@@ -122,6 +122,9 @@ dist/
 # Test coverage
 coverage/
 
+# Nested git repositories
+nodeTexeure/
+
 # Package lock files (choose one)
 # package-lock.json
 # yarn.lock
