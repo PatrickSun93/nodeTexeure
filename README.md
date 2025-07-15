@@ -13,7 +13,20 @@ A full-stack application with **Next.js frontend** (port 3000) and **Express.js 
 
 ## 🚀 Quick Start
 
-### 1. Start the Backend Server
+### 1. Setup Database (First Time)
+
+```bash
+# Install dependencies
+npm install
+
+# Test database connection
+npm run db:test
+
+# Initialize database
+npm run db:init
+```
+
+### 2. Start the Backend Server
 
 ```bash
 # Navigate to backend directory
@@ -26,7 +39,7 @@ npm install
 npm run dev
 ```
 
-### 2. Start the Frontend Server
+### 3. Start the Frontend Server
 
 ```bash
 # In the root directory (separate terminal)
@@ -35,7 +48,50 @@ npm run dev
 ```
 
 **Frontend**: [http://localhost:3000](http://localhost:3000)  
-**Backend API**: [http://localhost:6666](http://localhost:6666)
+**Backend API**: [http://localhost:6666](http://localhost:6666)  
+**Database**: MySQL (configured via `backend/.env`)
+
+## 🗄️ Database System
+
+The application uses a comprehensive MySQL database with:
+
+- **44 Tables**: Complete e-commerce schema with audit logging
+- **66 Triggers**: Automatic change tracking
+- **JSON Support**: Advanced workflow management
+- **Optimized Performance**: Indexed for fast queries
+
+### Database Commands
+
+```bash
+# Test database connection
+npm run db:test
+
+# Initialize database with schema
+npm run db:init
+
+# Reset database (development only)
+npm run db:reset
+```
+
+### Database Management
+
+```bash
+# Using the database manager script
+cd database
+./db-manager.sh help     # Show all commands
+./db-manager.sh backup   # Create backup
+./db-manager.sh restore backup.sql  # Restore backup
+```
+
+### Documentation
+
+All database documentation is located in the `database/` directory:
+
+- `README-DATABASE.md` - Complete setup guide
+- `DATABASE_DESIGN.md` - Schema design and relationships
+- `DATABASE_SUMMARY.md` - System overview
+- `JSON_SYSTEM.md` - JSON column usage
+- `AUDIT_SYSTEM.md` - Audit logging system
 
 ## 📡 Backend API Structure
 

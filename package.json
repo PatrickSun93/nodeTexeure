@@ -11,12 +11,17 @@
     "build:backend": "cd backend && npm install",
     "start": "next start",
     "start:backend": "cd backend && npm start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "db:init": "node database/init-database.js",
+    "db:reset": "node database/init-database.js --reset",
+    "db:test": "node database/test-db-connection.js"
   },
   "dependencies": {
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "next": "15.3.5"
+    "next": "15.3.5",
+    "mysql2": "^3.6.5",
+    "dotenv": "^16.3.1"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
