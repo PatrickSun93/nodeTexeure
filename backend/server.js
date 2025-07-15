@@ -28,10 +28,14 @@ let nextUserId = 3;
 
 // Import routes
 const statusRoutes = require('./routes/statusRoutes');
+const databaseRoutes = require('./routes/databaseRoutes');
 
 // Routes
 // Status routes (health, hello)
 app.use('/api/status', statusRoutes);
+
+// Database routes (connection testing, data retrieval)
+app.use('/api/database', databaseRoutes);
 
 // Backward compatibility - redirect old endpoints to new structure
 app.get('/api/health', (req, res) => {

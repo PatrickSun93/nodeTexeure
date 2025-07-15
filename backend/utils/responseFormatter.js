@@ -19,10 +19,8 @@ class ResponseFormatter {
       response.message = message;
     }
     
-    if (keyValueTable && keyValueTable.length > 0) {
-      response.keyValueTable = keyValueTable;
-    }
-    
+    response.keyValueTable = [];
+    if (keyValueTable && keyValueTable.length > 0) response.keyValueTable.push(keyValueTable);
     return response;
   }
 
@@ -40,11 +38,7 @@ class ResponseFormatter {
     if (message) {
       response.message = message;
     }
-    
-    if (keyValueTable && keyValueTable.length > 0) {
-      response.keyValueTable = keyValueTable;
-    }
-    
+    response.keyValueTable = [];
     return response;
   }
 
@@ -71,48 +65,7 @@ class ResponseFormatter {
     return response;
   }
 
-  /**
-   * Add timestamp to keyValueTable
-   * @param {Array} keyValueTable - Existing key-value table
-   * @returns {Array} Updated key-value table with timestamp
-   */
-  static addTimestamp(keyValueTable = []) {
-    return [
-      ...keyValueTable,
-      { 'timestamp': new Date().toISOString() }
-    ];
-  }
 
-  /**
-   * Convert object to keyValueTable format
-   * @param {Object} data - Object to convert
-   * @returns {Array} Key-value table format
-   */
-  static objectToKeyValueTable(data) {
-    if (!data || typeof data !== 'object') {
-      return [];
-    }
-    
-    return Object.entries(data).map(([key, value]) => ({ [key]: value }));
-  }
-
-  /**
-   * Convert keyValueTable to object format
-   * @param {Array} keyValueTable - Key-value table to convert
-   * @returns {Object} Converted object
-   */
-  static keyValueTableToObject(keyValueTable) {
-    if (!Array.isArray(keyValueTable)) {
-      return {};
-    }
-    
-    return keyValueTable.reduce((obj, item) => {
-      if (typeof item === 'object' && item !== null) {
-        Object.assign(obj, item);
-      }
-      return obj;
-    }, {});
-  }
 }
 
 module.exports = ResponseFormatter;

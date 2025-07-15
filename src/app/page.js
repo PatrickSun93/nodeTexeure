@@ -7,6 +7,9 @@ import {
   useForm,
   useMessage,
   useHelloAPI,
+  useDatabaseStatus,
+  useDatabaseTables,
+  useTransnoData,
   validateUserData,
   confirmAction,
   CSS_CLASSES,
@@ -19,6 +22,9 @@ export default function Home() {
   const { users, loading: usersLoading, createUser, deleteUser } = useUsers();
   const { message, messageType, showSuccess, showError } = useMessage();
   const { testHello, loading: helloLoading } = useHelloAPI();
+  const { status: dbStatus, loading: dbStatusLoading, error: dbStatusError, checkDatabaseStatus } = useDatabaseStatus();
+  const { tableInfo, loading: tableLoading, error: tableError, fetchTableInfo } = useDatabaseTables();
+  const { transnoData, loading: transnoLoading, error: transnoError, fetchTransnoData } = useTransnoData();
   
   // Form management with validation
   const {
@@ -108,6 +114,162 @@ export default function Home() {
           >
             {helloLoading ? 'Testing...' : 'Test Hello API'}
           </button>
+        </div>
+
+        {/* Database Status Section */}
+        <div className={CSS_CLASSES.CARD.DEFAULT + " mb-8"}>
+          <h2 className="text-2xl font-semibold text-gray-800 mb-4">Database Status</h2>
+          <div className="bg-white p-4 rounded-lg shadow">
+            {dbStatusLoading ? (
+              <p>Checking database connection...</p>
+            ) : dbStatusError ? (
+              <div className="text-red-500">
+                <p>Error: {dbStatusError}</p>
+                <button
+                  onClick={checkDatabaseStatus}
+                  className="mt-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition"
+                >
+                  Retry
+                </button>
+              </div>
+            ) : (
+              <div>
+                <p>
+                  Connection: <span className={`font-medium ${dbStatus?.connected ? 'text-green-500' : 'text-red-500'}`}>
+                    {dbStatus?.connected ? 'Connected' : 'Disconnected'}
+                  </span>
+                </p>
+                {dbStatus?.connected && (
+                  <>
+                    <p>
+                      MySQL Version: <span className="font-medium">{dbStatus?.version}</span>
+                    </p>
+                    <p>
+                      Database: <span className="font-medium">{dbStatus?.database}</span>
+                    </p>
+                    <button
+                      onClick={checkDatabaseStatus}
+                      className="mt-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition"
+                    >
+                      Refresh
+                    </button>
+                  </>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Database Tables Section */}
+        <div className={CSS_CLASSES.CARD.DEFAULT + " mb-8"}>
+          <h2 className="text-2xl font-semibold text-gray-800 mb-4">Database Tables</h2>
+          <div className="bg-white p-4 rounded-lg shadow">
+            {tableLoading ? (
+              <p>Loading table information...</p>
+            ) : tableError ? (
+              <div className="text-red-500">
+                <p>Error: {tableError}</p>
+                <button
+                  onClick={fetchTableInfo}
+                  className="mt-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition"
+                >
+                  Retry
+                </button>
+              </div>
+            ) : (
+              <div>
+                <p>
+                  Total Tables: <span className="font-medium">{tableInfo?.count}</span>
+                </p>
+                {tableInfo?.tables && (
+                  <div className="mt-2">
+                    <p className="font-medium mb-1">Table List:</p>
+                    <div className="max-h-40 overflow-y-auto border border-gray-200 rounded p-2">
+                      <ul className="list-disc pl-5">
+                        {tableInfo.tables.map((table, index) => (
+                          <li key={index}>{table}</li>
+                        ))}
+                      </ul>
+                    </div>
+                    <button
+                      onClick={fetchTableInfo}
+                      className="mt-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition"
+                    >
+                      Refresh
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Transno Table Data Section */}
+        <div className={CSS_CLASSES.CARD.DEFAULT + " mb-8"}>
+          <h2 className="text-2xl font-semibold text-gray-800 mb-4">Transno Table Data</h2>
+          <div className="bg-white p-4 rounded-lg shadow">
+            {transnoLoading ? (
+              <p>Loading transno data...</p>
+            ) : transnoError ? (
+              <div className="text-red-500">
+                <p>Error: {transnoError}</p>
+                <button
+                  onClick={fetchTransnoData}
+                  className="mt-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition"
+                >
+                  Retry
+                </button>
+              </div>
+            ) : (
+              <div>
+                {transnoData?.rows && transnoData.rows.length > 0 ? (
+                  <div>
+                    <p className="mb-2">Total Records: <span className="font-medium">{transnoData.rows.length}</span></p>
+                    <div className="overflow-x-auto">
+                      <table className="min-w-full border border-gray-200">
+                        <thead className="bg-gray-50">
+                          <tr>
+                            {Object.keys(transnoData.rows[0]).map((key) => (
+                              <th key={key} className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b">
+                                {key}
+                              </th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {transnoData.rows.map((row, rowIndex) => (
+                            <tr key={rowIndex} className={rowIndex % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                              {Object.values(row).map((value, cellIndex) => (
+                                <td key={cellIndex} className="px-4 py-2 text-sm text-gray-500 border-b">
+                                  {value === null ? 'NULL' : String(value)}
+                                </td>
+                              ))}
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                    <button
+                      onClick={fetchTransnoData}
+                      className="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition"
+                    >
+                      Refresh
+                    </button>
+                  </div>
+                ) : (
+                  <div>
+                    <p>No data found in transno table.</p>
+                    <button
+                      onClick={fetchTransnoData}
+                      className="mt-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition"
+                    >
+                      Refresh
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Create User Form */}
@@ -200,6 +362,26 @@ export default function Home() {
               <span className="bg-green-100 text-green-800 px-2 py-1 rounded font-mono">GET</span>
               <span className="font-mono">/api/status/health</span>
               <span className="text-gray-600">- Backend health check</span>
+            </div>
+            <div className="flex items-center space-x-2">
+              <span className="bg-green-100 text-green-800 px-2 py-1 rounded font-mono">GET</span>
+              <span className="font-mono">/api/database/test</span>
+              <span className="text-gray-600">- Test database connection</span>
+            </div>
+            <div className="flex items-center space-x-2">
+              <span className="bg-green-100 text-green-800 px-2 py-1 rounded font-mono">GET</span>
+              <span className="font-mono">/api/database/tables</span>
+              <span className="text-gray-600">- Get database table count and list</span>
+            </div>
+            <div className="flex items-center space-x-2">
+              <span className="bg-green-100 text-green-800 px-2 py-1 rounded font-mono">GET</span>
+              <span className="font-mono">/api/database/transno</span>
+              <span className="text-gray-600">- Get transno table data</span>
+            </div>
+            <div className="flex items-center space-x-2">
+              <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded font-mono">POST</span>
+              <span className="font-mono">/api/database/query</span>
+              <span className="text-gray-600">- Execute custom SELECT queries</span>
             </div>
             <div className="flex items-center space-x-2">
               <span className="bg-green-100 text-green-800 px-2 py-1 rounded font-mono">GET</span>

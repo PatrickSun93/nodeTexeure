@@ -23,9 +23,7 @@ All API responses follow this consistent structure:
   "status": "SUCCESS" | "FAIL" | "CUSTOM_STATUS",
   "message": "Optional descriptive message",
   "keyValueTable": [
-    { "key1": "value1" },
-    { "key2": "value2" },
-    { "timestamp": "2024-01-01T00:00:00.000Z" }
+    { "key1": [] },
   ]
 }
 ```
@@ -70,22 +68,7 @@ const response = ResponseFormatter.success('User retrieved successfully', keyVal
 // }
 ```
 
-#### Adding Timestamp
-```javascript
-// Add timestamp to existing data
-const data = [{ 'port': 6666 }];
-const keyValueTable = ResponseFormatter.addTimestamp(data);
 
-const response = ResponseFormatter.success('Server status', keyValueTable);
-// Result: {
-//   status: 'SUCCESS',
-//   message: 'Server status',
-//   keyValueTable: [
-//     { 'port': 6666 },
-//     { 'timestamp': '2024-01-01T00:00:00.000Z' }
-//   ]
-// }
-```
 
 #### Error Response
 ```javascript
@@ -108,9 +91,9 @@ const response = ResponseFormatter.failure('Validation failed', errorDetails);
 // }
 ```
 
-#### Converting Objects
+#### Manual Key-Value Creation
 ```javascript
-// Convert regular object to keyValueTable format
+// Create keyValueTable format manually
 const userData = {
   id: 123,
   name: 'John Doe',
@@ -118,13 +101,13 @@ const userData = {
   active: true
 };
 
-const keyValueTable = ResponseFormatter.objectToKeyValueTable(userData);
-// Result: [
-//   { 'id': 123 },
-//   { 'name': 'John Doe' },
-//   { 'email': 'john@example.com' },
-//   { 'active': true }
-// ]
+// Create key-value pairs manually for better control
+const keyValueTable = [
+  { 'id': userData.id },
+  { 'name': userData.name },
+  { 'email': userData.email },
+  { 'active': userData.active }
+];
 
 const response = ResponseFormatter.success('User data', keyValueTable);
 ```
@@ -164,14 +147,6 @@ const userData = ResponseFormatter.keyValueTableToObject(keyValueTable);
 - **keyValueTable** (array, optional): Data in key-value format
 - **Returns**: Formatted response object with custom status
 
-#### `ResponseFormatter.addTimestamp(keyValueTable)`
-- **keyValueTable** (array, optional): Existing key-value table
-- **Returns**: Updated key-value table with timestamp added
-
-#### `ResponseFormatter.objectToKeyValueTable(data)`
-- **data** (object): Object to convert
-- **Returns**: Array in key-value table format
-
 #### `ResponseFormatter.keyValueTableToObject(keyValueTable)`
 - **keyValueTable** (array): Key-value table to convert
 - **Returns**: Converted object
@@ -207,11 +182,11 @@ const ResponseFormatter = require('../utils/responseFormatter');
 
 class UserService {
   getUser(id) {
-    const keyValueTable = ResponseFormatter.objectToKeyValueTable({
-      id,
-      name: 'John',
-      email: 'john@example.com'
-    });
+    const keyValueTable = [
+      { 'id': id },
+      { 'name': 'John' },
+      { 'email': 'john@example.com' }
+    ];
     
     return ResponseFormatter.success('User retrieved successfully', keyValueTable);
   }
@@ -219,9 +194,9 @@ class UserService {
 
 class StatusService {
   getHealth() {
-    const keyValueTable = ResponseFormatter.addTimestamp([
+    const keyValueTable = [
       { 'port': process.env.PORT || 6666 }
-    ]);
+    ];
     
     return ResponseFormatter.success('Server running', keyValueTable);
   }
@@ -250,13 +225,7 @@ describe('ResponseFormatter', () => {
     expect(response.message).toBe('Error message');
   });
   
-  test('adds timestamp', () => {
-    const result = ResponseFormatter.addTimestamp([{ 'test': 'data' }]);
-    
-    expect(result).toHaveLength(2);
-    expect(result[0]).toEqual({ 'test': 'data' });
-    expect(result[1]).toHaveProperty('timestamp');
-  });
+
 });
 ```
 

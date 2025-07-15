@@ -136,9 +136,9 @@ const failureResponse = ResponseFormatter.failure(
 );
 
 // With timestamp
-const keyValueTable = ResponseFormatter.addTimestamp([
+const keyValueTable = [
   { 'port': 6666 }
-]);
+];
 const response = ResponseFormatter.success('Server status', keyValueTable);
 ```
 

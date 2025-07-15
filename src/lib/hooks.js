@@ -4,7 +4,7 @@
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { userAPI, checkBackendHealth, testHelloAPI } from './api';
+import { userAPI, checkBackendHealth, testHelloAPI, databaseAPI } from './api';
 import { formatErrorMessage, debounce } from './utils';
 import { MESSAGES } from './constants';
 
@@ -357,4 +357,153 @@ export const useLocalStorage = (key, initialValue) => {
   }, [key, storedValue]);
 
   return [storedValue, setValue];
+};
+
+/**
+ * Hook for managing database status
+ * Updated to use backend/routes/databaseRoutes.js endpoints
+ * @returns {object} - Database status, loading state, and check function
+ */
+export const useDatabaseStatus = () => {
+  const [status, setStatus] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  const checkDatabaseStatus = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await databaseAPI.testConnection();
+      setStatus(data);
+      return { success: true, data };
+    } catch (err) {
+      const errorMessage = formatErrorMessage(err);
+      setError(errorMessage);
+      return { success: false, message: errorMessage };
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    checkDatabaseStatus();
+  }, [checkDatabaseStatus]);
+
+  return {
+    status,
+    loading,
+    error,
+    checkDatabaseStatus,
+    // Alias for backward compatibility
+    testConnection: checkDatabaseStatus,
+  };
+};
+
+/**
+ * Hook for managing database table information
+ * Updated to use backend/routes/databaseRoutes.js endpoints
+ * @returns {object} - Table data, loading state, and fetch function
+ */
+export const useDatabaseTables = () => {
+  const [tableInfo, setTableInfo] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  const fetchTableInfo = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await databaseAPI.getTableCount();
+      setTableInfo(data);
+      return { success: true, data };
+    } catch (err) {
+      const errorMessage = formatErrorMessage(err);
+      setError(errorMessage);
+      return { success: false, message: errorMessage };
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  return {
+    tableInfo,
+    loading,
+    error,
+    fetchTableInfo,
+  };
+};
+
+/**
+ * Hook for managing transno table data
+ * Updated to use backend/routes/databaseRoutes.js endpoints
+ * @returns {object} - Transno data, loading state, and fetch function
+ */
+export const useTransnoData = () => {
+  const [transnoData, setTransnoData] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  const fetchTransnoData = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await databaseAPI.getTransnoData();
+      setTransnoData(data);
+      return { success: true, data };
+    } catch (err) {
+      const errorMessage = formatErrorMessage(err);
+      setError(errorMessage);
+      return { success: false, message: errorMessage };
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  return {
+    transnoData,
+    loading,
+    error,
+    fetchTransnoData,
+  };
+};
+
+/**
+ * Hook for executing custom database queries
+ * Uses backend/routes/databaseRoutes.js POST /api/database/query endpoint
+ * @returns {object} - Query execution function, loading state, and result
+ */
+export const useDatabaseQuery = () => {
+  const [result, setResult] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  const executeQuery = useCallback(async (query, params = []) => {
+    setLoading(true);
+    setError(null);
+    setResult(null);
+    try {
+      const data = await databaseAPI.executeQuery(query, params);
+      setResult(data);
+      return { success: true, data };
+    } catch (err) {
+      const errorMessage = formatErrorMessage(err);
+      setError(errorMessage);
+      return { success: false, message: errorMessage };
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const clearResult = useCallback(() => {
+    setResult(null);
+    setError(null);
+  }, []);
+
+  return {
+    result,
+    loading,
+    error,
+    executeQuery,
+    clearResult,
+  };
 };

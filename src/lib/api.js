@@ -199,3 +199,77 @@ export const userAPI = {
     }
   },
 };
+
+/**
+ * Database API functions
+ * Updated to use backend/routes/databaseRoutes.js endpoints
+ */
+export const databaseAPI = {
+  /**
+   * Test database connection
+   * @returns {Promise<object>} - Database connection test result
+   */
+  testConnection: async () => {
+    try {
+      const response = await apiRequest('/database/test');
+      return response;
+    } catch (error) {
+      throw new Error('Error testing database connection - Make sure backend is running');
+    }
+  },
+
+  /**
+   * Get database table count
+   * @returns {Promise<object>} - Table count and list
+   */
+  getTableCount: async () => {
+    try {
+      const response = await apiRequest('/database/tables');
+      return response;
+    } catch (error) {
+      throw new Error('Error fetching table count - Make sure backend is running');
+    }
+  },
+
+  /**
+   * Get transno table data
+   * @returns {Promise<object>} - Transno table data
+   */
+  getTransnoData: async () => {
+    try {
+      const response = await apiRequest('/database/transno');
+      return response;
+    } catch (error) {
+      throw new Error('Error fetching transno data - Make sure backend is running');
+    }
+  },
+
+  /**
+   * Execute custom SELECT query
+   * @param {string} query - SQL SELECT query
+   * @param {Array} params - Query parameters (optional)
+   * @returns {Promise<object>} - Query execution result
+   */
+  executeQuery: async (query, params = []) => {
+    try {
+      const response = await apiRequest('/database/query', {
+        method: 'POST',
+        body: JSON.stringify({ query, params }),
+      });
+      return response;
+    } catch (error) {
+      throw new Error('Error executing query - Make sure backend is running');
+    }
+  },
+
+  // Legacy methods for backward compatibility
+  /**
+   * @deprecated Use testConnection() instead
+   * Check database connection status
+   * @returns {Promise<object>} - Database connection status
+   */
+  getConnectionStatus: async () => {
+    console.warn('databaseAPI.getConnectionStatus() is deprecated. Use testConnection() instead.');
+    return databaseAPI.testConnection();
+  },
+};
