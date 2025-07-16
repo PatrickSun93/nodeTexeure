@@ -1,425 +1,249 @@
 'use client';
 
 import { useState } from 'react';
-import {
-  useBackendHealth,
-  useUsers,
-  useForm,
-  useMessage,
-  useHelloAPI,
-  useDatabaseStatus,
-  useDatabaseTables,
-  useTransnoData,
-  validateUserData,
-  confirmAction,
-  CSS_CLASSES,
-  MESSAGES,
-} from '../lib';
+import Link from 'next/link';
+import { useBackendHealth } from '../lib';
+
+// Header Component
+function Header() {
+  return (
+    <header className="bg-white shadow-sm">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex justify-between items-center h-16">
+          {/* Logo */}
+          <div className="flex items-center space-x-2">
+            <div className="w-8 h-8 bg-amber-600 rounded"></div>
+            <span className="text-xl font-bold text-gray-900">Furniro</span>
+          </div>
+          
+          {/* Navigation */}
+          <nav className="hidden md:flex space-x-8">
+            <Link href="/" className="text-gray-900 hover:text-amber-600 font-medium">Home</Link>
+            <Link href="/shop" className="text-gray-900 hover:text-amber-600 font-medium">Shop</Link>
+            <Link href="/about" className="text-gray-900 hover:text-amber-600 font-medium">About</Link>
+            <Link href="/contact" className="text-gray-900 hover:text-amber-600 font-medium">Contact</Link>
+          </nav>
+          
+          {/* Icons */}
+          <div className="flex items-center space-x-4">
+            <button className="p-2 text-gray-600 hover:text-amber-600">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              </svg>
+            </button>
+            <button className="p-2 text-gray-600 hover:text-amber-600">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </button>
+            <button className="p-2 text-gray-600 hover:text-amber-600">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+              </svg>
+            </button>
+            <button className="p-2 text-gray-600 hover:text-amber-600">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-2.5 5M7 13l2.5 5m6-5v6a2 2 0 01-2 2H9a2 2 0 01-2-2v-6m8 0V9a2 2 0 00-2-2H9a2 2 0 00-2 2v4.01" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    </header>
+  );
+}
+
+// Hero Section Component
+function HeroSection() {
+  return (
+    <section className="relative bg-gradient-to-r from-amber-50 to-orange-50 py-20">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="text-center">
+          <h1 className="text-4xl md:text-6xl font-bold text-gray-900 mb-6">
+            Premium Bed Textures
+          </h1>
+          <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
+            Transform your bedroom with our luxurious collection of high-quality bed textures and linens
+          </p>
+          <Link href="/shop" className="inline-block bg-amber-600 text-white px-8 py-3 rounded-lg text-lg font-semibold hover:bg-amber-700 transition-colors">
+            Shop Now
+          </Link>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// Product Card Component
+function ProductCard({ name, price, image, isNew = false }) {
+  return (
+    <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
+      <div className="relative">
+        <div className="w-full h-64 bg-gray-200 flex items-center justify-center">
+          <span className="text-gray-500">{image || 'Product Image'}</span>
+        </div>
+        {isNew && (
+          <span className="absolute top-4 right-4 bg-green-500 text-white px-2 py-1 rounded text-sm font-medium">
+            New
+          </span>
+        )}
+        <button className="absolute top-4 left-4 p-2 bg-white rounded-full shadow-md hover:bg-gray-50">
+          <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+          </svg>
+        </button>
+      </div>
+      <div className="p-4">
+        <h3 className="text-lg font-semibold text-gray-900 mb-2">{name}</h3>
+        <p className="text-amber-600 font-bold text-xl">${price}</p>
+        <button className="w-full mt-4 bg-amber-600 text-white py-2 rounded-lg hover:bg-amber-700 transition-colors">
+          Add to Cart
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// Featured Products Section
+function FeaturedProducts() {
+  const products = [
+    { name: "Luxury Cotton Sheets", price: "299.99", isNew: true },
+    { name: "Silk Pillowcase Set", price: "149.99" },
+    { name: "Memory Foam Mattress Topper", price: "199.99" },
+    { name: "Bamboo Bed Sheet Set", price: "179.99", isNew: true },
+  ];
+
+  return (
+    <section className="py-16 bg-white">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="text-center mb-12">
+          <h2 className="text-3xl font-bold text-gray-900 mb-4">Featured Products</h2>
+          <p className="text-gray-600 max-w-2xl mx-auto">
+            Discover our most popular bed textures and accessories
+          </p>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+          {products.map((product, index) => (
+            <ProductCard key={index} {...product} />
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// Features Section
+function FeaturesSection() {
+  const features = [
+    {
+      icon: "🏆",
+      title: "High Quality",
+      description: "crafted from top materials"
+    },
+    {
+      icon: "🛡️",
+      title: "Warranty Protection",
+      description: "Over 2 years"
+    },
+    {
+      icon: "🚚",
+      title: "Free Shipping",
+      description: "Order over 150 $"
+    },
+    {
+      icon: "📞",
+      title: "24 / 7 Support",
+      description: "Dedicated support"
+    }
+  ];
+
+  return (
+    <section className="py-16 bg-amber-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+          {features.map((feature, index) => (
+            <div key={index} className="text-center">
+              <div className="text-4xl mb-4">{feature.icon}</div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">{feature.title}</h3>
+              <p className="text-gray-600">{feature.description}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// Footer Component
+function Footer() {
+  return (
+    <footer className="bg-white border-t">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+          <div>
+            <div className="flex items-center space-x-2 mb-4">
+              <div className="w-8 h-8 bg-amber-600 rounded"></div>
+              <span className="text-xl font-bold text-gray-900">Furniro</span>
+            </div>
+            <p className="text-gray-600 mb-4">
+              400 University Drive Suite 200 Coral Gables,<br />
+              FL 33134 USA
+            </p>
+          </div>
+          <div>
+            <h4 className="font-semibold text-gray-900 mb-4">Links</h4>
+            <ul className="space-y-2">
+              <li><Link href="/" className="text-gray-600 hover:text-amber-600">Home</Link></li>
+              <li><Link href="/shop" className="text-gray-600 hover:text-amber-600">Shop</Link></li>
+              <li><Link href="/about" className="text-gray-600 hover:text-amber-600">About</Link></li>
+              <li><Link href="/contact" className="text-gray-600 hover:text-amber-600">Contact</Link></li>
+            </ul>
+          </div>
+          <div>
+            <h4 className="font-semibold text-gray-900 mb-4">Help</h4>
+            <ul className="space-y-2">
+              <li><a href="#" className="text-gray-600 hover:text-amber-600">Payment Options</a></li>
+              <li><a href="#" className="text-gray-600 hover:text-amber-600">Returns</a></li>
+              <li><a href="#" className="text-gray-600 hover:text-amber-600">Privacy Policies</a></li>
+            </ul>
+          </div>
+          <div>
+            <h4 className="font-semibold text-gray-900 mb-4">Newsletter</h4>
+            <div className="flex">
+              <input 
+                type="email" 
+                placeholder="Enter Your Email Address" 
+                className="flex-1 px-3 py-2 border border-gray-300 rounded-l-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
+              />
+              <button className="bg-amber-600 text-white px-4 py-2 rounded-r-lg hover:bg-amber-700 transition-colors">
+                Subscribe
+              </button>
+            </div>
+          </div>
+        </div>
+        <div className="border-t mt-8 pt-8 text-center text-gray-600">
+          <p>&copy; 2024 Furniro. All rights reserved.</p>
+        </div>
+      </div>
+    </footer>
+  );
+}
 
 export default function Home() {
-  // Use custom hooks for cleaner state management
   const { status: backendStatus, isConnected } = useBackendHealth();
-  const { users, loading: usersLoading, createUser, deleteUser } = useUsers();
-  const { message, messageType, showSuccess, showError } = useMessage();
-  const { testHello, loading: helloLoading } = useHelloAPI();
-  const { status: dbStatus, loading: dbStatusLoading, error: dbStatusError, checkDatabaseStatus } = useDatabaseStatus();
-  const { tableInfo, loading: tableLoading, error: tableError, fetchTableInfo } = useDatabaseTables();
-  const { transnoData, loading: transnoLoading, error: transnoError, fetchTransnoData } = useTransnoData();
-  
-  // Form management with validation
-  const {
-    values: newUser,
-    errors: formErrors,
-    isSubmitting,
-    handleChange,
-    handleBlur,
-    reset: resetForm,
-    handleSubmit,
-  } = useForm(
-    { name: '', email: '' },
-    validateUserData
-  );
-
-  // Handle user creation
-  const handleCreateUser = async (e) => {
-    e.preventDefault();
-    
-    const result = await handleSubmit(async (userData) => {
-      return await createUser(userData);
-    });
-    
-    if (result.success) {
-      showSuccess(result.message);
-      resetForm();
-    } else {
-      showError(result.message);
-    }
-  };
-
-  // Handle user deletion with confirmation
-  const handleDeleteUser = async (userId) => {
-    if (!confirmAction(MESSAGES.CONFIRMATION.DELETE_USER)) return;
-    
-    const result = await deleteUser(userId);
-    if (result.success) {
-      showSuccess(result.message);
-    } else {
-      showError(result.message);
-    }
-  };
-
-  // Handle hello API test
-  const handleTestHello = async () => {
-    const result = await testHello();
-    if (result.success) {
-      showSuccess(result.message);
-    } else {
-      showError(result.message);
-    }
-  };
 
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-4xl mx-auto">
-        {/* Header */}
-        <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">
-            Next.js Frontend with Separate Node.js Backend
-          </h1>
-          <p className="text-lg text-gray-600">
-            Full-stack application with separate backend server on port 6666
-          </p>
-          <div className="mt-4 p-3 bg-gray-100 rounded-lg">
-            <p className="text-sm font-medium text-gray-700">
-              Backend Status: <span className={isConnected ? CSS_CLASSES.STATUS.CONNECTED : CSS_CLASSES.STATUS.DISCONNECTED}>{backendStatus}</span>
-            </p>
-          </div>
-        </div>
-
-        {/* Message Display */}
-        {message && (
-          <div className={`mb-6 ${CSS_CLASSES.MESSAGE[messageType.toUpperCase()]}`}>
-            {message}
-          </div>
-        )}
-
-        {/* API Test Section */}
-        <div className={CSS_CLASSES.CARD.DEFAULT + " mb-8"}>
-          <h2 className="text-2xl font-semibold text-gray-800 mb-4">API Testing</h2>
-          <button
-            onClick={handleTestHello}
-            disabled={helloLoading}
-            className={helloLoading ? CSS_CLASSES.BUTTON.DISABLED : CSS_CLASSES.BUTTON.SUCCESS}
-          >
-            {helloLoading ? 'Testing...' : 'Test Hello API'}
-          </button>
-        </div>
-
-        {/* Database Status Section */}
-        <div className={CSS_CLASSES.CARD.DEFAULT + " mb-8"}>
-          <h2 className="text-2xl font-semibold text-gray-800 mb-4">Database Status</h2>
-          <div className="bg-white p-4 rounded-lg shadow">
-            {dbStatusLoading ? (
-              <p>Checking database connection...</p>
-            ) : dbStatusError ? (
-              <div className="text-red-500">
-                <p>Error: {dbStatusError}</p>
-                <button
-                  onClick={checkDatabaseStatus}
-                  className="mt-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition"
-                >
-                  Retry
-                </button>
-              </div>
-            ) : (
-              <div>
-                <p>
-                  Connection: <span className={`font-medium ${dbStatus?.connected ? 'text-green-500' : 'text-red-500'}`}>
-                    {dbStatus?.connected ? 'Connected' : 'Disconnected'}
-                  </span>
-                </p>
-                {dbStatus?.connected && (
-                  <>
-                    <p>
-                      MySQL Version: <span className="font-medium">{dbStatus?.version}</span>
-                    </p>
-                    <p>
-                      Database: <span className="font-medium">{dbStatus?.database}</span>
-                    </p>
-                    <button
-                      onClick={checkDatabaseStatus}
-                      className="mt-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition"
-                    >
-                      Refresh
-                    </button>
-                  </>
-                )}
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Database Tables Section */}
-        <div className={CSS_CLASSES.CARD.DEFAULT + " mb-8"}>
-          <h2 className="text-2xl font-semibold text-gray-800 mb-4">Database Tables</h2>
-          <div className="bg-white p-4 rounded-lg shadow">
-            {tableLoading ? (
-              <p>Loading table information...</p>
-            ) : tableError ? (
-              <div className="text-red-500">
-                <p>Error: {tableError}</p>
-                <button
-                  onClick={fetchTableInfo}
-                  className="mt-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition"
-                >
-                  Retry
-                </button>
-              </div>
-            ) : (
-              <div>
-                <p>
-                  Total Tables: <span className="font-medium">{tableInfo?.count}</span>
-                </p>
-                {tableInfo?.tables && (
-                  <div className="mt-2">
-                    <p className="font-medium mb-1">Table List:</p>
-                    <div className="max-h-40 overflow-y-auto border border-gray-200 rounded p-2">
-                      <ul className="list-disc pl-5">
-                        {tableInfo.tables.map((table, index) => (
-                          <li key={index}>{table}</li>
-                        ))}
-                      </ul>
-                    </div>
-                    <button
-                      onClick={fetchTableInfo}
-                      className="mt-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition"
-                    >
-                      Refresh
-                    </button>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Transno Table Data Section */}
-        <div className={CSS_CLASSES.CARD.DEFAULT + " mb-8"}>
-          <h2 className="text-2xl font-semibold text-gray-800 mb-4">Transno Table Data</h2>
-          <div className="bg-white p-4 rounded-lg shadow">
-            {transnoLoading ? (
-              <p>Loading transno data...</p>
-            ) : transnoError ? (
-              <div className="text-red-500">
-                <p>Error: {transnoError}</p>
-                <button
-                  onClick={fetchTransnoData}
-                  className="mt-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition"
-                >
-                  Retry
-                </button>
-              </div>
-            ) : (
-              <div>
-                {transnoData?.rows && transnoData.rows.length > 0 ? (
-                  <div>
-                    <p className="mb-2">Total Records: <span className="font-medium">{transnoData.rows.length}</span></p>
-                    <div className="overflow-x-auto">
-                      <table className="min-w-full border border-gray-200">
-                        <thead className="bg-gray-50">
-                          <tr>
-                            {Object.keys(transnoData.rows[0]).map((key) => (
-                              <th key={key} className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b">
-                                {key}
-                              </th>
-                            ))}
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {transnoData.rows.map((row, rowIndex) => (
-                            <tr key={rowIndex} className={rowIndex % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                              {Object.values(row).map((value, cellIndex) => (
-                                <td key={cellIndex} className="px-4 py-2 text-sm text-gray-500 border-b">
-                                  {value === null ? 'NULL' : String(value)}
-                                </td>
-                              ))}
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                    <button
-                      onClick={fetchTransnoData}
-                      className="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition"
-                    >
-                      Refresh
-                    </button>
-                  </div>
-                ) : (
-                  <div>
-                    <p>No data found in transno table.</p>
-                    <button
-                      onClick={fetchTransnoData}
-                      className="mt-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition"
-                    >
-                      Refresh
-                    </button>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Create User Form */}
-        <div className={CSS_CLASSES.CARD.DEFAULT + " mb-8"}>
-          <h2 className="text-2xl font-semibold text-gray-800 mb-4">Create New User</h2>
-          <form onSubmit={handleCreateUser} className="space-y-4">
-            <div>
-              <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
-                Name
-              </label>
-              <input
-                type="text"
-                id="name"
-                name="name"
-                value={newUser.name}
-                onChange={handleChange}
-                onBlur={handleBlur}
-                className={formErrors.name ? CSS_CLASSES.INPUT.ERROR : CSS_CLASSES.INPUT.DEFAULT}
-                placeholder="Enter user name"
-              />
-              {formErrors.name && (
-                <p className="mt-1 text-sm text-red-600">{formErrors.name}</p>
-              )}
-            </div>
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-                Email
-              </label>
-              <input
-                type="email"
-                id="email"
-                name="email"
-                value={newUser.email}
-                onChange={handleChange}
-                onBlur={handleBlur}
-                className={formErrors.email ? CSS_CLASSES.INPUT.ERROR : CSS_CLASSES.INPUT.DEFAULT}
-                placeholder="Enter user email"
-              />
-              {formErrors.email && (
-                <p className="mt-1 text-sm text-red-600">{formErrors.email}</p>
-              )}
-            </div>
-            <button
-              type="submit"
-              disabled={isSubmitting || usersLoading}
-              className={isSubmitting || usersLoading ? CSS_CLASSES.BUTTON.DISABLED : CSS_CLASSES.BUTTON.PRIMARY}
-            >
-              {isSubmitting ? 'Creating...' : 'Create User'}
-            </button>
-          </form>
-        </div>
-
-        {/* Users List */}
-        <div className={CSS_CLASSES.CARD.DEFAULT}>
-          <h2 className="text-2xl font-semibold text-gray-800 mb-4">Users List</h2>
-          {usersLoading ? (
-            <p className="text-gray-500">Loading users...</p>
-          ) : users.length === 0 ? (
-            <p className="text-gray-500">No users found. Create one above!</p>
-          ) : (
-            <div className="space-y-3">
-              {users.map((user) => (
-                <div
-                  key={user.id}
-                  className="flex items-center justify-between p-4 bg-gray-50 rounded-lg"
-                >
-                  <div>
-                    <h3 className="font-medium text-gray-900">{user.name}</h3>
-                    <p className="text-sm text-gray-600">{user.email}</p>
-                  </div>
-                  <button
-                    onClick={() => handleDeleteUser(user.id)}
-                    disabled={usersLoading}
-                    className={usersLoading ? CSS_CLASSES.BUTTON.DISABLED : CSS_CLASSES.BUTTON.DANGER}
-                  >
-                    Delete
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* API Documentation */}
-        <div className={CSS_CLASSES.CARD.DEFAULT + " mt-8"}>
-          <h2 className="text-2xl font-semibold text-gray-800 mb-4">Available API Endpoints</h2>
-          <div className="space-y-2 text-sm">
-            <p className="text-gray-600 mb-3">Backend Server: <code className="bg-gray-100 px-2 py-1 rounded">http://localhost:6666</code></p>
-            <div className="flex items-center space-x-2">
-              <span className="bg-green-100 text-green-800 px-2 py-1 rounded font-mono">GET</span>
-              <span className="font-mono">/api/status/health</span>
-              <span className="text-gray-600">- Backend health check</span>
-            </div>
-            <div className="flex items-center space-x-2">
-              <span className="bg-green-100 text-green-800 px-2 py-1 rounded font-mono">GET</span>
-              <span className="font-mono">/api/database/test</span>
-              <span className="text-gray-600">- Test database connection</span>
-            </div>
-            <div className="flex items-center space-x-2">
-              <span className="bg-green-100 text-green-800 px-2 py-1 rounded font-mono">GET</span>
-              <span className="font-mono">/api/database/tables</span>
-              <span className="text-gray-600">- Get database table count and list</span>
-            </div>
-            <div className="flex items-center space-x-2">
-              <span className="bg-green-100 text-green-800 px-2 py-1 rounded font-mono">GET</span>
-              <span className="font-mono">/api/database/transno</span>
-              <span className="text-gray-600">- Get transno table data</span>
-            </div>
-            <div className="flex items-center space-x-2">
-              <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded font-mono">POST</span>
-              <span className="font-mono">/api/database/query</span>
-              <span className="text-gray-600">- Execute custom SELECT queries</span>
-            </div>
-            <div className="flex items-center space-x-2">
-              <span className="bg-green-100 text-green-800 px-2 py-1 rounded font-mono">GET</span>
-              <span className="font-mono">/api/status/hello</span>
-              <span className="text-gray-600">- Basic hello world endpoint</span>
-            </div>
-            <div className="flex items-center space-x-2">
-              <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded font-mono">POST</span>
-              <span className="font-mono">/api/status/hello</span>
-              <span className="text-gray-600">- Personalized hello endpoint</span>
-            </div>
-            <div className="flex items-center space-x-2">
-              <span className="bg-green-100 text-green-800 px-2 py-1 rounded font-mono">GET</span>
-              <span className="font-mono">/api/users</span>
-              <span className="text-gray-600">- Get all users</span>
-            </div>
-            <div className="flex items-center space-x-2">
-              <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded font-mono">POST</span>
-              <span className="font-mono">/api/users</span>
-              <span className="text-gray-600">- Create a new user</span>
-            </div>
-            <div className="flex items-center space-x-2">
-              <span className="bg-green-100 text-green-800 px-2 py-1 rounded font-mono">GET</span>
-              <span className="font-mono">/api/users/[id]</span>
-              <span className="text-gray-600">- Get specific user</span>
-            </div>
-            <div className="flex items-center space-x-2">
-              <span className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded font-mono">PUT</span>
-              <span className="font-mono">/api/users/[id]</span>
-              <span className="text-gray-600">- Update specific user</span>
-            </div>
-            <div className="flex items-center space-x-2">
-              <span className="bg-red-100 text-red-800 px-2 py-1 rounded font-mono">DELETE</span>
-              <span className="font-mono">/api/users/[id]</span>
-              <span className="text-gray-600">- Delete specific user</span>
-            </div>
-          </div>
-        </div>
+    <div className="min-h-screen bg-white">
+      <Header />
+      <HeroSection />
+      <FeaturedProducts />
+      <FeaturesSection />
+      <Footer />
+      
+      {/* Backend Status - Hidden but functional */}
+      <div className="hidden">
+        <p>Backend Status: {isConnected ? 'Connected' : 'Disconnected'} - {backendStatus}</p>
       </div>
     </div>
   );
