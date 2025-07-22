@@ -25,6 +25,7 @@ router.get('/test', async (req, res) => {
       version: result.version,
       databaseExists: result.databaseExists
     };
+    console.log(keyValueTable);
     
     res.json(ResponseFormatter.success(
       'Database connection test completed',
@@ -32,9 +33,9 @@ router.get('/test', async (req, res) => {
     ));
   } catch (error) {
     console.error('Database test error:', error);
-    const keyValueTable = [
-      { 'error': error.message }
-    ];
+    const keyValueTable = {
+      error: error.message
+    };
     
     res.status(500).json(ResponseFormatter.failure(
       'Database connection test failed',
@@ -64,21 +65,21 @@ router.get('/tables', async (req, res) => {
     console.log(countResult)
     if (countResult.success && tablesResult.success) {
       const tables = tablesResult.data.map(row => row.table_name || row.TABLE_NAME);
-      const keyValueTable = [
-        { 'success': true },
-        { 'count': countResult.data[0].table_count },
-        { 'tables': tables }
-      ];
+      const keyValueTable = {
+        success: true,
+        count: countResult.data[0].table_count,
+        tables: tables
+      };
     
     res.json(ResponseFormatter.success(
       'Table count retrieved successfully',
       keyValueTable
     ));
     } else {
-      const keyValueTable = [
-        { 'success': false },
-        { 'error': 'Failed to retrieve table information' }
-      ];
+      const keyValueTable = {
+        success: false,
+        error: 'Failed to retrieve table information'
+      };
       
       res.status(500).json(ResponseFormatter.failure(
         'Failed to get table count',
@@ -87,9 +88,9 @@ router.get('/tables', async (req, res) => {
     }
   } catch (error) {
     console.error('Table count error:', error);
-    const keyValueTable = [
-      { 'error': error.message }
-    ];
+    const keyValueTable = {
+      error: error.message
+    };
     
     res.status(500).json(ResponseFormatter.failure(
       'Failed to get table count',
@@ -108,14 +109,13 @@ router.get('/transno', async (req, res) => {
     
     let keyValueTable;
     if (result.success) {
-      // Convert result data to key-value pairs
       if (Array.isArray(result.data) && result.data.length > 0) {
-        keyValueTable = Object.entries(result.data[0]).map(([key, value]) => ({ [key]: value }));
+        keyValueTable = result.data;
       } else {
-        keyValueTable = [{ 'message': 'No data found in transno table' }];
+        keyValueTable = { message: 'No data found in transno table' };
       }
     } else {
-      keyValueTable = [{ 'error': result.error }];
+      keyValueTable = { error: result.error };
     }
     
     // keyValueTable already contains the data
@@ -126,9 +126,9 @@ router.get('/transno', async (req, res) => {
     ));
   } catch (error) {
     console.error('Transno data error:', error);
-    const keyValueTable = [
-      { 'error': error.message }
-    ];
+    const keyValueTable = {
+      error: error.message
+    };
     
     res.status(500).json(ResponseFormatter.failure(
       'Failed to get transno data',
@@ -146,9 +146,9 @@ router.post('/query', async (req, res) => {
     const { query, params = [] } = req.body;
     
     if (!query) {
-      const keyValueTable = [
-        { 'error': 'Query parameter is required' }
-      ];
+      const keyValueTable = {
+        error: 'Query parameter is required'
+      };
       return res.status(400).json(ResponseFormatter.failure(
         'Query is required',
         keyValueTable
@@ -157,10 +157,10 @@ router.post('/query', async (req, res) => {
     
     // Basic security check - only allow SELECT queries
     if (!query.trim().toLowerCase().startsWith('select')) {
-      const keyValueTable = [
-        { 'error': 'Only SELECT queries are allowed for security reasons' },
-        { 'provided_query': query.substring(0, 50) + '...' }
-      ];
+      const keyValueTable = {
+        error: 'Only SELECT queries are allowed for security reasons',
+        provided_query: query.substring(0, 50) + '...'
+      };
       return res.status(403).json(ResponseFormatter.failure(
         'Only SELECT queries are allowed',
         keyValueTable
@@ -171,17 +171,17 @@ router.post('/query', async (req, res) => {
     let keyValueTable = [];
     
     if (Array.isArray(result)) {
-      keyValueTable = [
-        { 'query': query },
-        { 'record_count': result.length },
-        { 'results': result }
-      ];
+      keyValueTable = {
+        query: query,
+        record_count: result.length,
+        results: result
+      };
     } else {
-      keyValueTable = [
-        { 'query': query },
-        { 'success': result.success || true },
-        { 'data': result.data || result }
-      ];
+      keyValueTable = {
+        query: query,
+        success: result.success || true,
+        data: result.data || result
+      };
     }
     
     // keyValueTable already contains the data
@@ -192,10 +192,10 @@ router.post('/query', async (req, res) => {
     ));
   } catch (error) {
     console.error('Query execution error:', error);
-    const keyValueTable = [
-      { 'error': error.message },
-      { 'query': req.body.query || 'N/A' }
-    ];
+    const keyValueTable = {
+      error: error.message,
+      query: req.body.query || 'N/A'
+    };
     
     res.status(500).json(ResponseFormatter.failure(
       'Query execution failed',

@@ -74,8 +74,8 @@ router.post('/hello', (req, res) => {
     
     if (!name || typeof name !== 'string' || name.trim() === '') {
       const errorTable = [
-        { 'error': 'Name is required and must be a non-empty string' },
-        { 'provided_name': name || 'N/A' }
+        { 'error': 'Name is required and must be a non-empty string',
+        'provided_name': name || 'N/A' }
       ];
       return res.status(400).json(ResponseFormatter.failure(
         'Invalid name provided',
@@ -97,8 +97,8 @@ router.post('/hello', (req, res) => {
   } catch (error) {
     console.error('Personalized hello error:', error);
     const keyValueTable = [
-      { 'error': error.message },
-      { 'provided_name': req.body.name || 'N/A' }
+      { 'error': error.message ,
+       'provided_name': req.body.name || 'N/A' }
     ];
     res.status(500).json(ResponseFormatter.failure(
       'Failed to get personalized hello message',

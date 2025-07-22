@@ -19,8 +19,7 @@ class ResponseFormatter {
       response.message = message;
     }
     
-    response.keyValueTable = [];
-    if (keyValueTable && keyValueTable.length > 0) response.keyValueTable.push(keyValueTable);
+    response.keyValueTable = keyValueTable;
     return response;
   }
 
