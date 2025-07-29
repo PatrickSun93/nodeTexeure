@@ -6,6 +6,7 @@ const rateLimit = require('express-rate-limit');
 const DatabaseUtil = require('../utils/database');
 const ResponseFormatter = require('../utils/responseFormatter');
 const { protect, admin } = require('../middleware/authMiddleware');
+const crypto = require('crypto');
 
 const router = express.Router();
 
@@ -21,12 +22,12 @@ const router = express.Router();
  */
 router.post('/register', async (req, res) => {
   try {
-    const { email, password, name, address } = req.body;
+    const { email, password, name } = req.body;
 
     // Input validation
-    if (!email || !password || !name || !address) {
+    if (!email || !password || !name) {
       const keyValueTable = {
-        error: 'All fields are required: email, password, name, address'
+        error: 'All fields are required: email, password, name'
       };
       return res.status(400).json(ResponseFormatter.failure(
         'Missing required fields',
@@ -56,8 +57,8 @@ router.post('/register', async (req, res) => {
 
     // Insert new user
     const insertResult = await DatabaseUtil.executeQuery(
-      'INSERT INTO users (email, password, name, address) VALUES (?, ?, ?, ?)',
-      [email, hashedPassword, name, address]
+      'INSERT INTO users (email, password, name) VALUES (?, ?, ?)',
+      [email, hashedPassword, name]
     );
 
     if (insertResult.success) {
@@ -134,8 +135,11 @@ router.post('/login', loginLimiter, async (req, res) => {
     const user = result.data[0];
 
     if (await bcrypt.compare(password, user.password)) {
-      const token = jwt.sign({ id: user.id, email: user.email, isAdmin: user.isAdmin }, process.env.JWT_SECRET, { expiresIn: '30d' });
-      const keyValueTable = { userId: user.id, email: user.email, token };
+      const accessToken = jwt.sign({ id: user.id, email: user.email, isAdmin: user.isAdmin }, process.env.JWT_SECRET, { expiresIn: '24h' });
+      const refreshToken = crypto.randomBytes(64).toString('hex');
+      const refreshExpiry = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
+      await DatabaseUtil.executeQuery('INSERT INTO refresh_tokens (id, user_id, token, expiry) VALUES (?, ?, ?, ?)', [get_next_id('REFRESH'), user.id, refreshToken, refreshExpiry]);
+      const keyValueTable = { userId: user.id, email: user.email, accessToken, refreshToken };
       res.json(ResponseFormatter.success('Login successful', keyValueTable));
     } else {
       const keyValueTable = { error: 'Invalid email or password' };
@@ -147,6 +151,73 @@ router.post('/login', loginLimiter, async (req, res) => {
     res.status(500).json(ResponseFormatter.failure('Login failed', keyValueTable));
   }
 });
+
+router.post('/refresh', async (req, res) => {
+  try {
+    const { refreshToken } = req.body;
+    if (!refreshToken) {
+      return res.status(400).json(ResponseFormatter.failure('Refresh token required'));
+    }
+    const result = await DatabaseUtil.executeQuery('SELECT * FROM refresh_tokens WHERE token = ? AND expiry > NOW()', [refreshToken]);
+    if (!result.success || result.data.length === 0) {
+      return res.status(401).json(ResponseFormatter.failure('Invalid or expired refresh token'));
+    }
+    const { user_id } = result.data[0];
+    const userResult = await DatabaseUtil.executeQuery('SELECT id, email, isAdmin FROM users WHERE id = ?', [user_id]);
+    if (!userResult.success || userResult.data.length === 0) {
+      return res.status(404).json(ResponseFormatter.failure('User not found'));
+    }
+    const user = userResult.data[0];
+    const newAccessToken = jwt.sign({ id: user.id, email: user.email, isAdmin: user.isAdmin }, process.env.JWT_SECRET, { expiresIn: '24h' });
+    res.json(ResponseFormatter.success('Token refreshed', { accessToken: newAccessToken }));
+  } catch (error) {
+    console.error('Refresh token error:', error);
+    res.status(500).json(ResponseFormatter.failure('Token refresh failed'));
+  }
+});
+
+// In the login endpoint, after successful login, add:
+// Handle cart merge
+if (req.cookies.sessionId) {
+  const sessionId = req.cookies.sessionId;
+  const guestCartResult = await DatabaseUtil.executeQuery('SELECT id FROM shopping_carts WHERE session_id = ?', [sessionId]);
+  if (guestCartResult.success && guestCartResult.data.length > 0) {
+    const guestCartId = guestCartResult.data[0].id;
+    // Get or create user cart
+    let userCartId;
+    const userCartResult = await DatabaseUtil.executeQuery('SELECT id FROM shopping_carts WHERE user_id = ?', [user.id]);
+    if (userCartResult.success && userCartResult.data.length > 0) {
+      userCartId = userCartResult.data[0].id;
+    } else {
+      userCartId = await get_next_id('CART');
+      await DatabaseUtil.executeQuery('INSERT INTO shopping_carts (id, user_id) VALUES (?, ?)', [userCartId, user.id]);
+    }
+    // Merge items: for each guest item, add or update in user cart
+    const guestItems = await DatabaseUtil.executeQuery('SELECT * FROM cart_items WHERE cart_id = ?', [guestCartId]);
+    for (const item of guestItems.data) {
+      const checkUserItem = await DatabaseUtil.executeQuery(
+        'SELECT id, quantity FROM cart_items WHERE cart_id = ? AND product_id = ? AND variant_id = ?',
+        [userCartId, item.product_id, item.variant_id]
+      );
+      if (checkUserItem.data.length > 0) {
+        await DatabaseUtil.executeQuery(
+          'UPDATE cart_items SET quantity = quantity + ? WHERE id = ?',
+          [item.quantity, checkUserItem.data[0].id]
+        );
+      } else {
+        const newItemId = await get_next_id('CARTITEM');
+        await DatabaseUtil.executeQuery(
+          'INSERT INTO cart_items (id, cart_id, product_id, variant_id, quantity, price) VALUES (?, ?, ?, ?, ?, ?)',
+          [newItemId, userCartId, item.product_id, item.variant_id, item.quantity, item.price]
+        );
+      }
+    }
+    // Delete guest cart
+    await DatabaseUtil.executeQuery('DELETE FROM shopping_carts WHERE id = ?', [guestCartId]);
+    // Clear session cookie
+    res.clearCookie('sessionId');
+  }
+}
 
 /**
  * GET /api/users/profile

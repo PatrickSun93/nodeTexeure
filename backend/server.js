@@ -36,6 +36,12 @@ app.use('/api/database', databaseRoutes);
 // User routes
 app.use('/api/users', userRoutes);
 
+// Product routes
+app.use('/api/products', require('./routes/productRoutes'));
+
+// Cart routes
+app.use('/api/cart', require('./routes/cartRoutes'));
+
 // Backward compatibility - redirect old endpoints to new structure
 app.get('/api/health', (req, res) => {
   res.redirect(301, '/api/status/health');

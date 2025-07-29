@@ -645,3 +645,29 @@ A: yes
 A: development use my local mac environment
 staging/prod use different AWS account
 
+
+## additional question
+- 1.
+For microservices, how should we handle inter-service communication and data consistency (e.g., using Saga pattern for distributed transactions)?
+I don't want to use microservices. all the backend api are hosted in the 6666
+- 2.
+For state management in React, based on the comparison, do you prefer Redux, Context API, or Zustand?
+A: compare them, I'd like to use a easy one
+- 3.
+For the database, between MySQL and PostgreSQL (as compared), confirm if we stick with MySQL or switch?
+A: we use mySql
+- 4.
+For payment gateways, Stripe has lower fees for most transactions compared to PayPal; which do you prefer?
+A: stripe is better
+- 5.
+Do you want to prioritize mobile app development now or later?
+A: not now
+- 6.
+Any specific third-party services for analytics/email (e.g., Google Analytics, SendGrid)?
+A: compare the library for email
+- 7.
+Details on coupon functionality (types, validation rules)?
+A: this part I didn't design yet. generate some ideas let me choose it
+- 8.
+How to handle guest user cart persistence (local storage, session-based)?
+A:session based
