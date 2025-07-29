@@ -8,7 +8,7 @@ const PORT = process.env.PORT || 6666;
 
 // Middleware
 app.use(cors({
-  origin: ['http://localhost:3000', 'http://127.0.0.1:3000'], // Frontend URLs
+  origin: ['http://localhost:3000', 'http://127.0.0.1:3000', 'http://localhost:3005'], // Add admin dashboard
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
@@ -44,6 +44,10 @@ app.use('/api/cart', require('./routes/cartRoutes'));
 
 // Order routes
 app.use('/api/orders', require('./routes/orderRoutes'));
+
+// Admin routes (protected)
+const adminRoutes = require('./routes/adminRoutes');
+app.use('/api/admin', protect, admin, adminRoutes);
 
 // Backward compatibility - redirect old endpoints to new structure
 app.get('/api/health', (req, res) => {

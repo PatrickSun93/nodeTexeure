@@ -42,7 +42,8 @@ This todo list is based on the system architecture design discussions for the be
   - Create endpoints for managing products: Add, update, delete.
   - Add coupon management: Create, edit (including expiration), delete.
   - Manage inventory and users via dedicated routes.
-  - the admin dashboard port is 3005 which is different from the current 3000 port. 
+  - the admin dashboard port is 3005
+  - the tech stack is nodejs, mysql and nextjs
 
 ## Phase 3: Integrations
 - [ ] Integrate Stripe for payments:
