@@ -4,12 +4,62 @@ const ResponseFormatter = require('../utils/responseFormatter');
 const { csrfProtection } = require('../middleware/csrfMiddleware');
 const router = express.Router();
 
+// Add: rate limiting for admin endpoints
+const rateLimit = require('express-rate-limit');
+
+// Unified rate-limit handler that uses your ResponseFormatter
+const rateLimitHandler = (req, res /*, next */) => {
+  const retryAfterSeconds =
+    res.getHeader('Retry-After') ||
+    (req.rateLimit && req.rateLimit.resetTime
+      ? Math.ceil((req.rateLimit.resetTime - Date.now()) / 1000)
+      : undefined);
+
+  const keyValueTable = {
+    path: req.originalUrl,
+    ...(retryAfterSeconds ? { retryAfterSeconds } : {}),
+  };
+
+  return res
+    .status(429)
+    .json(
+      ResponseFormatter.failure(
+        'Too many requests, please try again later',
+        keyValueTable
+      )
+    );
+};
+
+// Prefer per-user limiting when available, fallback to IP
+const keyGenerator = (req) =>
+  req.user && req.user.id ? `user:${req.user.id}` : req.ip;
+
+// Write limiter (POST/PUT/DELETE/PATCH)
+const adminWriteLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100,
+  standardHeaders: true,
+  legacyHeaders: false,
+  handler: rateLimitHandler,
+  keyGenerator,
+});
+
+// Read limiter (GET)
+const adminReadLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 500,
+  standardHeaders: true,
+  legacyHeaders: false,
+  handler: rateLimitHandler,
+  keyGenerator,
+});
+
 /**
  * POST /api/admin/logout
  * Logout admin user by clearing authentication cookies
  * Requires CSRF protection since it's a state-changing operation
  */
-router.post('/logout', csrfProtection, async (req, res) => {
+router.post('/logout', adminWriteLimiter, csrfProtection, async (req, res) => {
   try {
     // Clear the admin authentication cookie
     // Mirror the same settings used when setting the cookie in login
@@ -46,7 +96,7 @@ router.post('/logout', csrfProtection, async (req, res) => {
 
 // Product Management
 // Add new product
-router.post('/products', csrfProtection, async (req, res) => {
+router.post('/products', adminWriteLimiter, csrfProtection, async (req, res) => {
   try {
     const { sku, name, slug, description, short_description, category_id, base_price, product_details, meta_title, meta_description, meta_keywords } = req.body;
     const idResult = await DatabaseUtil.executeQuery('SELECT get_next_id("PROD") as id');
@@ -66,7 +116,7 @@ router.post('/products', csrfProtection, async (req, res) => {
 });
 
 // Update product
-router.put('/products/:id', csrfProtection, async (req, res) => {
+router.put('/products/:id', adminWriteLimiter, csrfProtection, async (req, res) => {
   try {
     const { id } = req.params;
     const updates = req.body;
@@ -92,7 +142,7 @@ router.put('/products/:id', csrfProtection, async (req, res) => {
 });
 
 // Delete product
-router.delete('/products/:id', csrfProtection, async (req, res) => {
+router.delete('/products/:id', adminWriteLimiter, csrfProtection, async (req, res) => {
   try {
     const { id } = req.params;
     const deleteResult = await DatabaseUtil.executeQuery('DELETE FROM products WHERE id = ?', [id]);
@@ -106,7 +156,7 @@ router.delete('/products/:id', csrfProtection, async (req, res) => {
 
 // Coupon Management
 // Add new coupon
-router.post('/coupons', csrfProtection, async (req, res) => {
+router.post('/coupons', adminWriteLimiter, csrfProtection, async (req, res) => {
   try {
     const { code, name, discount_details, type, value, minimum_order_amount, maximum_discount_amount, usage_limit, usage_limit_per_customer, starts_at, expires_at } = req.body;
     const idResult = await DatabaseUtil.executeQuery('SELECT get_next_id("DISC") as id');
@@ -126,7 +176,7 @@ router.post('/coupons', csrfProtection, async (req, res) => {
 });
 
 // Update coupon
-router.put('/coupons/:id', csrfProtection, async (req, res) => {
+router.put('/coupons/:id', adminWriteLimiter, csrfProtection, async (req, res) => {
   try {
     const { id } = req.params;
     const updates = req.body;
@@ -152,7 +202,7 @@ router.put('/coupons/:id', csrfProtection, async (req, res) => {
 });
 
 // Delete coupon
-router.delete('/coupons/:id', csrfProtection, async (req, res) => {
+router.delete('/coupons/:id', adminWriteLimiter, csrfProtection, async (req, res) => {
   try {
     const { id } = req.params;
     const deleteResult = await DatabaseUtil.executeQuery('DELETE FROM discount_codes WHERE id = ?', [id]);
@@ -166,7 +216,7 @@ router.delete('/coupons/:id', csrfProtection, async (req, res) => {
 
 // Inventory Management
 // Update inventory
-router.put('/inventory/:id', csrfProtection, async (req, res) => {
+router.put('/inventory/:id', adminWriteLimiter, csrfProtection, async (req, res) => {
   try {
     const { id } = req.params;
     const { quantity_available, quantity_reserved, reorder_point, reorder_quantity } = req.body;
@@ -184,7 +234,7 @@ router.put('/inventory/:id', csrfProtection, async (req, res) => {
 
 // User Management
 // List users (read-only; CSRF not required)
-router.get('/users', async (req, res) => {
+router.get('/users', adminReadLimiter, async (req, res) => {
   try {
     const listResult = await DatabaseUtil.executeQuery('SELECT id, email, first_name, last_name, role, status FROM users');
     if (!listResult.success) throw new Error(listResult.error);
@@ -196,7 +246,7 @@ router.get('/users', async (req, res) => {
 });
 
 // Update user
-router.put('/users/:id', csrfProtection, async (req, res) => {
+router.put('/users/:id', adminWriteLimiter, csrfProtection, async (req, res) => {
   try {
     const { id } = req.params;
     const updates = req.body;
@@ -217,7 +267,7 @@ router.put('/users/:id', csrfProtection, async (req, res) => {
 });
 
 // Delete user
-router.delete('/users/:id', csrfProtection, async (req, res) => {
+router.delete('/users/:id', adminWriteLimiter, csrfProtection, async (req, res) => {
   try {
     const { id } = req.params;
     const deleteResult = await DatabaseUtil.executeQuery('DELETE FROM users WHERE id = ?', [id]);
@@ -230,7 +280,7 @@ router.delete('/users/:id', csrfProtection, async (req, res) => {
 });
 
 // List products (read-only; CSRF not required)
-router.get('/products', async (req, res) => {
+router.get('/products', adminReadLimiter, async (req, res) => {
   try {
     const listResult = await DatabaseUtil.executeQuery('SELECT * FROM products');
     if (!listResult.success) throw new Error(listResult.error);
@@ -242,7 +292,7 @@ router.get('/products', async (req, res) => {
 });
 
 // List coupons (read-only; CSRF not required)
-router.get('/coupons', async (req, res) => {
+router.get('/coupons', adminReadLimiter, async (req, res) => {
   try {
     const listResult = await DatabaseUtil.executeQuery('SELECT * FROM discount_codes');
     if (!listResult.success) throw new Error(listResult.error);
@@ -254,7 +304,7 @@ router.get('/coupons', async (req, res) => {
 });
 
 // List inventory (read-only; CSRF not required)
-router.get('/inventory', async (req, res) => {
+router.get('/inventory', adminReadLimiter, async (req, res) => {
   try {
     const listResult = await DatabaseUtil.executeQuery('SELECT * FROM inventory');
     if (!listResult.success) throw new Error(listResult.error);

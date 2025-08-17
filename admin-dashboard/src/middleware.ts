@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 /**
  * Middleware guard for /dashboard routes.
  * - Blocks unauthorized users BEFORE any dashboard UI renders.
- * - Validates presence of admin_auth cookie and confirms admin session with backend.
+ * - Validates presence of admin_auth cookie by confirming with backend.
  * - Returns 401 "Unauthorized" plain text on failure.
  */
 export async function middleware(req: NextRequest) {
@@ -22,17 +22,15 @@ export async function middleware(req: NextRequest) {
 
   // Validate cookie against backend (no CSRF required for GET)
   try {
-    const csrfCookie = req.cookies.get('csrf_token')?.value;
-    const cookieHeader = `admin_auth=${adminAuth};${csrfCookie ? ` csrf_token=${csrfCookie};` : ''}`;
+    // Build cookie header: admin_auth alone is sufficient for GET to admin endpoints
+    const cookieHeader = `admin_auth=${adminAuth}`;
 
     const res = await fetch('http://localhost:6666/api/admin/users', {
       method: 'GET',
-      // Forward cookies to backend for validation
       headers: {
         Cookie: cookieHeader,
         Accept: 'application/json',
       },
-      // Avoid cached results
       cache: 'no-store',
     });
 
