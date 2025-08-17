@@ -1,6 +1,6 @@
 const express = require('express');
 const pool = require('../utils/database');
-const { formatResponse } = require('../utils/responseFormatter');
+const ResponseFormatter = require('../utils/responseFormatter');
 const router = express.Router();
 
 // GET /api/products - Product listing with pagination and filters
@@ -42,10 +42,11 @@ router.get('/', async (req, res) => {
     const [rows] = await pool.query(query, params);
     const [[{ total }]] = await pool.query(countQuery, params.slice(0, -2));
 
-    res.json(formatResponse(true, { products: rows, total, page: parseInt(page), limit: parseInt(limit) }));
+    const keyValueTable = { products: rows, total, page: parseInt(page), limit: parseInt(limit) };
+    res.json(ResponseFormatter.success('Products fetched successfully', keyValueTable));
   } catch (error) {
     console.error(error);
-    res.status(500).json(formatResponse(false, null, 'Server error'));
+    res.status(500).json(ResponseFormatter.failure('Server error', { error: error.message }));
   }
 });
 
@@ -55,17 +56,18 @@ router.get('/:id', async (req, res) => {
     const { id } = req.params;
     const [product] = await pool.query('SELECT * FROM products WHERE id = ?', [id]);
     if (product.length === 0) {
-      return res.status(404).json(formatResponse(false, null, 'Product not found'));
+      return res.status(404).json(ResponseFormatter.failure('Product not found'));
     }
 
     const [variants] = await pool.query('SELECT * FROM product_variants WHERE product_id = ?', [id]);
     const [images] = await pool.query('SELECT * FROM product_images WHERE product_id = ? ORDER BY sort_order', [id]);
     const [reviews] = await pool.query('SELECT * FROM product_reviews WHERE product_id = ? ORDER BY created_at DESC', [id]);
 
-    res.json(formatResponse(true, { ...product[0], variants, images, reviews }));
+    const keyValueTable = { ...product[0], variants, images, reviews };
+    res.json(ResponseFormatter.success('Product fetched successfully', keyValueTable));
   } catch (error) {
     console.error(error);
-    res.status(500).json(formatResponse(false, null, 'Server error'));
+    res.status(500).json(ResponseFormatter.failure('Server error', { error: error.message }));
   }
 });
 

@@ -1,7 +1,9 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
+const cookieParser = require('cookie-parser');
 const LoggingMiddleware = require('./middleware/loggingMiddleware');
+const ResponseFormatter = require('./utils/responseFormatter');
 
 const app = express();
 const PORT = process.env.PORT || 6666;
@@ -10,11 +12,12 @@ const PORT = process.env.PORT || 6666;
 app.use(cors({
   origin: ['http://localhost:3000', 'http://127.0.0.1:3000', 'http://localhost:3005'], // Add admin dashboard
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'X-CSRF-Token']
 }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
 
 // Comprehensive logging middleware
 app.use(LoggingMiddleware.middleware());
@@ -67,11 +70,11 @@ app.post('/api/hello', (req, res) => {
 
 // 404 handler
 app.use('*', (req, res) => {
-  res.status(404).json({ 
-    error: 'Endpoint not found',
+  const keyValueTable = { 
     path: req.originalUrl,
     timestamp: new Date().toISOString()
-  });
+  };
+  res.status(404).json(ResponseFormatter.failure('Endpoint not found', keyValueTable));
 });
 
 // Logging error middleware (logs errors before handling them)
@@ -80,10 +83,11 @@ app.use(LoggingMiddleware.errorMiddleware());
 // Error handler
 app.use((err, req, res, next) => {
   console.error('Error:', err);
-  res.status(500).json({ 
-    error: 'Internal server error',
-    timestamp: new Date().toISOString()
-  });
+  const keyValueTable = { 
+    timestamp: new Date().toISOString(),
+    error: err.message || 'Internal server error'
+  };
+  res.status(500).json(ResponseFormatter.failure('Internal server error', keyValueTable));
 });
 
 // Start server

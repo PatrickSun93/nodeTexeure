@@ -44,7 +44,7 @@ router.post('/apply-coupon', async (req, res) => {
   try {
     const cartItems = await getCartDetails(cartId);
     if (cartItems.length === 0) {
-      return res.status(400).json(ResponseFormatter.format('error', 'Cart is empty'));
+      return res.status(400).json(ResponseFormatter.failure('Cart is empty'));
     }
 
     let subtotal = 0;
@@ -53,12 +53,12 @@ router.post('/apply-coupon', async (req, res) => {
     });
 
     if (!couponCode) {
-      return res.json(ResponseFormatter.format('success', 'No coupon applied', { discount: 0 }));
+      return res.json(ResponseFormatter.success('No coupon applied', { discount: 0 }));
     }
 
     const validation = await validateCoupon(couponCode, subtotal);
     if (!validation.valid) {
-      return res.status(400).json(ResponseFormatter.format('error', validation.message));
+      return res.status(400).json(ResponseFormatter.failure(validation.message));
     }
 
     const coupon = validation.coupon;
@@ -72,10 +72,10 @@ router.post('/apply-coupon', async (req, res) => {
       discountAmount = coupon.value;
     }
 
-    res.json(ResponseFormatter.format('success', 'Coupon applied', { discount: discountAmount }));
+    res.json(ResponseFormatter.success('Coupon applied', { discount: discountAmount }));
   } catch (error) {
     console.error(error);
-    res.status(500).json(ResponseFormatter.format('error', 'Failed to apply coupon'));
+    res.status(500).json(ResponseFormatter.failure('Failed to apply coupon'));
   }
 });
 
@@ -89,7 +89,7 @@ router.post('/create', protectOptional, async (req, res) => {
     // Get cart details
     const cartItems = await getCartDetails(cartId);
     if (cartItems.length === 0) {
-      return res.status(400).json(ResponseFormatter.format('error', 'Cart is empty'));
+      return res.status(400).json(ResponseFormatter.failure('Cart is empty'));
     }
 
     // Calculate subtotal
@@ -102,7 +102,7 @@ router.post('/create', protectOptional, async (req, res) => {
     if (couponCode) {
       const validation = await validateCoupon(couponCode, subtotal);
       if (!validation.valid) {
-        return res.status(400).json(ResponseFormatter.format('error', validation.message));
+        return res.status(400).json(ResponseFormatter.failure(validation.message));
       }
       const coupon = validation.coupon;
       if (coupon.type === 'percentage') {
@@ -145,10 +145,10 @@ router.post('/create', protectOptional, async (req, res) => {
     await db.executeQuery('DELETE FROM cart_items WHERE cart_id = ?', [cartId]);
     await db.executeQuery('DELETE FROM shopping_carts WHERE id = ?', [cartId]);
 
-    res.json(ResponseFormatter.format('success', 'Order created successfully', { orderId, orderNumber }));
+    res.json(ResponseFormatter.success('Order created successfully', { orderId, orderNumber }));
   } catch (error) {
     console.error(error);
-    res.status(500).json(ResponseFormatter.format('error', 'Failed to create order'));
+    res.status(500).json(ResponseFormatter.failure('Failed to create order'));
   }
 });
 

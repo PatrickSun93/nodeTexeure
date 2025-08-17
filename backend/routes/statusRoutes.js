@@ -21,20 +21,13 @@ router.get('/health', (req, res) => {
       'uptime': process.uptime() + ' seconds'
     }
     
-    const healthStatus = ResponseFormatter.success(
-      'Backend server is running',
-      keyValueTable
-    );
-    res.json(healthStatus);
+    res.json(ResponseFormatter.success('Backend server is running', keyValueTable));
   } catch (error) {
     console.error('Health check error:', error);
     const keyValueTable = {
       'error': error.message
     }
-    res.status(500).json(ResponseFormatter.failure(
-      'Health check failed',
-      keyValueTable
-    ));
+    res.status(500).json(ResponseFormatter.failure('Health check failed', keyValueTable));
   }
 });
 
@@ -44,23 +37,11 @@ router.get('/health', (req, res) => {
  */
 router.get('/hello', (req, res) => {
   try {
-    const keyValueTable = [];
-    
-    const helloMessage = ResponseFormatter.success(
-      'Hello from Express backend!',
-      keyValueTable
-    );
-    
-    res.json(helloMessage);
+    res.json(ResponseFormatter.success('Hello from Express backend!'));
   } catch (error) {
     console.error('Hello endpoint error:', error);
-    const keyValueTable = [
-      { 'error': error.message }
-    ];
-    res.status(500).json(ResponseFormatter.failure(
-      'Failed to get hello message',
-      keyValueTable
-    ));
+    const keyValueTable = { error: error.message };
+    res.status(500).json(ResponseFormatter.failure('Failed to get hello message', keyValueTable));
   }
 });
 
@@ -73,37 +54,24 @@ router.post('/hello', (req, res) => {
     const { name } = req.body;
     
     if (!name || typeof name !== 'string' || name.trim() === '') {
-      const errorTable = [
-        { 'error': 'Name is required and must be a non-empty string',
-        'provided_name': name || 'N/A' }
-      ];
-      return res.status(400).json(ResponseFormatter.failure(
-        'Invalid name provided',
-        errorTable
-      ));
+      const keyValueTable = { 
+        error: 'Name is required and must be a non-empty string',
+        provided_name: name || 'N/A' 
+      };
+      return res.status(400).json(ResponseFormatter.failure('Invalid name provided', keyValueTable));
     }
     
     const sanitizedName = name.trim();
-    const keyValueTable = [
-      { 'name': sanitizedName }
-    ];
+    const keyValueTable = { name: sanitizedName };
     
-    const personalizedHello = ResponseFormatter.success(
-      `Hello, ${sanitizedName}! Welcome to the Express backend.`,
-      keyValueTable
-    );
-    
-    res.json(personalizedHello);
+    res.json(ResponseFormatter.success(`Hello, ${sanitizedName}! Welcome to the Express backend.`, keyValueTable));
   } catch (error) {
     console.error('Personalized hello error:', error);
-    const keyValueTable = [
-      { 'error': error.message ,
-       'provided_name': req.body.name || 'N/A' }
-    ];
-    res.status(500).json(ResponseFormatter.failure(
-      'Failed to get personalized hello message',
-      keyValueTable
-    ));
+    const keyValueTable = { 
+      error: error.message,
+      provided_name: req.body.name || 'N/A' 
+    };
+    res.status(500).json(ResponseFormatter.failure('Failed to get personalized hello message', keyValueTable));
   }
 });
 
