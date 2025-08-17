@@ -1,5 +1,5 @@
 const express = require('express');
-const { protect } = require('../middleware/authMiddleware');
+const { protect, protectOptional } = require('../middleware/authMiddleware');
 const DatabaseUtil = require('../utils/database');
 const ResponseFormatter = require('../utils/responseFormatter');
 const crypto = require('crypto');
@@ -14,7 +14,8 @@ async function getOrCreateCart(req) {
     if (result.success && result.data.length > 0) {
       cartId = result.data[0].id;
     } else {
-      cartId = await get_next_id('CART');
+      const idResult = await DatabaseUtil.executeQuery('SELECT get_next_id("CART") as id');
+cartId = idResult.data[0].id;
       await DatabaseUtil.executeQuery('INSERT INTO shopping_carts (id, user_id) VALUES (?, ?)', [cartId, req.user.id]);
     }
   } else {
@@ -28,7 +29,8 @@ async function getOrCreateCart(req) {
     if (result.success && result.data.length > 0) {
       cartId = result.data[0].id;
     } else {
-      cartId = await get_next_id('CART');
+      const idResult = await DatabaseUtil.executeQuery('SELECT get_next_id("CART") as id');
+cartId = idResult.data[0].id;
       await DatabaseUtil.executeQuery('INSERT INTO shopping_carts (id, session_id) VALUES (?, ?)', [cartId, sessionId]);
     }
   }
@@ -36,7 +38,7 @@ async function getOrCreateCart(req) {
 }
 
 // GET /api/cart - Get current cart
-router.get('/', protect.optional, async (req, res) => {
+router.get('/', protectOptional, async (req, res) => {
   try {
     const cartId = await getOrCreateCart(req);
     const itemsResult = await DatabaseUtil.executeQuery(
@@ -50,7 +52,7 @@ router.get('/', protect.optional, async (req, res) => {
 });
 
 // POST /api/cart/add - Add item to cart
-router.post('/add', protect.optional, async (req, res) => {
+router.post('/add', protectOptional, async (req, res) => {
   try {
     const { product_id, variant_id, quantity = 1 } = req.body;
     const cartId = await getOrCreateCart(req);
@@ -67,7 +69,8 @@ router.post('/add', protect.optional, async (req, res) => {
       );
     } else {
       // Insert new
-      const itemId = await get_next_id('CARTITEM');
+      const itemIdResult = await DatabaseUtil.executeQuery('SELECT get_next_id("CARTITEM") as id');
+const itemId = itemIdResult.data[0].id;
       const priceResult = await DatabaseUtil.executeQuery('SELECT base_price FROM products WHERE id = ?', [product_id]);
       const price = priceResult.data[0].base_price;
       await DatabaseUtil.executeQuery(
@@ -82,7 +85,7 @@ router.post('/add', protect.optional, async (req, res) => {
 });
 
 // PUT /api/cart/update/:itemId - Update item quantity
-router.put('/update/:itemId', protect.optional, async (req, res) => {
+router.put('/update/:itemId', protectOptional, async (req, res) => {
   try {
     const { quantity } = req.body;
     if (quantity <= 0) {
@@ -104,7 +107,7 @@ router.put('/update/:itemId', protect.optional, async (req, res) => {
 });
 
 // DELETE /api/cart/remove/:itemId - Remove item from cart
-router.delete('/remove/:itemId', protect.optional, async (req, res) => {
+router.delete('/remove/:itemId', protectOptional, async (req, res) => {
   try {
     const cartId = await getOrCreateCart(req);
     const result = await DatabaseUtil.executeQuery(

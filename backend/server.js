@@ -21,7 +21,8 @@ app.use(LoggingMiddleware.middleware());
 
 
 
-// Import routes
+// Import middleware and routes
+const { protect, admin } = require('./middleware/authMiddleware');
 const statusRoutes = require('./routes/statusRoutes');
 const databaseRoutes = require('./routes/databaseRoutes');
 const userRoutes = require('./routes/userRoutes');

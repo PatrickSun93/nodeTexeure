@@ -139,6 +139,63 @@ router.post('/login', loginLimiter, async (req, res) => {
       const refreshToken = crypto.randomBytes(64).toString('hex');
       const refreshExpiry = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
       await DatabaseUtil.executeQuery('INSERT INTO refresh_tokens (id, user_id, token, expiry) VALUES (?, ?, ?, ?)', [get_next_id('REFRESH'), user.id, refreshToken, refreshExpiry]);
+
+      // Issue HttpOnly authentication cookie for admin logins
+      // Secure in production, SameSite=Strict, Path=/, configurable TTL via ADMIN_AUTH_COOKIE_TTL_MS (default: 24h)
+      if (user.isAdmin) {
+        const ttlMs = Number.parseInt(process.env.ADMIN_AUTH_COOKIE_TTL_MS || '86400000', 10);
+        const isProd = process.env.NODE_ENV === 'production';
+        res.cookie('admin_auth', accessToken, {
+          httpOnly: true,
+          secure: isProd,
+          sameSite: 'strict',
+          path: '/',
+          maxAge: ttlMs
+        });
+      }
+
+      // In the login endpoint, after successful login, add:
+      // Handle cart merge
+      if (req.cookies.sessionId) {
+        const sessionId = req.cookies.sessionId;
+        const guestCartResult = await DatabaseUtil.executeQuery('SELECT id FROM shopping_carts WHERE session_id = ?', [sessionId]);
+        if (guestCartResult.success && guestCartResult.data.length > 0) {
+          const guestCartId = guestCartResult.data[0].id;
+          // Get or create user cart
+          let userCartId;
+          const userCartResult = await DatabaseUtil.executeQuery('SELECT id FROM shopping_carts WHERE user_id = ?', [user.id]);
+          if (userCartResult.success && userCartResult.data.length > 0) {
+            userCartId = userCartResult.data[0].id;
+          } else {
+            userCartId = await get_next_id('CART');
+            await DatabaseUtil.executeQuery('INSERT INTO shopping_carts (id, user_id) VALUES (?, ?)', [userCartId, user.id]);
+          }
+          // Merge items: for each guest item, add or update in user cart
+          const guestItems = await DatabaseUtil.executeQuery('SELECT * FROM cart_items WHERE cart_id = ?', [guestCartId]);
+          for (const item of guestItems.data) {
+            const checkUserItem = await DatabaseUtil.executeQuery(
+              'SELECT id, quantity FROM cart_items WHERE cart_id = ? AND product_id = ? AND variant_id = ?',
+              [userCartId, item.product_id, item.variant_id]
+            );
+            if (checkUserItem.data.length > 0) {
+              await DatabaseUtil.executeQuery(
+                'UPDATE cart_items SET quantity = quantity + ? WHERE id = ?',
+                [item.quantity, checkUserItem.data[0].id]
+              );
+            } else {
+              const newItemId = await get_next_id('CARTITEM');
+              await DatabaseUtil.executeQuery(
+                'INSERT INTO cart_items (id, cart_id, product_id, variant_id, quantity, price) VALUES (?, ?, ?, ?, ?, ?)',
+                [newItemId, userCartId, item.product_id, item.variant_id, item.quantity, item.price]
+              );
+            }
+          }
+          // Delete guest cart
+          await DatabaseUtil.executeQuery('DELETE FROM shopping_carts WHERE id = ?', [guestCartId]);
+          // Clear session cookie
+          res.clearCookie('sessionId');
+        }
+      }
       const keyValueTable = { userId: user.id, email: user.email, accessToken, refreshToken };
       res.json(ResponseFormatter.success('Login successful', keyValueTable));
     } else {
@@ -176,48 +233,6 @@ router.post('/refresh', async (req, res) => {
   }
 });
 
-// In the login endpoint, after successful login, add:
-// Handle cart merge
-if (req.cookies.sessionId) {
-  const sessionId = req.cookies.sessionId;
-  const guestCartResult = await DatabaseUtil.executeQuery('SELECT id FROM shopping_carts WHERE session_id = ?', [sessionId]);
-  if (guestCartResult.success && guestCartResult.data.length > 0) {
-    const guestCartId = guestCartResult.data[0].id;
-    // Get or create user cart
-    let userCartId;
-    const userCartResult = await DatabaseUtil.executeQuery('SELECT id FROM shopping_carts WHERE user_id = ?', [user.id]);
-    if (userCartResult.success && userCartResult.data.length > 0) {
-      userCartId = userCartResult.data[0].id;
-    } else {
-      userCartId = await get_next_id('CART');
-      await DatabaseUtil.executeQuery('INSERT INTO shopping_carts (id, user_id) VALUES (?, ?)', [userCartId, user.id]);
-    }
-    // Merge items: for each guest item, add or update in user cart
-    const guestItems = await DatabaseUtil.executeQuery('SELECT * FROM cart_items WHERE cart_id = ?', [guestCartId]);
-    for (const item of guestItems.data) {
-      const checkUserItem = await DatabaseUtil.executeQuery(
-        'SELECT id, quantity FROM cart_items WHERE cart_id = ? AND product_id = ? AND variant_id = ?',
-        [userCartId, item.product_id, item.variant_id]
-      );
-      if (checkUserItem.data.length > 0) {
-        await DatabaseUtil.executeQuery(
-          'UPDATE cart_items SET quantity = quantity + ? WHERE id = ?',
-          [item.quantity, checkUserItem.data[0].id]
-        );
-      } else {
-        const newItemId = await get_next_id('CARTITEM');
-        await DatabaseUtil.executeQuery(
-          'INSERT INTO cart_items (id, cart_id, product_id, variant_id, quantity, price) VALUES (?, ?, ?, ?, ?, ?)',
-          [newItemId, userCartId, item.product_id, item.variant_id, item.quantity, item.price]
-        );
-      }
-    }
-    // Delete guest cart
-    await DatabaseUtil.executeQuery('DELETE FROM shopping_carts WHERE id = ?', [guestCartId]);
-    // Clear session cookie
-    res.clearCookie('sessionId');
-  }
-}
 
 /**
  * GET /api/users/profile

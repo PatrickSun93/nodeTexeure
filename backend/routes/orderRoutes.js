@@ -3,7 +3,7 @@ const router = express.Router();
 const { v4: uuidv4 } = require('uuid');
 const DatabaseUtil = require('../utils/database');
 const ResponseFormatter = require('../utils/responseFormatter');
-const authMiddleware = require('../middleware/auth');
+const { protect, protectOptional } = require('../middleware/authMiddleware');
 const db = new DatabaseUtil();
 
 // Helper function to get cart details
@@ -80,7 +80,7 @@ router.post('/apply-coupon', async (req, res) => {
 });
 
 // POST /api/orders/create
-router.post('/create', authMiddleware.optional, async (req, res) => {
+router.post('/create', protectOptional, async (req, res) => {
   const { cartId, shippingAddress, billingAddress, couponCode } = req.body;
   const userId = req.user ? req.user.id : null;
   const guestEmail = req.body.guestEmail || null;
