@@ -1,9 +1,34 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { apiFetch, ensureCsrfToken } from '../../utils/api';
 
 export default function Dashboard() {
   const [activeTab, setActiveTab] = useState('products');
+  const router = useRouter();
+
+  useEffect(() => {
+    // Guard: verify auth and ensure CSRF token is present
+    (async () => {
+      try {
+        await ensureCsrfToken();
+      } catch (e) {
+        // Not authenticated or not admin
+        router.push('/');
+      }
+    })();
+  }, [router]);
+
+  const handleLogout = async () => {
+    try {
+      await apiFetch('http://localhost:6666/api/admin/logout', { method: 'POST' });
+      router.push('/');
+    } catch (e) {
+      // If unauthorized or other issue, still return to login
+      router.push('/');
+    }
+  };
 
   return (
     <div className="flex h-screen bg-gray-100">
@@ -11,6 +36,7 @@ export default function Dashboard() {
       <div className="w-64 bg-white shadow-md">
         <div className="p-6">
           <h1 className="text-2xl font-bold">Admin Dashboard</h1>
+          <button onClick={handleLogout} className="button w-full mt-4">Logout</button>
         </div>
         <nav className="mt-6">
           <button onClick={() => setActiveTab('products')} className="block w-full text-left px-6 py-3 hover:bg-blue-50">Products</button>
@@ -40,30 +66,25 @@ function ProductManagement() {
   }, []);
 
   const fetchData = async () => {
-    const token = localStorage.getItem('token');
-    const res = await fetch('http://localhost:6666/api/admin/products', { headers: { Authorization: `Bearer ${token}` } });
-    const data = await res.json();
+    const data = await apiFetch('http://localhost:6666/api/admin/products');
     if (data.success) setProducts(data.data.products);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const token = localStorage.getItem('token');
     const method = editingId ? 'PUT' : 'POST';
     const url = editingId ? `http://localhost:6666/api/admin/products/${editingId}` : 'http://localhost:6666/api/admin/products';
-    await fetch(url, { method, headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify(formData) });
-    fetchData();
+    await apiFetch(url, { method, body: JSON.stringify(formData) });
+    await fetchData();
     setFormData({});
     setEditingId(null);
   };
 
   const handleDelete = async (id) => {
-    const token = localStorage.getItem('token');
-    await fetch(`http://localhost:6666/api/admin/products/${id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } });
-    fetchData();
+    await apiFetch(`http://localhost:6666/api/admin/products/${id}`, { method: 'DELETE' });
+    await fetchData();
   };
 
-  // Form and table UI
   return (
     <div>
       <h2 className="text-xl font-bold mb-4">Product Management</h2>
@@ -96,27 +117,23 @@ function CouponManagement() {
   }, []);
 
   const fetchData = async () => {
-    const token = localStorage.getItem('token');
-    const res = await fetch('http://localhost:6666/api/admin/coupons', { headers: { Authorization: `Bearer ${token}` } });
-    const data = await res.json();
+    const data = await apiFetch('http://localhost:6666/api/admin/coupons');
     if (data.success) setCoupons(data.data.coupons);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const token = localStorage.getItem('token');
     const method = editingId ? 'PUT' : 'POST';
     const url = editingId ? `http://localhost:6666/api/admin/coupons/${editingId}` : 'http://localhost:6666/api/admin/coupons';
-    await fetch(url, { method, headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify(formData) });
-    fetchData();
+    await apiFetch(url, { method, body: JSON.stringify(formData) });
+    await fetchData();
     setFormData({});
     setEditingId(null);
   };
 
   const handleDelete = async (id) => {
-    const token = localStorage.getItem('token');
-    await fetch(`http://localhost:6666/api/admin/coupons/${id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } });
-    fetchData();
+    await apiFetch(`http://localhost:6666/api/admin/coupons/${id}`, { method: 'DELETE' });
+    await fetchData();
   };
 
   return (
@@ -151,19 +168,16 @@ function InventoryManagement() {
   }, []);
 
   const fetchData = async () => {
-    const token = localStorage.getItem('token');
-    const res = await fetch('http://localhost:6666/api/admin/inventory', { headers: { Authorization: `Bearer ${token}` } });
-    const data = await res.json();
+    const data = await apiFetch('http://localhost:6666/api/admin/inventory');
     if (data.success) setInventory(data.data.inventory);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const token = localStorage.getItem('token');
     const method = 'PUT';
     const url = `http://localhost:6666/api/admin/inventory/${editingId}`;
-    await fetch(url, { method, headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify(formData) });
-    fetchData();
+    await apiFetch(url, { method, body: JSON.stringify(formData) });
+    await fetchData();
     setFormData({});
     setEditingId(null);
   };
@@ -200,27 +214,23 @@ function UserManagement() {
   }, []);
 
   const fetchData = async () => {
-    const token = localStorage.getItem('token');
-    const res = await fetch('http://localhost:6666/api/admin/users', { headers: { Authorization: `Bearer ${token}` } });
-    const data = await res.json();
+    const data = await apiFetch('http://localhost:6666/api/admin/users');
     if (data.success) setUsers(data.data.users);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const token = localStorage.getItem('token');
     const method = editingId ? 'PUT' : 'POST';
     const url = editingId ? `http://localhost:6666/api/admin/users/${editingId}` : 'http://localhost:6666/api/admin/users';
-    await fetch(url, { method, headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify(formData) });
-    fetchData();
+    await apiFetch(url, { method, body: JSON.stringify(formData) });
+    await fetchData();
     setFormData({});
     setEditingId(null);
   };
 
   const handleDelete = async (id) => {
-    const token = localStorage.getItem('token');
-    await fetch(`http://localhost:6666/api/admin/users/${id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } });
-    fetchData();
+    await apiFetch(`http://localhost:6666/api/admin/users/${id}`, { method: 'DELETE' });
+    await fetchData();
   };
 
   return (

@@ -7,25 +7,37 @@ export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setIsLoading(true);
+    setError('');
+    
     try {
       const res = await fetch('http://localhost:6666/api/users/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include', // include cookies for auth
         body: JSON.stringify({ email, password }),
       });
+      
       const data = await res.json();
+      
       if (data.success && data.data.isAdmin) {
-        localStorage.setItem('token', data.data.token);
+        // Auth cookies are set; no localStorage anymore
         router.push('/dashboard');
+      } else if (data.success && !data.data.isAdmin) {
+        setError('Access denied. Admin privileges required.');
       } else {
-        setError('Invalid credentials or not admin');
+        setError(data.message || 'Invalid credentials');
       }
     } catch (err) {
-      setError('Login failed');
+      console.error('Login error:', err);
+      setError('Login failed. Please try again.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -40,6 +52,8 @@ export default function Login() {
             className="input w-full mb-4"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
+            required
+            disabled={isLoading}
           />
           <input
             type="password"
@@ -47,9 +61,17 @@ export default function Login() {
             className="input w-full mb-4"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            required
+            disabled={isLoading}
           />
           {error && <p className="text-red-500 mb-4">{error}</p>}
-          <button type="submit" className="button w-full">Login</button>
+          <button 
+            type="submit" 
+            className="button w-full"
+            disabled={isLoading}
+          >
+            {isLoading ? 'Logging in...' : 'Login'}
+          </button>
         </form>
       </div>
     </div>
