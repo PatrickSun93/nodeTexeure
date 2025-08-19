@@ -507,3 +507,48 @@ export const useDatabaseQuery = () => {
     clearResult,
   };
 };
+
+/**
+ * Hook to provide the cart item count (sum of quantities)
+ * - Fetches /api/cart
+ * - Sums item.quantity
+ * - Listens for 'cart:updated' to refresh automatically
+ */
+export const useCartCount = () => {
+  const [count, setCount] = useState(0);
+  const [loading, setLoading] = useState(true);
+
+  const fetchCartCount = useCallback(async () => {
+    try {
+      const res = await fetch('/api/cart');
+      const data = await res.json();
+      if (data && data.success) {
+        const items = Array.isArray(data.data?.items) ? data.data.items : [];
+        const total = items.reduce((sum, i) => sum + (Number(i.quantity) || 0), 0);
+        setCount(total);
+      } else {
+        setCount(0);
+      }
+    } catch (err) {
+      console.error('Failed to fetch cart:', err);
+      setCount(0);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchCartCount();
+    const handler = () => fetchCartCount();
+    if (typeof window !== 'undefined') {
+      window.addEventListener('cart:updated', handler);
+    }
+    return () => {
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('cart:updated', handler);
+      }
+    };
+  }, [fetchCartCount]);
+
+  return { count, loading, refresh: fetchCartCount };
+};

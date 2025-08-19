@@ -51,9 +51,6 @@ router.get('/', async (req, res) => {
     if (search) {
       whereClauses.push('MATCH(name, description, short_description) AGAINST (? IN NATURAL LANGUAGE MODE)');
       filterParams.push(search);
-      // Alternative LIKE fallback:
-      // whereClauses.push('(name LIKE ? OR description LIKE ? OR short_description LIKE ?)');
-      // filterParams.push(`%${search}%`, `%${search}%`, `%${search}%`);
     }
 
     if (whereClauses.length > 0) {
@@ -62,7 +59,6 @@ router.get('/', async (req, res) => {
       countQuery += where;
     }
 
-    // Inline LIMIT/OFFSET (placeholders not supported reliably in some setups)
     const limitNum = Math.max(1, Math.min(parseInt(limit, 10) || 10, 100));
     const pageNum = Math.max(1, parseInt(page, 10) || 1);
     const offsetNum = Math.max(0, (pageNum - 1) * limitNum);

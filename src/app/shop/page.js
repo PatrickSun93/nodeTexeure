@@ -2,9 +2,11 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useCartCount } from '../../lib'; // added
 
 // Header Component (reused from homepage)
 function Header() {
+  const { count } = useCartCount(); // added
   return (
     <header className="bg-white shadow-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -44,7 +46,7 @@ function Header() {
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-2.5 5M7 13l2.5 5m6-5v6a2 2 0 01-2 2H9a2 2 0 01-2-2v-6m8 0V9a2 2 0 00-2-2H9a2 2 0 00-2 2v4.01" />
               </svg>
-              <span className="absolute -top-1 -right-1 bg-amber-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">3</span>
+              <span className="absolute -top-1 -right-1 bg-amber-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">{count}</span>
             </button>
           </div>
         </div>
@@ -151,10 +153,9 @@ function FilterSidebar({ filters, onFilterChange }) {
 }
 
 // Product Card Component
-// Update ProductCard to link to details
 export function ProductCard({ product, onAddToCart, onToggleWishlist }) {
   return (
-    <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow group">
+    <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow group flex flex-col h-full">
       <Link href={`/products/${product.id}`}>
         <div className="relative">
           <div className="w-full h-64 bg-gray-200 flex items-center justify-center">
@@ -180,36 +181,47 @@ export function ProductCard({ product, onAddToCart, onToggleWishlist }) {
           </button>
         </div>
       </Link>
-      <div className="p-4">
+      
+      {/* Content area that grows to fill available space */}
+      <div className="p-4 flex flex-col flex-grow">
         <Link href={`/products/${product.id}`}>
-          <h3 className="text-lg font-semibold text-gray-900 mb-1">{product.name}</h3>
+          <h3 className="text-lg font-semibold text-gray-900 mb-1 line-clamp-2">{product.name}</h3>
         </Link>
         <p className="text-sm text-gray-600 mb-2">{product.category}</p>
-        <div className="flex items-center justify-between mb-3">
+        
+        {/* Spacer to push price and rating to consistent position */}
+        <div className="flex-grow"></div>
+        
+        {/* Price and rating section - always at same height */}
+        <div className="flex items-center justify-between mb-4">
           <div className="flex items-center space-x-2">
             {product.originalPrice && (
               <span className="text-gray-400 line-through text-sm">${product.originalPrice}</span>
             )}
-            <span className="text-amber-600 font-bold text-xl">${product.price}</span>
+            <span className="text-amber-600 font-bold text-xl">${product.base_price}</span>
           </div>
           <div className="flex items-center">
             <div className="flex text-yellow-400">
               {[...Array(5)].map((_, i) => (
                 <svg key={i} className={`w-4 h-4 ${i < product.rating ? 'fill-current' : 'text-gray-300'}`} viewBox="0 0 20 20">
                   <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                </svg>
-              ))}
+                  </svg>
+                ))}
             </div>
             <span className="text-sm text-gray-600 ml-1">({product.reviews})</span>
           </div>
         </div>
       </div>
-      <button 
-        onClick={() => onAddToCart(product)}
-        className="w-full bg-amber-600 text-white py-2 rounded-lg hover:bg-amber-700 transition-colors font-medium"
-      >
-        Add to Cart
-      </button>
+      
+      {/* Button always at the bottom */}
+      <div className="p-4 pt-0">
+        <button 
+          onClick={() => onAddToCart(product)}
+          className="w-full bg-amber-600 text-white py-3 rounded-lg hover:bg-amber-700 transition-colors font-medium"
+        >
+          Add to Cart
+        </button>
+      </div>
     </div>
   );
 }
@@ -251,9 +263,7 @@ export default function Shop() {
           params.append('materials', filters.materials.join(','));
         }
         const res = await fetch(`/api/products?${params}`);
-        console.log(res)
         const data = await res.json();
-        console.log(data)
         if (data.status == 'SUCCESS') {
           setProducts(data.keyValueTable.products);
           setPagination(prev => ({ ...prev, total: data.keyValueTable.total }));
@@ -281,6 +291,9 @@ export default function Shop() {
       });
       const data = await res.json();
       if (data.success) {
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new Event('cart:updated'));
+        }
         alert('Added to cart!');
       }
     } catch (error) {

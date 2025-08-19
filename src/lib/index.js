@@ -54,4 +54,5 @@ export {
   useDatabaseStatus,
   useDatabaseTables,
   useTransnoData,
+  useCartCount, // added
 } from './hooks';
