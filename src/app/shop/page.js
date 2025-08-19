@@ -2,11 +2,25 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useSession, signIn, signOut } from 'next-auth/react';
 import { useCartCount } from '../../lib'; // added
 
 // Header Component (reused from homepage)
 function Header() {
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const { data: session, status } = useSession();
   const { count } = useCartCount(); // added
+
+  const handleSignOut = () => {
+    signOut({ callbackUrl: '/' });
+    setIsUserMenuOpen(false);
+  };
+
+  const handleSignIn = () => {
+    signIn();
+    setIsUserMenuOpen(false);
+  };
+
   return (
     <header className="bg-white shadow-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -21,17 +35,85 @@ function Header() {
           <nav className="hidden md:flex space-x-8">
             <Link href="/" className="text-gray-900 hover:text-amber-600 font-medium">Home</Link>
             <Link href="/shop" className="text-amber-600 font-medium">Shop</Link>
-            <a href="#" className="text-gray-900 hover:text-amber-600 font-medium">About</a>
-            <a href="#" className="text-gray-900 hover:text-amber-600 font-medium">Contact</a>
+            <Link href="/about" className="text-gray-900 hover:text-amber-600 font-medium">About</Link>
+            <Link href="/contact" className="text-gray-900 hover:text-amber-600 font-medium">Contact</Link>
           </nav>
           
           {/* Icons */}
           <div className="flex items-center space-x-4">
-            <button className="p-2 text-gray-600 hover:text-amber-600">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-              </svg>
-            </button>
+            {/* User Menu */}
+            <div className="relative">
+              <button
+                className="p-2 text-gray-600 hover:text-amber-600 focus:outline-none"
+                onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+              </button>
+              {/* same dropdown content as home */}
+              {isUserMenuOpen && (
+                <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg border border-gray-200 z-50">
+                  <div className="py-1">
+                    {status === 'loading' ? (
+                      <div className="px-4 py-2 text-sm text-gray-500">Loading...</div>
+                    ) : session ? (
+                      <>
+                        <div className="px-4 py-2 text-sm text-gray-700 border-b border-gray-100">
+                          <div className="font-medium">{session.user?.name || session.user?.email}</div>
+                          <div className="text-gray-500 text-xs">{session.user?.email}</div>
+                        </div>
+                        <Link 
+                          href="/profile" 
+                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                          onClick={() => setIsUserMenuOpen(false)}
+                        >
+                          Profile
+                        </Link>
+                        <Link 
+                          href="/cart" 
+                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                          onClick={() => setIsUserMenuOpen(false)}
+                        >
+                          My Cart
+                        </Link>
+                        <Link 
+                          href="/orders" 
+                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                          onClick={() => setIsUserMenuOpen(false)}
+                        >
+                          Orders
+                        </Link>
+                        <button 
+                          onClick={handleSignOut}
+                          className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                        >
+                          Sign Out
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <Link 
+                          href="/login" 
+                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                          onClick={() => setIsUserMenuOpen(false)}
+                        >
+                          Sign In
+                        </Link>
+                        <Link 
+                          href="/register" 
+                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                          onClick={() => setIsUserMenuOpen(false)}
+                        >
+                          Sign Up
+                        </Link>
+                      </>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+
             <button className="p-2 text-gray-600 hover:text-amber-600">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />

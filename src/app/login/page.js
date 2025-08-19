@@ -19,7 +19,7 @@ export default function Login() {
       email,
       password,
     });
-
+    console.log(res);
     if (res.error) {
       setError(res.error);
     } else {

@@ -125,9 +125,10 @@ router.post('/login', loginLimiter, async (req, res) => {
       const keyValueTable = { error: 'Email and password are required' };
       return res.status(400).json(ResponseFormatter.failure('Missing required fields', keyValueTable));
     }
-
+    console.log(email);
+    console.log(password);
     const result = await DatabaseUtil.executeQuery('SELECT * FROM users WHERE email = ?', [email]);
-
+    console.log(result )
     if (!result.success || result.data.length === 0) {
       const keyValueTable = { error: 'Invalid email or password' };
       return res.status(401).json(ResponseFormatter.failure('Invalid credentials', keyValueTable));
@@ -135,12 +136,17 @@ router.post('/login', loginLimiter, async (req, res) => {
 
     const user = result.data[0];
 
-    if (await bcrypt.compare(password, user.password)) {
+    if (await bcrypt.compare(password, user.password_hash)) {
       const accessToken = jwt.sign({ id: user.id, email: user.email, isAdmin: user.isAdmin }, process.env.JWT_SECRET, { expiresIn: '24h' });
       const refreshToken = crypto.randomBytes(64).toString('hex');
       const refreshExpiry = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
-      await DatabaseUtil.executeQuery('INSERT INTO refresh_tokens (id, user_id, token, expiry) VALUES (?, ?, ?, ?)', [get_next_id('REFRESH'), user.id, refreshToken, refreshExpiry]);
-
+      
+      // Get next ID for refresh token
+      const refreshIdResult = await DatabaseUtil.executeQuery('SELECT get_next_id(?) as id', ['REFRESH']);
+      const refreshId = refreshIdResult.data[0].id;
+      
+      await DatabaseUtil.executeQuery('INSERT INTO refresh_tokens (id, user_id, token, expiry) VALUES (?, ?, ?, ?)', [refreshId, user.id, refreshToken, refreshExpiry]);
+      
       // Issue HttpOnly authentication cookie for admin logins
       // Secure in production, SameSite=Strict, Path=/, configurable TTL via ADMIN_AUTH_COOKIE_TTL_MS (default: 24h)
       if (user.isAdmin) {

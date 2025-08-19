@@ -3,8 +3,8 @@ const nextConfig = {
   async rewrites() {
     return [
       {
-        source: '/api/:path*',
-        destination: 'http://localhost:6666/api/:path*',
+        source: '/api/((?!auth).*)', // Exclude /api/auth/* from the proxy
+        destination: 'http://localhost:6666/api/$1',
       },
     ];
   },

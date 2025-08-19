@@ -3,6 +3,23 @@ import CredentialsProvider from 'next-auth/providers/credentials';
 import GoogleProvider from 'next-auth/providers/google';
 import FacebookProvider from 'next-auth/providers/facebook';
 
+// Robust backend URL resolution with sanitization and safe fallback
+const resolveBackendUrl = () => {
+  const raw = (process.env.NEXT_PUBLIC_BACKEND_URL || process.env.BACKEND_URL || 'http://localhost:6666').trim();
+  try {
+    // Will throw if invalid (e.g., bad port or malformed)
+    const u = new URL(raw);
+    // Use origin only (protocol + host + optional port), no path/query
+    const origin = `${u.protocol}//${u.hostname}${u.port ? `:${u.port}` : ''}`;
+    return origin.endsWith('/') ? origin.slice(0, -1) : origin;
+  } catch (e) {
+    console.error('Invalid BACKEND URL from env; falling back to http://localhost:6666', e);
+    return 'http://localhost:6666';
+  }
+};
+
+const BACKEND_URL = resolveBackendUrl();
+
 const handler = NextAuth({
   providers: [
     CredentialsProvider({
@@ -13,7 +30,11 @@ const handler = NextAuth({
       },
       async authorize(credentials) {
         try {
-          const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/users/login`, {
+          console.log(BACKEND_URL);
+          console.log(credentials);
+          const requestUrl = `${BACKEND_URL}/api/users/login`;
+          console.log(requestUrl)
+          const res = await fetch(requestUrl, { 
             method: 'POST',
             body: JSON.stringify(credentials),
             headers: { 'Content-Type': 'application/json' }
@@ -21,7 +42,7 @@ const handler = NextAuth({
 
           const data = await res.json();
 
-          if (res.ok && data.status === 'success') {
+          if (res.ok && data.status === 'SUCCESS') {
             return {
               id: data.keyValueTable.userId,
               email: data.keyValueTable.email,
@@ -65,7 +86,7 @@ const handler = NextAuth({
 
       // Refresh token
       try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/users/refresh`, {
+        const res = await fetch(`${BACKEND_URL}/api/users/refresh`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ refreshToken: token.refreshToken }),
@@ -73,7 +94,7 @@ const handler = NextAuth({
 
         const data = await res.json();
 
-        if (res.ok && data.status === 'success') {
+        if (res.ok && data.status === 'SUCCESS') {
           token.accessToken = data.keyValueTable.accessToken;
           token.accessTokenExpiry = Date.now() + 24 * 60 * 60 * 1000;
           return token;

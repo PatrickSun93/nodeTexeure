@@ -24,3 +24,17 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* Ensure inputs are readable across themes */
+input,
+textarea,
+select {
+  color: #000;         /* black text */
+  caret-color: #000;   /* black caret */
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: #6b7280;      /* tailwind gray-500 */
+  opacity: 1;          /* ensure placeholder is visible */
+}
