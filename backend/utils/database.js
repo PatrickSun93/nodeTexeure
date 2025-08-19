@@ -16,8 +16,6 @@ const dbConfig = {
   database: process.env.DB_NAME || 'bed_texture_ecommerce',
   // MySQL2 connection options
   connectTimeout: 60000,
-  acquireTimeout: 60000,
-  timeout: 60000,
   charset: 'utf8mb4',
   timezone: '+00:00',
   // Pool-specific options
@@ -75,8 +73,11 @@ class DatabaseUtil {
       }
       
       // Execute the query
+      console.log('sql', sql);
+      console.log('bindParams', bindParams);
       const [rows, fields] = await connection.execute(sql, bindParams);
-      
+      console.log('rows', rows);
+      console.log('fields', fields);
       // Commit transaction if required
       if (!commit) {
         await connection.commit();

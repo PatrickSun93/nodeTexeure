@@ -94,7 +94,6 @@ app.use((err, req, res, next) => {
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Backend server running on http://localhost:${PORT}`);
   console.log(`📡 API endpoints available at http://localhost:${PORT}/api`);
-  console.log(`🔗 Frontend should connect from http://localhost:3000`);
   console.log(`✅ Server ready to accept connections`);
 });
 
