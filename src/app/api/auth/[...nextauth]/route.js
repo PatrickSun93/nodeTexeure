@@ -2,6 +2,8 @@ import NextAuth from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import GoogleProvider from 'next-auth/providers/google';
 import FacebookProvider from 'next-auth/providers/facebook';
+import http from 'node:http';
+import https from 'node:https';
 
 // Robust backend URL resolution with sanitization and safe fallback
 const resolveBackendUrl = () => {
@@ -32,16 +34,16 @@ const handler = NextAuth({
         try {
           console.log(BACKEND_URL);
           console.log(credentials);
-          const requestUrl = `${BACKEND_URL}/api/users/login`;
+          const requestUrl = `/api/users/login`;
           console.log(requestUrl)
-          const res = await fetch(requestUrl, { 
+          const res = await fetchBackend(requestUrl, { 
             method: 'POST',
             body: JSON.stringify(credentials),
             headers: { 'Content-Type': 'application/json' }
           });
 
           const data = await res.json();
-
+          console.log(data)
           if (res.ok && data.status === 'SUCCESS') {
             return {
               id: data.keyValueTable.userId,
@@ -119,5 +121,70 @@ const handler = NextAuth({
   },
   secret: process.env.NEXTAUTH_SECRET
 });
+
+// helper function to make fetch requests to the backend
+const fetchBackend = async (url, options = {}) => {
+  const base = new URL(BACKEND_URL);
+  const isHttps = base.protocol === 'https:';
+  const transport = isHttps ? https : http;
+
+  // Avoid IPv6 localhost resolution issues
+  const hostname = base.hostname === 'localhost' ? '127.0.0.1' : base.hostname;
+  const port = base.port ? parseInt(base.port, 10) : (isHttps ? 443 : 80);
+  const path = url.startsWith('/') ? url : `/${url}`;
+
+  const headers = { ...(options.headers || {}) };
+
+  const requestOptions = {
+    hostname,
+    port,
+    path,
+    method: options.method || 'GET',
+    headers
+  };
+
+  return new Promise((resolve, reject) => {
+    const req = transport.request(requestOptions, (res) => {
+      const chunks = [];
+      res.on('data', (chunk) => chunks.push(chunk));
+      res.on('end', () => {
+        const buffer = Buffer.concat(chunks);
+        const text = buffer.toString('utf8');
+
+        resolve({
+          ok: res.statusCode >= 200 && res.statusCode < 300,
+          status: res.statusCode,
+          statusText: res.statusMessage,
+          headers: res.headers,
+          url: `${base.origin}${path}`,
+          json: async () => JSON.parse(text || 'null'),
+          text: async () => text
+        });
+      });
+    });
+
+    req.on('error', (err) => reject(err));
+
+    // Write request body if provided
+    if (options.body) {
+      const hasContentType =
+        headers['content-type'] || headers['Content-Type'];
+
+      if (typeof options.body === 'string') {
+        if (!hasContentType) {
+          req.setHeader('Content-Type', 'application/json');
+        }
+        req.write(options.body);
+      } else {
+        if (!hasContentType) {
+          req.setHeader('Content-Type', 'application/json');
+        }
+        req.write(JSON.stringify(options.body));
+      }
+    }
+
+    req.end();
+  });
+};
 
 export { handler as GET, handler as POST };
