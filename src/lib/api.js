@@ -57,6 +57,11 @@ export const apiRequest = async (endpoint, options = {}) => {
       'Content-Type': 'application/json',
       ...(customHeaders || {}),
     };
+    console.log('[apiRequest] headers:', headers);
+    console.log('[apiRequest] options:', options);
+    console.log('[apiRequest] endpoint:', endpoint);
+    console.log('[apiRequest] API_BASE_URL:', API_BASE_URL);
+    console.log('[apiRequest] API request:', rest);
 
     // First try via Next.js proxy
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {
@@ -79,7 +84,7 @@ export const apiRequest = async (endpoint, options = {}) => {
       // Avoid infinite loops and only fallback in browser/runtime where env is available
       if (!__noFallback && isEndpointNotFound && typeof window !== 'undefined') {
         const backendOrigin =
-          (typeof process !== 'undefined' && process.env.NEXT_PUBLIC_BACKEND_URL) ||
+          (typeof process !== 'undefined' && process.env.BACKEND_URL) ||
           'http://localhost:6666';
 
         const directUrl = `${backendOrigin.replace(/\/$/, '')}/api${endpoint}`;

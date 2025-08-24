@@ -26,6 +26,7 @@ export default function Profile() {
       router.push('/login');
       return;
     }
+    console.log(session)
     fetchProfile();
   }, [status, session, router]);
 
