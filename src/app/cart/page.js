@@ -1,6 +1,9 @@
+'use client'
+
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import Header from '../components/Header'; // Assuming Header exists
+import Header from '../../components/Header'; // fixed path to src/components/Header
+import { apiRequest, extractResponseData } from '../../lib/api';
 
 function Breadcrumb() {
   return (
@@ -25,10 +28,16 @@ export default function Cart() {
 
   const fetchCart = async () => {
     try {
-      const res = await fetch('/api/cart');
-      const data = await res.json();
-      if (data.success) {
-        setCart(data.data);
+      const raw = await apiRequest('/cart');
+      const parsed = extractResponseData(raw);
+      if (parsed.status === 'SUCCESS') {
+        // Normalize into the shape the UI expects
+        setCart({
+          id: parsed.cartId,
+          items: Array.isArray(parsed.items) ? parsed.items : []
+        });
+      } else {
+        console.error('Failed to fetch cart:', parsed.message);
       }
     } catch (error) {
       console.error(error);
@@ -43,15 +52,12 @@ export default function Cart() {
 
   const handleUpdateQuantity = async (itemId, quantity) => {
     try {
-      const res = await fetch(`/api/cart/update/${itemId}`, {
+      await apiRequest(`/cart/update/${itemId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ quantity })
       });
-      const data = await res.json();
-      if (data.success) {
-        fetchCart();
-      }
+      fetchCart();
     } catch (error) {
       console.error(error);
     }
@@ -59,13 +65,10 @@ export default function Cart() {
 
   const handleRemove = async (itemId) => {
     try {
-      const res = await fetch(`/api/cart/remove/${itemId}`, {
+      await apiRequest(`/cart/remove/${itemId}`, {
         method: 'DELETE'
       });
-      const data = await res.json();
-      if (data.success) {
-        fetchCart();
-      }
+      fetchCart();
     } catch (error) {
       console.error(error);
     }

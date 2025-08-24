@@ -6,7 +6,7 @@ const crypto = require('crypto');
 const router = express.Router();
 
 // Helper to get or create cart
-async function getOrCreateCart(req) {
+async function getOrCreateCart(req, res) {
   let cartId;
   if (req.user) {
     // Logged-in user
@@ -15,7 +15,7 @@ async function getOrCreateCart(req) {
       cartId = result.data[0].id;
     } else {
       const idResult = await DatabaseUtil.executeQuery('SELECT get_next_id("CART") as id');
-cartId = idResult.data[0].id;
+      cartId = idResult.data[0].id;
       await DatabaseUtil.executeQuery('INSERT INTO shopping_carts (id, user_id) VALUES (?, ?)', [cartId, req.user.id]);
     }
   } else {
@@ -30,7 +30,7 @@ cartId = idResult.data[0].id;
       cartId = result.data[0].id;
     } else {
       const idResult = await DatabaseUtil.executeQuery('SELECT get_next_id("CART") as id');
-cartId = idResult.data[0].id;
+      cartId = idResult.data[0].id;
       await DatabaseUtil.executeQuery('INSERT INTO shopping_carts (id, session_id) VALUES (?, ?)', [cartId, sessionId]);
     }
   }
@@ -40,7 +40,7 @@ cartId = idResult.data[0].id;
 // GET /api/cart - Get current cart
 router.get('/', protectOptional, async (req, res) => {
   try {
-    const cartId = await getOrCreateCart(req);
+    const cartId = await getOrCreateCart(req, res);
     const itemsResult = await DatabaseUtil.executeQuery(
       'SELECT ci.*, p.name, p.base_price FROM cart_items ci JOIN products p ON ci.product_id = p.id WHERE ci.cart_id = ?',
       [cartId]
@@ -55,7 +55,7 @@ router.get('/', protectOptional, async (req, res) => {
 router.post('/add', protectOptional, async (req, res) => {
   try {
     const { product_id, variant_id, quantity = 1 } = req.body;
-    const cartId = await getOrCreateCart(req);
+    const cartId = await getOrCreateCart(req, res);
     // Check if item exists
     const checkResult = await DatabaseUtil.executeQuery(
       'SELECT id FROM cart_items WHERE cart_id = ? AND product_id = ? AND variant_id = ?',
@@ -70,7 +70,7 @@ router.post('/add', protectOptional, async (req, res) => {
     } else {
       // Insert new
       const itemIdResult = await DatabaseUtil.executeQuery('SELECT get_next_id("CARTITEM") as id');
-const itemId = itemIdResult.data[0].id;
+      const itemId = itemIdResult.data[0].id;
       const priceResult = await DatabaseUtil.executeQuery('SELECT base_price FROM products WHERE id = ?', [product_id]);
       const price = priceResult.data[0].base_price;
       await DatabaseUtil.executeQuery(
@@ -91,7 +91,7 @@ router.put('/update/:itemId', protectOptional, async (req, res) => {
     if (quantity <= 0) {
       return res.status(400).json(ResponseFormatter.failure('Quantity must be positive'));
     }
-    const cartId = await getOrCreateCart(req);
+    const cartId = await getOrCreateCart(req, res);
     const result = await DatabaseUtil.executeQuery(
       'UPDATE cart_items SET quantity = ? WHERE id = ? AND cart_id = ?',
       [quantity, req.params.itemId, cartId]
@@ -109,7 +109,7 @@ router.put('/update/:itemId', protectOptional, async (req, res) => {
 // DELETE /api/cart/remove/:itemId - Remove item from cart
 router.delete('/remove/:itemId', protectOptional, async (req, res) => {
   try {
-    const cartId = await getOrCreateCart(req);
+    const cartId = await getOrCreateCart(req, res);
     const result = await DatabaseUtil.executeQuery(
       'DELETE FROM cart_items WHERE id = ? AND cart_id = ?',
       [req.params.itemId, cartId]

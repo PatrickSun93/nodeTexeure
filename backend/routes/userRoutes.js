@@ -248,7 +248,7 @@ router.post('/refresh', async (req, res) => {
 router.get('/profile', protect, async (req, res) => {
   try {
     const result = await DatabaseUtil.executeQuery('SELECT id, name, email, address, isAdmin FROM users WHERE id = ?', [req.user.id]);
-
+    console.log(result)
     if (!result.success || result.data.length === 0) {
       const keyValueTable = { error: 'User not found' };
       return res.status(404).json(ResponseFormatter.failure('User not found', keyValueTable));

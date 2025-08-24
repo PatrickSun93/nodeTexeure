@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
+import Header from '../../components/Header';
+import { extractResponseData, profileAPI } from '../../lib/api';
 
 export default function Profile() {
   const { data: session, status } = useSession();
@@ -11,7 +12,13 @@ export default function Profile() {
   const [userData, setUserData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [formData, setFormData] = useState({ name: '', email: '', password: '', confirmPassword: '' });
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    address: '',
+    password: '',
+    confirmPassword: ''
+  });
 
   useEffect(() => {
     if (status === 'loading') return;
@@ -24,19 +31,17 @@ export default function Profile() {
 
   const fetchProfile = async () => {
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/users/profile`, {
-        headers: {
-          'Authorization': `Bearer ${session.accessToken}`,
-        },
-      });
-      const data = await res.json();
-      if (data.success) {
-        setUserData(data.keyValueTable);
-        setFormData({ name: data.keyValueTable.name, email: data.keyValueTable.email, password: '', confirmPassword: '' });
+      const raw = await profileAPI.get(session.accessToken);
+      const parsed = extractResponseData(raw);
+      if (parsed.status === 'SUCCESS') {
+        const profile = parsed.data || {};
+        setUserData(profile);
+        setError('');
       } else {
-        setError('Failed to fetch profile');
+        setError(parsed.message || 'Failed to fetch profile');
       }
     } catch (err) {
+      console.error('Error fetching profile', err);
       setError('Error fetching profile');
     } finally {
       setLoading(false);
@@ -55,25 +60,20 @@ export default function Profile() {
       return;
     }
     try {
-      const updateData = { name: formData.name };
+      const updateData = { name: formData.name, address: formData.address };
       if (formData.password) updateData.password = formData.password;
-      const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/users/profile`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.accessToken}`,
-        },
-        body: JSON.stringify(updateData),
-      });
-      const data = await res.json();
-      if (data.success) {
-        fetchProfile();
+
+      const raw = await profileAPI.update(session.accessToken, updateData);
+      const parsed = extractResponseData(raw);
+      if (parsed.status === 'SUCCESS') {
+        await fetchProfile();
         setError('');
         alert('Profile updated successfully');
       } else {
-        setError('Failed to update profile');
+        setError(parsed.message || 'Failed to update profile');
       }
     } catch (err) {
+      console.error('Error updating profile', err);
       setError('Error updating profile');
     }
   };
@@ -81,41 +81,42 @@ export default function Profile() {
   if (loading) return <div>Loading...</div>;
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
-      <div className="max-w-md w-full space-y-8 bg-white p-8 rounded-xl shadow-lg">
-        <div className="text-center">
-          <h2 className="text-3xl font-bold text-gray-900">Your Profile</h2>
-        </div>
+    <div className="min-h-screen bg-gray-50">
+      <Header />
+      <div className="max-w-3xl mx-auto py-8 px-4">
+        <div className="bg-white p-6 rounded-xl shadow">
+          <div className="text-center mb-6">
+            <h2 className="text-3xl font-bold text-gray-900">Your Profile</h2>
+          </div>
 
-        {error && <p className="text-red-500 text-sm">{error}</p>}
+          {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
 
-        {userData && (
-          <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+          {userData && (
             <div className="space-y-4">
               <div>
-                <label htmlFor="name">Name</label>
-                <input id="name" name="name" type="text" value={formData.name} onChange={handleChange} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md" />
+                <div className="text-sm text-gray-500">Name</div>
+                <div className="text-base font-medium text-gray-900">
+                  {userData.name || 'Not set'}
+                </div>
               </div>
+
               <div>
-                <label htmlFor="email">Email</label>
-                <input id="email" name="email" type="email" value={formData.email} disabled className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100" />
+                <div className="text-sm text-gray-500">Email</div>
+                <div className="text-base font-medium text-gray-900">
+                  {userData.email || 'Not set'}
+                </div>
               </div>
+
               <div>
-                <label htmlFor="password">New Password (optional)</label>
-                <input id="password" name="password" type="password" value={formData.password} onChange={handleChange} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md" />
-              </div>
-              <div>
-                <label htmlFor="confirmPassword">Confirm New Password</label>
-                <input id="confirmPassword" name="confirmPassword" type="password" value={formData.confirmPassword} onChange={handleChange} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md" />
+                <div className="text-sm text-gray-500">Shipping Address</div>
+                <div className="text-base font-medium text-gray-900 whitespace-pre-line">
+                  {userData.address || 'Not set'}
+                </div>
               </div>
             </div>
-            <button type="submit" className="w-full py-2 px-4 bg-indigo-600 text-white rounded-md">Update Profile</button>
-          </form>
-        )}
-
-        <p className="mt-4 text-center text-sm text-gray-600">
-          <Link href="/" className="font-medium text-indigo-600 hover:text-indigo-500">Back to Home</Link>
-        </p>
+          )}
+        </div>
+        {/* Payment Information and footer removed */}
       </div>
     </div>
   );

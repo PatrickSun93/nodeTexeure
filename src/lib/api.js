@@ -22,6 +22,8 @@ export const extractResponseData = (response) => {
         Object.assign(data, item);
       }
     });
+  } else if (response.keyValueTable && typeof response.keyValueTable === 'object') {
+    Object.assign(data, response.keyValueTable);
   }
   
   return {
@@ -43,31 +45,78 @@ export const isSuccessResponse = (response) => {
 
 /**
  * Generic API request function with error handling
- * @param {string} endpoint - API endpoint
+ * @param {string} endpoint - API endpoint (e.g., '/users/profile')
  * @param {object} options - Fetch options (method, headers, body, etc.)
  * @returns {Promise<object>} - Response data
  */
 export const apiRequest = async (endpoint, options = {}) => {
   try {
+    // Merge headers carefully
+    const { headers: customHeaders, __noFallback, ...rest } = options;
+    const headers = {
+      'Content-Type': 'application/json',
+      ...(customHeaders || {}),
+    };
+
+    // First try via Next.js proxy
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-      headers: {
-        'Content-Type': 'application/json',
-        ...options.headers,
-      },
-      ...options,
+      ...rest,
+      headers,
     });
 
-    const data = await response.json();
-    
+    let data;
+    try {
+      data = await response.json();
+    } catch {
+      data = { message: `HTTP error! status: ${response.status}` };
+    }
+
+    // If the proxy returns the backend's 404 wrapper, try direct backend URL as a fallback
     if (!response.ok) {
+      const isEndpointNotFound =
+        data && (data.message === 'Endpoint not found' || data.error === 'Endpoint not found');
+
+      // Avoid infinite loops and only fallback in browser/runtime where env is available
+      if (!__noFallback && isEndpointNotFound && typeof window !== 'undefined') {
+        const backendOrigin =
+          (typeof process !== 'undefined' && process.env.NEXT_PUBLIC_BACKEND_URL) ||
+          'http://localhost:6666';
+
+        const directUrl = `${backendOrigin.replace(/\/$/, '')}/api${endpoint}`;
+        const directResp = await fetch(directUrl, {
+          ...rest,
+          headers,
+        });
+
+        let directData;
+        try {
+          directData = await directResp.json();
+        } catch {
+          directData = { message: `HTTP error! status: ${directResp.status}` };
+        }
+
+        if (!directResp.ok) {
+          throw new Error(
+            directData.error || directData.message || `HTTP error! status: ${directResp.status}`
+          );
+        }
+
+        if (directData.status === 'FAIL') {
+          throw new Error(directData.message || 'API request failed');
+        }
+
+        return directData;
+      }
+
+      // No fallback or still not OK
       throw new Error(data.error || data.message || `HTTP error! status: ${response.status}`);
     }
-    
-    // Check if response indicates failure in the new format
+
+    // Check new format failure
     if (data.status === 'FAIL') {
       throw new Error(data.message || 'API request failed');
     }
-    
+
     return data;
   } catch (error) {
     console.error(`API request failed for ${endpoint}:`, error);
@@ -271,5 +320,37 @@ export const databaseAPI = {
   getConnectionStatus: async () => {
     console.warn('databaseAPI.getConnectionStatus() is deprecated. Use testConnection() instead.');
     return databaseAPI.testConnection();
+  },
+};
+
+/**
+ * Profile API helpers to ensure Authorization header is consistently sent
+ */
+export const profileAPI = {
+  /**
+   * Get current user's profile using access token
+   * @param {string} accessToken
+   */
+  get: async (accessToken) => {
+    return apiRequest('/users/profile', {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
+  },
+
+  /**
+   * Update current user's profile using access token
+   * @param {string} accessToken
+   * @param {object} updateData
+   */
+  update: async (accessToken, updateData) => {
+    return apiRequest('/users/profile', {
+      method: 'PUT',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+      body: JSON.stringify(updateData),
+    });
   },
 };

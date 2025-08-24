@@ -88,7 +88,7 @@ const handler = NextAuth({
 
       // Refresh token
       try {
-        const res = await fetch(`${BACKEND_URL}/api/users/refresh`, {
+        const res = await fetch(`/api/users/refresh`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ refreshToken: token.refreshToken }),
