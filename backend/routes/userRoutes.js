@@ -245,9 +245,38 @@ router.post('/refresh', async (req, res) => {
  * GET /api/users/profile
  * Get user profile
  */
+// router.get('/profile', protect, async (req, res) => {
 router.get('/profile', protect, async (req, res) => {
   try {
-    const result = await DatabaseUtil.executeQuery('SELECT id, name, email, address, isAdmin FROM users WHERE id = ?', [req.user.id]);
+    const result = await DatabaseUtil.executeQuery(
+      `SELECT 
+         u.id,
+         u.first_name,
+         u.last_name,
+         u.phone,
+         u.email,
+         (
+           SELECT COALESCE(
+             JSON_ARRAYAGG(
+               JSON_OBJECT(
+                 'id', ua.id,
+                 'type', ua.type,
+                 'is_default', ua.is_default,
+                 'first_name', ua.first_name,
+                 'last_name', ua.last_name,
+                 'phone', ua.phone,
+                 'address', ua.address_json
+               )
+             ),
+             JSON_ARRAY()
+           )
+           FROM user_addresses ua
+           WHERE ua.user_id = u.id
+         ) AS addresses
+       FROM users u
+       WHERE u.id = ?`,
+      [req.user.id]
+    );
     console.log(result)
     if (!result.success || result.data.length === 0) {
       const keyValueTable = { error: 'User not found' };
