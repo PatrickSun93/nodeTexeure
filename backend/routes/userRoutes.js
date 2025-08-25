@@ -302,28 +302,33 @@ router.get('/profile', protect, async (req, res) => {
 /**
  * PUT /api/users/profile
  * Update user profile
- * @param {string} name - User's name (optional)
- * @param {string} address - User's address (optional)
+ * @param {string} firstName - User's first name (optional)
+ * @param {string} lastName - User's last name (optional)
+ * @param {string} phone - User's phone (optional)
  * @param {string} password - New password (optional)
  */
 router.put('/profile', protect, async (req, res) => {
   try {
-    const { name, address, password } = req.body;
+    const { firstName, lastName, phone, password } = req.body;
     let updates = [];
     let params = [];
 
-    if (name) {
-      updates.push('name = ?');
-      params.push(name);
+    if (firstName) {
+      updates.push('first_name = ?');
+      params.push(firstName);
     }
-    if (address) {
-      updates.push('address = ?');
-      params.push(address);
+    if (lastName) {
+      updates.push('last_name = ?');
+      params.push(lastName);
+    }
+    if (phone) {
+      updates.push('phone = ?');
+      params.push(phone);
     }
     if (password) {
       const salt = await bcrypt.genSalt(10);
       const hashedPassword = await bcrypt.hash(password, salt);
-      updates.push('password = ?');
+      updates.push('password_hash = ?');
       params.push(hashedPassword);
     }
 

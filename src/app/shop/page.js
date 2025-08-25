@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useSession, signIn, signOut } from 'next-auth/react';
+import { useSearchParams } from 'next/navigation';
 import { useCartCount } from '../../lib'; // added
 
 // Header Component (reused from homepage)
@@ -310,7 +311,9 @@ export function ProductCard({ product, onAddToCart, onToggleWishlist }) {
 
 // Main Shop Component
 export default function Shop() {
-  const [filters, setFilters] = useState({ category: 'All', price: 'all', materials: [] });
+  const searchParams = useSearchParams();
+  const searchQuery = searchParams.get('search') || '';
+  const [filters, setFilters] = useState({ category: 'All', price: 'all', materials: [], search: searchQuery });
   const [sortBy, setSortBy] = useState('featured');
   const [viewMode, setViewMode] = useState('grid');
   const [products, setProducts] = useState([]);
@@ -344,6 +347,10 @@ export default function Shop() {
         if (filters.materials.length > 0) {
           params.append('materials', filters.materials.join(','));
         }
+        // Implement search filter
+        if (filters.search && filters.search.trim()) {
+          params.append('search', filters.search.trim());
+        }
         const res = await fetch(`/api/products?${params}`);
         const data = await res.json();
         if (data.status == 'SUCCESS') {
@@ -358,6 +365,15 @@ export default function Shop() {
     };
     fetchProducts();
   }, [filters, pagination.page, sortBy]);
+
+  // Update filters when search params change
+  useEffect(() => {
+    const newSearchQuery = searchParams.get('search') || '';
+    if (newSearchQuery !== filters.search) {
+      setFilters(prev => ({ ...prev, search: newSearchQuery }));
+      setPagination(prev => ({ ...prev, page: 1 }));
+    }
+  }, [searchParams, filters.search]);
 
   const handleFilterChange = (key, value) => {
     setFilters(prev => ({ ...prev, [key]: value }));
@@ -393,6 +409,20 @@ export default function Shop() {
   
   // Filter products based on current filters
   const filteredProducts = products.filter(product => {
+    // Search filter
+    if (filters.search && filters.search.trim()) {
+      const searchTerm = filters.search.toLowerCase();
+      const productName = (product.name || '').toLowerCase();
+      const productDescription = (product.description || '').toLowerCase();
+      const productCategory = (product.category || '').toLowerCase();
+      
+      if (!productName.includes(searchTerm) && 
+          !productDescription.includes(searchTerm) && 
+          !productCategory.includes(searchTerm)) {
+        return false;
+      }
+    }
+    
     // Category filter
     if (filters.category !== 'All' && product.category !== filters.category) {
       return false;
@@ -455,6 +485,34 @@ export default function Shop() {
           
           {/* Main Content */}
           <div className="lg:w-3/4">
+            {/* Search Results Header */}
+            {filters.search && filters.search.trim() && (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-lg font-semibold text-blue-900">
+                      Search Results for "{filters.search}"
+                    </h2>
+                    <p className="text-blue-700 text-sm mt-1">
+                      Found {filteredProducts.length} product{filteredProducts.length !== 1 ? 's' : ''}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => {
+                      setFilters(prev => ({ ...prev, search: '' }));
+                      window.history.pushState({}, '', '/shop');
+                    }}
+                    className="text-blue-600 hover:text-blue-800 font-medium text-sm flex items-center gap-1"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                    Clear Search
+                  </button>
+                </div>
+              </div>
+            )}
+            
             {/* Toolbar */}
             <div className="bg-white p-4 rounded-lg shadow-sm mb-6">
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
