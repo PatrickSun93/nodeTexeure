@@ -18,17 +18,18 @@ const router = express.Router();
  * Register a new user
  * @param {string} email - User's email
  * @param {string} password - User's password
- * @param {string} name - User's name
+ * @param {string} firstName - User's first name
+ * @param {string} lastName - User's last name
  * @param {string} address - User's address
  */
 router.post('/register', async (req, res) => {
   try {
-    const { email, password, name } = req.body;
+    const { email, password, firstName, lastName } = req.body;
 
     // Input validation
-    if (!email || !password || !name) {
+    if (!email || !password || !firstName || !lastName) {
       const keyValueTable = {
-        error: 'All fields are required: email, password, name'
+        error: 'All fields are required: email, password, firstName, lastName'
       };
       return res.status(400).json(ResponseFormatter.failure(
         'Missing required fields',
@@ -56,18 +57,25 @@ router.post('/register', async (req, res) => {
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
+    // Get next user ID
+    const idResult = await DatabaseUtil.executeQuery('SELECT get_next_id("USER") as id');
+    if (!idResult.success) {
+      throw new Error('Failed to generate user ID');
+    }
+    const userId = idResult.data[0].id;
+
     // Insert new user
     const insertResult = await DatabaseUtil.executeQuery(
-      'INSERT INTO users (email, password, name) VALUES (?, ?, ?)',
-      [email, hashedPassword, name]
+      'INSERT INTO users (id, email, password_hash, first_name, last_name) VALUES (?, ?, ?, ?, ?)',
+      [userId, email, hashedPassword, firstName, lastName]
     );
 
     if (insertResult.success) {
       const keyValueTable = {
-        userId: insertResult.data.insertId,
+        userId: userId,
         email: email,
-        name: name,
-        address: address
+        firstName: firstName,
+        lastName: lastName
       };
       res.status(201).json(ResponseFormatter.success(
         'User registered successfully',
