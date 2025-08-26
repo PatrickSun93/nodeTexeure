@@ -101,8 +101,8 @@ export default function Header() {
                   <button
                     type="button"
                     onClick={() => {
-                      setIsSearchOpen(false);
                       setSearchQuery('');
+                      setIsSearchOpen(false);
                     }}
                     className="aesop-search-close"
                   >

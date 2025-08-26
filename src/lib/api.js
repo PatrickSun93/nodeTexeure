@@ -57,11 +57,6 @@ export const apiRequest = async (endpoint, options = {}) => {
       'Content-Type': 'application/json',
       ...(customHeaders || {}),
     };
-    console.log('[apiRequest] headers:', headers);
-    console.log('[apiRequest] options:', options);
-    console.log('[apiRequest] endpoint:', endpoint);
-    console.log('[apiRequest] API_BASE_URL:', API_BASE_URL);
-    console.log('[apiRequest] API request:', rest);
 
     // First try via Next.js proxy
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {

@@ -7,419 +7,516 @@ import Header from '../../components/Header';
 
 // Breadcrumb Component
 function Breadcrumb() {
-    return (
-        <nav className="aesop-breadcrumb">
-            <div className="aesop-container">
-                <ol className="aesop-breadcrumb-list">
-                    <li><Link href="/">Home</Link></li>
-                    <li>Shop</li>
-                </ol>
-            </div>
-        </nav>
-    );
+  return (
+    <div className="aesop-breadcrumb">
+      <div className="aesop-container">
+        <Link href="/" className="aesop-breadcrumb-link">Home</Link>
+        <span className="aesop-breadcrumb-separator">&gt;</span>
+        <span className="aesop-breadcrumb-current">Shop</span>
+      </div>
+    </div>
+  );
 }
 
 // Filter Sidebar Component
 function FilterSidebar({ filters, onFilterChange }) {
-    const categories = ['All', 'Sheets', 'Pillows', 'Blankets', 'Mattresses'];
-    const priceRanges = [
-        { label: 'All Prices', min: 0, max: Infinity },
-        { label: 'Under $100', min: 0, max: 100 },
-        { label: '$100 - $200', min: 100, max: 200 },
-        { label: '$200 - $300', min: 200, max: 300 },
-        { label: 'Over $300', min: 300, max: Infinity }
-    ];
+  const categories = [
+    'All', 'Sheets', 'Pillows', 'Blankets', 'Mattresses', 'Accessories'
+  ];
 
-    return (
-        <aside className="aesop-filter-sidebar">
-            <div className="aesop-filter-section">
-                <h3 className="aesop-filter-title">Categories</h3>
-                <div className="aesop-filter-options">
-                    {categories.map(category => (
-                        <label key={category} className="aesop-filter-option">
-                            <input
-                                type="radio"
-                                name="category"
-                                value={category}
-                                checked={filters.category === category}
-                                onChange={(e) => onFilterChange({ ...filters, category: e.target.value })}
-                            />
-                            <span>{category}</span>
-                        </label>
-                    ))}
-                </div>
-            </div>
+  const priceRanges = [
+    { label: 'All Prices', value: 'all' },
+    { label: '$0 - $100', value: '0-100' },
+    { label: '$100 - $200', value: '100-200' },
+    { label: '$200 - $300', value: '200-300' },
+    { label: '$300+', value: '300+' }
+  ];
 
-            <div className="aesop-filter-section">
-                <h3 className="aesop-filter-title">Price Range</h3>
-                <div className="aesop-filter-options">
-                    {priceRanges.map((range, index) => (
-                        <label key={index} className="aesop-filter-option">
-                            <input
-                                type="radio"
-                                name="priceRange"
-                                value={`${range.min}-${range.max}`}
-                                checked={filters.priceMin === range.min && filters.priceMax === range.max}
-                                onChange={() => onFilterChange({ 
-                                    ...filters, 
-                                    priceMin: range.min, 
-                                    priceMax: range.max 
-                                })}
-                            />
-                            <span>{range.label}</span>
-                        </label>
-                    ))}
-                </div>
-            </div>
+  const materials = ['Cotton', 'Silk', 'Bamboo', 'Linen', 'Memory Foam'];
 
-            <div className="aesop-filter-section">
-                <h3 className="aesop-filter-title">Sort By</h3>
-                <select 
-                    className="aesop-select"
-                    value={filters.sortBy}
-                    onChange={(e) => onFilterChange({ ...filters, sortBy: e.target.value })}
-                >
-                    <option value="name">Name</option>
-                    <option value="price-low">Price: Low to High</option>
-                    <option value="price-high">Price: High to Low</option>
-                    <option value="newest">Newest</option>
-                </select>
-            </div>
-        </aside>
-    );
+  return (
+    <div className="aesop-filter-sidebar">
+      <h3 className="aesop-filter-title">Filters</h3>
+      
+      {/* Category Filter */}
+      <div className="aesop-filter-section">
+        <h4 className="aesop-filter-section-title">Category</h4>
+        <div className="aesop-filter-options">
+          {categories.map(category => (
+            <label key={category} className="aesop-filter-option">
+              <input
+                type="radio"
+                name="category"
+                value={category}
+                checked={filters.category === category}
+                onChange={(e) => onFilterChange('category', e.target.value)}
+                className="aesop-filter-radio"
+              />
+              <span className="aesop-filter-label">{category}</span>
+            </label>
+          ))}
+        </div>
+      </div>
+
+      {/* Price Filter */}
+      <div className="aesop-filter-section">
+        <h4 className="aesop-filter-section-title">Price Range</h4>
+        <div className="aesop-filter-options">
+          {priceRanges.map(range => (
+            <label key={range.value} className="aesop-filter-option">
+              <input
+                type="radio"
+                name="price"
+                value={range.value}
+                checked={filters.price === range.value}
+                onChange={(e) => onFilterChange('price', e.target.value)}
+                className="aesop-filter-radio"
+              />
+              <span className="aesop-filter-label">{range.label}</span>
+            </label>
+          ))}
+        </div>
+      </div>
+
+      {/* Materials Filter */}
+      <div className="aesop-filter-section">
+        <h4 className="aesop-filter-section-title">Materials</h4>
+        <div className="aesop-filter-options">
+          {materials.map(material => (
+            <label key={material} className="aesop-filter-option">
+              <input
+                type="checkbox"
+                value={material}
+                checked={filters.materials.includes(material)}
+                onChange={(e) => {
+                  const newMaterials = e.target.checked
+                    ? [...filters.materials, material]
+                    : filters.materials.filter(m => m !== material);
+                  onFilterChange('materials', newMaterials);
+                }}
+                className="aesop-filter-checkbox"
+              />
+              <span className="aesop-filter-label">{material}</span>
+            </label>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
 }
 
 // Product Card Component
 export function ProductCard({ product, onAddToCart, onToggleWishlist }) {
-    const [isWishlisted, setIsWishlisted] = useState(false);
-    const [isLoading, setIsLoading] = useState(false);
+  const [isWishlisted, setIsWishlisted] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
-    const handleAddToCart = async () => {
-        setIsLoading(true);
-        try {
-            await onAddToCart(product);
-        } catch (error) {
-            console.error('Error adding to cart:', error);
-        } finally {
-            setIsLoading(false);
-        }
-    };
+  const handleAddToCart = async () => {
+    setIsLoading(true);
+    try {
+      await onAddToCart(product);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-    const handleToggleWishlist = () => {
-        setIsWishlisted(!isWishlisted);
-        onToggleWishlist?.(product);
-    };
+  const handleToggleWishlist = () => {
+    setIsWishlisted(!isWishlisted);
+    if (onToggleWishlist) {
+      onToggleWishlist(product, !isWishlisted);
+    }
+  };
 
-    return (
-        <div className="aesop-product-card">
-            <div className="aesop-product-image">
-                <img 
-                    src={product.image || '/api/placeholder/300/300'} 
-                    alt={product.name}
-                    onError={(e) => {
-                        e.target.src = '/api/placeholder/300/300';
-                    }}
-                />
-                {product.isNew && <span className="aesop-product-badge">New</span>}
-                <button 
-                    className={`aesop-wishlist-button ${isWishlisted ? 'active' : ''}`}
-                    onClick={handleToggleWishlist}
-                    aria-label="Add to wishlist"
-                >
-                    <svg className="w-5 h-5" fill={isWishlisted ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                    </svg>
-                </button>
-            </div>
-            <div className="aesop-product-info">
-                <h3 className="aesop-product-name">{product.name}</h3>
-                <p className="aesop-product-description">{product.description}</p>
-                <div className="aesop-product-price-section">
-                    <span className="aesop-product-price">${product.price}</span>
-                    {product.originalPrice && (
-                        <span className="aesop-product-original-price">${product.originalPrice}</span>
-                    )}
-                </div>
-                <button 
-                    className="aesop-button-primary aesop-add-to-cart"
-                    onClick={handleAddToCart}
-                    disabled={isLoading}
-                >
-                    {isLoading ? 'Adding...' : 'Add to Cart'}
-                </button>
-            </div>
+  return (
+    <div className="aesop-product-card">
+      <div className="aesop-product-image-container">
+        <img 
+          src={product.image} 
+          alt={product.name}
+          className="aesop-product-image"
+        />
+        {product.isNew && (
+          <span className="aesop-product-badge aesop-product-badge-new">New</span>
+        )}
+        {product.originalPrice && (
+          <span className="aesop-product-badge aesop-product-badge-sale">Sale</span>
+        )}
+        <div className="aesop-product-overlay">
+          <button 
+            onClick={handleAddToCart}
+            disabled={isLoading}
+            className="aesop-button-primary aesop-product-add-to-cart"
+          >
+            {isLoading ? 'Adding...' : 'Add to Cart'}
+          </button>
+          <div className="aesop-product-actions">
+            <button 
+              onClick={handleToggleWishlist}
+              className={`aesop-icon-button ${isWishlisted ? 'aesop-icon-button-active' : ''}`}
+              title="Add to Wishlist"
+            >
+              <svg className="w-5 h-5" fill={isWishlisted ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+              </svg>
+            </button>
+            <Link href={`/products/${product.id}`} className="aesop-icon-button" title="View Details">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+              </svg>
+            </Link>
+          </div>
         </div>
-    );
+      </div>
+      <div className="aesop-product-info">
+        <h3 className="aesop-product-name">{product.name}</h3>
+        <p className="aesop-product-description">{product.description}</p>
+        <div className="aesop-product-price">
+          <span className="aesop-product-current-price">${product.price}</span>
+          {product.originalPrice && (
+            <span className="aesop-product-original-price">${product.originalPrice}</span>
+          )}
+        </div>
+      </div>
+    </div>
+  );
 }
 
 // Main Shop Component
 export default function Shop() {
-    const router = useRouter();
-    const searchParams = useSearchParams();
-    const [products, setProducts] = useState([]);
-    const [filteredProducts, setFilteredProducts] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
-    const [filters, setFilters] = useState({
-        category: 'All',
-        priceMin: 0,
-        priceMax: Infinity,
-        sortBy: 'name',
-        search: ''
-    });
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const searchQuery = searchParams.get('search') || '';
+  const [filters, setFilters] = useState({ 
+    category: 'All', 
+    price: 'all', 
+    materials: [], 
+    search: searchQuery 
+  });
+  const [sortBy, setSortBy] = useState('featured');
+  const [viewMode, setViewMode] = useState('grid');
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [pagination, setPagination] = useState({ page: 1, total: 0, limit: 20 });
 
-    // Sample products data
-    const sampleProducts = [
-        {
-            id: 1,
-            name: "Luxury Cotton Sheets",
-            description: "Premium 100% Egyptian cotton sheets with 400 thread count",
-            price: 299,
-            originalPrice: 399,
-            category: "Sheets",
-            image: "/api/placeholder/300/300",
-            isNew: true
-        },
-        {
-            id: 2,
-            name: "Silk Pillowcase Set",
-            description: "Mulberry silk pillowcases for hair and skin care",
-            price: 149,
-            category: "Pillows",
-            image: "/api/placeholder/300/300"
-        },
-        {
-            id: 3,
-            name: "Memory Foam Mattress",
-            description: "Gel-infused memory foam for optimal comfort",
-            price: 899,
-            category: "Mattresses",
-            image: "/api/placeholder/300/300"
-        },
-        {
-            id: 4,
-            name: "Bamboo Duvet Cover",
-            description: "Eco-friendly bamboo fiber duvet cover set",
-            price: 199,
-            category: "Blankets",
-            image: "/api/placeholder/300/300",
-            isNew: true
-        },
-        {
-            id: 5,
-            name: "Linen Throw Blanket",
-            description: "Soft and breathable linen throw for all seasons",
-            price: 89,
-            category: "Blankets",
-            image: "/api/placeholder/300/300"
-        },
-        {
-            id: 6,
-            name: "Down Alternative Pillow",
-            description: "Hypoallergenic down alternative pillow",
-            price: 79,
-            category: "Pillows",
-            image: "/api/placeholder/300/300"
+  // Sample products data (fallback)
+  const sampleProducts = [
+    {
+      id: 1,
+      name: "Luxury Cotton Sheets",
+      description: "Premium 100% Egyptian cotton sheets with 400 thread count",
+      price: 299,
+      originalPrice: 399,
+      category: "Sheets",
+      image: "/api/placeholder/300/300",
+      isNew: true
+    },
+    {
+      id: 2,
+      name: "Silk Pillowcase Set",
+      description: "Mulberry silk pillowcases for hair and skin care",
+      price: 149,
+      category: "Pillows",
+      image: "/api/placeholder/300/300"
+    },
+    {
+      id: 3,
+      name: "Memory Foam Mattress",
+      description: "Gel-infused memory foam for optimal comfort",
+      price: 899,
+      category: "Mattresses",
+      image: "/api/placeholder/300/300"
+    },
+    {
+      id: 4,
+      name: "Bamboo Duvet Cover",
+      description: "Eco-friendly bamboo fiber duvet cover set",
+      price: 199,
+      category: "Blankets",
+      image: "/api/placeholder/300/300",
+      isNew: true
+    },
+    {
+      id: 5,
+      name: "Linen Throw Blanket",
+      description: "Soft and breathable linen throw for all seasons",
+      price: 89,
+      category: "Blankets",
+      image: "/api/placeholder/300/300"
+    },
+    {
+      id: 6,
+      name: "Down Alternative Pillow",
+      description: "Hypoallergenic down alternative pillow",
+      price: 79,
+      category: "Pillows",
+      image: "/api/placeholder/300/300"
+    }
+  ];
+
+  // Fetch products from API
+  const fetchProducts = async () => {
+    try {
+      setLoading(true);
+      const params = new URLSearchParams();
+      
+      if (filters.category !== 'All') {
+        params.append('category', filters.category);
+      }
+      
+      if (filters.price !== 'all') {
+        let min_price, max_price;
+        switch (filters.price) {
+          case '0-100': min_price = 0; max_price = 100; break;
+          case '100-200': min_price = 100; max_price = 200; break;
+          case '200-300': min_price = 200; max_price = 300; break;
+          case '300+': min_price = 300; break;
         }
-    ];
-
-    // Initialize products and handle search params
-    useEffect(() => {
+        if (min_price !== undefined) params.append('min_price', min_price);
+        if (max_price !== undefined) params.append('max_price', max_price);
+      }
+      
+      if (filters.materials.length > 0) {
+        params.append('materials', filters.materials.join(','));
+      }
+      
+      if (filters.search && filters.search.trim()) {
+        params.append('search', filters.search.trim());
+      }
+      
+      const res = await fetch(`/api/products?${params}`);
+      const data = await res.json();
+      
+      if (data.status === 'SUCCESS') {
+        setProducts(data.keyValueTable.products || []);
+        setPagination(prev => ({ ...prev, total: data.keyValueTable.total || 0 }));
+      } else {
+        // Fallback to sample data if API fails
         setProducts(sampleProducts);
-        setLoading(false);
-
-        // Handle search query from URL
-        const searchQuery = searchParams.get('search');
-        const categoryQuery = searchParams.get('category');
-        
-        if (searchQuery || categoryQuery) {
-            setFilters(prev => ({
-                ...prev,
-                search: searchQuery || '',
-                category: categoryQuery || 'All'
-            }));
-        }
-    }, [searchParams]);
-
-    // Filter and sort products
-    useEffect(() => {
-        let filtered = [...products];
-
-        // Apply search filter
-        if (filters.search) {
-            filtered = filtered.filter(product =>
-                product.name.toLowerCase().includes(filters.search.toLowerCase()) ||
-                product.description.toLowerCase().includes(filters.search.toLowerCase()) ||
-                product.category.toLowerCase().includes(filters.search.toLowerCase())
-            );
-        }
-
-        // Apply category filter
-        if (filters.category !== 'All') {
-            filtered = filtered.filter(product => product.category === filters.category);
-        }
-
-        // Apply price filter
-        filtered = filtered.filter(product => 
-            product.price >= filters.priceMin && product.price <= filters.priceMax
-        );
-
-        // Apply sorting
-        switch (filters.sortBy) {
-            case 'price-low':
-                filtered.sort((a, b) => a.price - b.price);
-                break;
-            case 'price-high':
-                filtered.sort((a, b) => b.price - a.price);
-                break;
-            case 'newest':
-                filtered.sort((a, b) => (b.isNew ? 1 : 0) - (a.isNew ? 1 : 0));
-                break;
-            case 'name':
-            default:
-                filtered.sort((a, b) => a.name.localeCompare(b.name));
-                break;
-        }
-
-        setFilteredProducts(filtered);
-    }, [products, filters]);
-
-    const handleFilterChange = (newFilters) => {
-        setFilters(newFilters);
-    };
-
-    const handleAddToCart = async (product) => {
-        try {
-            const response = await fetch('/api/cart', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    productId: product.id,
-                    quantity: 1
-                })
-            });
-
-            if (!response.ok) {
-                throw new Error('Failed to add to cart');
-            }
-
-            // Show success message or update cart count
-            console.log('Product added to cart successfully');
-        } catch (error) {
-            console.error('Error adding to cart:', error);
-            throw error;
-        }
-    };
-
-    const handleToggleWishlist = (product) => {
-        console.log('Toggle wishlist for:', product.name);
-    };
-
-    const clearSearch = () => {
-        setFilters(prev => ({ ...prev, search: '' }));
-        router.push('/shop');
-    };
-
-    if (loading) {
-        return (
-            <div className="aesop-page">
-                <Header />
-                <div className="aesop-loading">
-                    <div className="aesop-container">
-                        <p>Loading products...</p>
-                    </div>
-                </div>
-            </div>
-        );
+      }
+    } catch (error) {
+      console.error('Error fetching products:', error);
+      // Fallback to sample data
+      setProducts(sampleProducts);
+    } finally {
+      setLoading(false);
     }
+  };
 
-    if (error) {
-        return (
-            <div className="aesop-page">
-                <Header />
-                <div className="aesop-error">
-                    <div className="aesop-container">
-                        <p>Error loading products: {error}</p>
-                    </div>
-                </div>
-            </div>
-        );
+  useEffect(() => {
+    fetchProducts();
+  }, [filters]);
+
+  // Update search filter when URL search param changes
+  useEffect(() => {
+    const searchQuery = searchParams.get('search');
+    const categoryQuery = searchParams.get('category');
+    
+    if (searchQuery || categoryQuery) {
+      setFilters(prev => ({
+        ...prev,
+        search: searchQuery || '',
+        category: categoryQuery || 'All'
+      }));
     }
+  }, [searchParams]);
 
-    return (
-        <div className="aesop-page">
-            <Header />
-            <Breadcrumb />
-            
-            <main className="aesop-shop-main">
-                <div className="aesop-container">
-                    {/* Search Results Header */}
-                    {filters.search && (
-                        <div className="aesop-search-results">
-                            <h2 className="aesop-search-title">
-                                Search results for "{filters.search}" ({filteredProducts.length} products)
-                            </h2>
-                            <button 
-                                className="aesop-button-secondary"
-                                onClick={clearSearch}
-                            >
-                                Clear Search
-                            </button>
-                        </div>
-                    )}
+  const handleFilterChange = (key, value) => {
+    setFilters(prev => ({ ...prev, [key]: value }));
+  };
 
-                    <div className="aesop-shop-layout">
-                        {/* Filter Sidebar */}
-                        <FilterSidebar 
-                            filters={filters} 
-                            onFilterChange={handleFilterChange} 
-                        />
+  const handleAddToCart = async (product) => {
+    try {
+      const response = await fetch('/api/cart', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          productId: product.id,
+          quantity: 1
+        })
+      });
+      
+      if (response.ok) {
+        // Show success message or update cart count
+        console.log('Product added to cart successfully');
+      }
+    } catch (error) {
+      console.error('Error adding to cart:', error);
+    }
+  };
 
-                        {/* Products Grid */}
-                        <div className="aesop-products-section">
-                            <div className="aesop-products-header">
-                                <h1 className="aesop-page-title">
-                                    {filters.category === 'All' ? 'All Products' : filters.category}
-                                </h1>
-                                <p className="aesop-products-count">
-                                    Showing {filteredProducts.length} of {products.length} products
-                                </p>
-                            </div>
+  const handleToggleWishlist = (product, isWishlisted) => {
+    // Implement wishlist functionality
+    console.log(`${isWishlisted ? 'Added to' : 'Removed from'} wishlist:`, product.name);
+  };
 
-                            {filteredProducts.length === 0 ? (
-                                <div className="aesop-no-products">
-                                    <p>No products found matching your criteria.</p>
-                                    <button 
-                                        className="aesop-button-primary"
-                                        onClick={() => setFilters({
-                                            category: 'All',
-                                            priceMin: 0,
-                                            priceMax: Infinity,
-                                            sortBy: 'name',
-                                            search: ''
-                                        })}
-                                    >
-                                        Reset Filters
-                                    </button>
-                                </div>
-                            ) : (
-                                <div className="aesop-product-grid">
-                                    {filteredProducts.map(product => (
-                                        <ProductCard
-                                            key={product.id}
-                                            product={product}
-                                            onAddToCart={handleAddToCart}
-                                            onToggleWishlist={handleToggleWishlist}
-                                        />
-                                    ))}
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                </div>
-            </main>
+  // Filter products based on current filters
+  const filteredProducts = products.filter(product => {
+    if (filters.category !== 'All' && product.category !== filters.category) {
+      return false;
+    }
+    
+    if (filters.search && !product.name.toLowerCase().includes(filters.search.toLowerCase())) {
+      return false;
+    }
+    
+    if (filters.price !== 'all') {
+      let min_price, max_price;
+      switch (filters.price) {
+        case '0-100': min_price = 0; max_price = 100; break;
+        case '100-200': min_price = 100; max_price = 200; break;
+        case '200-300': min_price = 200; max_price = 300; break;
+        case '300+': min_price = 300; max_price = Infinity; break;
+      }
+      if (product.price < min_price || product.price > max_price) {
+        return false;
+      }
+    }
+    
+    return true;
+  });
+
+  // Sort products
+  const sortedProducts = [...filteredProducts].sort((a, b) => {
+    switch (sortBy) {
+      case 'price-low':
+        return a.price - b.price;
+      case 'price-high':
+        return b.price - a.price;
+      case 'name':
+        return a.name.localeCompare(b.name);
+      case 'newest':
+        return b.isNew ? 1 : -1;
+      default:
+        return 0;
+    }
+  });
+
+  return (
+    <div className="aesop-page">
+      <Header />
+      <Breadcrumb />
+      
+      <div className="aesop-shop-hero">
+        <div className="aesop-container">
+          <h1 className="aesop-shop-title">Shop</h1>
+          <p className="aesop-shop-subtitle">Discover our premium collection of home textiles</p>
         </div>
-    );
+      </div>
+
+      <div className="aesop-container">
+        <div className="aesop-shop-content">
+          <aside className="aesop-shop-sidebar">
+            <FilterSidebar filters={filters} onFilterChange={handleFilterChange} />
+          </aside>
+          
+          <main className="aesop-shop-main">
+            <div className="aesop-shop-toolbar">
+              <div className="aesop-shop-results">
+                <span className="aesop-results-count">
+                  Showing {sortedProducts.length} of {products.length} products
+                  {filters.search && (
+                    <span className="aesop-search-query"> for "{filters.search}"</span>
+                  )}
+                </span>
+              </div>
+              
+              <div className="aesop-shop-controls">
+                <div className="aesop-sort-control">
+                  <label htmlFor="sort-select" className="aesop-sort-label">Sort by:</label>
+                  <select 
+                    id="sort-select"
+                    value={sortBy} 
+                    onChange={(e) => setSortBy(e.target.value)}
+                    className="aesop-sort-select"
+                  >
+                    <option value="featured">Featured</option>
+                    <option value="newest">Newest</option>
+                    <option value="price-low">Price: Low to High</option>
+                    <option value="price-high">Price: High to Low</option>
+                    <option value="name">Name: A to Z</option>
+                  </select>
+                </div>
+                
+                <div className="aesop-view-controls">
+                  <button 
+                    onClick={() => setViewMode('grid')}
+                    className={`aesop-view-button ${viewMode === 'grid' ? 'aesop-view-button-active' : ''}`}
+                    title="Grid View"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+                    </svg>
+                  </button>
+                  <button 
+                    onClick={() => setViewMode('list')}
+                    className={`aesop-view-button ${viewMode === 'list' ? 'aesop-view-button-active' : ''}`}
+                    title="List View"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+            
+            {loading ? (
+              <div className="aesop-loading">
+                <div className="aesop-loading-spinner"></div>
+                <p>Loading products...</p>
+              </div>
+            ) : (
+              <div className={`aesop-products-grid ${viewMode === 'list' ? 'aesop-products-list' : ''}`}>
+                {sortedProducts.length > 0 ? (
+                  sortedProducts.map(product => (
+                    <ProductCard 
+                      key={product.id} 
+                      product={product} 
+                      onAddToCart={handleAddToCart}
+                      onToggleWishlist={handleToggleWishlist}
+                    />
+                  ))
+                ) : (
+                  <div className="aesop-no-products">
+                    <p>No products found matching your criteria.</p>
+                    <button 
+                      onClick={() => setFilters({ category: 'All', price: 'all', materials: [], search: '' })}
+                      className="aesop-button-secondary"
+                    >
+                      Clear Filters
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+            
+            {/* Pagination */}
+            {pagination.total > pagination.limit && (
+              <div className="aesop-pagination">
+                <button 
+                  onClick={() => setPagination(prev => ({ ...prev, page: Math.max(1, prev.page - 1) }))}
+                  disabled={pagination.page === 1}
+                  className="aesop-pagination-button"
+                >
+                  Previous
+                </button>
+                <span className="aesop-pagination-info">
+                  Page {pagination.page} of {Math.ceil(pagination.total / pagination.limit)}
+                </span>
+                <button 
+                  onClick={() => setPagination(prev => ({ ...prev, page: prev.page + 1 }))}
+                  disabled={pagination.page >= Math.ceil(pagination.total / pagination.limit)}
+                  className="aesop-pagination-button"
+                >
+                  Next
+                </button>
+              </div>
+            )}
+          </main>
+        </div>
+      </div>
+    </div>
+  );
 }
