@@ -4,51 +4,56 @@ import Link from 'next/link';
 
 export default function Footer() {
   return (
-    <footer className="bg-white border-t">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-          <div>
-            <div className="flex items-center space-x-2 mb-4">
-              <div className="w-8 h-8 bg-amber-600 rounded"></div>
-              <span className="text-xl font-bold text-gray-900">Furniro</span>
-            </div>
-            <p className="text-gray-600 mb-4">
-              400 University Drive Suite 200 Coral Gables,<br />
-              FL 33134 USA
-            </p>
+    <footer className="aesop-bg-white aesop-border-t">
+      <div className="aesop-container aesop-py-12">
+        {/* First Row - Logo and Description */}
+        <div className="aesop-text-center aesop-mb-8">
+          <div className="aesop-flex aesop-items-center aesop-justify-center aesop-space-x-2 aesop-mb-4">
+            <div className="aesop-w-8 aesop-h-8 aesop-bg-primary aesop-rounded"></div>
+            <span className="aesop-heading-2">Furniro</span>
           </div>
+          <p className="aesop-text-muted">
+            Premium bed textures crafted for the ultimate sleep experience.
+          </p>
+        </div>
+
+        {/* Second Row - 3 Columns */}
+        <div className="aesop-grid aesop-grid-cols-1 md:aesop-grid-cols-3 aesop-gap-8 aesop-text-center aesop-mb-8">
+          {/* Shop Column */}
           <div>
-            <h4 className="font-semibold text-gray-900 mb-4">Links</h4>
-            <ul className="space-y-2">
-              <li><Link href="/" className="text-gray-600 hover:text-amber-600">Home</Link></li>
-              <li><Link href="/shop" className="text-gray-600 hover:text-amber-600">Shop</Link></li>
-              <li><Link href="/about" className="text-gray-600 hover:text-amber-600">About</Link></li>
-              <li><Link href="/contact" className="text-gray-600 hover:text-amber-600">Contact</Link></li>
+            <h4 className="aesop-heading-4 aesop-mb-4">Shop</h4>
+            <ul className="aesop-space-y-2">
+              <li><Link href="/shop" className="aesop-text-muted aesop-hover-text-primary">All Products</Link></li>
+              <li><Link href="/shop?category=sheets" className="aesop-text-muted aesop-hover-text-primary">Sheets</Link></li>
+              <li><Link href="/shop?category=pillows" className="aesop-text-muted aesop-hover-text-primary">Pillows</Link></li>
+              <li><Link href="/shop?category=blankets" className="aesop-text-muted aesop-hover-text-primary">Blankets</Link></li>
             </ul>
           </div>
+
+          {/* Support Column */}
           <div>
-            <h4 className="font-semibold text-gray-900 mb-4">Help</h4>
-            <ul className="space-y-2">
-              <li><Link href="/payment-options" className="text-gray-600 hover:text-amber-600">Payment Options</Link></li>
-              <li><Link href="/returns" className="text-gray-600 hover:text-amber-600">Returns</Link></li>
-              <li><Link href="/privacy-policies" className="text-gray-600 hover:text-amber-600">Privacy Policies</Link></li>
+            <h4 className="aesop-heading-4 aesop-mb-4">Support</h4>
+            <ul className="aesop-space-y-2">
+              <li><Link href="/contact" className="aesop-text-muted aesop-hover-text-primary">Contact</Link></li>
+              <li><Link href="/about" className="aesop-text-muted aesop-hover-text-primary">About</Link></li>
+              <li><Link href="/shipping" className="aesop-text-muted aesop-hover-text-primary">Shipping</Link></li>
+              <li><Link href="/returns" className="aesop-text-muted aesop-hover-text-primary">Returns</Link></li>
             </ul>
           </div>
+
+          {/* Connect Column */}
           <div>
-            <h4 className="font-semibold text-gray-900 mb-4">Newsletter</h4>
-            <div className="flex">
-              <input 
-                type="email" 
-                placeholder="Enter Your Email Address" 
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-l-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
-              />
-              <button className="bg-amber-600 text-white px-4 py-2 rounded-r-lg hover:bg-amber-700 transition-colors">
-                Subscribe
-              </button>
-            </div>
+            <h4 className="aesop-heading-4 aesop-mb-4">Connect</h4>
+            <ul className="aesop-space-y-2">
+              <li><a href="#newsletter" className="aesop-text-muted aesop-hover-text-primary">Newsletter</a></li>
+              <li><a href="#" className="aesop-text-muted aesop-hover-text-primary">Instagram</a></li>
+              <li><a href="#" className="aesop-text-muted aesop-hover-text-primary">Pinterest</a></li>
+            </ul>
           </div>
         </div>
-        <div className="border-t mt-8 pt-8 text-center text-gray-600">
+
+        {/* Third Row - Copyright */}
+        <div className="aesop-border-t aesop-pt-8 aesop-text-center aesop-text-muted">
           <p>&copy; 2024 Furniro. All rights reserved.</p>
         </div>
       </div>

@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useBackendHealth } from '../lib';
 import Header from '../components/Header';
+import Footer from '../components/Footer';
 
 // Hero Section Component
 function HeroSection() {
@@ -101,52 +102,7 @@ function FeaturesSection() {
     );
 }
 
-// Footer Component
-function Footer() {
-    return (
-        <footer className="aesop-footer">
-            <div className="aesop-container">
-                <div className="aesop-footer-content">
-                    <div className="aesop-footer-section">
-                        <h3 className="aesop-footer-title">Furniro</h3>
-                        <p className="aesop-footer-text">
-                            Premium bed textures and linens for the discerning home.
-                        </p>
-                    </div>
-                    <div className="aesop-footer-section">
-                        <h4 className="aesop-footer-subtitle">Shop</h4>
-                        <ul className="aesop-footer-links">
-                            <li><Link href="/shop">All Products</Link></li>
-                            <li><Link href="/shop?category=sheets">Sheets</Link></li>
-                            <li><Link href="/shop?category=pillows">Pillows</Link></li>
-                            <li><Link href="/shop?category=blankets">Blankets</Link></li>
-                        </ul>
-                    </div>
-                    <div className="aesop-footer-section">
-                        <h4 className="aesop-footer-subtitle">Support</h4>
-                        <ul className="aesop-footer-links">
-                            <li><Link href="/contact">Contact</Link></li>
-                            <li><Link href="/about">About</Link></li>
-                            <li><Link href="/shipping">Shipping</Link></li>
-                            <li><Link href="/returns">Returns</Link></li>
-                        </ul>
-                    </div>
-                    <div className="aesop-footer-section">
-                        <h4 className="aesop-footer-subtitle">Connect</h4>
-                        <ul className="aesop-footer-links">
-                            <li><a href="#">Newsletter</a></li>
-                            <li><a href="#">Instagram</a></li>
-                            <li><a href="#">Pinterest</a></li>
-                        </ul>
-                    </div>
-                </div>
-                <div className="aesop-footer-bottom">
-                    <p>&copy; 2024 Furniro. All rights reserved.</p>
-                </div>
-            </div>
-        </footer>
-    );
-}
+
 
 export default function Home() {
     const { isHealthy, isLoading } = useBackendHealth();
