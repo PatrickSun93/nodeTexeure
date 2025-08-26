@@ -8,12 +8,10 @@ import Header from '../../components/Header';
 // Breadcrumb Component
 function Breadcrumb() {
   return (
-    <div className="aesop-breadcrumb">
-      <div className="aesop-container">
-        <Link href="/" className="aesop-breadcrumb-link">Home</Link>
-        <span className="aesop-breadcrumb-separator">&gt;</span>
-        <span className="aesop-breadcrumb-current">Shop</span>
-      </div>
+    <div className="aesop-container">
+      <Link href="/" className="aesop-breadcrumb-link">Home</Link>
+      <span className="aesop-breadcrumb-separator">&gt;</span>
+      <span className="aesop-breadcrumb-current">Shop</span>
     </div>
   );
 }
@@ -34,6 +32,18 @@ function FilterSidebar({ filters, onFilterChange }) {
 
   const materials = ['Cotton', 'Silk', 'Bamboo', 'Linen', 'Memory Foam'];
 
+  const handleMaterialChange = (material) => {
+    const newMaterials = filters.materials.includes(material)
+      ? filters.materials.filter(m => m !== material)
+      : [...filters.materials, material];
+    onFilterChange('materials', newMaterials);
+  };
+
+  const removeMaterial = (material) => {
+    const newMaterials = filters.materials.filter(m => m !== material);
+    onFilterChange('materials', newMaterials);
+  };
+
   return (
     <div className="aesop-filter-sidebar">
       <h3 className="aesop-filter-title">Filters</h3>
@@ -41,65 +51,101 @@ function FilterSidebar({ filters, onFilterChange }) {
       {/* Category Filter */}
       <div className="aesop-filter-section">
         <h4 className="aesop-filter-section-title">Category</h4>
-        <div className="aesop-filter-options">
+        <select 
+          value={filters.category} 
+          onChange={(e) => onFilterChange('category', e.target.value)}
+          className="aesop-filter-dropdown"
+        >
           {categories.map(category => (
-            <label key={category} className="aesop-filter-option">
-              <input
-                type="radio"
-                name="category"
-                value={category}
-                checked={filters.category === category}
-                onChange={(e) => onFilterChange('category', e.target.value)}
-                className="aesop-filter-radio"
-              />
-              <span className="aesop-filter-label">{category}</span>
-            </label>
+            <option key={category} value={category}>{category}</option>
           ))}
-        </div>
+        </select>
+        {filters.category !== 'All' && (
+          <div className="aesop-selected-items">
+            <span className="aesop-selected-label">Selected:</span>
+            <span className="aesop-selected-item">
+              {filters.category}
+              <button 
+                onClick={() => onFilterChange('category', 'All')}
+                className="aesop-remove-item"
+              >
+                ×
+              </button>
+            </span>
+          </div>
+        )}
       </div>
 
       {/* Price Filter */}
       <div className="aesop-filter-section">
         <h4 className="aesop-filter-section-title">Price Range</h4>
-        <div className="aesop-filter-options">
+        <select 
+          value={filters.price} 
+          onChange={(e) => onFilterChange('price', e.target.value)}
+          className="aesop-filter-dropdown"
+        >
           {priceRanges.map(range => (
-            <label key={range.value} className="aesop-filter-option">
-              <input
-                type="radio"
-                name="price"
-                value={range.value}
-                checked={filters.price === range.value}
-                onChange={(e) => onFilterChange('price', e.target.value)}
-                className="aesop-filter-radio"
-              />
-              <span className="aesop-filter-label">{range.label}</span>
-            </label>
+            <option key={range.value} value={range.value}>{range.label}</option>
           ))}
-        </div>
+        </select>
+        {filters.price !== 'all' && (
+          <div className="aesop-selected-items">
+            <span className="aesop-selected-label">Selected:</span>
+            <span className="aesop-selected-item">
+              {priceRanges.find(r => r.value === filters.price)?.label}
+              <button 
+                onClick={() => onFilterChange('price', 'all')}
+                className="aesop-remove-item"
+              >
+                ×
+              </button>
+            </span>
+          </div>
+        )}
       </div>
 
       {/* Materials Filter */}
       <div className="aesop-filter-section">
         <h4 className="aesop-filter-section-title">Materials</h4>
-        <div className="aesop-filter-options">
+        <select 
+          onChange={(e) => {
+            if (e.target.value && !filters.materials.includes(e.target.value)) {
+              handleMaterialChange(e.target.value);
+            }
+            e.target.value = ''; // Reset dropdown
+          }}
+          className="aesop-filter-dropdown"
+          defaultValue=""
+        >
+          <option value="" disabled>Select materials...</option>
           {materials.map(material => (
-            <label key={material} className="aesop-filter-option">
-              <input
-                type="checkbox"
-                value={material}
-                checked={filters.materials.includes(material)}
-                onChange={(e) => {
-                  const newMaterials = e.target.checked
-                    ? [...filters.materials, material]
-                    : filters.materials.filter(m => m !== material);
-                  onFilterChange('materials', newMaterials);
-                }}
-                className="aesop-filter-checkbox"
-              />
-              <span className="aesop-filter-label">{material}</span>
-            </label>
+            <option 
+              key={material} 
+              value={material}
+              disabled={filters.materials.includes(material)}
+            >
+              {material}
+            </option>
           ))}
-        </div>
+        </select>
+        {filters.materials.length > 0 && (
+          <div className="aesop-selected-items">
+            <span className="aesop-selected-label">Selected:</span>
+            <div className="aesop-selected-list">
+              {filters.materials.map(material => (
+                <span key={material} className="aesop-selected-item">
+                  {material}
+                  <button 
+                    onClick={() => removeMaterial(material)}
+                    className="aesop-remove-item"
+                  >
+                    ×
+                  </button>
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

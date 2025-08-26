@@ -98,6 +98,474 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* ===== SHOP PAGE LAYOUT ===== */
+.aesop-shop-content {
+  display: flex;
+  gap: var(--space-8);
+  align-items: flex-start;
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: var(--space-6);
+  justify-content: center;
+}
+
+.aesop-shop-sidebar {
+  flex: 0 0 280px;
+  position: sticky;
+  top: var(--space-6);
+}
+
+.aesop-shop-main {
+  flex: 1;
+  min-width: 0;
+}
+
+/* ===== FILTER SIDEBAR STYLES ===== */
+.aesop-filter-sidebar {
+  background: var(--color-white);
+  border: 1px solid var(--color-gray-lighter);
+  border-radius: var(--radius-base);
+  padding: var(--space-6);
+  box-shadow: var(--shadow-sm);
+}
+
+.aesop-filter-title {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-black);
+  margin-bottom: var(--space-6);
+  padding-bottom: var(--space-3);
+  border-bottom: 1px solid var(--color-gray-lighter);
+}
+
+.aesop-filter-section {
+  margin-bottom: var(--space-6);
+}
+
+.aesop-filter-section:last-child {
+  margin-bottom: 0;
+}
+
+.aesop-filter-section-title {
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-gray-dark);
+  margin-bottom: var(--space-4);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.aesop-filter-options {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.aesop-filter-option {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  cursor: pointer;
+  padding: var(--space-2);
+  border-radius: var(--radius-sm);
+  transition: background-color var(--transition-fast);
+}
+
+.aesop-filter-option:hover {
+  background-color: var(--color-tertiary-bg);
+}
+
+.aesop-filter-radio,
+.aesop-filter-checkbox {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  cursor: pointer;
+}
+
+/* ===== DROPDOWN STYLES ===== */
+.aesop-filter-dropdown {
+  width: 100%;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--color-gray-light);
+  border-radius: var(--radius-sm);
+  background: var(--color-white);
+  font-size: var(--font-size-sm);
+  color: var(--color-black);
+  cursor: pointer;
+  transition: border-color var(--transition-fast);
+}
+
+.aesop-filter-dropdown:hover {
+  border-color: var(--color-gray-medium);
+}
+
+.aesop-filter-dropdown:focus {
+  outline: none;
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 2px rgba(212, 175, 55, 0.1);
+}
+
+.aesop-filter-dropdown option:disabled {
+  color: var(--color-gray-light);
+  background: var(--color-gray-lighter);
+}
+
+/* ===== SELECTED ITEMS STYLES ===== */
+.aesop-selected-items {
+  margin-top: var(--space-3);
+  padding: var(--space-3);
+  background: var(--color-tertiary-bg);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-gray-lighter);
+}
+
+.aesop-selected-label {
+  font-size: var(--font-size-xs);
+  color: var(--color-gray-medium);
+  font-weight: var(--font-weight-medium);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  display: block;
+  margin-bottom: var(--space-2);
+}
+
+.aesop-selected-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.aesop-selected-item {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-3);
+  background: var(--color-white);
+  border: 1px solid var(--color-gray-light);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-sm);
+  color: var(--color-black);
+}
+
+.aesop-remove-item {
+  background: none;
+  border: none;
+  color: var(--color-gray-medium);
+  font-size: var(--font-size-lg);
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all var(--transition-fast);
+}
+
+.aesop-remove-item:hover {
+  background: var(--color-gray-light);
+  color: var(--color-white);
+}
+
+.aesop-filter-label {
+  font-size: var(--font-size-sm);
+  color: var(--color-gray-dark);
+  cursor: pointer;
+  user-select: none;
+}
+
+.aesop-filter-option:hover .aesop-filter-label {
+  color: var(--color-black);
+}
+
+/* ===== SHOP HERO SECTION ===== */
+.aesop-shop-hero {
+  background: var(--color-secondary-bg);
+  padding: var(--space-12) 0;
+  text-align: center;
+  border-bottom: 1px solid var(--color-gray-lighter);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.aesop-shop-title {
+  font-size: var(--font-size-4xl);
+  font-weight: var(--font-weight-light);
+  color: var(--color-black);
+  margin-bottom: var(--space-4);
+  letter-spacing: -0.5px;
+}
+
+.aesop-shop-subtitle {
+  font-size: var(--font-size-lg);
+  color: var(--color-gray-medium);
+  font-weight: var(--font-weight-normal);
+}
+
+/* ===== SHOP TOOLBAR ===== */
+.aesop-shop-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-8);
+  padding: var(--space-4) 0;
+  border-bottom: 1px solid var(--color-gray-lighter);
+  width: 100%;
+  max-width: 1000px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.aesop-shop-results {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.aesop-results-count {
+  font-size: var(--font-size-sm);
+  color: var(--color-gray-medium);
+}
+
+.aesop-search-query {
+  font-weight: var(--font-weight-medium);
+  color: var(--color-black);
+}
+
+.aesop-shop-controls {
+  display: flex;
+  align-items: center;
+  gap: var(--space-6);
+}
+
+.aesop-sort-control {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.aesop-sort-label {
+  font-size: var(--font-size-sm);
+  color: var(--color-gray-medium);
+  font-weight: var(--font-weight-medium);
+}
+
+.aesop-sort-select {
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-gray-lighter);
+  border-radius: var(--radius-sm);
+  background: var(--color-white);
+  font-size: var(--font-size-sm);
+  color: var(--color-gray-dark);
+  cursor: pointer;
+  transition: border-color var(--transition-fast);
+}
+
+.aesop-sort-select:focus {
+  outline: none;
+  border-color: var(--color-accent);
+}
+
+.aesop-view-controls {
+  display: flex;
+  gap: var(--space-1);
+}
+
+.aesop-view-button {
+  padding: var(--space-2);
+  border: 1px solid var(--color-gray-lighter);
+  background: var(--color-white);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.aesop-view-button:first-child {
+  border-radius: var(--radius-sm) 0 0 var(--radius-sm);
+}
+
+.aesop-view-button:last-child {
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  border-left: none;
+}
+
+.aesop-view-button:hover {
+  background: var(--color-tertiary-bg);
+}
+
+.aesop-view-button-active {
+  background: var(--color-black);
+  color: var(--color-white);
+  border-color: var(--color-black);
+}
+
+.aesop-view-button svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* ===== PRODUCTS GRID ===== */
+.aesop-products-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: var(--space-8);
+  margin-bottom: var(--space-12);
+}
+
+.aesop-products-list {
+  grid-template-columns: 1fr;
+  gap: var(--space-4);
+}
+
+/* ===== LOADING & EMPTY STATES ===== */
+.aesop-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-16);
+  text-align: center;
+}
+
+.aesop-loading-spinner {
+  width: 32px;
+  height: 32px;
+  border: 2px solid var(--color-gray-lighter);
+  border-top: 2px solid var(--color-black);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: var(--space-4);
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.aesop-no-products {
+  text-align: center;
+  padding: var(--space-16);
+  color: var(--color-gray-medium);
+}
+
+.aesop-no-products p {
+  font-size: var(--font-size-lg);
+  margin-bottom: var(--space-6);
+}
+
+/* ===== PAGINATION ===== */
+.aesop-pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: var(--space-4);
+  margin-top: var(--space-8);
+}
+
+.aesop-pagination-button {
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--color-gray-lighter);
+  background: var(--color-white);
+  color: var(--color-gray-dark);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  font-size: var(--font-size-sm);
+}
+
+.aesop-pagination-button:hover:not(:disabled) {
+  background: var(--color-black);
+  color: var(--color-white);
+  border-color: var(--color-black);
+}
+
+.aesop-pagination-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.aesop-pagination-info {
+  font-size: var(--font-size-sm);
+  color: var(--color-gray-medium);
+  padding: 0 var(--space-4);
+}
+
+/* ===== BREADCRUMB ===== */
+
+
+.aesop-breadcrumb-link {
+  color: var(--color-gray-medium);
+  text-decoration: none;
+  font-size: var(--font-size-sm);
+  transition: color var(--transition-fast);
+}
+
+.aesop-breadcrumb-link:hover {
+  color: var(--color-black);
+}
+
+.aesop-breadcrumb-separator {
+  margin: 0 var(--space-2);
+  color: var(--color-gray-light);
+  font-size: var(--font-size-sm);
+}
+
+.aesop-breadcrumb-current {
+  color: var(--color-black);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+}
+
+/* ===== CONTAINER ===== */
+.aesop-container {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 0 var(--space-6);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* ===== RESPONSIVE DESIGN ===== */
+@media (max-width: 768px) {
+  .aesop-shop-content {
+    flex-direction: column;
+    gap: var(--space-6);
+  }
+  
+  .aesop-shop-sidebar {
+    flex: none;
+    position: static;
+  }
+  
+  .aesop-shop-toolbar {
+    flex-direction: column;
+    gap: var(--space-4);
+    align-items: flex-start;
+  }
+  
+  .aesop-shop-controls {
+    width: 100%;
+    justify-content: space-between;
+  }
+  
+  .aesop-products-grid {
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: var(--space-6);
+  }
+  
+  .aesop-container {
+    padding: 0 var(--space-4);
+  }
+}
+
 /* ===== TYPOGRAPHY SYSTEM ===== */
 .text-xs { font-size: var(--font-size-xs); }
 .text-sm { font-size: var(--font-size-sm); }
@@ -595,19 +1063,51 @@ select:focus {
   align-items: center;
   justify-content: space-between;
   gap: var(--space-6);
+  width: 100%;
+}
+
+.aesop-header-left {
+  flex: 1;
+  display: flex;
+  justify-content: flex-start;
+}
+
+.aesop-header-center {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+}
+
+.aesop-header-right {
+  flex: 1;
+  display: flex;
+  justify-content: flex-end;
 }
 
 .aesop-logo {
-  font-size: var(--font-size-2xl);
+  font-size: var(--font-size-3xl);
   font-weight: var(--font-weight-bold);
   color: var(--color-black);
+}
+
+.aesop-logo-link {
+  color: var(--color-black);
   text-decoration: none;
+  transition: color var(--transition-base);
+}
+
+.aesop-logo-link:hover {
+  color: var(--color-accent);
 }
 
 .aesop-nav {
   display: flex;
   align-items: center;
-  gap: var(--space-6);
+  gap: var(--space-8);
+}
+
+.aesop-nav.aesop-header-center {
+  gap: var(--space-10);
 }
 
 .aesop-header-actions {

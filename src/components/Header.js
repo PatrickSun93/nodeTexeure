@@ -48,28 +48,30 @@ export default function Header() {
     <header className="aesop-header">
       <div className="aesop-container">
         <div className="aesop-header-content">
-          <div className="aesop-logo">
-            <Link href="/" className="aesop-logo-link">
-              Furniro
-            </Link>
+          <div className="aesop-header-left">
+            <div className="aesop-logo">
+              <Link href="/" className="aesop-logo-link">
+                Furniro
+              </Link>
+            </div>
           </div>
           
-          <nav className="aesop-nav">
+          <nav className="aesop-nav aesop-header-center">
             <Link href="/" className="aesop-nav-link">
               NEW
             </Link>
             <Link href="/shop" className="aesop-nav-link">
-              Shop
+              SHOP
             </Link>
             <Link href="/about" className="aesop-nav-link">
-              About
+              ABOUT
             </Link>
             <Link href="/contact" className="aesop-nav-link">
-              Contact
+              CONTACT
             </Link>
           </nav>
           
-          <div className="aesop-header-actions">
+          <div className="aesop-header-actions aesop-header-right">
             {/* Search */}
             <div className="aesop-search-container">
               {isSearchOpen ? (
