@@ -1,130 +1,22 @@
 'use client';
 
-import { useState } from 'react';
 import Link from 'next/link';
-import { useSession, signIn, signOut } from 'next-auth/react';
 import { useBackendHealth } from '../lib';
-
-// Header Component
-function Header() {
-    const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
-    const { data: session, status } = useSession();
-
-    const handleSignOut = () => {
-        signOut({ callbackUrl: '/' });
-        setIsUserMenuOpen(false);
-    };
-
-    const handleSignIn = () => {
-        signIn();
-        setIsUserMenuOpen(false);
-    };
-
-    return (
-        <header className="bg-white shadow-sm">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="flex justify-between items-center h-16">
-                    {/* Logo */}
-                    <div className="flex items-center space-x-2">
-                        <div className="w-8 h-8 bg-amber-600 rounded"></div>
-                        <span className="text-xl font-bold text-gray-900">Furniro</span>
-                    </div>
-                    
-                    {/* Navigation */}
-                    <nav className="hidden md:flex space-x-8">
-                        <Link href="/" className="text-gray-900 hover:text-amber-600 font-medium">Home</Link>
-                        <Link href="/shop" className="text-gray-900 hover:text-amber-600 font-medium">Shop</Link>
-                        <Link href="/about" className="text-gray-900 hover:text-amber-600 font-medium">About</Link>
-                        <Link href="/contact" className="text-gray-900 hover:text-amber-600 font-medium">Contact</Link>
-                    </nav>
-                    
-                    {/* Icons */}
-                    <div className="flex items-center space-x-4">
-                        {/* User Menu */}
-                        <div className="relative">
-                            <button
-                                className="p-2 text-gray-600 hover:text-amber-600 focus:outline-none"
-                                onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-                            >
-                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                                </svg>
-                            </button>
-                        
-                            {isUserMenuOpen && (
-                                <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg border border-gray-200 z-50">
-                                    <div className="py-1">
-                                        {status === 'loading' ? (
-                                            <div className="px-4 py-2 text-sm text-gray-500">Loading...</div>
-                                        ) : session ? (
-                                            <>
-                                                <div className="px-4 py-2 text-sm text-gray-700 border-b border-gray-100">
-                                                    <div className="font-medium">{session.user?.name || session.user?.email}</div>
-                                                    <div className="text-gray-500 text-xs">{session.user?.email}</div>
-                                                </div>
-                                                <Link href="/profile" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" onClick={() => setIsUserMenuOpen(false)}>
-                                                    Profile
-                                                </Link>
-                                                <Link href="/cart" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" onClick={() => setIsUserMenuOpen(false)}>
-                                                    My Cart
-                                                </Link>
-                                                <Link href="/orders" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" onClick={() => setIsUserMenuOpen(false)}>
-                                                    Orders
-                                                </Link>
-                                                <button onClick={handleSignOut} className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                                    Sign Out
-                                                </button>
-                                            </>
-                                        ) : (
-                                            <>
-                                                <Link href="/login" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" onClick={() => setIsUserMenuOpen(false)}>
-                                                    Sign In
-                                                </Link>
-                                                <Link href="/register" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" onClick={() => setIsUserMenuOpen(false)}>
-                                                    Sign Up
-                                                </Link>
-                                            </>
-                                        )}
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-                
-                        <button className="p-2 text-gray-600 hover:text-amber-600">
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                            </svg>
-                        </button>
-                        <button className="p-2 text-gray-600 hover:text-amber-600">
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                            </svg>
-                        </button>
-                        <button className="p-2 text-gray-600 hover:text-amber-600">
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-2.5 5M7 13l2.5 5m6-5v6a2 2 0 01-2 2H9a2 2 0 01-2-2v-6m8 0V9a2 2 0 00-2-2H9a2 2 0 00-2 2v4.01" />
-                            </svg>
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </header>
-    );
-}
+import Header from '../components/Header';
 
 // Hero Section Component
 function HeroSection() {
     return (
-        <section className="relative bg-gradient-to-r from-amber-50 to-orange-50 py-20">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="text-center">
-                    <h1 className="text-4xl md:text-6xl font-bold text-gray-900 mb-6">
+        <section className="aesop-hero">
+            <div className="aesop-container">
+                <div className="aesop-hero-content">
+                    <h1 className="aesop-hero-title">
                         Premium Bed Textures
                     </h1>
-                    <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
+                    <p className="aesop-hero-subtitle">
                         Transform your bedroom with our luxurious collection of high-quality bed textures and linens
                     </p>
-                    <Link href="/shop" className="inline-block bg-amber-600 text-white px-8 py-3 rounded-lg text-lg font-semibold hover:bg-amber-700 transition-colors">
+                    <Link href="/shop" className="aesop-button-primary aesop-button-large">
                         Shop Now
                     </Link>
                 </div>
@@ -136,52 +28,33 @@ function HeroSection() {
 // Product Card Component
 function ProductCard({ name, price, image, isNew = false }) {
     return (
-        <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
-            <div className="relative">
-                <div className="w-full h-64 bg-gray-200 flex items-center justify-center">
-                    <span className="text-gray-500">{image || 'Product Image'}</span>
-                </div>
-                {isNew && (
-                    <span className="absolute top-4 right-4 bg-green-500 text-white px-2 py-1 rounded text-sm font-medium">
-                        New
-                    </span>
-                )}
-                <button className="absolute top-4 left-4 p-2 bg-white rounded-full shadow-md hover:bg-gray-50">
-                    <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                    </svg>
-                </button>
+        <div className="aesop-product-card">
+            <div className="aesop-product-image">
+                <img src={image} alt={name} />
+                {isNew && <span className="aesop-product-badge">New</span>}
             </div>
-            <div className="p-4">
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">{name}</h3>
-                <p className="text-amber-600 font-bold text-xl">${price}</p>
-                <button className="w-full mt-4 bg-amber-600 text-white py-2 rounded-lg hover:bg-amber-700 transition-colors">
-                    Add to Cart
-                </button>
+            <div className="aesop-product-info">
+                <h3 className="aesop-product-name">{name}</h3>
+                <p className="aesop-product-price">${price}</p>
             </div>
         </div>
     );
 }
 
-// Featured Products Section
+// Featured Products Component
 function FeaturedProducts() {
     const products = [
-        { name: "Luxury Cotton Sheets", price: "299.99", isNew: true },
-        { name: "Silk Pillowcase Set", price: "149.99" },
-        { name: "Memory Foam Mattress Topper", price: "199.99" },
-        { name: "Bamboo Bed Sheet Set", price: "179.99", isNew: true },
+        { name: "Luxury Cotton Sheets", price: "299", image: "/api/placeholder/300/300", isNew: true },
+        { name: "Silk Pillowcase Set", price: "149", image: "/api/placeholder/300/300" },
+        { name: "Bamboo Duvet Cover", price: "199", image: "/api/placeholder/300/300" },
+        { name: "Linen Throw Blanket", price: "89", image: "/api/placeholder/300/300", isNew: true }
     ];
-    
+
     return (
-        <section className="py-16 bg-white">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="text-center mb-12">
-                    <h2 className="text-3xl font-bold text-gray-900 mb-4">Featured Products</h2>
-                    <p className="text-gray-600 max-w-2xl mx-auto">
-                        Discover our most popular bed textures and accessories
-                    </p>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+        <section className="aesop-section">
+            <div className="aesop-container">
+                <h2 className="aesop-section-title">Featured Products</h2>
+                <div className="aesop-product-grid">
                     {products.map((product, index) => (
                         <ProductCard key={index} {...product} />
                     ))}
@@ -191,40 +64,35 @@ function FeaturedProducts() {
     );
 }
 
-// Features Section
+// Features Section Component
 function FeaturesSection() {
     const features = [
         {
-            icon: "🏆",
-            title: "High Quality",
-            description: "crafted from top materials"
+            title: "Premium Quality",
+            description: "Crafted from the finest materials for ultimate comfort and durability",
+            icon: "✨"
         },
         {
-            icon: "🛡️",
-            title: "Warranty Protection",
-            description: "Over 2 years"
+            title: "Sustainable",
+            description: "Ethically sourced and environmentally conscious production methods",
+            icon: "🌱"
         },
         {
-            icon: "🚚",
-            title: "Free Shipping",
-            description: "Order over 150 $"
-        },
-        {
-            icon: "📞",
-            title: "24 / 7 Support",
-            description: "Dedicated support"
+            title: "Expert Craftsmanship",
+            description: "Meticulously designed by textile artisans with decades of experience",
+            icon: "👥"
         }
     ];
-    
+
     return (
-        <section className="py-16 bg-amber-50">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+        <section className="aesop-section aesop-features">
+            <div className="aesop-container">
+                <div className="aesop-features-grid">
                     {features.map((feature, index) => (
-                        <div key={index} className="text-center">
-                            <div className="text-4xl mb-4">{feature.icon}</div>
-                            <h3 className="text-lg font-semibold text-gray-900 mb-2">{feature.title}</h3>
-                            <p className="text-gray-600">{feature.description}</p>
+                        <div key={index} className="aesop-feature-card">
+                            <div className="aesop-feature-icon">{feature.icon}</div>
+                            <h3 className="aesop-feature-title">{feature.title}</h3>
+                            <p className="aesop-feature-description">{feature.description}</p>
                         </div>
                     ))}
                 </div>
@@ -236,51 +104,43 @@ function FeaturesSection() {
 // Footer Component
 function Footer() {
     return (
-        <footer className="bg-white border-t">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-                    <div>
-                        <div className="flex items-center space-x-2 mb-4">
-                            <div className="w-8 h-8 bg-amber-600 rounded"></div>
-                            <span className="text-xl font-bold text-gray-900">Furniro</span>
-                        </div>
-                        <p className="text-gray-600 mb-4">
-                            400 University Drive Suite 200 Coral Gables,<br />
-                            FL 33134 USA
+        <footer className="aesop-footer">
+            <div className="aesop-container">
+                <div className="aesop-footer-content">
+                    <div className="aesop-footer-section">
+                        <h3 className="aesop-footer-title">Furniro</h3>
+                        <p className="aesop-footer-text">
+                            Premium bed textures and linens for the discerning home.
                         </p>
                     </div>
-                    <div>
-                        <h4 className="font-semibold text-gray-900 mb-4">Links</h4>
-                        <ul className="space-y-2">
-                            <li><Link href="/" className="text-gray-600 hover:text-amber-600">Home</Link></li>
-                            <li><Link href="/shop" className="text-gray-600 hover:text-amber-600">Shop</Link></li>
-                            <li><Link href="/about" className="text-gray-600 hover:text-amber-600">About</Link></li>
-                            <li><Link href="/contact" className="text-gray-600 hover:text-amber-600">Contact</Link></li>
+                    <div className="aesop-footer-section">
+                        <h4 className="aesop-footer-subtitle">Shop</h4>
+                        <ul className="aesop-footer-links">
+                            <li><Link href="/shop">All Products</Link></li>
+                            <li><Link href="/shop?category=sheets">Sheets</Link></li>
+                            <li><Link href="/shop?category=pillows">Pillows</Link></li>
+                            <li><Link href="/shop?category=blankets">Blankets</Link></li>
                         </ul>
                     </div>
-                    <div>
-                        <h4 className="font-semibold text-gray-900 mb-4">Help</h4>
-                        <ul className="space-y-2">
-                            <li><a href="#" className="text-gray-600 hover:text-amber-600">Payment Options</a></li>
-                            <li><a href="#" className="text-gray-600 hover:text-amber-600">Returns</a></li>
-                            <li><a href="#" className="text-gray-600 hover:text-amber-600">Privacy Policies</a></li>
+                    <div className="aesop-footer-section">
+                        <h4 className="aesop-footer-subtitle">Support</h4>
+                        <ul className="aesop-footer-links">
+                            <li><Link href="/contact">Contact</Link></li>
+                            <li><Link href="/about">About</Link></li>
+                            <li><Link href="/shipping">Shipping</Link></li>
+                            <li><Link href="/returns">Returns</Link></li>
                         </ul>
                     </div>
-                    <div>
-                        <h4 className="font-semibold text-gray-900 mb-4">Newsletter</h4>
-                        <div className="flex">
-                            <input 
-                                type="email" 
-                                placeholder="Enter Your Email Address" 
-                                className="flex-1 px-3 py-2 border border-gray-300 rounded-l-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
-                            />
-                            <button className="bg-amber-600 text-white px-4 py-2 rounded-r-lg hover:bg-amber-700 transition-colors">
-                                Subscribe
-                            </button>
-                        </div>
+                    <div className="aesop-footer-section">
+                        <h4 className="aesop-footer-subtitle">Connect</h4>
+                        <ul className="aesop-footer-links">
+                            <li><a href="#">Newsletter</a></li>
+                            <li><a href="#">Instagram</a></li>
+                            <li><a href="#">Pinterest</a></li>
+                        </ul>
                     </div>
                 </div>
-                <div className="border-t mt-8 pt-8 text-center text-gray-600">
+                <div className="aesop-footer-bottom">
                     <p>&copy; 2024 Furniro. All rights reserved.</p>
                 </div>
             </div>
@@ -289,20 +149,29 @@ function Footer() {
 }
 
 export default function Home() {
-    const { status: backendStatus, isConnected } = useBackendHealth();
-    
+    const { isHealthy, isLoading } = useBackendHealth();
+
     return (
-        <div className="min-h-screen bg-white">
+        <div className="aesop-page">
             <Header />
-            <HeroSection />
-            <FeaturedProducts />
-            <FeaturesSection />
+            <main>
+                <HeroSection />
+                <FeaturedProducts />
+                <FeaturesSection />
+            </main>
             <Footer />
             
-            {/* Backend Status - Hidden but functional */}
-            <div className="hidden">
-                <p>Backend Status: {isConnected ? 'Connected' : 'Disconnected'} - {backendStatus}</p>
-            </div>
+            {/* Backend Health Status */}
+            {isLoading && (
+                <div className="aesop-status aesop-status-loading">
+                    Checking backend connection...
+                </div>
+            )}
+            {!isLoading && !isHealthy && (
+                <div className="aesop-status aesop-status-error">
+                    Backend connection failed
+                </div>
+            )}
         </div>
     );
 }
