@@ -2,234 +2,160 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useSession, signIn, signOut } from 'next-auth/react';
-import { useSearchParams } from 'next/navigation';
-import { useCartCount } from '../../lib'; // added
-
-// Header Component (reused from homepage)
-function Header() {
-  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
-  const { data: session, status } = useSession();
-  const { count } = useCartCount(); // added
-
-  const handleSignOut = () => {
-    signOut({ callbackUrl: '/' });
-    setIsUserMenuOpen(false);
-  };
-
-  const handleSignIn = () => {
-    signIn();
-    setIsUserMenuOpen(false);
-  };
-
-  return (
-    <header className="bg-white shadow-sm">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
-          {/* Logo */}
-          <Link href="/" className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-amber-600 rounded"></div>
-            <span className="text-xl font-bold text-gray-900">Furniro</span>
-          </Link>
-          
-          {/* Navigation */}
-          <nav className="hidden md:flex space-x-8">
-            <Link href="/" className="text-gray-900 hover:text-amber-600 font-medium">Home</Link>
-            <Link href="/shop" className="text-amber-600 font-medium">Shop</Link>
-            <Link href="/about" className="text-gray-900 hover:text-amber-600 font-medium">About</Link>
-            <Link href="/contact" className="text-gray-900 hover:text-amber-600 font-medium">Contact</Link>
-          </nav>
-          
-          {/* Icons */}
-          <div className="flex items-center space-x-4">
-            {/* User Menu */}
-            <div className="relative">
-              <button
-                className="p-2 text-gray-600 hover:text-amber-600 focus:outline-none"
-                onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                </svg>
-              </button>
-              {/* same dropdown content as home */}
-              {isUserMenuOpen && (
-                <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg border border-gray-200 z-50">
-                  <div className="py-1">
-                    {status === 'loading' ? (
-                      <div className="px-4 py-2 text-sm text-gray-500">Loading...</div>
-                    ) : session ? (
-                      <>
-                        <div className="px-4 py-2 text-sm text-gray-700 border-b border-gray-100">
-                          <div className="font-medium">{session.user?.name || session.user?.email}</div>
-                          <div className="text-gray-500 text-xs">{session.user?.email}</div>
-                        </div>
-                        <Link 
-                          href="/profile" 
-                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                          onClick={() => setIsUserMenuOpen(false)}
-                        >
-                          Profile
-                        </Link>
-                        <Link 
-                          href="/cart" 
-                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                          onClick={() => setIsUserMenuOpen(false)}
-                        >
-                          My Cart
-                        </Link>
-                        <Link 
-                          href="/orders" 
-                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                          onClick={() => setIsUserMenuOpen(false)}
-                        >
-                          Orders
-                        </Link>
-                        <button 
-                          onClick={handleSignOut}
-                          className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                        >
-                          Sign Out
-                        </button>
-                      </>
-                    ) : (
-                      <>
-                        <Link 
-                          href="/login" 
-                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                          onClick={() => setIsUserMenuOpen(false)}
-                        >
-                          Sign In
-                        </Link>
-                        <Link 
-                          href="/register" 
-                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                          onClick={() => setIsUserMenuOpen(false)}
-                        >
-                          Sign Up
-                        </Link>
-                      </>
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
-
-            <button className="p-2 text-gray-600 hover:text-amber-600">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-            </button>
-            <button className="p-2 text-gray-600 hover:text-amber-600">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-              </svg>
-            </button>
-            <button className="p-2 text-gray-600 hover:text-amber-600 relative">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-2.5 5M7 13l2.5 5m6-5v6a2 2 0 01-2 2H9a2 2 0 01-2-2v-6m8 0V9a2 2 0 00-2-2H9a2 2 0 00-2 2v4.01" />
-              </svg>
-              <span className="absolute -top-1 -right-1 bg-amber-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">{count}</span>
-            </button>
-          </div>
-        </div>
-      </div>
-    </header>
-  );
-}
+import { useRouter, useSearchParams } from 'next/navigation';
+import Header from '../../components/Header';
+import Footer from '../../components/Footer';
 
 // Breadcrumb Component
 function Breadcrumb() {
   return (
-    <div className="bg-amber-50 py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">Shop</h1>
-          <nav className="flex justify-center items-center space-x-2 text-sm">
-            <Link href="/" className="text-gray-600 hover:text-amber-600">Home</Link>
-            <span className="text-gray-400">&gt;</span>
-            <span className="text-gray-900 font-medium">Shop</span>
-          </nav>
-        </div>
-      </div>
+    <div className="aesop-container">
+      <Link href="/" className="aesop-breadcrumb-link">Home</Link>
+      <span className="aesop-breadcrumb-separator">&gt;</span>
+      <span className="aesop-breadcrumb-current">Shop</span>
     </div>
   );
 }
 
 // Filter Sidebar Component
 function FilterSidebar({ filters, onFilterChange }) {
+  const categories = [
+    'All', 'Sheets', 'Pillows', 'Blankets', 'Mattresses', 'Accessories'
+  ];
+
+  const priceRanges = [
+    { label: 'All Prices', value: 'all' },
+    { label: '$0 - $100', value: '0-100' },
+    { label: '$100 - $200', value: '100-200' },
+    { label: '$200 - $300', value: '200-300' },
+    { label: '$300+', value: '300+' }
+  ];
+
+  const materials = ['Cotton', 'Silk', 'Bamboo', 'Linen', 'Memory Foam'];
+
+  const seasons = ['All', 'Spring', 'Summer', 'Fall', 'Winter'];
+
+  const handleSeasonChange = (season) => {
+    const newSeasons = filters.seasons.includes(season)
+      ? filters.seasons.filter(s => s !== season)
+      : [...filters.seasons, season];
+    onFilterChange('seasons', newSeasons);
+  };
+
+  const handleMaterialChange = (material) => {
+    const newMaterials = filters.materials.includes(material)
+      ? filters.materials.filter(m => m !== material)
+      : [...filters.materials, material];
+    onFilterChange('materials', newMaterials);
+  };
+
+  const removeMaterial = (material) => {
+    const newMaterials = filters.materials.filter(m => m !== material);
+    onFilterChange('materials', newMaterials);
+  };
+
   return (
-    <div className="bg-white p-6 rounded-lg shadow-sm">
-      <h3 className="text-lg font-semibold text-gray-900 mb-6">Filters</h3>
+    <div className="aesop-filter-sidebar">
+      <h3 className="aesop-filter-title">Filters</h3>
       
       {/* Category Filter */}
-      <div className="mb-6">
-        <h4 className="font-medium text-gray-900 mb-3">Category</h4>
-        <div className="space-y-2">
-          {['All', 'Bed Sheets', 'Pillowcases', 'Mattress Toppers', 'Blankets', 'Comforters'].map((category) => (
-            <label key={category} className="flex items-center">
-              <input
-                type="radio"
-                name="category"
-                value={category}
-                checked={filters.category === category}
-                onChange={(e) => onFilterChange('category', e.target.value)}
-                className="mr-2 text-amber-600 focus:ring-amber-500"
-              />
-              <span className="text-gray-700">{category}</span>
-            </label>
+      <div className="aesop-filter-section">
+        <h4 className="aesop-filter-section-title">Category</h4>
+        <select 
+          value={filters.category} 
+          onChange={(e) => onFilterChange('category', e.target.value)}
+          className="aesop-filter-dropdown"
+        >
+          {categories.map(category => (
+            <option key={category} value={category}>{category}</option>
           ))}
-        </div>
+        </select>
+        {filters.category !== 'All' && (
+          <div className="aesop-selected-items">
+            <span className="aesop-selected-label">Selected:</span>
+            <span className="aesop-selected-item">
+              {filters.category}
+              <button 
+                onClick={() => onFilterChange('category', 'All')}
+                className="aesop-remove-item"
+              >
+                ×
+              </button>
+            </span>
+          </div>
+        )}
       </div>
 
-      {/* Price Range Filter */}
-      <div className="mb-6">
-        <h4 className="font-medium text-gray-900 mb-3">Price Range</h4>
-        <div className="space-y-2">
-          {[
-            { label: 'All Prices', value: 'all' },
-            { label: 'Under $100', value: '0-100' },
-            { label: '$100 - $200', value: '100-200' },
-            { label: '$200 - $300', value: '200-300' },
-            { label: 'Over $300', value: '300+' }
-          ].map((price) => (
-            <label key={price.value} className="flex items-center">
-              <input
-                type="radio"
-                name="price"
-                value={price.value}
-                checked={filters.price === price.value}
-                onChange={(e) => onFilterChange('price', e.target.value)}
-                className="mr-2 text-amber-600 focus:ring-amber-500"
-              />
-              <span className="text-gray-700">{price.label}</span>
-            </label>
+      {/* Price Filter */}
+      <div className="aesop-filter-section">
+        <h4 className="aesop-filter-section-title">Price Range</h4>
+        <select 
+          value={filters.price} 
+          onChange={(e) => onFilterChange('price', e.target.value)}
+          className="aesop-filter-dropdown"
+        >
+          {priceRanges.map(range => (
+            <option key={range.value} value={range.value}>{range.label}</option>
           ))}
-        </div>
+        </select>
+        {filters.price !== 'all' && (
+          <div className="aesop-selected-items">
+            <span className="aesop-selected-label">Selected:</span>
+            <span className="aesop-selected-item">
+              {priceRanges.find(r => r.value === filters.price)?.label}
+              <button 
+                onClick={() => onFilterChange('price', 'all')}
+                className="aesop-remove-item"
+              >
+                ×
+              </button>
+            </span>
+          </div>
+        )}
       </div>
 
-      {/* Material Filter */}
-      <div className="mb-6">
-        <h4 className="font-medium text-gray-900 mb-3">Material</h4>
-        <div className="space-y-2">
-          {['Cotton', 'Silk', 'Bamboo', 'Linen', 'Microfiber'].map((material) => (
-            <label key={material} className="flex items-center">
-              <input
-                type="checkbox"
-                value={material}
-                checked={filters.materials.includes(material)}
-                onChange={(e) => {
-                  const materials = e.target.checked 
-                    ? [...filters.materials, material]
-                    : filters.materials.filter(m => m !== material);
-                  onFilterChange('materials', materials);
-                }}
-                className="mr-2 text-amber-600 focus:ring-amber-500"
-              />
-              <span className="text-gray-700">{material}</span>
-            </label>
+      {/* Materials Filter */}
+      <div className="aesop-filter-section">
+        <h4 className="aesop-filter-section-title">Materials</h4>
+        <select 
+          onChange={(e) => {
+            if (e.target.value && !filters.materials.includes(e.target.value)) {
+              handleMaterialChange(e.target.value);
+            }
+            e.target.value = ''; // Reset dropdown
+          }}
+          className="aesop-filter-dropdown"
+          defaultValue=""
+        >
+          <option value="" disabled>Select materials...</option>
+          {materials.map(material => (
+            <option 
+              key={material} 
+              value={material}
+              disabled={filters.materials.includes(material)}
+            >
+              {material}
+            </option>
           ))}
-        </div>
+        </select>
+        {filters.materials.length > 0 && (
+          <div className="aesop-selected-items">
+            <span className="aesop-selected-label">Selected:</span>
+            <div className="aesop-selected-list">
+              {filters.materials.map(material => (
+                <span key={material} className="aesop-selected-item">
+                  {material}
+                  <button 
+                    onClick={() => removeMaterial(material)}
+                    className="aesop-remove-item"
+                  >
+                    ×
+                  </button>
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -237,73 +163,75 @@ function FilterSidebar({ filters, onFilterChange }) {
 
 // Product Card Component
 export function ProductCard({ product, onAddToCart, onToggleWishlist }) {
+  const [isWishlisted, setIsWishlisted] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleAddToCart = async () => {
+    setIsLoading(true);
+    try {
+      await onAddToCart(product);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleToggleWishlist = () => {
+    setIsWishlisted(!isWishlisted);
+    if (onToggleWishlist) {
+      onToggleWishlist(product, !isWishlisted);
+    }
+  };
+
   return (
-    <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow group flex flex-col h-full">
-      <Link href={`/products/${product.id}`}>
-        <div className="relative">
-          <div className="w-full h-64 bg-gray-200 flex items-center justify-center">
-            <span className="text-gray-500">{product.image || 'Product Image'}</span>
-          </div>
-          {product.isNew && (
-            <span className="absolute top-4 right-4 bg-green-500 text-white px-2 py-1 rounded text-sm font-medium">
-              New
-            </span>
-          )}
-          {product.discount && (
-            <span className="absolute top-4 left-4 bg-red-500 text-white px-2 py-1 rounded text-sm font-medium">
-              -{product.discount}%
-            </span>
-          )}
+    <div className="aesop-product-card">
+      <div className="aesop-product-image-container">
+        <img 
+          src={product.image} 
+          alt={product.name}
+          className="aesop-product-image"
+        />
+        {product.isNew && (
+          <span className="aesop-product-badge aesop-product-badge-new">New</span>
+        )}
+        {product.originalPrice && (
+          <span className="aesop-product-badge aesop-product-badge-sale">Sale</span>
+        )}
+        <div className="aesop-product-overlay">
           <button 
-            onClick={(e) => { e.preventDefault(); onToggleWishlist(product.id); }}
-            className="absolute top-4 left-4 p-2 bg-white rounded-full shadow-md hover:bg-gray-50 opacity-0 group-hover:opacity-100 transition-opacity"
+            onClick={handleAddToCart}
+            disabled={isLoading}
+            className="aesop-button-primary aesop-product-add-to-cart"
           >
-            <svg className={`w-4 h-4 ${product.isWishlisted ? 'text-red-500 fill-current' : 'text-gray-600'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-            </svg>
+            {isLoading ? 'Adding...' : 'Add to Cart'}
           </button>
-        </div>
-      </Link>
-      
-      {/* Content area that grows to fill available space */}
-      <div className="p-4 flex flex-col flex-grow">
-        <Link href={`/products/${product.id}`}>
-          <h3 className="text-lg font-semibold text-gray-900 mb-1 line-clamp-2">{product.name}</h3>
-        </Link>
-        <p className="text-sm text-gray-600 mb-2">{product.category}</p>
-        
-        {/* Spacer to push price and rating to consistent position */}
-        <div className="flex-grow"></div>
-        
-        {/* Price and rating section - always at same height */}
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center space-x-2">
-            {product.originalPrice && (
-              <span className="text-gray-400 line-through text-sm">${product.originalPrice}</span>
-            )}
-            <span className="text-amber-600 font-bold text-xl">${product.base_price}</span>
-          </div>
-          <div className="flex items-center">
-            <div className="flex text-yellow-400">
-              {[...Array(5)].map((_, i) => (
-                <svg key={i} className={`w-4 h-4 ${i < product.rating ? 'fill-current' : 'text-gray-300'}`} viewBox="0 0 20 20">
-                  <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                  </svg>
-                ))}
-            </div>
-            <span className="text-sm text-gray-600 ml-1">({product.reviews})</span>
+          <div className="aesop-product-actions">
+            <button 
+              onClick={handleToggleWishlist}
+              className={`aesop-icon-button ${isWishlisted ? 'aesop-icon-button-active' : ''}`}
+              title="Add to Wishlist"
+            >
+              <svg className="w-5 h-5" fill={isWishlisted ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+              </svg>
+            </button>
+            <Link href={`/products/${product.id}`} className="aesop-icon-button" title="View Details">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+              </svg>
+            </Link>
           </div>
         </div>
       </div>
-      
-      {/* Button always at the bottom */}
-      <div className="p-4 pt-0">
-        <button 
-          onClick={() => onAddToCart(product)}
-          className="w-full bg-amber-600 text-white py-3 rounded-lg hover:bg-amber-700 transition-colors font-medium"
-        >
-          Add to Cart
-        </button>
+      <div className="aesop-product-info">
+        <h3 className="aesop-product-name">{product.name}</h3>
+        <p className="aesop-product-description">{product.description}</p>
+        <div className="aesop-product-price">
+          <span className="aesop-product-current-price">${product.price}</span>
+          {product.originalPrice && (
+            <span className="aesop-product-original-price">${product.originalPrice}</span>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -311,298 +239,341 @@ export function ProductCard({ product, onAddToCart, onToggleWishlist }) {
 
 // Main Shop Component
 export default function Shop() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const searchQuery = searchParams.get('search') || '';
-  const [filters, setFilters] = useState({ category: 'All', price: 'all', materials: [], search: searchQuery });
+  const [filters, setFilters] = useState({ 
+    category: 'All', 
+    price: 'all', 
+    materials: [], 
+    search: searchQuery 
+  });
   const [sortBy, setSortBy] = useState('featured');
   const [viewMode, setViewMode] = useState('grid');
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [pagination, setPagination] = useState({ page: 1, total: 0, limit: 20 });
 
-  useEffect(() => {
-    const fetchProducts = async () => {
-      setLoading(true);
-      try {
-        const params = new URLSearchParams({
-          page: pagination.page,
-          limit: pagination.limit,
-        });
-        if (filters.category !== 'All') {
-          params.append('category', filters.category);
-        }
-        // Implement price filter
-        if (filters.price !== 'all') {
-          let min_price, max_price;
-          switch (filters.price) {
-            case '0-100': min_price = 0; max_price = 100; break;
-            case '100-200': min_price = 100; max_price = 200; break;
-            case '200-300': min_price = 200; max_price = 300; break;
-            case '300+': min_price = 300; break;
-          }
-          if (min_price !== undefined) params.append('min_price', min_price);
-          if (max_price !== undefined) params.append('max_price', max_price);
-        }
-        // Implement materials filter
-        if (filters.materials.length > 0) {
-          params.append('materials', filters.materials.join(','));
-        }
-        // Implement search filter
-        if (filters.search && filters.search.trim()) {
-          params.append('search', filters.search.trim());
-        }
-        const res = await fetch(`/api/products?${params}`);
-        const data = await res.json();
-        if (data.status == 'SUCCESS') {
-          setProducts(data.keyValueTable.products);
-          setPagination(prev => ({ ...prev, total: data.keyValueTable.total }));
-        }
-      } catch (error) {
-        console.error(error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchProducts();
-  }, [filters, pagination.page, sortBy]);
-
-  // Update filters when search params change
-  useEffect(() => {
-    const newSearchQuery = searchParams.get('search') || '';
-    if (newSearchQuery !== filters.search) {
-      setFilters(prev => ({ ...prev, search: newSearchQuery }));
-      setPagination(prev => ({ ...prev, page: 1 }));
+  // Sample products data (fallback)
+  const sampleProducts = [
+    {
+      id: 1,
+      name: "Luxury Cotton Sheets",
+      description: "Premium 100% Egyptian cotton sheets with 400 thread count",
+      price: 299,
+      originalPrice: 399,
+      category: "Sheets",
+      image: "/api/placeholder/300/300",
+      isNew: true
+    },
+    {
+      id: 2,
+      name: "Silk Pillowcase Set",
+      description: "Mulberry silk pillowcases for hair and skin care",
+      price: 149,
+      category: "Pillows",
+      image: "/api/placeholder/300/300"
+    },
+    {
+      id: 3,
+      name: "Memory Foam Mattress",
+      description: "Gel-infused memory foam for optimal comfort",
+      price: 899,
+      category: "Mattresses",
+      image: "/api/placeholder/300/300"
+    },
+    {
+      id: 4,
+      name: "Bamboo Duvet Cover",
+      description: "Eco-friendly bamboo fiber duvet cover set",
+      price: 199,
+      category: "Blankets",
+      image: "/api/placeholder/300/300",
+      isNew: true
+    },
+    {
+      id: 5,
+      name: "Linen Throw Blanket",
+      description: "Soft and breathable linen throw for all seasons",
+      price: 89,
+      category: "Blankets",
+      image: "/api/placeholder/300/300"
+    },
+    {
+      id: 6,
+      name: "Down Alternative Pillow",
+      description: "Hypoallergenic down alternative pillow",
+      price: 79,
+      category: "Pillows",
+      image: "/api/placeholder/300/300"
     }
-  }, [searchParams, filters.search]);
+  ];
+
+  // Fetch products from API
+  const fetchProducts = async () => {
+    try {
+      setLoading(true);
+      const params = new URLSearchParams();
+      
+      if (filters.category !== 'All') {
+        params.append('category', filters.category);
+      }
+      
+      if (filters.price !== 'all') {
+        let min_price, max_price;
+        switch (filters.price) {
+          case '0-100': min_price = 0; max_price = 100; break;
+          case '100-200': min_price = 100; max_price = 200; break;
+          case '200-300': min_price = 200; max_price = 300; break;
+          case '300+': min_price = 300; break;
+        }
+        if (min_price !== undefined) params.append('min_price', min_price);
+        if (max_price !== undefined) params.append('max_price', max_price);
+      }
+      
+      if (filters.materials.length > 0) {
+        params.append('materials', filters.materials.join(','));
+      }
+      
+      if (filters.search && filters.search.trim()) {
+        params.append('search', filters.search.trim());
+      }
+      
+      const res = await fetch(`/api/products?${params}`);
+      const data = await res.json();
+      
+      if (data.status === 'SUCCESS') {
+        setProducts(data.keyValueTable.products || []);
+        setPagination(prev => ({ ...prev, total: data.keyValueTable.total || 0 }));
+      } else {
+        // Fallback to sample data if API fails
+        setProducts(sampleProducts);
+      }
+    } catch (error) {
+      console.error('Error fetching products:', error);
+      // Fallback to sample data
+      setProducts(sampleProducts);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchProducts();
+  }, [filters]);
+
+  // Update search filter when URL search param changes
+  useEffect(() => {
+    const searchQuery = searchParams.get('search');
+    const categoryQuery = searchParams.get('category');
+    
+    if (searchQuery || categoryQuery) {
+      setFilters(prev => ({
+        ...prev,
+        search: searchQuery || '',
+        category: categoryQuery || 'All'
+      }));
+    }
+  }, [searchParams]);
 
   const handleFilterChange = (key, value) => {
     setFilters(prev => ({ ...prev, [key]: value }));
-    setPagination(prev => ({ ...prev, page: 1 }));
   };
 
   const handleAddToCart = async (product) => {
     try {
-      const res = await fetch('/api/cart/add', {
+      const response = await fetch('/api/cart', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ product_id: product.id })
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          productId: product.id,
+          quantity: 1
+        })
       });
-      const data = await res.json();
-      if (data.success) {
-        if (typeof window !== 'undefined') {
-          window.dispatchEvent(new Event('cart:updated'));
-        }
-        alert('Added to cart!');
+      
+      if (response.ok) {
+        // Show success message or update cart count
+        console.log('Product added to cart successfully');
       }
     } catch (error) {
-      console.error(error);
+      console.error('Error adding to cart:', error);
     }
   };
 
-  const handleToggleWishlist = (productId) => {
-    setProducts(prev => prev.map(product => 
-      product.id === productId 
-        ? { ...product, isWishlisted: !product.isWishlisted }
-        : product
-    ));
+  const handleToggleWishlist = (product, isWishlisted) => {
+    // Implement wishlist functionality
+    console.log(`${isWishlisted ? 'Added to' : 'Removed from'} wishlist:`, product.name);
   };
-  
+
   // Filter products based on current filters
   const filteredProducts = products.filter(product => {
-    // Search filter
-    if (filters.search && filters.search.trim()) {
-      const searchTerm = filters.search.toLowerCase();
-      const productName = (product.name || '').toLowerCase();
-      const productDescription = (product.description || '').toLowerCase();
-      const productCategory = (product.category || '').toLowerCase();
-      
-      if (!productName.includes(searchTerm) && 
-          !productDescription.includes(searchTerm) && 
-          !productCategory.includes(searchTerm)) {
-        return false;
-      }
-    }
-    
-    // Category filter
     if (filters.category !== 'All' && product.category !== filters.category) {
       return false;
     }
     
-    // Price filter
-    if (filters.price !== 'all') {
-      const price = parseFloat(product.price);
-      switch (filters.price) {
-        case '0-100':
-          if (price >= 100) return false;
-          break;
-        case '100-200':
-          if (price < 100 || price >= 200) return false;
-          break;
-        case '200-300':
-          if (price < 200 || price >= 300) return false;
-          break;
-        case '300+':
-          if (price < 300) return false;
-          break;
-      }
+    if (filters.search && !product.name.toLowerCase().includes(filters.search.toLowerCase())) {
+      return false;
     }
     
-    // Material filter
-    if (filters.materials.length > 0 && !filters.materials.includes(product.material)) {
-      return false;
+    if (filters.price !== 'all') {
+      let min_price, max_price;
+      switch (filters.price) {
+        case '0-100': min_price = 0; max_price = 100; break;
+        case '100-200': min_price = 100; max_price = 200; break;
+        case '200-300': min_price = 200; max_price = 300; break;
+        case '300+': min_price = 300; max_price = Infinity; break;
+      }
+      if (product.price < min_price || product.price > max_price) {
+        return false;
+      }
     }
     
     return true;
   });
-  
+
   // Sort products
   const sortedProducts = [...filteredProducts].sort((a, b) => {
     switch (sortBy) {
       case 'price-low':
-        return parseFloat(a.price) - parseFloat(b.price);
+        return a.price - b.price;
       case 'price-high':
-        return parseFloat(b.price) - parseFloat(a.price);
-      case 'rating':
-        return b.rating - a.rating;
+        return b.price - a.price;
+      case 'name':
+        return a.name.localeCompare(b.name);
       case 'newest':
-        return b.isNew - a.isNew;
+        return b.isNew ? 1 : -1;
       default:
         return 0;
     }
   });
-  
+
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="aesop-page">
       <Header />
       <Breadcrumb />
       
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="flex flex-col lg:flex-row gap-8">
-          {/* Sidebar */}
-          <div className="lg:w-1/4">
+      <div className="aesop-shop-hero">
+        <div className="aesop-container">
+          <h1 className="aesop-shop-title">Shop</h1>
+          <p className="aesop-shop-subtitle">Discover our premium collection of home textiles</p>
+        </div>
+      </div>
+
+      <div className="aesop-container">
+        <div className="aesop-shop-content">
+          <aside className="aesop-shop-sidebar">
             <FilterSidebar filters={filters} onFilterChange={handleFilterChange} />
-          </div>
+          </aside>
           
-          {/* Main Content */}
-          <div className="lg:w-3/4">
-            {/* Search Results Header */}
-            {filters.search && filters.search.trim() && (
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h2 className="text-lg font-semibold text-blue-900">
-                      Search Results for "{filters.search}"
-                    </h2>
-                    <p className="text-blue-700 text-sm mt-1">
-                      Found {filteredProducts.length} product{filteredProducts.length !== 1 ? 's' : ''}
-                    </p>
-                  </div>
-                  <button
-                    onClick={() => {
-                      setFilters(prev => ({ ...prev, search: '' }));
-                      window.history.pushState({}, '', '/shop');
-                    }}
-                    className="text-blue-600 hover:text-blue-800 font-medium text-sm flex items-center gap-1"
+          <main className="aesop-shop-main">
+            <div className="aesop-shop-toolbar">
+              <div className="aesop-shop-results">
+                <span className="aesop-results-count">
+                  Showing {sortedProducts.length} of {products.length} products
+                  {filters.search && (
+                    <span className="aesop-search-query"> for "{filters.search}"</span>
+                  )}
+                </span>
+              </div>
+              
+              <div className="aesop-shop-controls">
+                <div className="aesop-sort-control">
+                  <label htmlFor="sort-select" className="aesop-sort-label">Sort by:</label>
+                  <select 
+                    id="sort-select"
+                    value={sortBy} 
+                    onChange={(e) => setSortBy(e.target.value)}
+                    className="aesop-sort-select"
                   >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    <option value="featured">Featured</option>
+                    <option value="newest">Newest</option>
+                    <option value="price-low">Price: Low to High</option>
+                    <option value="price-high">Price: High to Low</option>
+                    <option value="name">Name: A to Z</option>
+                  </select>
+                </div>
+                
+                <div className="aesop-view-controls">
+                  <button 
+                    onClick={() => setViewMode('grid')}
+                    className={`aesop-view-button ${viewMode === 'grid' ? 'aesop-view-button-active' : ''}`}
+                    title="Grid View"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
                     </svg>
-                    Clear Search
+                  </button>
+                  <button 
+                    onClick={() => setViewMode('list')}
+                    className={`aesop-view-button ${viewMode === 'list' ? 'aesop-view-button-active' : ''}`}
+                    title="List View"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+                    </svg>
                   </button>
                 </div>
+              </div>
+            </div>
+            
+            {loading ? (
+              <div className="aesop-loading">
+                <div className="aesop-loading-spinner"></div>
+                <p>Loading products...</p>
+              </div>
+            ) : (
+              <div className={`aesop-products-grid ${viewMode === 'list' ? 'aesop-products-list' : ''}`}>
+                {sortedProducts.length > 0 ? (
+                  sortedProducts.map(product => (
+                    <ProductCard 
+                      key={product.id} 
+                      product={product} 
+                      onAddToCart={handleAddToCart}
+                      onToggleWishlist={handleToggleWishlist}
+                    />
+                  ))
+                ) : (
+                  <div className="aesop-no-products">
+                    <p>No products found matching your criteria.</p>
+                    <button 
+                      onClick={() => setFilters({ category: 'All', price: 'all', materials: [], search: '' })}
+                      className="aesop-button-secondary"
+                    >
+                      Clear Filters
+                    </button>
+                  </div>
+                )}
               </div>
             )}
             
-            {/* Toolbar */}
-            <div className="bg-white p-4 rounded-lg shadow-sm mb-6">
-              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                <div className="flex items-center space-x-4">
-                  <span className="text-gray-600">Showing {sortedProducts.length} of {products.length} products</span>
-                </div>
-                
-                <div className="flex items-center space-x-4">
-                  {/* View Mode Toggle */}
-                  <div className="flex border rounded-lg">
-                    <button
-                      onClick={() => setViewMode('grid')}
-                      className={`p-2 ${viewMode === 'grid' ? 'bg-amber-600 text-white' : 'text-gray-600 hover:bg-gray-100'}`}
-                    >
-                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                        <path d="M5 3a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2H5zM5 11a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2H5zM11 5a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V5zM11 13a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
-                      </svg>
-                    </button>
-                    <button
-                      onClick={() => setViewMode('list')}
-                      className={`p-2 ${viewMode === 'list' ? 'bg-amber-600 text-white' : 'text-gray-600 hover:bg-gray-100'}`}
-                    >
-                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                        <path d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 8a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 12a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 16a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" />
-                      </svg>
-                    </button>
-                  </div>
-                  
-                  {/* Sort Dropdown */}
-                  <select
-                    value={sortBy}
-                    onChange={(e) => setSortBy(e.target.value)}
-                    className="border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-amber-500"
-                  >
-                    <option value="featured">Featured</option>
-                    <option value="price-low">Price: Low to High</option>
-                    <option value="price-high">Price: High to Low</option>
-                    <option value="rating">Highest Rated</option>
-                    <option value="newest">Newest</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-            
-            {/* Products Grid */}
-            <div className={`grid gap-6 ${
-              viewMode === 'grid' 
-                ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3' 
-                : 'grid-cols-1'
-            }`}>
-              {sortedProducts.map((product) => (
-                <ProductCard
-                  key={product.id}
-                  product={product}
-                  onAddToCart={handleAddToCart}
-                  onToggleWishlist={handleToggleWishlist}
-                />
-              ))}
-            </div>
-            
             {/* Pagination */}
-            <div className="mt-12 flex justify-center">
-              <nav className="flex items-center space-x-2">
-                <button className="px-3 py-2 text-gray-500 hover:text-amber-600">
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                  </svg>
+            {pagination.total > pagination.limit && (
+              <div className="aesop-pagination">
+                <button 
+                  onClick={() => setPagination(prev => ({ ...prev, page: Math.max(1, prev.page - 1) }))}
+                  disabled={pagination.page === 1}
+                  className="aesop-pagination-button"
+                >
+                  Previous
                 </button>
-                {[1, 2, 3, 4, 5].map((page) => (
-                  <button
-                    key={page}
-                    className={`px-4 py-2 rounded-lg ${
-                      page === 1 
-                        ? 'bg-amber-600 text-white' 
-                        : 'text-gray-700 hover:bg-gray-100'
-                    }`}
-                  >
-                    {page}
-                  </button>
-                ))}
-                <button className="px-3 py-2 text-gray-500 hover:text-amber-600">
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
+                <span className="aesop-pagination-info">
+                  Page {pagination.page} of {Math.ceil(pagination.total / pagination.limit)}
+                </span>
+                <button 
+                  onClick={() => setPagination(prev => ({ ...prev, page: prev.page + 1 }))}
+                  disabled={pagination.page >= Math.ceil(pagination.total / pagination.limit)}
+                  className="aesop-pagination-button"
+                >
+                  Next
                 </button>
-              </nav>
-            </div>
-          </div>
+              </div>
+            )}
+          </main>
         </div>
       </div>
+      <Footer />
     </div>
   );
 }
