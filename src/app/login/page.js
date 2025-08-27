@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react';
 import { signIn, useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
+import Header from '../../components/Header';
+import Footer from '../../components/Footer';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('alice.customer@example.com');
@@ -45,7 +47,9 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50">
+      <Header />
+      <div className="flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <div className="w-full max-w-xs">
         <form className="px-8 pt-6 pb-8 mb-4 bg-white rounded shadow-md" onSubmit={handleSubmit}>
           {error && (
@@ -90,6 +94,8 @@ export default function LoginPage() {
           </div>
         </form>
       </div>
+      </div>
+      <Footer />
     </div>
   );
 }

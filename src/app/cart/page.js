@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Header from '../../components/Header'; // fixed path to src/components/Header
+import Footer from '../../components/Footer';
 import { apiRequest, extractResponseData } from '../../lib/api';
 
 function Breadcrumb() {
@@ -117,6 +118,7 @@ export default function Cart() {
           </div>
         </div>
       </div>
+      <Footer />
     </div>
   );
 }

@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useBackendHealth } from '../lib';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
+import { useRef, useState } from 'react';
 
 // Hero Section Component
 function HeroSection() {
@@ -26,38 +27,69 @@ function HeroSection() {
     );
 }
 
-// Product Card Component
-function ProductCard({ name, price, image, isNew = false }) {
+// Product Image Collection Component (mouse-move carousel)
+function ProductCard({ images = [] }) {
+    const [currentIndex, setCurrentIndex] = useState(0);
+    const containerRef = useRef(null);
+
+    const handleMouseMove = (e) => {
+        if (!containerRef.current || images.length === 0) return;
+        const rect = containerRef.current.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const ratio = Math.min(Math.max(x / rect.width, 0), 1);
+        const nextIndex = Math.min(images.length - 1, Math.floor(ratio * images.length));
+        setCurrentIndex(nextIndex);
+    };
+
+    const handleMouseLeave = () => {
+        // Optionally reset to the first image on leave for a clean look
+        setCurrentIndex(0);
+    };
+
     return (
         <div className="aesop-product-card">
-            <div className="aesop-product-image">
-                <img src={image} alt={name} />
-                {isNew && <span className="aesop-product-badge">New</span>}
-            </div>
-            <div className="aesop-product-info">
-                <h3 className="aesop-product-name">{name}</h3>
-                <p className="aesop-product-price">${price}</p>
+            <div
+                ref={containerRef}
+                className="aesop-product-image-carousel"
+                onMouseMove={handleMouseMove}
+                onMouseLeave={handleMouseLeave}
+            >
+                <img
+                    src={images[currentIndex]}
+                    alt={`Product image ${currentIndex + 1}`}
+                    className="aesop-carousel-image"
+                />
+                <div className="aesop-image-counter">{currentIndex + 1}/{images.length}</div>
+                <div className="aesop-image-indicators">
+                    {images.map((_, i) => (
+                        <span key={i} className={`aesop-indicator ${i === currentIndex ? 'active' : ''}`}></span>
+                    ))}
+                </div>
             </div>
         </div>
     );
 }
 
-// Featured Products Component
+// Featured Products Component (now a gallery of image collections)
 function FeaturedProducts() {
-    const products = [
-        { name: "Luxury Cotton Sheets", price: "299", image: "/api/placeholder/300/300", isNew: true },
-        { name: "Silk Pillowcase Set", price: "149", image: "/api/placeholder/300/300" },
-        { name: "Bamboo Duvet Cover", price: "199", image: "/api/placeholder/300/300" },
-        { name: "Linen Throw Blanket", price: "89", image: "/api/placeholder/300/300", isNew: true }
+    // Generate image collections (10 images each). Using placeholder API with slight size variation for visual variety.
+    const generateImages = (base) => Array.from({ length: 10 }, (_, i) => `/api/placeholder/${base + i}/${base + i}`);
+
+    const galleries = [
+        { images: generateImages(600) },
+        { images: generateImages(610) },
+        { images: generateImages(620) },
+        { images: generateImages(630) }
     ];
 
     return (
         <section className="aesop-section">
             <div className="aesop-container">
                 <h2 className="aesop-section-title">Featured Products</h2>
+                <p className="aesop-section-subtitle">Hover and move your mouse to explore different angles</p>
                 <div className="aesop-product-grid">
-                    {products.map((product, index) => (
-                        <ProductCard key={index} {...product} />
+                    {galleries.map((g, index) => (
+                        <ProductCard key={index} images={g.images} />
                     ))}
                 </div>
             </div>

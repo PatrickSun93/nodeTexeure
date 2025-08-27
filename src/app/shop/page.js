@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Header from '../../components/Header';
+import Footer from '../../components/Footer';
 
 // Breadcrumb Component
 function Breadcrumb() {
@@ -31,6 +32,15 @@ function FilterSidebar({ filters, onFilterChange }) {
   ];
 
   const materials = ['Cotton', 'Silk', 'Bamboo', 'Linen', 'Memory Foam'];
+
+  const seasons = ['All', 'Spring', 'Summer', 'Fall', 'Winter'];
+
+  const handleSeasonChange = (season) => {
+    const newSeasons = filters.seasons.includes(season)
+      ? filters.seasons.filter(s => s !== season)
+      : [...filters.seasons, season];
+    onFilterChange('seasons', newSeasons);
+  };
 
   const handleMaterialChange = (material) => {
     const newMaterials = filters.materials.includes(material)
@@ -563,6 +573,7 @@ export default function Shop() {
           </main>
         </div>
       </div>
+      <Footer />
     </div>
   );
 }
