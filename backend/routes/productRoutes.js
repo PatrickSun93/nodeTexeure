@@ -84,24 +84,31 @@ router.get('/', async (req, res) => {
 // GET /api/products/:id - Product details
 router.get('/:id', async (req, res) => {
   try {
-    const { id } = req.params;
+    const { id: param } = req.params;
 
-    const productResult = await DatabaseUtil.executeQuery('SELECT * FROM products WHERE id = ?', [id]);
+    // Allow fetching by numeric/primary id OR by slug
+    const productResult = await DatabaseUtil.executeQuery(
+      'SELECT * FROM products WHERE id = ? OR slug = ? LIMIT 1',
+      [param, param]
+    );
     if (!productResult.success) throw new Error(productResult.error || 'Failed to fetch product');
     if (!productResult.data || productResult.data.length === 0) {
       return res.status(404).json(ResponseFormatter.failure('Product not found'));
     }
 
-    const variantsResult = await DatabaseUtil.executeQuery('SELECT * FROM product_variants WHERE product_id = ?', [id]);
+    const product = productResult.data[0];
+    const productId = product.id;
+
+    const variantsResult = await DatabaseUtil.executeQuery('SELECT * FROM product_variants WHERE product_id = ?', [productId]);
     if (!variantsResult.success) throw new Error(variantsResult.error || 'Failed to fetch variants');
 
-    const imagesResult = await DatabaseUtil.executeQuery('SELECT * FROM product_images WHERE product_id = ? ORDER BY sort_order', [id]);
+    const imagesResult = await DatabaseUtil.executeQuery('SELECT * FROM product_images WHERE product_id = ? ORDER BY sort_order', [productId]);
     if (!imagesResult.success) throw new Error(imagesResult.error || 'Failed to fetch images');
 
-    const reviewsResult = await DatabaseUtil.executeQuery('SELECT * FROM product_reviews WHERE product_id = ? ORDER BY created_at DESC', [id]);
+    const reviewsResult = await DatabaseUtil.executeQuery('SELECT * FROM product_reviews WHERE product_id = ? ORDER BY created_at DESC', [productId]);
     if (!reviewsResult.success) throw new Error(reviewsResult.error || 'Failed to fetch reviews');
 
-    const keyValueTable = { ...productResult.data[0], variants: variantsResult.data, images: imagesResult.data, reviews: reviewsResult.data };
+    const keyValueTable = { ...product, variants: variantsResult.data, images: imagesResult.data, reviews: reviewsResult.data };
     res.json(ResponseFormatter.success('Product fetched successfully', keyValueTable));
   } catch (error) {
     console.error(error);

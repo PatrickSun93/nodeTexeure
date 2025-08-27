@@ -984,6 +984,8 @@ p {
 
 .footer-section ul {
   list-style: none;
+  margin: 0;
+  padding: 0;
 }
 
 .footer-section li {
@@ -1429,67 +1431,147 @@ select:focus {
   }
 }
 
-/* Hero Section */
-.aesop-hero {
-  background-color: var(--color-primary-bg);
-  padding: var(--space-20) 0;
-  text-align: center;
+/* ===== OPTION B: FULL-WIDTH STRIP (Featured Collections) ===== */
+.aesop-fullstrip {
+  /* Keep vertical rhythm from .aesop-section; no extra styles needed here */
 }
 
-.aesop-hero-content {
-  max-width: 600px;
-  margin: 0 auto;
+.aesop-fullstrip .aesop-strip-row {
+  display: flex;
+  align-items: stretch;
+  gap: var(--space-8);
+  width: 100%;
+  padding: 0 var(--space-6);
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scroll-snap-type: x proximity;
 }
 
-.aesop-hero-title {
-  font-size: var(--font-size-5xl);
-  font-weight: var(--font-weight-medium);
-  color: var(--color-black);
-  margin-bottom: var(--space-6);
-  line-height: var(--line-height-tight);
+/* Hide scrollbar in WebKit while keeping scrollability */
+.aesop-fullstrip .aesop-strip-row::-webkit-scrollbar {
+  display: none;
 }
 
-.aesop-hero-subtitle {
-  font-size: var(--font-size-lg);
-  color: var(--color-gray-dark);
-  margin-bottom: var(--space-8);
-  line-height: var(--line-height-relaxed);
+.aesop-fullstrip .aesop-strip-item {
+  flex: 0 0 calc((100% - 3 * var(--space-8)) / 4); /* 4-up on desktop */
+  scroll-snap-align: start;
+  min-width: calc((100% - 3 * var(--space-8)) / 4);
 }
 
-/* Buttons */
-.aesop-button-primary {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: var(--space-4) var(--space-8);
-  background-color: var(--color-black);
-  color: var(--color-white);
-  text-decoration: none;
-  font-size: var(--font-size-base);
-  font-weight: var(--font-weight-medium);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  border: none;
-  border-radius: var(--radius-base);
-  cursor: pointer;
-  transition: all var(--transition-base);
+/* Ensure cards stretch to equal heights for a clean strip */
+.aesop-fullstrip .aesop-strip-item .aesop-product-card {
+  height: 100%;
 }
 
-.aesop-button-primary:hover {
-  background-color: var(--color-gray-dark);
-  transform: translateY(-1px);
+/* Tablet: 3-up layout */
+@media (max-width: 1024px) {
+  .aesop-fullstrip .aesop-strip-item {
+    flex-basis: calc((100% - 2 * var(--space-8)) / 3);
+    min-width: calc((100% - 2 * var(--space-8)) / 3);
+  }
 }
 
-.aesop-button-large {
-  padding: var(--space-5) var(--space-10);
-  font-size: var(--font-size-lg);
+/* Mobile: large, swipeable tiles */
+@media (max-width: 768px) {
+  .aesop-fullstrip .aesop-strip-row {
+    gap: var(--space-6);
+    padding: 0 var(--space-4);
+  }
+  .aesop-fullstrip .aesop-strip-item {
+    flex-basis: 85%;
+    min-width: 85%;
+  }
 }
 
-/* Product Components */
-.aesop-featured-products {
-  padding: var(--space-20) 0;
-  background-color: var(--color-white);
+.aesop-product-card {
+  position: relative;
 }
+
+.aesop-product-image-carousel {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  background: var(--color-secondary-bg);
+  border: 1px solid var(--color-gray-lighter);
+}
+
+.aesop-carousel-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform var(--transition-base);
+}
+
+.aesop-image-counter {
+  position: absolute;
+  bottom: var(--space-3);
+  right: var(--space-3);
+  background: rgba(0,0,0,0.55);
+  color: #fff;
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-xs);
+}
+
+.aesop-image-indicators {
+  position: absolute;
+  bottom: var(--space-3);
+  left: var(--space-3);
+  display: flex;
+  gap: 4px;
+}
+
+.aesop-indicator {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.45);
+}
+
+.aesop-indicator.active {
+  background: #ffffff;
+}
+
+/* Thin progress bar along bottom edge */
+.aesop-carousel-progress {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 2px; /* thin */
+  background: rgba(0,0,0,0.08);
+}
+
+.aesop-carousel-progress-bar {
+  height: 100%;
+  width: 0%;
+  background: var(--color-black);
+  transition: width 200ms linear;
+}
+
+/* Grid for Featured section */
+.aesop-product-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-6);
+}
+
+@media (max-width: 1024px) {
+  .aesop-product-grid { grid-template-columns: repeat(3, 1fr); }
+}
+@media (max-width: 768px) {
+  .aesop-product-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 480px) {
+  .aesop-product-grid { grid-template-columns: 1fr; }
+}
+
+/* Section titles */
+.aesop-section { padding: var(--space-12) 0; }
+.aesop-section-title { font-size: var(--font-size-3xl); font-weight: var(--font-weight-light); margin-bottom: var(--space-2); }
+.aesop-section-subtitle { color: var(--color-gray-medium); margin-bottom: var(--space-6); }
 
 .aesop-section-title {
   font-size: var(--font-size-3xl);
