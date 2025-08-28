@@ -124,39 +124,18 @@ function ProductCard({ images = [], slug, title }) {
 
 // Featured Products Component (now a gallery of image collections)
 function FeaturedProducts() {
-    // Generate image collections (10 images each) with consistent 4:3 aspect ratio.
-    // Use base 800x600 and scale by a factor to keep variety while preserving ratio.
-    const generateImages = () => Array.from({ length: 10 }, (_, i) => {
-        const width = 800 + i * 40;   // maintains 4:3 when paired with height increment below
-        const height = 600 + i * 30;  // 40:30 == 4:3
-        return `/api/placeholder/${width}/${height}`;
+    // One full-width, hero-like collection that scrubs on hover
+    const images = Array.from({ length: 10 }, (_, i) => {
+        const w = 800 + i * 40;
+        const h = 600 + i * 30; // keeps 4:3 ratio
+        return `/api/placeholder/${w}/${h}`;
     });
-
-    const slugToTitle = (slug) => slug
-        .split('-')
-        .map((s) => s.charAt(0).toUpperCase() + s.slice(1))
-        .join(' ');
-
-    const galleries = [
-        { slug: 'luxury-cotton-sheets', title: slugToTitle('luxury-cotton-sheets'), images: generateImages() },
-        { slug: 'silk-pillowcase-set', title: slugToTitle('silk-pillowcase-set'), images: generateImages() },
-        { slug: 'memory-foam-mattress', title: slugToTitle('memory-foam-mattress'), images: generateImages() },
-        { slug: 'bamboo-duvet-cover', title: slugToTitle('bamboo-duvet-cover'), images: generateImages() }
-    ];
+    const slug = 'luxury-cotton-sheets';
+    const title = 'Luxury Cotton Sheets';
 
     return (
-        <section className="aesop-section aesop-fullstrip">
-            <div className="aesop-container">
-                <h2 className="aesop-section-title">Featured Collections</h2>
-                <p className="aesop-section-subtitle">Hover to scrub through each collection</p>
-            </div>
-            <div className="aesop-strip-row" role="list" aria-label="Featured Collections">
-                {galleries.map((g, index) => (
-                    <div key={index} className="aesop-strip-item" role="listitem">
-                        <ProductCard images={g.images} slug={g.slug} title={g.title} />
-                    </div>
-                ))}
-            </div>
+        <section className="aesop-section aesop-fullstrip aesop-fullstrip-hero">
+            <ProductCard images={images} slug={slug} title={title} />
         </section>
     );
 }

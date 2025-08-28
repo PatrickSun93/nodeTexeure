@@ -420,10 +420,42 @@ body {
 }
 
 .aesop-products-list {
+  /* In list mode, the grid container itself collapses to a single column */
   grid-template-columns: 1fr;
   gap: var(--space-4);
 }
 
+/* Make card layout visibly different in list mode */
+.aesop-products-list .aesop-product-card {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: var(--space-6);
+  align-items: stretch;
+}
+
+.aesop-products-list .aesop-product-image-container {
+  height: 100%;
+}
+
+.aesop-products-list .aesop-product-image {
+  height: 100%;
+  object-fit: cover;
+}
+
+@media (max-width: 1024px) {
+  .aesop-products-list .aesop-product-card {
+    grid-template-columns: 220px 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .aesop-products-list .aesop-product-card {
+    grid-template-columns: 1fr;
+  }
+  .aesop-products-list .aesop-product-image {
+    height: 240px;
+  }
+}
 /* ===== LOADING & EMPTY STATES ===== */
 .aesop-loading {
   display: flex;
@@ -653,6 +685,13 @@ body {
   .aesop-products-grid {
     grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
     gap: var(--space-6);
+  }
+
+  /* Ensure the Change Layout (List view) works on mobile as well.
+     When both classes are present, force single-column list layout. */
+  .aesop-products-grid.aesop-products-list {
+    grid-template-columns: 1fr;
+    gap: var(--space-4);
   }
   
   .aesop-container {
@@ -1463,6 +1502,16 @@ select:focus {
   height: 100%;
 }
 
+.aesop-fullstrip.aesop-fullstrip-hero {
+  width: 100%;
+  height: 100vh; /* full viewport height for hero impact */
+  display: flex;
+  align-items: stretch;
+}
+.aesop-fullstrip.aesop-fullstrip-hero .aesop-product-card {
+  flex: 1 1 auto;
+}
+
 /* Tablet: 3-up layout */
 @media (max-width: 1024px) {
   .aesop-fullstrip .aesop-strip-item {
@@ -1583,7 +1632,7 @@ select:focus {
 
 .aesop-product-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: var(--space-8);
 }
 
