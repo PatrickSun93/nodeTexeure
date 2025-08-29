@@ -145,7 +145,9 @@ router.post('/login', loginLimiter, async (req, res) => {
     const user = result.data[0];
 
     if (await bcrypt.compare(password, user.password_hash)) {
-      const accessToken = jwt.sign({ id: user.id, email: user.email, isAdmin: user.isAdmin }, process.env.JWT_SECRET, { expiresIn: '24h' });
+      // Compute isAdmin from role field
+      const isAdmin = user.role === 'admin' || user.role === 'staff';
+      const accessToken = jwt.sign({ id: user.id, email: user.email, isAdmin }, process.env.JWT_SECRET, { expiresIn: '24h' });
       const refreshToken = crypto.randomBytes(64).toString('hex');
       const refreshExpiry = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
       
@@ -157,7 +159,7 @@ router.post('/login', loginLimiter, async (req, res) => {
       
       // Issue HttpOnly authentication cookie for admin logins
       // Secure in production, SameSite=Strict, Path=/, configurable TTL via ADMIN_AUTH_COOKIE_TTL_MS (default: 24h)
-      if (user.isAdmin) {
+      if (isAdmin) {
         const ttlMs = Number.parseInt(process.env.ADMIN_AUTH_COOKIE_TTL_MS || '86400000', 10);
         const isProd = process.env.NODE_ENV === 'production';
         res.cookie('admin_auth', accessToken, {
@@ -169,9 +171,8 @@ router.post('/login', loginLimiter, async (req, res) => {
         });
       }
 
-      // In the login endpoint, after successful login, add:
-      // Handle cart merge
-      if (req.cookies.sessionId) {
+      // Handle cart merge - skip for admin/staff users
+      if (req.cookies.sessionId && user.role !== 'admin' && user.role !== 'staff') {
         const sessionId = req.cookies.sessionId;
         const guestCartResult = await DatabaseUtil.executeQuery('SELECT id FROM shopping_carts WHERE session_id = ?', [sessionId]);
         if (guestCartResult.success && guestCartResult.data.length > 0) {
@@ -182,7 +183,8 @@ router.post('/login', loginLimiter, async (req, res) => {
           if (userCartResult.success && userCartResult.data.length > 0) {
             userCartId = userCartResult.data[0].id;
           } else {
-            userCartId = await get_next_id('CART');
+            const cartIdResult = await DatabaseUtil.executeQuery('SELECT get_next_id(?) as id', ['CART']);
+            userCartId = cartIdResult.data[0].id;
             await DatabaseUtil.executeQuery('INSERT INTO shopping_carts (id, user_id) VALUES (?, ?)', [userCartId, user.id]);
           }
           // Merge items: for each guest item, add or update in user cart
@@ -198,7 +200,8 @@ router.post('/login', loginLimiter, async (req, res) => {
                 [item.quantity, checkUserItem.data[0].id]
               );
             } else {
-              const newItemId = await get_next_id('CARTITEM');
+              const itemIdResult = await DatabaseUtil.executeQuery('SELECT get_next_id(?) as id', ['CARTITEM']);
+              const newItemId = itemIdResult.data[0].id;
               await DatabaseUtil.executeQuery(
                 'INSERT INTO cart_items (id, cart_id, product_id, variant_id, quantity, price) VALUES (?, ?, ?, ?, ?, ?)',
                 [newItemId, userCartId, item.product_id, item.variant_id, item.quantity, item.price]
@@ -207,11 +210,14 @@ router.post('/login', loginLimiter, async (req, res) => {
           }
           // Delete guest cart
           await DatabaseUtil.executeQuery('DELETE FROM shopping_carts WHERE id = ?', [guestCartId]);
-          // Clear session cookie
-          res.clearCookie('sessionId');
         }
+        // Clear session cookie for regular users
+        res.clearCookie('sessionId');
+      } else if (req.cookies.sessionId && (user.role === 'admin' || user.role === 'staff')) {
+        // For admin/staff users, just clear the session cookie without cart operations
+        res.clearCookie('sessionId');
       }
-      const keyValueTable = { userId: user.id, email: user.email, accessToken, refreshToken };
+      const keyValueTable = { userId: user.id, email: user.email, accessToken, refreshToken, role: user.role, isAdmin };
       res.json(ResponseFormatter.success('Login successful', keyValueTable));
     } else {
       const keyValueTable = { error: 'Invalid email or password' };
@@ -235,12 +241,14 @@ router.post('/refresh', async (req, res) => {
       return res.status(401).json(ResponseFormatter.failure('Invalid or expired refresh token'));
     }
     const { user_id } = result.data[0];
-    const userResult = await DatabaseUtil.executeQuery('SELECT id, email, isAdmin FROM users WHERE id = ?', [user_id]);
+    const userResult = await DatabaseUtil.executeQuery('SELECT id, email, role FROM users WHERE id = ?', [user_id]);
     if (!userResult.success || userResult.data.length === 0) {
       return res.status(404).json(ResponseFormatter.failure('User not found'));
     }
     const user = userResult.data[0];
-    const newAccessToken = jwt.sign({ id: user.id, email: user.email, isAdmin: user.isAdmin }, process.env.JWT_SECRET, { expiresIn: '24h' });
+    // Compute isAdmin from role field
+    const isAdmin = user.role === 'admin' || user.role === 'staff';
+    const newAccessToken = jwt.sign({ id: user.id, email: user.email, isAdmin }, process.env.JWT_SECRET, { expiresIn: '24h' });
     res.json(ResponseFormatter.success('Token refreshed', { accessToken: newAccessToken }));
   } catch (error) {
     console.error('Refresh token error:', error);

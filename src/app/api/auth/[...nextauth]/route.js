@@ -105,14 +105,16 @@ const handler = NextAuth({
 
           if (data.status == 'SUCCESS') {
             // Extract user data from successful response
-            const { userId, email, accessToken, refreshToken } = data.keyValueTable;
+            const { userId, email, accessToken, refreshToken, role, isAdmin } = data.keyValueTable;
             
             console.log('[NextAuth] Login successful, returning user object');
             return {
               id: userId.toString(),
               email: email,
               accessToken: accessToken,
-              refreshToken: refreshToken
+              refreshToken: refreshToken,
+              role: role,
+              isAdmin: isAdmin
             };
           } else {
             // Login failed
@@ -135,11 +137,15 @@ const handler = NextAuth({
         token.id = user.id;
         token.accessToken = user.accessToken;
         token.refreshToken = user.refreshToken;
+        token.role = user.role;
+        token.isAdmin = user.isAdmin;
       }
       return token;
     },
     async session({ session, token }) {
       session.user.id = token.id;
+      session.user.role = token.role;
+      session.user.isAdmin = token.isAdmin;
       session.accessToken = token.accessToken;
       return session;
     }

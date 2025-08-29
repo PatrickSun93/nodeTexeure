@@ -1839,3 +1839,225 @@ select:focus {
 .aesop-h-96 {
   height: 384px;
 }
+
+/* ===== CART DRAWER ===== */
+.aesop-cart-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.4);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity var(--transition-base), visibility var(--transition-base);
+  z-index: 999;
+}
+.aesop-cart-overlay.open { opacity: 1; visibility: visible; }
+
+.aesop-cart-drawer {
+  position: fixed;
+  top: 0; right: 0; bottom: 0;
+  width: min(420px, 100%);
+  background: var(--color-white);
+  border-left: 1px solid var(--color-gray-lighter);
+  box-shadow: -8px 0 24px rgba(0,0,0,0.08);
+  transform: translateX(100%);
+  transition: transform var(--transition-slow);
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+}
+.aesop-cart-drawer.open { transform: translateX(0); }
+
+.aesop-cart-drawer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-5) var(--space-6);
+  border-bottom: 1px solid var(--color-gray-lighter);
+}
+.aesop-cart-drawer-title { font-size: var(--font-size-xl); font-weight: var(--font-weight-medium); }
+
+.aesop-cart-drawer-body {
+  flex: 1;
+  overflow: auto;
+  padding: var(--space-6);
+}
+
+.aesop-cart-items { list-style: none; display: flex; flex-direction: column; gap: var(--space-4); }
+.aesop-cart-item { border: 1px solid var(--color-gray-lighter); border-radius: var(--radius-base); padding: var(--space-4); background: var(--color-white); }
+.aesop-cart-item-main { display: flex; align-items: baseline; justify-content: space-between; gap: var(--space-3); margin-bottom: var(--space-3); }
+.aesop-cart-item-title { font-weight: var(--font-weight-medium); }
+.aesop-cart-item-price { color: var(--color-gray-dark); }
+.aesop-cart-line { margin-left: auto; font-weight: var(--font-weight-medium); }
+
+.aesop-cart-item-controls { display: grid; grid-template-columns: auto auto auto; align-items: center; gap: var(--space-3); }
+.aesop-qty-control { display: inline-flex; align-items: center; border: 1px solid var(--color-gray-lighter); border-radius: var(--radius-sm); overflow: hidden; }
+.aesop-qty-btn { background: none; border: none; padding: 6px 10px; cursor: pointer; }
+.aesop-qty-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.aesop-qty-input { width: 48px; text-align: center; border: none; padding: 6px 4px; outline: none; }
+
+.aesop-link-button { background: none; border: none; color: var(--color-gray-dark); cursor: pointer; text-decoration: underline; }
+.aesop-remove-item:hover { color: var(--color-black); }
+
+.aesop-cart-empty { display: grid; gap: var(--space-4); text-align: center; padding: var(--space-10) var(--space-6); }
+.aesop-cart-loading, .aesop-cart-error { text-align: center; padding: var(--space-6); color: var(--color-gray-dark); }
+
+.aesop-cart-drawer-footer {
+  border-top: 1px solid var(--color-gray-lighter);
+  padding: var(--space-5) var(--space-6);
+  display: grid;
+  gap: var(--space-4);
+  background: var(--color-white);
+}
+.aesop-cart-subtotal { display: flex; align-items: center; justify-content: space-between; }
+.aesop-cart-actions { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-3); }
+
+/* Cart buttons reuse existing .aesop-button-primary and .aesop-button-secondary classes */
+
+.aesop-button-secondary {
+  background: var(--color-white);
+  color: var(--color-black);
+  border: 1px solid var(--color-black);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  text-align: center;
+}
+
+/* Cart Page Layout */
+.aesop-cart-page {
+  padding: var(--space-12) 0;
+}
+
+.aesop-cart-content {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-8);
+}
+
+@media (min-width: 768px) {
+  .aesop-cart-content {
+    grid-template-columns: 2fr 1fr;
+  }
+}
+
+/* Cart Items Section */
+.aesop-cart-items-section {
+  background: var(--color-white);
+  border-radius: var(--radius-base);
+  padding: var(--space-6);
+  box-shadow: var(--shadow-sm);
+}
+
+.aesop-cart-page-items {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.aesop-cart-page-item {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: var(--space-4);
+  padding: var(--space-4) 0;
+  border-bottom: 1px solid var(--color-gray-lighter);
+  align-items: start;
+}
+
+.aesop-cart-page-item:last-child {
+  border-bottom: none;
+}
+
+.aesop-cart-item-image {
+  width: 80px;
+  height: 80px;
+}
+
+.aesop-placeholder-image {
+  width: 100%;
+  height: 100%;
+  background: var(--color-secondary-bg);
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-gray-medium);
+  font-size: var(--font-size-sm);
+}
+
+.aesop-cart-item-details {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.aesop-cart-item-name {
+  font-weight: var(--font-weight-medium);
+  color: var(--color-black);
+  margin: 0;
+}
+
+.aesop-cart-item-price {
+  color: var(--color-gray-medium);
+  margin: 0;
+}
+
+.aesop-cart-item-controls {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-top: var(--space-2);
+}
+
+.aesop-cart-item-total {
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-black);
+  text-align: right;
+}
+
+/* Cart Summary Section */
+.aesop-cart-summary-section {
+  align-self: start;
+}
+
+.aesop-cart-summary-card {
+  background: var(--color-white);
+  border-radius: var(--radius-base);
+  padding: var(--space-6);
+  box-shadow: var(--shadow-sm);
+  position: sticky;
+  top: var(--space-6);
+}
+
+.aesop-cart-summary-details {
+  margin: var(--space-4) 0;
+}
+
+.aesop-cart-summary-note {
+  margin-top: var(--space-3);
+}
+
+.aesop-cart-summary-note p {
+  color: var(--color-gray-medium);
+  font-size: var(--font-size-sm);
+  margin: 0;
+}
+
+.aesop-cart-summary-actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin-top: var(--space-6);
+}
+
+.aesop-checkout-btn {
+  width: 100%;
+  justify-content: center;
+}
+
+@media (max-width: 480px) {
+  .aesop-cart-drawer { width: 100%; }
+  .aesop-cart-actions { grid-template-columns: 1fr; }
+}

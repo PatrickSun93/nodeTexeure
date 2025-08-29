@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import Link from 'next/link';
 import { useBackendHealth } from '../lib';
@@ -180,7 +180,7 @@ function FeaturesSection() {
 
 
 export default function Home() {
-    const { isHealthy, isLoading } = useBackendHealth();
+    const { isConnected, loading } = useBackendHealth();
 
     return (
         <div className="aesop-page">
@@ -193,12 +193,12 @@ export default function Home() {
             <Footer />
             
             {/* Backend Health Status */}
-            {isLoading && (
+            {loading && (
                 <div className="aesop-status aesop-status-loading">
                     Checking backend connection...
                 </div>
             )}
-            {!isLoading && !isHealthy && (
+            {!loading && !isConnected && (
                 <div className="aesop-status aesop-status-error">
                     Backend connection failed
                 </div>
