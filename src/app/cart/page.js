@@ -2,20 +2,20 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import Header from '../../components/Header'; // fixed path to src/components/Header
+import Header from '../../components/Header';
 import Footer from '../../components/Footer';
 import { apiRequest, extractResponseData } from '../../lib/api';
 
 function Breadcrumb() {
   return (
-    <div className="bg-amber-50 py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">Shopping Cart</h1>
-          <nav className="flex justify-center items-center space-x-2 text-sm">
-            <Link href="/" className="text-gray-600 hover:text-amber-600">Home</Link>
-            <span className="text-gray-400">&gt;</span>
-            <span className="text-gray-900 font-medium">Cart</span>
+    <div className="aesop-breadcrumb">
+      <div className="aesop-container">
+        <div className="aesop-breadcrumb-content">
+          <h1 className="aesop-page-title">Shopping Cart</h1>
+          <nav className="aesop-breadcrumb-nav" aria-label="Breadcrumb">
+            <Link href="/" className="aesop-breadcrumb-link">Home</Link>
+            <span className="aesop-breadcrumb-separator">→</span>
+            <span className="aesop-breadcrumb-current">Cart</span>
           </nav>
         </div>
       </div>
@@ -24,95 +24,270 @@ function Breadcrumb() {
 }
 
 export default function Cart() {
-  const [cart, setCart] = useState(null);
+  const [cart, setCart] = useState({ id: null, items: [] });
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [updating, setUpdating] = useState({});
 
   const fetchCart = async () => {
+    setLoading(true);
+    setError('');
     try {
       const raw = await apiRequest('/cart');
       const parsed = extractResponseData(raw);
       if (parsed.status === 'SUCCESS') {
-        // Normalize into the shape the UI expects
         setCart({
-          id: parsed.cartId,
+          id: parsed.cartId || null,
           items: Array.isArray(parsed.items) ? parsed.items : []
         });
       } else {
-        console.error('Failed to fetch cart:', parsed.message);
+        setError(parsed.message || 'Failed to fetch cart');
       }
-    } catch (error) {
-      console.error(error);
+    } catch (e) {
+      setError(e?.message || 'Failed to fetch cart');
     } finally {
       setLoading(false);
     }
+  };
+
+  const dispatchCartUpdated = () => {
+    try {
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new Event('cart:updated'));
+      }
+    } catch {}
   };
 
   useEffect(() => {
     fetchCart();
   }, []);
 
-  const handleUpdateQuantity = async (itemId, quantity) => {
+  const updateQuantity = async (itemId, newQty) => {
+    if (!itemId || newQty < 1) return;
+    setUpdating(s => ({ ...s, [itemId]: true }));
     try {
       await apiRequest(`/cart/update/${itemId}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ quantity })
+        body: JSON.stringify({ quantity: newQty })
       });
-      fetchCart();
-    } catch (error) {
-      console.error(error);
+      setCart(prev => ({
+        ...prev,
+        items: prev.items.map(it => it.id === itemId ? { ...it, quantity: newQty } : it)
+      }));
+      dispatchCartUpdated();
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setUpdating(s => ({ ...s, [itemId]: false }));
     }
   };
 
-  const handleRemove = async (itemId) => {
+  const removeItem = async (itemId) => {
+    if (!itemId) return;
+    setUpdating(s => ({ ...s, [itemId]: true }));
     try {
-      await apiRequest(`/cart/remove/${itemId}`, {
-        method: 'DELETE'
-      });
-      fetchCart();
-    } catch (error) {
-      console.error(error);
+      await apiRequest(`/cart/remove/${itemId}`, { method: 'DELETE' });
+      setCart(prev => ({ ...prev, items: prev.items.filter(it => it.id !== itemId) }));
+      dispatchCartUpdated();
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setUpdating(s => ({ ...s, [itemId]: false }));
     }
   };
 
-  if (loading) return <div>Loading...</div>;
-  if (!cart || cart.items.length === 0) return <div>Your cart is empty</div>;
+  const subtotal = cart.items.reduce((sum, it) => sum + (Number(it.base_price) || 0) * (Number(it.quantity) || 0), 0);
+
+  if (loading) {
+    return (
+      <div className="aesop-page">
+        <Header />
+        <Breadcrumb />
+        <div className="aesop-container">
+          <div className="aesop-loading-state">Loading your cart...</div>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="aesop-page">
+        <Header />
+        <Breadcrumb />
+        <div className="aesop-container">
+          <div className="aesop-error-state">
+            <p>{error}</p>
+            <button className="aesop-button-primary" onClick={fetchCart}>Try Again</button>
+          </div>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
+
+  if (!cart.items || cart.items.length === 0) {
+    return (
+      <div className="aesop-page">
+        <Header />
+        <Breadcrumb />
+        <div className="aesop-container">
+          <div className="aesop-empty-state">
+            <h2>Your cart is empty</h2>
+            <p>Discover our curated collection of premium products.</p>
+            <Link href="/shop" className="aesop-button-primary">Continue Shopping</Link>
+          </div>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
+
+  if (loading) {
+    return (
+      <div className="aesop-page">
+        <Header />
+        <Breadcrumb />
+        <div className="aesop-container">
+          <div className="aesop-cart-loading">Loading your cart...</div>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="aesop-page">
+        <Header />
+        <Breadcrumb />
+        <div className="aesop-container">
+          <div className="aesop-cart-error">
+            <p>Error loading cart: {error}</p>
+            <button onClick={() => window.location.reload()} className="aesop-button-secondary">
+              Try Again
+            </button>
+          </div>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
+
+  if (!cart || cart.items.length === 0) {
+    return (
+      <div className="aesop-page">
+        <Header />
+        <Breadcrumb />
+        <div className="aesop-container">
+          <div className="aesop-cart-empty">
+            <h2>Your cart is empty</h2>
+            <p>Discover our collection and add items to your cart.</p>
+            <Link href="/shop" className="aesop-button-primary">
+              Start Shopping
+            </Link>
+          </div>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="aesop-page">
       <Header />
       <Breadcrumb />
-      <div className="max-w-7xl mx-auto px-4 py-8">
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div>
-              <h2 className="text-2xl font-bold mb-4">Cart Items</h2>
-              {cart.items.map(item => (
-                <div key={item.id} className="flex items-center mb-4 border-b pb-4">
-                  <div className="w-24 h-24 bg-gray-200 mr-4">Image</div>
-                  <div className="flex-1">
-                    <h3 className="font-medium">{item.name}</h3>
-                    <p>${item.price}</p>
-                    <div className="flex items-center mt-2">
-                      <input
-                        type="number"
-                        defaultValue={item.quantity}
-                        min="1"
-                        className="w-16 border rounded px-2 py-1 mr-2"
-                        onChange={(e) => handleUpdateQuantity(item.id, parseInt(e.target.value))}
-                      />
-                      <button onClick={() => handleRemove(item.id)} className="text-red-600 hover:text-red-800 mr-4">Remove</button>
-                    </div>
-                  </div>
-                  <p className="font-medium">${(item.price * item.quantity).toFixed(2)}</p>
-                </div>
-              ))}
+      <div className="aesop-container">
+        <div className="aesop-cart-page">
+          <div className="aesop-cart-content">
+            {/* Cart Items Column */}
+            <div className="aesop-cart-items-section">
+              <h2 className="aesop-section-title">Cart Items</h2>
+              <ul className="aesop-cart-page-items" aria-live="polite">
+                {cart.items.map((item) => {
+                  const price = Number(item.base_price) || 0;
+                  const qty = Number(item.quantity) || 0;
+                  const line = price * qty;
+                  return (
+                    <li key={item.id} className="aesop-cart-page-item">
+                      <div className="aesop-cart-item-image">
+                        <div className="aesop-placeholder-image">Image</div>
+                      </div>
+                      <div className="aesop-cart-item-details">
+                        <h3 className="aesop-cart-item-name">{item.name || item.product_id}</h3>
+                        <p className="aesop-cart-item-price">${price.toFixed(2)}</p>
+                        <div className="aesop-cart-item-controls">
+                          <div className="aesop-qty-control" aria-label={`Quantity for ${item.name || item.product_id}`}>
+                            <button
+                              className="aesop-qty-btn"
+                              onClick={() => updateQuantity(item.id, Math.max(1, qty - 1))}
+                              disabled={!!updating[item.id] || qty <= 1}
+                              aria-label="Decrease quantity"
+                            >
+                              −
+                            </button>
+                            <input
+                              className="aesop-qty-input"
+                              type="number"
+                              min={1}
+                              value={qty}
+                              onChange={(e) => {
+                                const val = parseInt(e.target.value, 10);
+                                if (!Number.isNaN(val) && val >= 1) {
+                                  updateQuantity(item.id, val);
+                                }
+                              }}
+                              aria-live="off"
+                            />
+                            <button
+                              className="aesop-qty-btn"
+                              onClick={() => updateQuantity(item.id, qty + 1)}
+                              disabled={!!updating[item.id]}
+                              aria-label="Increase quantity"
+                            >
+                              +
+                            </button>
+                          </div>
+                          <button
+                            className="aesop-link-button aesop-remove-item"
+                            onClick={() => removeItem(item.id)}
+                            disabled={!!updating[item.id]}
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      </div>
+                      <div className="aesop-cart-item-total">
+                        ${line.toFixed(2)}
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
             </div>
-            <div>
-              <h2 className="text-2xl font-bold mb-4">Summary</h2>
-              <div className="bg-gray-50 p-4 rounded-lg">
-                <p className="flex justify-between mb-2"><span>Subtotal</span><span>${cart.items.reduce((sum, i) => sum + i.price * i.quantity, 0).toFixed(2)}</span></p>
-                <button className="w-full bg-amber-600 text-white py-3 rounded-lg mt-4">Proceed to Checkout</button>
+
+            {/* Cart Summary Column */}
+            <div className="aesop-cart-summary-section">
+              <div className="aesop-cart-summary-card">
+                <h2 className="aesop-section-title">Order Summary</h2>
+                <div className="aesop-cart-summary-details">
+                  <div className="aesop-cart-subtotal">
+                    <span>Subtotal</span>
+                    <strong>${subtotal.toFixed(2)}</strong>
+                  </div>
+                  <div className="aesop-cart-summary-note">
+                    <p>Shipping and taxes calculated at checkout</p>
+                  </div>
+                </div>
+                <div className="aesop-cart-summary-actions">
+                  <button className="aesop-button-primary aesop-checkout-btn">
+                    Proceed to Checkout
+                  </button>
+                  <Link href="/shop" className="aesop-button-secondary">
+                    Continue Shopping
+                  </Link>
+                </div>
               </div>
             </div>
           </div>

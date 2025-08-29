@@ -5,11 +5,13 @@ import Link from 'next/link';
 import { useSession, signIn, signOut } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useCartCount } from '../lib';
+import CartDrawer from './CartDrawer';
 
 export default function Header() {
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [isCartOpen, setIsCartOpen] = useState(false);
   const { data: session, status } = useSession();
   const { count } = useCartCount();
   const router = useRouter();
@@ -126,7 +128,13 @@ export default function Header() {
               )}
             </div>
 
-            <Link href="/cart" className="aesop-cart-link">
+            <button
+              type="button"
+              className="aesop-cart-link"
+              onClick={() => setIsCartOpen(true)}
+              aria-label="Open cart"
+              title="Open cart"
+            >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-1.5 6M7 13l-1.5 6m0 0h9" />
               </svg>
@@ -135,7 +143,7 @@ export default function Header() {
                   {count}
                 </span>
               )}
-            </Link>
+            </button>
 
             <div className="aesop-user-menu">
               {status === 'loading' ? (
@@ -183,6 +191,7 @@ export default function Header() {
           </div>
         </div>
       </div>
+      <CartDrawer isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
     </header>
   );
 }

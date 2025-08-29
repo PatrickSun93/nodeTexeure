@@ -420,10 +420,42 @@ body {
 }
 
 .aesop-products-list {
+  /* In list mode, the grid container itself collapses to a single column */
   grid-template-columns: 1fr;
   gap: var(--space-4);
 }
 
+/* Make card layout visibly different in list mode */
+.aesop-products-list .aesop-product-card {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: var(--space-6);
+  align-items: stretch;
+}
+
+.aesop-products-list .aesop-product-image-container {
+  height: 100%;
+}
+
+.aesop-products-list .aesop-product-image {
+  height: 100%;
+  object-fit: cover;
+}
+
+@media (max-width: 1024px) {
+  .aesop-products-list .aesop-product-card {
+    grid-template-columns: 220px 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .aesop-products-list .aesop-product-card {
+    grid-template-columns: 1fr;
+  }
+  .aesop-products-list .aesop-product-image {
+    height: 240px;
+  }
+}
 /* ===== LOADING & EMPTY STATES ===== */
 .aesop-loading {
   display: flex;
@@ -653,6 +685,13 @@ body {
   .aesop-products-grid {
     grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
     gap: var(--space-6);
+  }
+
+  /* Ensure the Change Layout (List view) works on mobile as well.
+     When both classes are present, force single-column list layout. */
+  .aesop-products-grid.aesop-products-list {
+    grid-template-columns: 1fr;
+    gap: var(--space-4);
   }
   
   .aesop-container {
@@ -984,6 +1023,8 @@ p {
 
 .footer-section ul {
   list-style: none;
+  margin: 0;
+  padding: 0;
 }
 
 .footer-section li {
@@ -1429,67 +1470,157 @@ select:focus {
   }
 }
 
-/* Hero Section */
-.aesop-hero {
-  background-color: var(--color-primary-bg);
-  padding: var(--space-20) 0;
-  text-align: center;
+/* ===== OPTION B: FULL-WIDTH STRIP (Featured Collections) ===== */
+.aesop-fullstrip {
+  /* Keep vertical rhythm from .aesop-section; no extra styles needed here */
 }
 
-.aesop-hero-content {
-  max-width: 600px;
-  margin: 0 auto;
+.aesop-fullstrip .aesop-strip-row {
+  display: flex;
+  align-items: stretch;
+  gap: var(--space-8);
+  width: 100%;
+  padding: 0 var(--space-6);
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scroll-snap-type: x proximity;
 }
 
-.aesop-hero-title {
-  font-size: var(--font-size-5xl);
-  font-weight: var(--font-weight-medium);
-  color: var(--color-black);
-  margin-bottom: var(--space-6);
-  line-height: var(--line-height-tight);
+/* Hide scrollbar in WebKit while keeping scrollability */
+.aesop-fullstrip .aesop-strip-row::-webkit-scrollbar {
+  display: none;
 }
 
-.aesop-hero-subtitle {
-  font-size: var(--font-size-lg);
-  color: var(--color-gray-dark);
-  margin-bottom: var(--space-8);
-  line-height: var(--line-height-relaxed);
+.aesop-fullstrip .aesop-strip-item {
+  flex: 0 0 calc((100% - 3 * var(--space-8)) / 4); /* 4-up on desktop */
+  scroll-snap-align: start;
+  min-width: calc((100% - 3 * var(--space-8)) / 4);
 }
 
-/* Buttons */
-.aesop-button-primary {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: var(--space-4) var(--space-8);
-  background-color: var(--color-black);
-  color: var(--color-white);
-  text-decoration: none;
-  font-size: var(--font-size-base);
-  font-weight: var(--font-weight-medium);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  border: none;
-  border-radius: var(--radius-base);
-  cursor: pointer;
-  transition: all var(--transition-base);
+/* Ensure cards stretch to equal heights for a clean strip */
+.aesop-fullstrip .aesop-strip-item .aesop-product-card {
+  height: 100%;
 }
 
-.aesop-button-primary:hover {
-  background-color: var(--color-gray-dark);
-  transform: translateY(-1px);
+.aesop-fullstrip.aesop-fullstrip-hero {
+  width: 100%;
+  height: 100vh; /* full viewport height for hero impact */
+  display: flex;
+  align-items: stretch;
+}
+.aesop-fullstrip.aesop-fullstrip-hero .aesop-product-card {
+  flex: 1 1 auto;
 }
 
-.aesop-button-large {
-  padding: var(--space-5) var(--space-10);
-  font-size: var(--font-size-lg);
+/* Tablet: 3-up layout */
+@media (max-width: 1024px) {
+  .aesop-fullstrip .aesop-strip-item {
+    flex-basis: calc((100% - 2 * var(--space-8)) / 3);
+    min-width: calc((100% - 2 * var(--space-8)) / 3);
+  }
 }
 
-/* Product Components */
-.aesop-featured-products {
-  padding: var(--space-20) 0;
-  background-color: var(--color-white);
+/* Mobile: large, swipeable tiles */
+@media (max-width: 768px) {
+  .aesop-fullstrip .aesop-strip-row {
+    gap: var(--space-6);
+    padding: 0 var(--space-4);
+  }
+  .aesop-fullstrip .aesop-strip-item {
+    flex-basis: 85%;
+    min-width: 85%;
+  }
 }
+
+.aesop-product-card {
+  position: relative;
+}
+
+.aesop-product-image-carousel {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  background: var(--color-secondary-bg);
+  border: 1px solid var(--color-gray-lighter);
+}
+
+.aesop-carousel-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform var(--transition-base);
+}
+
+.aesop-image-counter {
+  position: absolute;
+  bottom: var(--space-3);
+  right: var(--space-3);
+  background: rgba(0,0,0,0.55);
+  color: #fff;
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-xs);
+}
+
+.aesop-image-indicators {
+  position: absolute;
+  bottom: var(--space-3);
+  left: var(--space-3);
+  display: flex;
+  gap: 4px;
+}
+
+.aesop-indicator {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.45);
+}
+
+.aesop-indicator.active {
+  background: #ffffff;
+}
+
+/* Thin progress bar along bottom edge */
+.aesop-carousel-progress {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 2px; /* thin */
+  background: rgba(0,0,0,0.08);
+}
+
+.aesop-carousel-progress-bar {
+  height: 100%;
+  width: 0%;
+  background: var(--color-black);
+  transition: width 200ms linear;
+}
+
+/* Grid for Featured section */
+.aesop-product-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-6);
+}
+
+@media (max-width: 1024px) {
+  .aesop-product-grid { grid-template-columns: repeat(3, 1fr); }
+}
+@media (max-width: 768px) {
+  .aesop-product-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 480px) {
+  .aesop-product-grid { grid-template-columns: 1fr; }
+}
+
+/* Section titles */
+.aesop-section { padding: var(--space-12) 0; }
+.aesop-section-title { font-size: var(--font-size-3xl); font-weight: var(--font-weight-light); margin-bottom: var(--space-2); }
+.aesop-section-subtitle { color: var(--color-gray-medium); margin-bottom: var(--space-6); }
 
 .aesop-section-title {
   font-size: var(--font-size-3xl);
@@ -1501,7 +1632,7 @@ select:focus {
 
 .aesop-product-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: var(--space-8);
 }
 
@@ -1707,4 +1838,226 @@ select:focus {
 
 .aesop-h-96 {
   height: 384px;
+}
+
+/* ===== CART DRAWER ===== */
+.aesop-cart-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.4);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity var(--transition-base), visibility var(--transition-base);
+  z-index: 999;
+}
+.aesop-cart-overlay.open { opacity: 1; visibility: visible; }
+
+.aesop-cart-drawer {
+  position: fixed;
+  top: 0; right: 0; bottom: 0;
+  width: min(420px, 100%);
+  background: var(--color-white);
+  border-left: 1px solid var(--color-gray-lighter);
+  box-shadow: -8px 0 24px rgba(0,0,0,0.08);
+  transform: translateX(100%);
+  transition: transform var(--transition-slow);
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+}
+.aesop-cart-drawer.open { transform: translateX(0); }
+
+.aesop-cart-drawer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-5) var(--space-6);
+  border-bottom: 1px solid var(--color-gray-lighter);
+}
+.aesop-cart-drawer-title { font-size: var(--font-size-xl); font-weight: var(--font-weight-medium); }
+
+.aesop-cart-drawer-body {
+  flex: 1;
+  overflow: auto;
+  padding: var(--space-6);
+}
+
+.aesop-cart-items { list-style: none; display: flex; flex-direction: column; gap: var(--space-4); }
+.aesop-cart-item { border: 1px solid var(--color-gray-lighter); border-radius: var(--radius-base); padding: var(--space-4); background: var(--color-white); }
+.aesop-cart-item-main { display: flex; align-items: baseline; justify-content: space-between; gap: var(--space-3); margin-bottom: var(--space-3); }
+.aesop-cart-item-title { font-weight: var(--font-weight-medium); }
+.aesop-cart-item-price { color: var(--color-gray-dark); }
+.aesop-cart-line { margin-left: auto; font-weight: var(--font-weight-medium); }
+
+.aesop-cart-item-controls { display: grid; grid-template-columns: auto auto auto; align-items: center; gap: var(--space-3); }
+.aesop-qty-control { display: inline-flex; align-items: center; border: 1px solid var(--color-gray-lighter); border-radius: var(--radius-sm); overflow: hidden; }
+.aesop-qty-btn { background: none; border: none; padding: 6px 10px; cursor: pointer; }
+.aesop-qty-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.aesop-qty-input { width: 48px; text-align: center; border: none; padding: 6px 4px; outline: none; }
+
+.aesop-link-button { background: none; border: none; color: var(--color-gray-dark); cursor: pointer; text-decoration: underline; }
+.aesop-remove-item:hover { color: var(--color-black); }
+
+.aesop-cart-empty { display: grid; gap: var(--space-4); text-align: center; padding: var(--space-10) var(--space-6); }
+.aesop-cart-loading, .aesop-cart-error { text-align: center; padding: var(--space-6); color: var(--color-gray-dark); }
+
+.aesop-cart-drawer-footer {
+  border-top: 1px solid var(--color-gray-lighter);
+  padding: var(--space-5) var(--space-6);
+  display: grid;
+  gap: var(--space-4);
+  background: var(--color-white);
+}
+.aesop-cart-subtotal { display: flex; align-items: center; justify-content: space-between; }
+.aesop-cart-actions { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-3); }
+
+/* Cart buttons reuse existing .aesop-button-primary and .aesop-button-secondary classes */
+
+.aesop-button-secondary {
+  background: var(--color-white);
+  color: var(--color-black);
+  border: 1px solid var(--color-black);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  text-align: center;
+}
+
+/* Cart Page Layout */
+.aesop-cart-page {
+  padding: var(--space-12) 0;
+}
+
+.aesop-cart-content {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-8);
+}
+
+@media (min-width: 768px) {
+  .aesop-cart-content {
+    grid-template-columns: 2fr 1fr;
+  }
+}
+
+/* Cart Items Section */
+.aesop-cart-items-section {
+  background: var(--color-white);
+  border-radius: var(--radius-base);
+  padding: var(--space-6);
+  box-shadow: var(--shadow-sm);
+}
+
+.aesop-cart-page-items {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.aesop-cart-page-item {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: var(--space-4);
+  padding: var(--space-4) 0;
+  border-bottom: 1px solid var(--color-gray-lighter);
+  align-items: start;
+}
+
+.aesop-cart-page-item:last-child {
+  border-bottom: none;
+}
+
+.aesop-cart-item-image {
+  width: 80px;
+  height: 80px;
+}
+
+.aesop-placeholder-image {
+  width: 100%;
+  height: 100%;
+  background: var(--color-secondary-bg);
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-gray-medium);
+  font-size: var(--font-size-sm);
+}
+
+.aesop-cart-item-details {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.aesop-cart-item-name {
+  font-weight: var(--font-weight-medium);
+  color: var(--color-black);
+  margin: 0;
+}
+
+.aesop-cart-item-price {
+  color: var(--color-gray-medium);
+  margin: 0;
+}
+
+.aesop-cart-item-controls {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-top: var(--space-2);
+}
+
+.aesop-cart-item-total {
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-black);
+  text-align: right;
+}
+
+/* Cart Summary Section */
+.aesop-cart-summary-section {
+  align-self: start;
+}
+
+.aesop-cart-summary-card {
+  background: var(--color-white);
+  border-radius: var(--radius-base);
+  padding: var(--space-6);
+  box-shadow: var(--shadow-sm);
+  position: sticky;
+  top: var(--space-6);
+}
+
+.aesop-cart-summary-details {
+  margin: var(--space-4) 0;
+}
+
+.aesop-cart-summary-note {
+  margin-top: var(--space-3);
+}
+
+.aesop-cart-summary-note p {
+  color: var(--color-gray-medium);
+  font-size: var(--font-size-sm);
+  margin: 0;
+}
+
+.aesop-cart-summary-actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin-top: var(--space-6);
+}
+
+.aesop-checkout-btn {
+  width: 100%;
+  justify-content: center;
+}
+
+@media (max-width: 480px) {
+  .aesop-cart-drawer { width: 100%; }
+  .aesop-cart-actions { grid-template-columns: 1fr; }
 }

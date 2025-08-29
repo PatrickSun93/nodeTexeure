@@ -1,10 +1,10 @@
-'use client';
+"use client";
 
 import Link from 'next/link';
 import { useBackendHealth } from '../lib';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
-import { useRef, useState } from 'react';
+import { useRef, useState, useEffect } from 'react';
 
 // Hero Section Component
 function HeroSection() {
@@ -28,11 +28,28 @@ function HeroSection() {
 }
 
 // Product Image Collection Component (mouse-move carousel)
-function ProductCard({ images = [] }) {
+function ProductCard({ images = [], slug, title }) {
     const [currentIndex, setCurrentIndex] = useState(0);
+    const [isAutoplay, setIsAutoplay] = useState(false);
     const containerRef = useRef(null);
+    const idleTimeoutRef = useRef(null);
+    const autoplayIntervalRef = useRef(null);
 
+    const clearTimers = () => {
+        if (idleTimeoutRef.current) clearTimeout(idleTimeoutRef.current);
+        if (autoplayIntervalRef.current) clearInterval(autoplayIntervalRef.current);
+    };
+
+    const startIdleTimer = () => {
+        clearTimers();
+        idleTimeoutRef.current = setTimeout(() => {
+            setIsAutoplay(true);
+        }, 3000); // start after 3s
+    };
+
+    // Handle mouse move (scrub)
     const handleMouseMove = (e) => {
+        setIsAutoplay(false);
         if (!containerRef.current || images.length === 0) return;
         const rect = containerRef.current.getBoundingClientRect();
         const x = e.clientX - rect.left;
@@ -42,57 +59,83 @@ function ProductCard({ images = [] }) {
     };
 
     const handleMouseLeave = () => {
-        // Optionally reset to the first image on leave for a clean look
         setCurrentIndex(0);
+        startIdleTimer();
     };
+
+    // Autoplay effect
+    // 1200ms per frame when autoplay is ON
+    // Resets when user interacts (mouse move)
+    useEffect(() => {
+        if (isAutoplay && images.length > 0) {
+            if (autoplayIntervalRef.current) clearInterval(autoplayIntervalRef.current);
+            autoplayIntervalRef.current = setInterval(() => {
+                setCurrentIndex((prev) => (prev + 1) % images.length);
+            }, 1200);
+        } else {
+            if (autoplayIntervalRef.current) clearInterval(autoplayIntervalRef.current);
+        }
+        return () => {
+            if (autoplayIntervalRef.current) clearInterval(autoplayIntervalRef.current);
+        };
+    }, [isAutoplay, images.length]);
+
+    // Start idle timer on mount
+    useEffect(() => {
+        startIdleTimer();
+        return () => clearTimers();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
+    const progressPercent = images.length > 1 ? (currentIndex / (images.length - 1)) * 100 : 0;
 
     return (
         <div className="aesop-product-card">
-            <div
-                ref={containerRef}
-                className="aesop-product-image-carousel"
-                onMouseMove={handleMouseMove}
-                onMouseLeave={handleMouseLeave}
-            >
-                <img
-                    src={images[currentIndex]}
-                    alt={`Product image ${currentIndex + 1}`}
-                    className="aesop-carousel-image"
-                />
-                <div className="aesop-image-counter">{currentIndex + 1}/{images.length}</div>
-                <div className="aesop-image-indicators">
-                    {images.map((_, i) => (
-                        <span key={i} className={`aesop-indicator ${i === currentIndex ? 'active' : ''}`}></span>
-                    ))}
+            <Link href={slug ? `/products/${slug}` : '#'}>
+                <div
+                    ref={containerRef}
+                    className="aesop-product-image-carousel"
+                    onMouseMove={handleMouseMove}
+                    onMouseLeave={handleMouseLeave}
+                    aria-label="Product image gallery"
+                    role="img"
+                >
+                    <img
+                        src={images[currentIndex]}
+                        alt={title ? `${title} — image ${currentIndex + 1} of ${images.length}` : `Product image ${currentIndex + 1} of ${images.length}`}
+                        className="aesop-carousel-image"
+                    />
+                    <div className="aesop-image-counter">{currentIndex + 1}/{images.length}</div>
+                    {/* Optional dots indicators retained for visual aid */}
+                    <div className="aesop-image-indicators">
+                        {images.map((_, i) => (
+                            <span key={i} className={`aesop-indicator ${i === currentIndex ? 'active' : ''}`}></span>
+                        ))}
+                    </div>
+                    {/* Thin progress bar */}
+                    <div className="aesop-carousel-progress" aria-hidden="true">
+                        <div className="aesop-carousel-progress-bar" style={{ width: `${progressPercent}%` }}></div>
+                    </div>
                 </div>
-            </div>
+            </Link>
         </div>
     );
 }
 
 // Featured Products Component (now a gallery of image collections)
 function FeaturedProducts() {
-    // Generate image collections (10 images each). Using placeholder API with slight size variation for visual variety.
-    const generateImages = (base) => Array.from({ length: 10 }, (_, i) => `/api/placeholder/${base + i}/${base + i}`);
-
-    const galleries = [
-        { images: generateImages(600) },
-        { images: generateImages(610) },
-        { images: generateImages(620) },
-        { images: generateImages(630) }
-    ];
+    // One full-width, hero-like collection that scrubs on hover
+    const images = Array.from({ length: 10 }, (_, i) => {
+        const w = 800 + i * 40;
+        const h = 600 + i * 30; // keeps 4:3 ratio
+        return `/api/placeholder/${w}/${h}`;
+    });
+    const slug = 'luxury-cotton-sheets';
+    const title = 'Luxury Cotton Sheets';
 
     return (
-        <section className="aesop-section">
-            <div className="aesop-container">
-                <h2 className="aesop-section-title">Featured Products</h2>
-                <p className="aesop-section-subtitle">Hover and move your mouse to explore different angles</p>
-                <div className="aesop-product-grid">
-                    {galleries.map((g, index) => (
-                        <ProductCard key={index} images={g.images} />
-                    ))}
-                </div>
-            </div>
+        <section className="aesop-section aesop-fullstrip aesop-fullstrip-hero">
+            <ProductCard images={images} slug={slug} title={title} />
         </section>
     );
 }
@@ -137,7 +180,7 @@ function FeaturesSection() {
 
 
 export default function Home() {
-    const { isHealthy, isLoading } = useBackendHealth();
+    const { isConnected, loading } = useBackendHealth();
 
     return (
         <div className="aesop-page">
@@ -150,12 +193,12 @@ export default function Home() {
             <Footer />
             
             {/* Backend Health Status */}
-            {isLoading && (
+            {loading && (
                 <div className="aesop-status aesop-status-loading">
                     Checking backend connection...
                 </div>
             )}
-            {!isLoading && !isHealthy && (
+            {!loading && !isConnected && (
                 <div className="aesop-status aesop-status-error">
                     Backend connection failed
                 </div>

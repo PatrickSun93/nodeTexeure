@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Header from '../../components/Header';
 import Footer from '../../components/Footer';
+import { apiRequest } from '../../lib/api';
 
 // Breadcrumb Component
 function Breadcrumb() {
@@ -382,20 +383,18 @@ export default function Shop() {
 
   const handleAddToCart = async (product) => {
     try {
-      const response = await fetch('/api/cart', {
+      await apiRequest('/cart/add', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify({
-          productId: product.id,
-          quantity: 1
-        })
+          product_id: product.id,
+          variant_id: product.variant_id ?? null,
+          quantity: 1,
+        }),
       });
-      
-      if (response.ok) {
-        // Show success message or update cart count
-        console.log('Product added to cart successfully');
+      // Show success message or update cart count
+      console.log('Product added to cart successfully');
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new Event('cart:updated'));
       }
     } catch (error) {
       console.error('Error adding to cart:', error);

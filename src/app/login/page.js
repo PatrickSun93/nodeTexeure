@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { signIn, useSession } from 'next-auth/react';
+import { signIn, useSession, getSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Header from '../../components/Header';
 import Footer from '../../components/Footer';
@@ -16,7 +16,7 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (status === 'authenticated') {
-      router.replace('/profile');
+      // This will be handled in handleSubmit after we get session data
     }
   }, [status, router]);
 
@@ -36,7 +36,13 @@ export default function LoginPage() {
     if (result?.error) {
       setError('Login failed. Please check credentials.');
     } else if (result?.ok) {
-      router.push('/profile');
+      // Get the updated session to check user role
+      const session = await getSession();
+      if (session?.user?.isAdmin || session?.user?.role === 'admin' || session?.user?.role === 'staff') {
+        router.push('/dashboard');
+      } else {
+        router.push('/profile');
+      }
     } else {
       setError('An unexpected error occurred.');
     }

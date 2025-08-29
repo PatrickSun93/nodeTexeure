@@ -4,7 +4,7 @@
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { userAPI, checkBackendHealth, testHelloAPI, databaseAPI } from './api';
+import { userAPI, checkBackendHealth, testHelloAPI, databaseAPI, apiRequest, extractResponseData } from './api';
 import { formatErrorMessage, debounce } from './utils';
 import { MESSAGES } from './constants';
 
@@ -519,16 +519,17 @@ export const useCartCount = () => {
   const [loading, setLoading] = useState(true);
 
   const fetchCartCount = useCallback(async () => {
+    setLoading(true);
     try {
-      const res = await fetch('/api/cart');
-      const data = await res.json();
-      if (data && data.success) {
-        const items = Array.isArray(data.data?.items) ? data.data.items : [];
-        const total = items.reduce((sum, i) => sum + (Number(i.quantity) || 0), 0);
-        setCount(total);
-      } else {
-        setCount(0);
-      }
+      const resp = await apiRequest('/cart', {
+        method: 'GET',
+        headers: { Accept: 'application/json' },
+        cache: 'no-store',
+      });
+      const { data } = extractResponseData(resp);
+      const items = Array.isArray(data?.items) ? data.items : [];
+      const total = items.reduce((sum, i) => sum + (Number(i.quantity) || 0), 0);
+      setCount(total);
     } catch (err) {
       console.error('Failed to fetch cart:', err);
       setCount(0);
