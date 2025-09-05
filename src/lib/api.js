@@ -63,7 +63,7 @@ export const apiRequest = async (endpoint, options = {}) => {
       ...rest,
       headers,
     });
-
+    console.log('response', response)
     let data;
     try {
       data = await response.json();

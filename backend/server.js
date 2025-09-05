@@ -29,6 +29,7 @@ const { protect, admin } = require('./middleware/authMiddleware');
 const statusRoutes = require('./routes/statusRoutes');
 const databaseRoutes = require('./routes/databaseRoutes');
 const userRoutes = require('./routes/userRoutes');
+const systemSettingsRoutes = require('./routes/systemSettingsRoutes');
 
 // Routes
 // Status routes (health, hello)
@@ -39,6 +40,9 @@ app.use('/api/database', databaseRoutes);
 
 // User routes
 app.use('/api/users', userRoutes);
+
+// System settings routes
+app.use('/api/settings', systemSettingsRoutes);
 
 // Product routes
 app.use('/api/products', require('./routes/productRoutes'));

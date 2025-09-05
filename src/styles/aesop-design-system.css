@@ -3,21 +3,22 @@
 
 /* ===== CSS VARIABLES (DESIGN TOKENS) ===== */
 :root {
-  /* Color Palette - Monochromatic with muted tones */
-  --color-primary-bg: #F7F7F7;           /* Main background - muted cream/beige */
+  /* Color Palette - Noirae inspired warm tones */
+  --color-primary-bg: #f7f7f2;           /* Main background - warm cream */
   --color-secondary-bg: #F2F2F0;         /* Secondary background - slightly warmer */
   --color-tertiary-bg: #EEEEEC;          /* Tertiary background - for hover states */
   --color-white: #FFFFFF;                 /* Pure white for cards/containers */
-  --color-black: #000000;                 /* Primary text color */
-  --color-gray-dark: #333333;             /* Secondary text color */
-  --color-gray-medium: #666666;           /* Tertiary text color */
+  --color-black: #2a2a2a;                 /* Primary text color - softer black */
+  --color-gray-dark: #6b6b6b;             /* Secondary text color */
+  --color-gray-medium: #9a9a9a;           /* Tertiary text color */
   --color-gray-light: #999999;            /* Subtle text/borders */
-  --color-gray-lighter: #CCCCCC;          /* Light borders/dividers */
-  --color-accent: #D4AF37;                /* Subtle gold accent for luxury feel */
+  --color-gray-lighter: #e8e8e0;          /* Light borders/dividers - warm tone */
+  --color-accent: #8b7355;                /* Noirae brown accent */
   
-  /* Typography Scale - Based on modular scale */
+  /* Typography Scale - Noirae inspired */
   --font-family-primary: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --font-family-secondary: 'Playfair Display', Georgia, serif; /* For headings if needed */
+  --font-family-secondary: 'EB Garamond', 'Playfair Display', Georgia, serif; /* For headings if needed */
+  --font-family-serif: 'EB Garamond', serif;
   
   --font-size-xs: 0.75rem;    /* 12px */
   --font-size-sm: 0.875rem;   /* 14px */

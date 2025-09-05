@@ -7,7 +7,7 @@ const nextConfig = {
       : process.env.PRODUCTION_BACKEND_URL;
     
     const routes = [
-      'users', 'products', 'orders', 'cart', 'admin', 'status', 'database'
+      'users', 'products', 'orders', 'cart', 'admin', 'status', 'database', 'settings'
     ];
     
     // In development, add extra debugging routes

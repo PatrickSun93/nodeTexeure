@@ -1,4 +1,6 @@
 @import "tailwindcss";
+@import "../styles/aesop-design-system.css";
+@import "../styles/noirae-theme.css";
 
 :root {
   --background: #F7F7F7;
@@ -55,4 +57,9 @@ input::placeholder,
 textarea::placeholder {
   color: var(--color-gray-medium, #666666);
   opacity: 1;
+}
+
+/* Keep the first navigation item ("NEW ARRIVE") on a single line */
+.aesop-nav.aesop-header-center .aesop-nav-link:first-child {
+  white-space: nowrap;
 }

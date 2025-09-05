@@ -86,7 +86,7 @@ class DatabaseUtil {
       return {
         success: true,
         data: rows,
-        fields: fields,
+        // fields: fields,
         affectedRows: rows.affectedRows || 0,
         insertId: rows.insertId || null
       };

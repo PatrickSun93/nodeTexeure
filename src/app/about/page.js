@@ -21,7 +21,7 @@ const AboutContent = () => {
       <div className="aesop-text-center aesop-mb-16">
         <h2 className="aesop-heading-2 aesop-mb-6">Crafting Premium Bed Textures Since 2010</h2>
         <p className="aesop-text-lg aesop-text-muted aesop-max-width-3xl aesop-mx-auto">
-          At Furniro, we believe that quality sleep begins with exceptional bedding. Our passion for creating 
+          At Noiraé, we believe that quality sleep begins with exceptional bedding. Our passion for creating 
           the finest bed textures has driven us to source the world's most luxurious materials and craft them 
           into products that transform your bedroom into a sanctuary of comfort.
         </p>
@@ -32,7 +32,7 @@ const AboutContent = () => {
         <div>
           <h3 className="aesop-heading-3 aesop-mb-6">Our Story</h3>
           <p className="aesop-text-muted aesop-mb-4">
-            Founded in 2010 by textile enthusiasts Sarah and Michael Chen, Furniro began as a small family 
+            Founded in 2010 by textile enthusiasts Sarah and Michael Chen, Noiraé began as a small family 
             business with a simple mission: to bring hotel-quality bedding to everyday homes. What started 
             in a small workshop has grown into a trusted brand serving customers worldwide.
           </p>
@@ -136,7 +136,7 @@ const AboutContent = () => {
 
       {/* CTA Section */}
       <div className="aesop-bg-primary-light aesop-rounded aesop-p-8 aesop-text-center">
-        <h3 className="aesop-heading-3 aesop-mb-4">Experience the Furniro Difference</h3>
+        <h3 className="aesop-heading-3 aesop-mb-4">Experience the Noiraé Difference</h3>
         <p className="aesop-text-muted aesop-mb-6 aesop-max-width-2xl aesop-mx-auto">
           Join thousands of satisfied customers who have transformed their sleep experience with our 
           premium bed textures. Discover the perfect bedding for your home today.

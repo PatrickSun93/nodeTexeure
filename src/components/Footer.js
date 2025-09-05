@@ -10,7 +10,7 @@ export default function Footer() {
         <div className="aesop-text-center aesop-mb-8">
           <div className="aesop-flex aesop-items-center aesop-justify-center aesop-space-x-2 aesop-mb-4">
             <div className="aesop-w-8 aesop-h-8 aesop-bg-primary aesop-rounded"></div>
-            <span className="aesop-heading-2">Furniro</span>
+            <span className="aesop-heading-2">Noiraé</span>
           </div>
           <p className="aesop-text-muted">
             Premium bed textures crafted for the ultimate sleep experience.
@@ -63,7 +63,7 @@ export default function Footer() {
       {/* Third Row - Copyright */}
       <div className="aesop-border-t aesop-pt-8 aesop-text-center aesop-text-muted">
         <div className="aesop-container">
-          <p>&copy; 2024 Furniro. All rights reserved.</p>
+          <p>&copy; 2024 Noiraé. All rights reserved.</p>
         </div>
       </div>
     </footer>

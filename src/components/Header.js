@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation';
 import { useCartCount } from '../lib';
 import CartDrawer from './CartDrawer';
 
-export default function Header() {
+  export default function Header({ siteName = 'Noiraé' }) {
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -53,14 +53,23 @@ export default function Header() {
           <div className="aesop-header-left">
             <div className="aesop-logo">
               <Link href="/" className="aesop-logo-link">
-                Furniro
+                {siteName}
               </Link>
             </div>
           </div>
           
           <nav className="aesop-nav aesop-header-center">
             <Link href="/" className="aesop-nav-link">
-              NEW
+              NEW ARRIVE
+            </Link>
+            <Link href="/shop" className="aesop-nav-link">
+              BEDDING
+            </Link>
+            <Link href="/shop" className="aesop-nav-link">
+              BATH
+            </Link>
+             <Link href="/shop" className="aesop-nav-link">
+              LIVING
             </Link>
             <Link href="/shop" className="aesop-nav-link">
               SHOP

@@ -201,9 +201,9 @@ const ContactInfo = () => {
             <div>
               <h4 className="aesop-heading-4 aesop-mb-1">Email</h4>
               <p className="aesop-text-muted">
-                General: info@furniro.com<br />
-                Support: support@furniro.com<br />
-                Sales: sales@furniro.com
+                General: info@Noiraé.com<br />
+                Support: support@Noiraé.com<br />
+                Sales: sales@Noiraé.com
               </p>
             </div>
           </div>

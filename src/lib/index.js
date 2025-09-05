@@ -27,6 +27,11 @@ export {
   storage,
 } from './utils';
 
+// Settings utilities
+export {
+  fetchSettings,
+} from './fetchSettings';
+
 // Constants
 export {
   API_CONFIG,

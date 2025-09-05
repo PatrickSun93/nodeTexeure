@@ -4,21 +4,22 @@ import Link from 'next/link';
 import { useBackendHealth } from '../lib';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
+import { fetchSettings } from '../lib/fetchSettings';
 import { useRef, useState, useEffect } from 'react';
 
 // Hero Section Component
 function HeroSection() {
     return (
-        <section className="aesop-hero">
+        <section className="noirae-hero">
             <div className="aesop-container">
                 <div className="aesop-hero-content">
-                    <h1 className="aesop-hero-title">
+                    <h1 className="noirae-hero-title">
                         Premium Bed Textures
                     </h1>
-                    <p className="aesop-hero-subtitle">
+                    <p className="noirae-hero-subtitle">
                         Transform your bedroom with our luxurious collection of high-quality bed textures and linens
                     </p>
-                    <Link href="/shop" className="aesop-button-primary aesop-button-large">
+                    <Link href="/shop" className="noirae-cta-button">
                         Shop Now
                     </Link>
                 </div>
@@ -177,15 +178,38 @@ function FeaturesSection() {
     );
 }
 
-
-
 export default function Home() {
     const { isConnected, loading } = useBackendHealth();
+    const [settings, setSettings] = useState(null);
+
+    useEffect(() => {
+        let mounted = true;
+        (async () => {
+            try {
+                const s = await fetchSettings();
+                console.log('Settings:', s);
+                if (!mounted) return;
+                setSettings(s);
+                const title = s.siteTitle || s.site_name || 'Noiraé shop';
+                if (typeof document !== 'undefined') {
+                    document.title = title;
+                }
+            } catch (err) {
+                // Keep defaults if fetching fails
+                console.error('Failed to load settings on page:', err);
+            }
+        })();
+        return () => {
+            mounted = false;
+        };
+    }, []);
+
+    const siteName = settings?.site_name || 'Noiraé';
 
     return (
-        <div className="aesop-page">
-            <Header />
-            <main>
+        <div className="noirae-page">
+            <Header siteName={siteName} />
+            <main className="noirae-main">
                 <HeroSection />
                 <FeaturedProducts />
                 <FeaturesSection />

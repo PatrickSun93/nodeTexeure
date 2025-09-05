@@ -1,0 +1,146 @@
+/* Noirae-inspired theme styles */
+@import url('https://fonts.googleapis.com/css2?family=EB+Garamond:wght@400;500;600&family=Inter:wght@300;400;500;600&display=swap');
+
+/* Page Layout */
+.noirae-page {
+  background-color: var(--color-primary-bg);
+  color: var(--color-black);
+  font-family: var(--font-family-primary);
+  line-height: 1.6;
+}
+
+.noirae-main {
+  min-height: calc(100vh - 80px);
+  padding: 40px 0;
+}
+
+/* Hero Section */
+.noirae-hero {
+  text-align: center;
+  padding: 80px 0;
+  background: linear-gradient(135deg, var(--color-primary-bg) 0%, var(--color-secondary-bg) 100%);
+}
+
+.noirae-hero-title {
+  font-family: var(--font-family-serif);
+  font-size: 48px;
+  font-weight: 500;
+  margin-bottom: 20px;
+  color: var(--color-black);
+  letter-spacing: 2px;
+  line-height: 1.2;
+}
+
+.noirae-hero-subtitle {
+  font-size: 18px;
+  color: var(--color-gray-dark);
+  max-width: 600px;
+  margin: 0 auto 40px;
+  font-weight: 300;
+  line-height: 1.6;
+}
+
+.noirae-cta-button {
+  background: var(--color-black);
+  color: white;
+  padding: 15px 40px;
+  border: none;
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-decoration: none;
+  display: inline-block;
+  font-family: var(--font-family-primary);
+}
+
+.noirae-cta-button:hover {
+  background: var(--color-accent);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Section Titles */
+.noirae-section-title {
+  font-family: var(--font-family-serif);
+  font-size: 36px;
+  text-align: center;
+  margin-bottom: 60px;
+  font-weight: 500;
+  letter-spacing: 1px;
+  color: var(--color-black);
+}
+
+/* Product Cards Enhancement */
+.aesop-product-card {
+  background: white;
+  border: 1px solid var(--color-gray-lighter);
+  transition: all 0.3s ease;
+}
+
+.aesop-product-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+}
+
+.aesop-product-title {
+  font-family: var(--font-family-serif);
+  font-weight: 500;
+  letter-spacing: 0.5px;
+}
+
+.aesop-product-price {
+  color: var(--color-accent);
+  font-weight: 600;
+}
+
+/* Features Section */
+.aesop-features {
+  background: white;
+  border-top: 1px solid var(--color-gray-lighter);
+  border-bottom: 1px solid var(--color-gray-lighter);
+}
+
+.aesop-feature-title {
+  font-family: var(--font-family-serif);
+  font-weight: 500;
+  letter-spacing: 0.5px;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .noirae-hero-title {
+    font-size: 36px;
+    letter-spacing: 1px;
+  }
+  
+  .noirae-hero-subtitle {
+    font-size: 16px;
+    padding: 0 20px;
+  }
+  
+  .noirae-cta-button {
+    padding: 12px 30px;
+    font-size: 13px;
+  }
+  
+  .noirae-section-title {
+    font-size: 28px;
+    margin-bottom: 40px;
+  }
+}
+
+@media (max-width: 480px) {
+  .noirae-hero {
+    padding: 60px 0;
+  }
+  
+  .noirae-hero-title {
+    font-size: 28px;
+  }
+  
+  .noirae-hero-subtitle {
+    font-size: 14px;
+  }
+}

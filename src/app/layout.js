@@ -15,9 +15,10 @@ const playfairDisplay = Playfair_Display({
   display: 'swap',
 });
 
+// Static fallback metadata; actual title will be adjusted client-side on Home via settings
 export const metadata = {
-  title: "Furniro shop",
-  description: "Furniro shop",
+  title: "Noiraé shop",
+  description: "Noiraé shop",
 };
 
 export default function RootLayout({ children }) {
