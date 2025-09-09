@@ -81,6 +81,49 @@ router.get('/', async (req, res) => {
   }
 });
 
+// GET /api/products/by-ids - Fetch products by a list of IDs, preserving order
+router.get('/by-ids', async (req, res) => {
+  try {
+    const raw = req.query.ids;
+
+    // Support ids=1,2,3 or ids[]=1&ids[]=2
+    let idList = [];
+    if (Array.isArray(raw)) {
+      idList = raw.flatMap(v => String(v).split(',')).map(v => v.trim()).filter(Boolean);
+    } else if (typeof raw === 'string') {
+      idList = raw.split(',').map(v => v.trim()).filter(Boolean);
+    }
+
+    // Validate and normalize to integers
+    const ids = idList.filter(v => /^\d+$/.test(v)).map(v => parseInt(v, 10));
+
+    if (!ids || ids.length === 0) {
+      return res.status(400).json(ResponseFormatter.failure('Parameter "ids" is required and must contain at least one numeric id'));
+    }
+
+    // Limit to prevent abuse
+    if (ids.length > 100) {
+      return res.status(400).json(ResponseFormatter.failure('Too many ids provided (max 100)'));
+    }
+
+    // Build placeholders for IN clause and ORDER BY FIELD to preserve order
+    const placeholders = ids.map(() => '?').join(', ');
+    const orderPlaceholders = ids.map(() => '?').join(', ');
+
+    const query = `SELECT * FROM products WHERE id IN (${placeholders}) ORDER BY FIELD(id, ${orderPlaceholders})`;
+
+    const result = await DatabaseUtil.executeQuery(query, [...ids, ...ids]);
+    if (!result.success) throw new Error(result.error || 'Failed to fetch products by ids');
+
+    const rows = result.data || [];
+    const keyValueTable = { products: rows, total: rows.length };
+    res.json(ResponseFormatter.success('Products fetched by IDs successfully', keyValueTable));
+  } catch (error) {
+    console.error(error);
+    res.status(500).json(ResponseFormatter.failure('Server error', { error: error.message }));
+  }
+});
+
 // GET /api/products/:id - Product details
 router.get('/:id', async (req, res) => {
   try {

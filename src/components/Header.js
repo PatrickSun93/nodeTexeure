@@ -59,7 +59,7 @@ import CartDrawer from './CartDrawer';
           </div>
           
           <nav className="aesop-nav aesop-header-center">
-            <Link href="/" className="aesop-nav-link">
+            <Link href="/new-arrive" className="aesop-nav-link">
               NEW ARRIVE
             </Link>
             <Link href="/shop" className="aesop-nav-link">
