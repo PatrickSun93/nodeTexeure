@@ -73,7 +73,13 @@ router.get('/', async (req, res) => {
     if (!countResult.success) throw new Error(countResult.error || 'Failed to count products');
     const total = Number(countResult.data[0]?.total || 0);
 
-    const keyValueTable = { products: rows, total, page: pageNum, limit: limitNum };
+    // Map image alias for frontend compatibility
+    const products = (rows || []).map(p => ({
+      ...p,
+      image: p.image || p.thumbnail_small_url || p.thumbnail_medium_url || p.thumbnail_large_url || null,
+    }));
+
+    const keyValueTable = { products, total, page: pageNum, limit: limitNum };
     res.json(ResponseFormatter.success('Products fetched successfully', keyValueTable));
   } catch (error) {
     console.error(error);
@@ -116,7 +122,14 @@ router.get('/by-ids', async (req, res) => {
     if (!result.success) throw new Error(result.error || 'Failed to fetch products by ids');
 
     const rows = result.data || [];
-    const keyValueTable = { products: rows, total: rows.length };
+
+    // Map image alias for frontend compatibility
+    const products = rows.map(p => ({
+      ...p,
+      image: p.image || p.thumbnail_small_url || p.thumbnail_medium_url || p.thumbnail_large_url || null,
+    }));
+
+    const keyValueTable = { products, total: products.length };
     res.json(ResponseFormatter.success('Products fetched by IDs successfully', keyValueTable));
   } catch (error) {
     console.error(error);

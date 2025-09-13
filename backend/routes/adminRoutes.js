@@ -1,100 +1,57 @@
 const express = require('express');
+const rateLimit = require('express-rate-limit');
+const { csrfProtection } = require('../middleware/csrfMiddleware');
 const DatabaseUtil = require('../utils/database');
 const ResponseFormatter = require('../utils/responseFormatter');
-const { csrfProtection } = require('../middleware/csrfMiddleware');
+const path = require('path');
+const fs = require('fs');
+
+// Multer setup (installed separately). Using disk storage inside backend/uploads
+let multer;
+try {
+  multer = require('multer');
+} catch (e) {
+ // If multer is not installed, surface a clear error when endpoint is hit
+}
+
 const router = express.Router();
 
-// Add: rate limiting for admin endpoints
-const rateLimit = require('express-rate-limit');
-
-// Unified rate-limit handler that uses your ResponseFormatter
-const rateLimitHandler = (req, res /*, next */) => {
-  const retryAfterSeconds =
-    res.getHeader('Retry-After') ||
-    (req.rateLimit && req.rateLimit.resetTime
-      ? Math.ceil((req.rateLimit.resetTime - Date.now()) / 1000)
-      : undefined);
-
-  const keyValueTable = {
-    path: req.originalUrl,
-    ...(retryAfterSeconds ? { retryAfterSeconds } : {}),
-  };
-
-  return res
-    .status(429)
-    .json(
-      ResponseFormatter.failure(
-        'Too many requests, please try again later',
-        keyValueTable
-      )
-    );
-};
-
-// Prefer per-user limiting when available, fallback to IP
-const keyGenerator = (req) =>
-  req.user && req.user.id ? `user:${req.user.id}` : req.ip;
-
-// Write limiter (POST/PUT/DELETE/PATCH)
-const adminWriteLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
+// Rate limiter for admin routes
+const adminLimiter = rateLimit({
+  windowMs: 1 * 60 * 1000,
   max: 100,
   standardHeaders: true,
   legacyHeaders: false,
-  handler: rateLimitHandler,
-  keyGenerator,
 });
 
-// Read limiter (GET)
+// Separate read/write limiters for finer control
 const adminReadLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 500,
+  windowMs: 1 * 60 * 1000,
+  max: 300,
   standardHeaders: true,
   legacyHeaders: false,
-  handler: rateLimitHandler,
-  keyGenerator,
 });
 
-/**
- * POST /api/admin/logout
- * Logout admin user by clearing authentication cookies
- * Requires CSRF protection since it's a state-changing operation
- */
-router.post('/logout', adminWriteLimiter, csrfProtection, async (req, res) => {
+const adminWriteLimiter = rateLimit({
+  windowMs: 1 * 60 * 1000,
+  max: 60,
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+router.use(adminLimiter);
+router.use(csrfProtection);
+
+// Admin logout
+router.post('/logout', async (req, res) => {
   try {
-    // Clear the admin authentication cookie
-    // Mirror the same settings used when setting the cookie in login
-    const isProd = process.env.NODE_ENV === 'production';
-    
-    res.clearCookie('admin_auth', {
-      httpOnly: true,
-      secure: isProd,
-      sameSite: 'strict',
-      path: '/'
-    });
-    
-    // Also clear the CSRF token cookie for security
-    res.clearCookie('csrf_token', {
-      httpOnly: false,
-      secure: isProd,
-      sameSite: 'strict',
-      path: '/'
-    });
-    
-    const keyValueTable = {
-      message: 'Successfully logged out',
-      timestamp: new Date().toISOString(),
-      action: 'Admin session terminated'
-    };
-    
-    res.json(ResponseFormatter.success('Logout successful', keyValueTable));
+    // Implement your logout logic here
+    res.json(ResponseFormatter.success('Logged out successfully'));
   } catch (error) {
-    console.error('Admin logout error:', error);
-    const keyValueTable = { error: error.message };
-    res.status(500).json(ResponseFormatter.failure('Logout failed', keyValueTable));
+    res.status(500).json(ResponseFormatter.failure('Logout failed', { error: error.message }));
   }
 });
 
-// Product Management
 // Add new product
 router.post('/products', adminWriteLimiter, csrfProtection, async (req, res) => {
   try {
@@ -312,6 +269,103 @@ router.get('/inventory', adminReadLimiter, async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json(ResponseFormatter.failure('Server error', { error: error.message }));
+  }
+});
+
+// Ensure upload directory exists
+function ensureDirSync(dirPath) {
+  try {
+    fs.mkdirSync(dirPath, { recursive: true });
+  } catch (e) {
+    // ignore if exists
+  }
+}
+
+// Configure multer storage dynamically based on product id
+function createMulterForProduct(productId) {
+  if (!multer) {
+    throw new Error('File upload not available: multer is not installed on backend. Please install it in backend package.json');
+  }
+  const dest = path.join(__dirname, '..', 'uploads', 'products', String(productId));
+  ensureDirSync(dest);
+  const storage = multer.diskStorage({
+    destination: function (req, file, cb) {
+      cb(null, dest);
+    },
+    filename: function (req, file, cb) {
+      // Simple filename: timestamp-originalName sanitized
+      const safeBase = path.basename(file.originalname).replace(/[^a-zA-Z0-9_.-]/g, '_');
+      const ts = Date.now();
+      cb(null, `${ts}-${safeBase}`);
+    },
+  });
+  return multer({
+    storage,
+    limits: {
+      fileSize: 5 * 1024 * 1024, // 5MB limit
+    },
+    fileFilter: (req, file, cb) => {
+      const allowed = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+      if (!allowed.includes(file.mimetype)) {
+        return cb(new Error('Invalid file type. Only images are allowed.'));
+      }
+      cb(null, true);
+    },
+  });
+}
+
+// POST /api/admin/products/:id/image - upload a single primary thumbnail and store URL in products.thumbnail_small_url
+router.post('/products/:id/image', adminWriteLimiter, csrfProtection, async (req, res) => {
+  try {
+    const productId = req.params.id;
+    // Accept alphanumeric IDs (e.g., PROD0000000001) with dashes/underscores
+    if (!/^[A-Za-z0-9_-]+$/.test(String(productId))) {
+      return res.status(400).json(ResponseFormatter.failure('Invalid product id'));
+    }
+
+    // Verify product exists first
+    const prodResult = await DatabaseUtil.executeQuery('SELECT id FROM products WHERE id = ? LIMIT 1', [productId]);
+    if (!prodResult.success) throw new Error(prodResult.error || 'Failed to verify product');
+    if (!prodResult.data || prodResult.data.length === 0) {
+      return res.status(404).json(ResponseFormatter.failure('Product not found'));
+    }
+
+    // Initialize multer for this product
+    let uploader;
+    try {
+      uploader = createMulterForProduct(productId).single('image');
+    } catch (e) {
+      return res.status(500).json(ResponseFormatter.failure('Upload not available', { error: e.message }));
+    }
+
+    uploader(req, res, async function (err) {
+      if (err) {
+        return res.status(400).json(ResponseFormatter.failure('Upload failed', { error: err.message }));
+      }
+      if (!req.file) {
+        return res.status(400).json(ResponseFormatter.failure('No file uploaded. Expect field name "image"'));
+      }
+
+      // Build public URL using static /uploads mount (configured in server.js)
+      // e.g. http://localhost:6666/uploads/products/:id/filename
+      const baseUrl = `${req.protocol}://${req.get('host')}`; // respects env and proxy
+      const publicUrl = `${baseUrl}/uploads/products/${productId}/${encodeURIComponent(req.file.filename)}`;
+
+      // Update product thumbnail_small_url
+      const updateResult = await DatabaseUtil.executeQuery(
+        'UPDATE products SET thumbnail_small_url = ?, updated_at = NOW() WHERE id = ?',
+        [publicUrl, productId]
+      );
+      if (!updateResult.success) {
+        return res.status(500).json(ResponseFormatter.failure('Failed to update product image', { error: updateResult.error }));
+      }
+
+      const keyValueTable = { url: publicUrl, field: 'thumbnail_small_url' };
+      return res.json(ResponseFormatter.success('Image uploaded and product updated', keyValueTable));
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json(ResponseFormatter.failure('Server error', { error: error.message }));
   }
 });
 

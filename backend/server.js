@@ -22,6 +22,19 @@ app.use(cookieParser());
 // Comprehensive logging middleware
 app.use(LoggingMiddleware.middleware());
 
+// Static file serving for uploaded assets
+// Ensure the uploads directory exists before serving
+const fs = require('fs');
+const uploadsRoot = path.join(__dirname, 'uploads');
+const productUploads = path.join(uploadsRoot, 'products');
+try {
+  fs.mkdirSync(productUploads, { recursive: true });
+} catch (e) {
+  console.error('Failed to ensure uploads directory exists:', e);
+}
+// Serve /uploads/* as static assets
+app.use('/uploads', express.static(uploadsRoot, { index: false, maxAge: '1d' }));
+
 
 
 // Import middleware and routes

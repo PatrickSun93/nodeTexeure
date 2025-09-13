@@ -1,3 +1,9 @@
+/**
+ * Next.js configuration
+ * - Rewrites API routes to backend server (dev/prod)
+ * - Adds images.remotePatterns to allow loading images from backend uploads
+ */
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   async rewrites() {
@@ -19,6 +25,16 @@ const nextConfig = {
       source: `/api/${route}/:path*`,
       destination: `${backendUrl}/api/${route}/:path*`,
     }));
+  },
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'http',
+        hostname: 'localhost',
+        port: '6666',
+        pathname: '/uploads/**',
+      },
+    ],
   },
 };
 
