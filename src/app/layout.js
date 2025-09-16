@@ -1,6 +1,8 @@
 import Providers from '../components/Providers';
 import ServiceWorkerRegistration from '../components/ServiceWorkerRegistration';
 import PerformanceMonitor from '../components/PerformanceMonitor';
+import MobileOptimizations from '../components/MobileOptimizations';
+import MobilePerformanceOptimizer from '../components/MobilePerformanceOptimizer';
 import { Inter, Playfair_Display } from "next/font/google";
 import "./globals.css";
 import "../styles/aesop-design-system.css";
@@ -51,7 +53,7 @@ export default function RootLayout({ children }) {
         />
         
         {/* Additional SEO Meta Tags */}
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
         <meta httpEquiv="Content-Type" content="text/html; charset=utf-8" />
         <meta name="language" content="English" />
         <meta name="author" content="Noiraé" />
@@ -72,9 +74,12 @@ export default function RootLayout({ children }) {
         className={`${inter.variable} ${playfairDisplay.variable} antialiased`}
       >
         <Providers>
-          {children}
-          <ServiceWorkerRegistration />
-          <PerformanceMonitor />
+          <MobilePerformanceOptimizer>
+            <MobileOptimizations />
+            {children}
+            <ServiceWorkerRegistration />
+            <PerformanceMonitor />
+          </MobilePerformanceOptimizer>
         </Providers>
       </body>
     </html>

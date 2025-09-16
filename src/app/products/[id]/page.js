@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import Head from 'next/head';
@@ -8,6 +8,9 @@ import Header from '../../../components/Header';
 import Footer from '../../../components/Footer';
 import Breadcrumb from '../../../components/Breadcrumb';
 import LazyImage from '../../../components/LazyImage';
+import MobileLoading, { MobileSkeleton } from '../../../components/MobileLoading';
+import { useMobilePerformance } from '../../../components/MobileOptimizations';
+import { useMobileGestures, useMobileImageOptimization } from '../../../components/MobilePerformanceOptimizer';
 import { apiRequest } from '../../../lib/api';
 import { generateMetaTags, generateStructuredData, generateBreadcrumbs } from '../../../lib/seo';
 
@@ -35,6 +38,9 @@ export default function ProductDetails() {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [quantity, setQuantity] = useState(1);
   const [activeTab, setActiveTab] = useState('description');
+  const { isMobile, optimizeForMobile } = useMobilePerformance();
+  const { getOptimizedImageUrl, isSlowConnection } = useMobileImageOptimization();
+  const galleryRef = useRef(null);
 
   // Fetch product details
   useEffect(() => {
@@ -94,6 +100,32 @@ export default function ProductDetails() {
     }
   };
 
+  // Enhanced touch gesture support using the mobile performance optimizer
+  const { isDragging } = useMobileGestures(galleryRef.current, {
+    onSwipeLeft: () => {
+      if (product?.images && currentImageIndex < product.images.length - 1) {
+        nextImage();
+      }
+    },
+    onSwipeRight: () => {
+      if (currentImageIndex > 0) {
+        prevImage();
+      }
+    },
+    preventVerticalScroll: true
+  });
+
+  // Keyboard navigation for accessibility
+  const handleKeyDown = (e) => {
+    if (e.key === 'ArrowLeft') {
+      e.preventDefault();
+      prevImage();
+    } else if (e.key === 'ArrowRight') {
+      e.preventDefault();
+      nextImage();
+    }
+  };
+
   const handleAddToCart = async () => {
     if (!product) return;
     setAdding(true);
@@ -122,8 +154,14 @@ export default function ProductDetails() {
     <div className="aesop-page">
       <Header />
       <div className="product-loading">
-        <div className="product-loading-spinner"></div>
-        <p>Loading product details...</p>
+        {isMobile ? (
+          <MobileLoading message="Loading product details..." size="large" />
+        ) : (
+          <>
+            <div className="product-loading-spinner"></div>
+            <p>Loading product details...</p>
+          </>
+        )}
       </div>
       <Footer />
     </div>
@@ -214,9 +252,16 @@ export default function ProductDetails() {
         <div className="product-detail-grid">
           <div className="product-gallery">
             {/* Main image */}
-            <div className="product-main-image">
+            <div 
+              ref={galleryRef}
+              className={`product-main-image ${isDragging ? 'dragging' : ''}`}
+              onKeyDown={handleKeyDown}
+              tabIndex={0}
+              role="img"
+              aria-label={`Product image ${currentImageIndex + 1} of ${product.images?.length || 1}`}
+            >
               <LazyImage 
-                src={selectedImage || product.images?.[0]?.original_url || '/api/placeholder/600/600'} 
+                src={getOptimizedImageUrl(selectedImage || product.images?.[0]?.original_url || '/api/placeholder/600/600', 600, 600)} 
                 alt={product.name}
                 width={600}
                 height={600}
@@ -225,26 +270,42 @@ export default function ProductDetails() {
                 sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 600px"
               />
               {product.images?.length > 1 && (
-                <div className="product-image-nav">
-                  <button 
-                    onClick={prevImage}
-                    className="product-image-nav-btn"
-                    disabled={currentImageIndex === 0}
-                  >
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                    </svg>
-                  </button>
-                  <button 
-                    onClick={nextImage}
-                    className="product-image-nav-btn"
-                    disabled={currentImageIndex === (product.images?.length - 1)}
-                  >
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                    </svg>
-                  </button>
-                </div>
+                <>
+                  <div className="product-image-nav">
+                    <button 
+                      onClick={prevImage}
+                      className="product-image-nav-btn"
+                      disabled={currentImageIndex === 0}
+                      aria-label="Previous image"
+                    >
+                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                      </svg>
+                    </button>
+                    <button 
+                      onClick={nextImage}
+                      className="product-image-nav-btn"
+                      disabled={currentImageIndex === (product.images?.length - 1)}
+                      aria-label="Next image"
+                    >
+                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
+                    </button>
+                  </div>
+                  
+                  {/* Image indicators for mobile */}
+                  <div className="product-image-indicators">
+                    {product.images.map((_, index) => (
+                      <button
+                        key={index}
+                        onClick={() => selectImage(product.images[index].original_url, index)}
+                        className={`product-image-indicator ${currentImageIndex === index ? 'active' : ''}`}
+                        aria-label={`View image ${index + 1}`}
+                      />
+                    ))}
+                  </div>
+                </>
               )}
             </div>
             

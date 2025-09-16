@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Header from '../../components/Header';
 import Footer from '../../components/Footer';
+import MobileLoading from '../../components/MobileLoading';
 
 function CheckoutPage() {
   const [cartItems, setCartItems] = useState([]);
@@ -31,7 +32,19 @@ function CheckoutPage() {
   const [applyCouponLoading, setApplyCouponLoading] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
   const [sameAsBilling, setSameAsBilling] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   const router = useRouter();
+
+  // Detect mobile screen size
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   useEffect(() => {
     fetchCart();
@@ -235,34 +248,64 @@ function CheckoutPage() {
     </div>
   );
 
-  const OrderSummary = () => (
-    <div className="checkout-summary">
-      <h3 className="checkout-summary-title">Order Summary</h3>
-      
-      {loading ? (
-        <div className="checkout-loading">
-          <div className="checkout-spinner"></div>
-          <p>Loading cart items...</p>
+  const OrderSummary = ({ isCollapsible = false }) => {
+    const [isExpanded, setIsExpanded] = useState(!isCollapsible);
+    
+    return (
+      <div className="checkout-summary">
+        <div className="checkout-summary-header">
+          <h3 className="checkout-summary-title">
+            Order Summary
+            {isMobile && (
+              <span className="checkout-summary-total-mobile">
+                ${total.toFixed(2)}
+              </span>
+            )}
+          </h3>
+          {isCollapsible && (
+            <button
+              onClick={() => setIsExpanded(!isExpanded)}
+              className="checkout-summary-toggle"
+              aria-label={isExpanded ? 'Collapse order summary' : 'Expand order summary'}
+            >
+              <svg 
+                className={`w-5 h-5 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
+                fill="none" 
+                stroke="currentColor" 
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+          )}
         </div>
-      ) : (
-        <>
-          <div className="checkout-items">
-            {cartItems.map(item => (
-              <div key={item.id} className="checkout-item">
-                <div className="checkout-item-image">
-                  <img src={item.image || '/api/placeholder/60/60'} alt={item.name} />
-                  <span className="checkout-item-quantity">{item.quantity}</span>
-                </div>
-                <div className="checkout-item-details">
-                  <h4>{item.name}</h4>
-                  <p className="checkout-item-variant">{item.variant}</p>
-                </div>
-                <div className="checkout-item-price">
-                  ${(item.price * item.quantity).toFixed(2)}
-                </div>
-              </div>
-            ))}
+        
+        {loading ? (
+          <div className="checkout-loading">
+            <div className="checkout-spinner"></div>
+            <p>Loading cart items...</p>
           </div>
+        ) : (
+          <>
+            {isExpanded && (
+              <div className="checkout-items">
+                {cartItems.map(item => (
+                  <div key={item.id} className="checkout-item">
+                    <div className="checkout-item-image">
+                      <img src={item.image || '/api/placeholder/60/60'} alt={item.name} />
+                      <span className="checkout-item-quantity">{item.quantity}</span>
+                    </div>
+                    <div className="checkout-item-details">
+                      <h4>{item.name}</h4>
+                      <p className="checkout-item-variant">{item.variant}</p>
+                    </div>
+                    <div className="checkout-item-price">
+                      ${(item.price * item.quantity).toFixed(2)}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
 
           <div className="checkout-coupon">
             <div className="checkout-coupon-input">
@@ -312,14 +355,21 @@ function CheckoutPage() {
       )}
     </div>
   );
+};
 
   if (loading) {
     return (
       <div className="aesop-page">
         <Header />
         <div className="checkout-loading-page">
-          <div className="checkout-spinner"></div>
-          <p>Loading checkout...</p>
+          {isMobile ? (
+            <MobileLoading message="Loading checkout..." size="large" />
+          ) : (
+            <>
+              <div className="checkout-spinner"></div>
+              <p>Loading checkout...</p>
+            </>
+          )}
         </div>
         <Footer />
       </div>
@@ -494,7 +544,7 @@ function CheckoutPage() {
           </div>
 
           <div className="checkout-sidebar">
-            <OrderSummary />
+            <OrderSummary isCollapsible={isMobile} />
           </div>
         </div>
       </div>

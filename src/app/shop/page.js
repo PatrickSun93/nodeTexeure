@@ -25,7 +25,7 @@ function ShopHeader({ breadcrumbs }) {
 }
 
 // Filter Sidebar Component
-function FilterSidebar({ filters, onFilterChange }) {
+function FilterSidebar({ filters, onFilterChange, isMobile = false, isOpen = false, onClose }) {
   const categories = [
     'All', 'Sheets', 'Pillows', 'Blankets', 'Mattresses', 'Accessories'
   ];
@@ -62,8 +62,18 @@ function FilterSidebar({ filters, onFilterChange }) {
   };
 
   return (
-    <div className="aesop-filter-sidebar">
-      <h3 className="aesop-filter-title">Filters</h3>
+    <div className={`aesop-filter-sidebar ${isMobile && isOpen ? 'mobile-open' : ''}`}>
+      {isMobile && (
+        <div className="mobile-filter-header">
+          <h3 className="aesop-filter-title">Filters</h3>
+          <button onClick={onClose} className="mobile-filter-close" aria-label="Close filters">
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+      )}
+      {!isMobile && <h3 className="aesop-filter-title">Filters</h3>}
       
       {/* Category Filter */}
       <div className="aesop-filter-section">
@@ -280,6 +290,19 @@ function ShopContent() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [pagination, setPagination] = useState({ page: 1, total: 0, limit: 20 });
+  const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Detect mobile screen size
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   // Sample products data (fallback)
   const sampleProducts = [
@@ -538,8 +561,50 @@ function ShopContent() {
 
       <div className="aesop-container">
         <div className="aesop-shop-content">
+          {/* Mobile Filter Toggle */}
+          {isMobile && (
+            <div className="mobile-shop-controls">
+              <button 
+                onClick={() => setIsMobileFilterOpen(true)}
+                className="mobile-filter-toggle"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                </svg>
+                Filters
+                {(filters.category !== 'All' || filters.price !== 'all' || filters.materials.length > 0) && (
+                  <span className="mobile-filter-badge">
+                    {[
+                      filters.category !== 'All' ? 1 : 0,
+                      filters.price !== 'all' ? 1 : 0,
+                      filters.materials.length
+                    ].reduce((a, b) => a + b, 0)}
+                  </span>
+                )}
+              </button>
+              
+              <select 
+                value={sortBy} 
+                onChange={(e) => setSortBy(e.target.value)}
+                className="mobile-sort-select"
+              >
+                <option value="featured">Featured</option>
+                <option value="newest">Newest</option>
+                <option value="price-low">Price: Low to High</option>
+                <option value="price-high">Price: High to Low</option>
+                <option value="name">Name: A to Z</option>
+              </select>
+            </div>
+          )}
+
           <aside className="aesop-shop-sidebar">
-            <FilterSidebar filters={filters} onFilterChange={handleFilterChange} />
+            <FilterSidebar 
+              filters={filters} 
+              onFilterChange={handleFilterChange}
+              isMobile={isMobile}
+              isOpen={isMobileFilterOpen}
+              onClose={() => setIsMobileFilterOpen(false)}
+            />
           </aside>
           
           <main className="aesop-shop-main">
