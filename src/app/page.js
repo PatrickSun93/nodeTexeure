@@ -5,8 +5,10 @@ import Head from 'next/head';
 import { useBackendHealth } from '../lib';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
+import LazyImage from '../components/LazyImage';
 import { fetchSettings } from '../lib/fetchSettings';
 import { generateMetaTags, generateStructuredData, defaultSEO } from '../lib/seo';
+import { usePerformance } from '../lib/usePerformance';
 import { useRef, useState, useEffect } from 'react';
 
 // Hero Section Component
@@ -103,10 +105,14 @@ function ProductCard({ images = [], slug, title }) {
                     aria-label="Product image gallery"
                     role="img"
                 >
-                    <img
+                    <LazyImage
                         src={images[currentIndex]}
                         alt={title ? `${title} — image ${currentIndex + 1} of ${images.length}` : `Product image ${currentIndex + 1} of ${images.length}`}
+                        width={800}
+                        height={600}
                         className="aesop-carousel-image"
+                        priority={currentIndex === 0}
+                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 800px"
                     />
                     <div className="aesop-image-counter">{currentIndex + 1}/{images.length}</div>
                     {/* Optional dots indicators retained for visual aid */}
@@ -183,6 +189,7 @@ function FeaturesSection() {
 export default function Home() {
     const { isConnected, loading } = useBackendHealth();
     const [settings, setSettings] = useState(null);
+    const performanceMetrics = usePerformance();
 
     useEffect(() => {
         let mounted = true;

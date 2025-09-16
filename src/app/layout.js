@@ -1,7 +1,10 @@
 import Providers from '../components/Providers';
+import ServiceWorkerRegistration from '../components/ServiceWorkerRegistration';
+import PerformanceMonitor from '../components/PerformanceMonitor';
 import { Inter, Playfair_Display } from "next/font/google";
 import "./globals.css";
 import "../styles/aesop-design-system.css";
+import "../styles/performance.css";
 import { generateMetaTags, generateStructuredData, defaultSEO } from '../lib/seo';
 
 const inter = Inter({
@@ -70,6 +73,8 @@ export default function RootLayout({ children }) {
       >
         <Providers>
           {children}
+          <ServiceWorkerRegistration />
+          <PerformanceMonitor />
         </Providers>
       </body>
     </html>

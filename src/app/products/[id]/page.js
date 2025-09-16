@@ -7,6 +7,7 @@ import Head from 'next/head';
 import Header from '../../../components/Header';
 import Footer from '../../../components/Footer';
 import Breadcrumb from '../../../components/Breadcrumb';
+import LazyImage from '../../../components/LazyImage';
 import { apiRequest } from '../../../lib/api';
 import { generateMetaTags, generateStructuredData, generateBreadcrumbs } from '../../../lib/seo';
 
@@ -214,10 +215,14 @@ export default function ProductDetails() {
           <div className="product-gallery">
             {/* Main image */}
             <div className="product-main-image">
-              <img 
+              <LazyImage 
                 src={selectedImage || product.images?.[0]?.original_url || '/api/placeholder/600/600'} 
                 alt={product.name}
+                width={600}
+                height={600}
                 className="product-image-main"
+                priority={true}
+                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 600px"
               />
               {product.images?.length > 1 && (
                 <div className="product-image-nav">
@@ -252,9 +257,12 @@ export default function ProductDetails() {
                     onClick={() => selectImage(img.original_url || '/api/placeholder/600/600', index)}
                     className={`product-thumbnail ${currentImageIndex === index ? 'active' : ''}`}
                   >
-                    <img 
+                    <LazyImage 
                       src={img.thumbnail_small_url || '/api/placeholder/100/100'} 
                       alt={`${product.name} view ${index + 1}`}
+                      width={100}
+                      height={100}
+                      sizes="100px"
                     />
                   </button>
                 ))}

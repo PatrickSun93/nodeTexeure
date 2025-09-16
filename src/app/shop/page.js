@@ -1,12 +1,13 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import Head from 'next/head';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Header from '../../components/Header';
 import Footer from '../../components/Footer';
 import Breadcrumb from '../../components/Breadcrumb';
+import LazyImage from '../../components/LazyImage';
 import { apiRequest } from '../../lib/api';
 import { generateMetaTags, generateStructuredData, generateBreadcrumbs } from '../../lib/seo';
 
@@ -196,10 +197,13 @@ export function ProductCard({ product, onAddToCart, onToggleWishlist }) {
   return (
     <div className="aesop-product-card">
       <div className="aesop-product-image-container">
-        <img 
+        <LazyImage 
           src={product.image} 
           alt={product.name}
+          width={300}
+          height={300}
           className="aesop-product-image"
+          sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 300px"
         />
         {product.isNew && (
           <span className="aesop-product-badge aesop-product-badge-new">New</span>
@@ -260,7 +264,7 @@ export function ProductCard({ product, onAddToCart, onToggleWishlist }) {
 }
 
 // Main Shop Component
-export default function Shop() {
+function ShopContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const searchQuery = searchParams.get('search') || '';
@@ -656,5 +660,13 @@ export default function Shop() {
       <Footer />
     </div>
     </>
+  );
+}
+
+export default function Shop() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <ShopContent />
+    </Suspense>
   );
 }
