@@ -5,6 +5,7 @@ const logger = require('../utils/logger');
 const ResponseFormatter = require('../utils/responseFormatter');
 const { protect } = require('../middleware/authMiddleware');
 const EmailQueueService = require('../services/emailQueueService');
+const InventoryService = require('../services/inventoryService');
 const db = require('../utils/database');
 
 // Initialize email queue service
@@ -221,6 +222,79 @@ async function handlePaymentSucceeded(paymentIntent) {
         orderId,
         paymentIntentId: paymentIntent.id
       });
+
+      // Process inventory updates for confirmed order
+      try {
+        // Get order items for inventory update
+        const orderItemsResult = await db.query(
+          'SELECT product_id, variant_id, quantity FROM order_items WHERE order_id = ?',
+          [orderId]
+        );
+
+        if (orderItemsResult.length > 0) {
+          const inventoryResult = await InventoryService.processOrderInventoryUpdate(
+            orderId,
+            orderItemsResult,
+            userId || 'system'
+          );
+
+          if (inventoryResult.success) {
+            logger.info('Inventory updated for confirmed order', {
+              orderId,
+              totalItems: inventoryResult.data.total_items,
+              successfulUpdates: inventoryResult.data.successful_updates,
+              failedUpdates: inventoryResult.data.failed_updates
+            });
+          } else {
+            logger.error('Failed to update inventory for confirmed order', {
+              orderId,
+              error: inventoryResult.error
+            });
+          }
+        }
+      } catch (inventoryError) {
+        logger.error('Error processing inventory updates for confirmed order', {
+          error: inventoryError.message,
+          orderId,
+          paymentIntentId: paymentIntent.id
+        });
+        // Don't fail the payment processing if inventory update fails
+      }
+
+      // Confirm stock reservations (convert to sales)
+      try {
+        // Get cart ID from order metadata or find by order
+        const cartResult = await db.query(
+          'SELECT cart_id FROM order_cart_mapping WHERE order_id = ?',
+          [orderId]
+        );
+
+        if (cartResult.length > 0) {
+          const cartId = cartResult[0].cart_id;
+          const confirmResult = await InventoryService.confirmReservation(cartId);
+          
+          if (confirmResult.success) {
+            logger.info('Stock reservations confirmed for order', {
+              orderId,
+              cartId,
+              confirmedItems: confirmResult.data.confirmed_items
+            });
+          } else {
+            logger.error('Failed to confirm stock reservations', {
+              orderId,
+              cartId,
+              error: confirmResult.error
+            });
+          }
+        }
+      } catch (reservationError) {
+        logger.error('Error confirming stock reservations', {
+          error: reservationError.message,
+          orderId,
+          paymentIntentId: paymentIntent.id
+        });
+        // Don't fail the payment processing if reservation confirmation fails
+      }
 
       // Queue order status update email for payment confirmation
       try {

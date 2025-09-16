@@ -1,16 +1,16 @@
 #!/usr/bin/env node
 
 /**
- * Test Inventory Service Functionality
+ * Test Enhanced Inventory Service Functionality
  * 
- * This script tests the inventory service functions to ensure they work correctly.
+ * This script tests the enhanced inventory service functions to ensure they work correctly.
  */
 
 const InventoryService = require('../services/inventoryService');
 const DatabaseUtil = require('../utils/database');
 
 async function testInventoryService() {
-  console.log('Testing Inventory Service...\n');
+  console.log('Testing Enhanced Inventory Service...\n');
   
   try {
     // Test 1: Get a product with variants from the database
@@ -66,8 +66,53 @@ async function testInventoryService() {
     }
     console.log();
     
-    // Test 4: Get low stock items
-    console.log('4. Testing getLowStockItems...');
+    // Test 4: Test inventory update with logging (using first variant)
+    console.log('4. Testing updateInventoryWithLogging...');
+    let testVariantId = null;
+    if (variantResult.success && variantResult.data.length > 0) {
+      testVariantId = variantResult.data[0].id;
+    }
+    
+    const updateResult = await InventoryService.updateInventoryWithLogging(
+      testProduct.id,
+      testVariantId, // Use first variant
+      5, // Add 5 units
+      'restock',
+      'manual',
+      'TEST001',
+      'TEST_USER',
+      { notes: 'Test restock for inventory service testing' }
+    );
+    
+    if (updateResult.success) {
+      console.log(`✓ Inventory updated successfully`);
+      console.log(`  - Previous available: ${updateResult.data.previous_available}`);
+      console.log(`  - New available: ${updateResult.data.new_available}`);
+      console.log(`  - Movement logged: ${updateResult.data.movement_logged}`);
+    } else {
+      console.log('✗ Failed to update inventory with logging:', updateResult.error);
+    }
+    console.log();
+    
+    // Test 5: Test movement history
+    console.log('5. Testing getMovementHistory...');
+    const historyResult = await InventoryService.getMovementHistory(null, {
+      product_id: testProduct.id,
+      limit: 5
+    });
+    
+    if (historyResult.success) {
+      console.log(`✓ Found ${historyResult.data.length} movement records`);
+      historyResult.data.forEach(movement => {
+        console.log(`  - ${movement.movement_type}: ${movement.quantity_change > 0 ? '+' : ''}${movement.quantity_change} (${movement.created_at})`);
+      });
+    } else {
+      console.log('✗ Failed to get movement history:', historyResult.error);
+    }
+    console.log();
+    
+    // Test 6: Get low stock items
+    console.log('6. Testing getLowStockItems...');
     const lowStockResult = await InventoryService.getLowStockItems();
     if (lowStockResult.success) {
       console.log(`✓ Found ${lowStockResult.data.length} low stock items`);
@@ -84,8 +129,57 @@ async function testInventoryService() {
     }
     console.log();
     
-    // Test 5: Test expired reservations cleanup
-    console.log('5. Testing releaseExpiredReservations...');
+    // Test 7: Test low stock alert system
+    console.log('7. Testing low stock alert system...');
+    if (lowStockResult.success && lowStockResult.data.length > 0) {
+      const testItem = lowStockResult.data[0];
+      const alertResult = await InventoryService.triggerLowStockAlert(testItem);
+      
+      if (alertResult.success) {
+        console.log(`✓ Low stock alert processed`);
+        console.log(`  - Alert sent: ${alertResult.data.alert_sent}`);
+        if (alertResult.data.alert_sent) {
+          console.log(`  - Admin count: ${alertResult.data.admin_count}`);
+          console.log(`  - Product: ${alertResult.data.product}`);
+        } else {
+          console.log(`  - Reason: ${alertResult.data.reason}`);
+        }
+      } else {
+        console.log('✗ Failed to trigger low stock alert:', alertResult.error);
+      }
+    } else {
+      console.log('- No low stock items to test alert system');
+    }
+    console.log();
+    
+    // Test 8: Test order processing simulation (using first variant)
+    console.log('8. Testing processOrderInventoryUpdate...');
+    const mockOrderItems = [
+      {
+        product_id: testProduct.id,
+        variant_id: testVariantId, // Use first variant
+        quantity: 2
+      }
+    ];
+    
+    const orderProcessResult = await InventoryService.processOrderInventoryUpdate(
+      'TEST_ORDER_001',
+      mockOrderItems,
+      'TEST_USER'
+    );
+    
+    if (orderProcessResult.success) {
+      console.log(`✓ Order inventory processing completed`);
+      console.log(`  - Total items: ${orderProcessResult.data.total_items}`);
+      console.log(`  - Successful updates: ${orderProcessResult.data.successful_updates}`);
+      console.log(`  - Failed updates: ${orderProcessResult.data.failed_updates}`);
+    } else {
+      console.log('✗ Failed to process order inventory:', orderProcessResult.error);
+    }
+    console.log();
+    
+    // Test 9: Test expired reservations cleanup
+    console.log('9. Testing releaseExpiredReservations...');
     const cleanupResult = await InventoryService.releaseExpiredReservations();
     if (cleanupResult.success) {
       console.log(`✓ Cleanup completed: ${cleanupResult.data.released_count} released, ${cleanupResult.data.total_expired} total expired`);
@@ -94,7 +188,7 @@ async function testInventoryService() {
     }
     console.log();
     
-    console.log('✓ All inventory service tests completed successfully!');
+    console.log('✓ All enhanced inventory service tests completed successfully!');
     
   } catch (error) {
     console.error('Test failed with error:', error.message);

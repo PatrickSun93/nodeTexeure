@@ -154,4 +154,143 @@ router.put('/:inventoryId', protect, admin, async (req, res) => {
   }
 });
 
+// POST /api/inventory/update-with-logging - Update inventory with automatic logging (admin only)
+router.post('/update-with-logging', protect, admin, async (req, res) => {
+  try {
+    const { 
+      product_id, 
+      variant_id, 
+      quantity_change, 
+      movement_type, 
+      reference_type, 
+      reference_id, 
+      details 
+    } = req.body;
+    
+    if (!product_id || quantity_change === undefined || !movement_type || !reference_type) {
+      return res.status(400).json(ResponseFormatter.failure(
+        'product_id, quantity_change, movement_type, and reference_type are required'
+      ));
+    }
+    
+    const result = await InventoryService.updateInventoryWithLogging(
+      product_id,
+      variant_id,
+      quantity_change,
+      movement_type,
+      reference_type,
+      reference_id,
+      req.user.id,
+      details || {}
+    );
+    
+    if (!result.success) {
+      return res.status(400).json(ResponseFormatter.failure(result.error));
+    }
+    
+    res.json(ResponseFormatter.success('Inventory updated with logging successfully', result.data));
+  } catch (error) {
+    console.error('Error updating inventory with logging:', error);
+    res.status(500).json(ResponseFormatter.failure('Server error', { error: error.message }));
+  }
+});
+
+// POST /api/inventory/process-order - Process order inventory updates (admin only)
+router.post('/process-order', protect, admin, async (req, res) => {
+  try {
+    const { order_id, order_items } = req.body;
+    
+    if (!order_id || !order_items || !Array.isArray(order_items)) {
+      return res.status(400).json(ResponseFormatter.failure(
+        'order_id and order_items array are required'
+      ));
+    }
+    
+    const result = await InventoryService.processOrderInventoryUpdate(
+      order_id,
+      order_items,
+      req.user.id
+    );
+    
+    if (!result.success) {
+      return res.status(400).json(ResponseFormatter.failure(result.error));
+    }
+    
+    res.json(ResponseFormatter.success('Order inventory processed successfully', result.data));
+  } catch (error) {
+    console.error('Error processing order inventory:', error);
+    res.status(500).json(ResponseFormatter.failure('Server error', { error: error.message }));
+  }
+});
+
+// GET /api/inventory/movement-history - Get inventory movement history (admin only)
+router.get('/movement-history', protect, admin, async (req, res) => {
+  try {
+    const { 
+      inventory_id, 
+      product_id, 
+      movement_type, 
+      reference_type, 
+      date_from, 
+      date_to, 
+      limit 
+    } = req.query;
+    
+    const filters = {};
+    if (product_id) filters.product_id = product_id;
+    if (movement_type) filters.movement_type = movement_type;
+    if (reference_type) filters.reference_type = reference_type;
+    if (date_from) filters.date_from = date_from;
+    if (date_to) filters.date_to = date_to;
+    if (limit) filters.limit = limit;
+    
+    const result = await InventoryService.getMovementHistory(inventory_id, filters);
+    
+    if (!result.success) {
+      return res.status(400).json(ResponseFormatter.failure(result.error));
+    }
+    
+    res.json(ResponseFormatter.success('Movement history fetched successfully', {
+      movements: result.data
+    }));
+  } catch (error) {
+    console.error('Error fetching movement history:', error);
+    res.status(500).json(ResponseFormatter.failure('Server error', { error: error.message }));
+  }
+});
+
+// POST /api/inventory/trigger-low-stock-alerts - Manually trigger low stock alerts (admin only)
+router.post('/trigger-low-stock-alerts', protect, admin, async (req, res) => {
+  try {
+    const lowStockResult = await InventoryService.getLowStockItems();
+    
+    if (!lowStockResult.success) {
+      return res.status(400).json(ResponseFormatter.failure(lowStockResult.error));
+    }
+    
+    const alertResults = [];
+    
+    for (const item of lowStockResult.data) {
+      const alertResult = await InventoryService.triggerLowStockAlert(item);
+      alertResults.push({
+        product_id: item.product_id,
+        product_name: item.product_name,
+        alert_sent: alertResult.success && alertResult.data.alert_sent,
+        error: alertResult.error
+      });
+    }
+    
+    const successCount = alertResults.filter(r => r.alert_sent).length;
+    
+    res.json(ResponseFormatter.success('Low stock alerts processed', {
+      total_items: alertResults.length,
+      alerts_sent: successCount,
+      results: alertResults
+    }));
+  } catch (error) {
+    console.error('Error triggering low stock alerts:', error);
+    res.status(500).json(ResponseFormatter.failure('Server error', { error: error.message }));
+  }
+});
+
 module.exports = router;
