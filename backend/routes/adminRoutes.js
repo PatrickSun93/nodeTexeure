@@ -6,11 +6,13 @@ const DatabaseUtil = require('../utils/database');
 const ResponseFormatter = require('../utils/responseFormatter');
 const NotificationService = require('../services/notificationService');
 const EmailQueueService = require('../services/emailQueueService');
+const OrderService = require('../services/orderService');
 const path = require('path');
 const fs = require('fs');
 
-// Initialize email queue service
+// Initialize services
 const emailQueueService = new EmailQueueService();
+const orderService = new OrderService();
 
 // Multer setup (installed separately). Using disk storage inside backend/uploads
 let multer;
@@ -578,59 +580,45 @@ router.get('/analytics/dashboard', adminReadLimiter, async (req, res) => {
   }
 });
 
-// Order Management
+// Order Management - Enhanced with filtering and search
 router.get('/orders', adminReadLimiter, async (req, res) => {
   try {
-    const { status, page = 1, limit = 20 } = req.query;
-    const offset = (page - 1) * limit;
+    const {
+      status,
+      dateFrom,
+      dateTo,
+      customerEmail,
+      orderNumber,
+      minAmount,
+      maxAmount,
+      page = 1,
+      limit = 20
+    } = req.query;
+
+    const filters = {
+      status,
+      dateFrom,
+      dateTo,
+      customerEmail,
+      orderNumber,
+      minAmount,
+      maxAmount
+    };
+
+    const result = await orderService.getOrdersWithFilters(filters, parseInt(page), parseInt(limit));
     
-    let query = `
-      SELECT 
-        o.id,
-        o.order_number,
-        o.status,
-        o.total_amount,
-        o.created_at,
-        o.updated_at,
-        COALESCE(CONCAT(u.first_name, ' ', u.last_name), o.guest_email) as customer_name,
-        u.email as customer_email
-      FROM orders o
-      LEFT JOIN users u ON o.user_id = u.id
-    `;
-    let params = [];
-    
-    if (status) {
-      query += ' WHERE o.status = ?';
-      params.push(status);
+    if (result.success) {
+      res.json(result);
+    } else {
+      res.status(400).json(result);
     }
-    
-    query += ' ORDER BY o.created_at DESC LIMIT ? OFFSET ?';
-    params.push(parseInt(limit), parseInt(offset));
-    
-    const ordersResult = await DatabaseUtil.executeQuery(query, params);
-    
-    // Get total count for pagination
-    let countQuery = 'SELECT COUNT(*) as total FROM orders o';
-    let countParams = [];
-    if (status) {
-      countQuery += ' WHERE o.status = ?';
-      countParams.push(status);
-    }
-    const countResult = await DatabaseUtil.executeQuery(countQuery, countParams);
-    
-    res.json(ResponseFormatter.success('Orders fetched successfully', {
-      orders: ordersResult.success ? ordersResult.data : [],
-      total: countResult.success ? countResult.data[0].total : 0,
-      page: parseInt(page),
-      limit: parseInt(limit)
-    }));
   } catch (error) {
-    console.error(error);
+    console.error('Error fetching orders:', error);
     res.status(500).json(ResponseFormatter.failure('Server error', { error: error.message }));
   }
 });
 
-// Get order details
+// Get order details with status history
 router.get('/orders/:id', adminReadLimiter, async (req, res) => {
   try {
     const { id } = req.params;
@@ -656,10 +644,13 @@ router.get('/orders/:id', adminReadLimiter, async (req, res) => {
     const itemsQuery = `
       SELECT 
         oi.*,
-        p.thumbnail_small_url
+        p.name as current_product_name,
+        pi.thumbnail_small_url
       FROM order_items oi
       LEFT JOIN products p ON oi.product_id = p.id
+      LEFT JOIN product_images pi ON p.id = pi.product_id AND pi.is_primary = 1
       WHERE oi.order_id = ?
+      ORDER BY oi.created_at
     `;
     const itemsResult = await DatabaseUtil.executeQuery(itemsQuery, [id]);
     
@@ -674,9 +665,13 @@ router.get('/orders/:id', adminReadLimiter, async (req, res) => {
       order.billing_address = JSON.parse(order.billing_address_json);
     }
     
+    // Get order status history
+    const historyResult = await orderService.getOrderStatusHistory(id);
+    order.status_history = historyResult.success ? historyResult.data : [];
+    
     res.json(ResponseFormatter.success('Order details fetched successfully', order));
   } catch (error) {
-    console.error(error);
+    console.error('Error fetching order details:', error);
     res.status(500).json(ResponseFormatter.failure('Server error', { error: error.message }));
   }
 });
@@ -753,6 +748,72 @@ router.put('/orders/:id/status', adminWriteLimiter, csrfProtection, async (req, 
     res.json(ResponseFormatter.success('Order status updated successfully', { id, status }));
   } catch (error) {
     console.error(error);
+    res.status(500).json(ResponseFormatter.failure('Server error', { error: error.message }));
+  }
+});
+
+// Cancel order
+router.put('/orders/:id/cancel', adminWriteLimiter, csrfProtection, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { reason } = req.body;
+    const cancelledBy = req.user.id;
+    
+    if (!reason) {
+      return res.status(400).json(ResponseFormatter.failure('Cancellation reason is required'));
+    }
+    
+    const result = await orderService.cancelOrder(id, reason, cancelledBy);
+    
+    if (result.success) {
+      res.json(result);
+    } else {
+      res.status(400).json(result);
+    }
+  } catch (error) {
+    console.error('Error cancelling order:', error);
+    res.status(500).json(ResponseFormatter.failure('Server error', { error: error.message }));
+  }
+});
+
+// Process refund
+router.post('/orders/:id/refund', adminWriteLimiter, csrfProtection, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { amount, reason, reasonNotes } = req.body;
+    const processedBy = req.user.id;
+    
+    if (!amount || !reason) {
+      return res.status(400).json(ResponseFormatter.failure('Amount and reason are required'));
+    }
+    
+    const result = await orderService.initiateRefund(id, parseFloat(amount), reason, reasonNotes, processedBy);
+    
+    if (result.success) {
+      res.json(result);
+    } else {
+      res.status(400).json(result);
+    }
+  } catch (error) {
+    console.error('Error processing refund:', error);
+    res.status(500).json(ResponseFormatter.failure('Server error', { error: error.message }));
+  }
+});
+
+// Get order status history
+router.get('/orders/:id/history', adminReadLimiter, async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    const result = await orderService.getOrderStatusHistory(id);
+    
+    if (result.success) {
+      res.json(result);
+    } else {
+      res.status(400).json(result);
+    }
+  } catch (error) {
+    console.error('Error fetching order history:', error);
     res.status(500).json(ResponseFormatter.failure('Server error', { error: error.message }));
   }
 });

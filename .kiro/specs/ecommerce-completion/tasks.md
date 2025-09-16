@@ -139,14 +139,14 @@
   - Add automatic inventory updates when orders are placed
   - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5_
 
-- [ ] 21. Create comprehensive coupon system
+- [x] 21. Create comprehensive coupon system
   - Build coupon creation and management API endpoints
   - Implement coupon validation logic (expiration, usage limits, minimum order)
   - Create coupon application in checkout process
   - Add coupon usage tracking and analytics
   - _Requirements: 6.1, 6.2, 6.3, 6.4, 6.5_
 
-- [ ] 22. Enhance order management and tracking
+- [x] 22. Enhance order management and tracking
   - Create order status update system with history tracking
   - Implement order cancellation and refund processing
   - Build customer order history and tracking pages

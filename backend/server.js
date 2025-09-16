@@ -102,6 +102,10 @@ app.use('/api/tax', taxRoutes);
 const fedexRoutes = require('./routes/fedexRoutes');
 app.use('/api/fedex', fedexRoutes);
 
+// Coupon routes
+const couponRoutes = require('./routes/couponRoutes');
+app.use('/api/coupons', couponRoutes);
+
 // Backward compatibility - redirect old endpoints to new structure
 app.get('/api/health', (req, res) => {
   res.redirect(301, '/api/status/health');
