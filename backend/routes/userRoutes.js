@@ -64,21 +64,59 @@ router.post('/register', async (req, res) => {
     }
     const userId = idResult.data[0].id;
 
-    // Insert new user
+    // Generate email verification token
+    const emailVerificationToken = crypto.randomBytes(32).toString('hex');
+
+    // Insert new user with email verification token
     const insertResult = await DatabaseUtil.executeQuery(
-      'INSERT INTO users (id, email, password_hash, first_name, last_name) VALUES (?, ?, ?, ?, ?)',
-      [userId, email, hashedPassword, firstName, lastName]
+      'INSERT INTO users (id, email, password_hash, first_name, last_name, email_verification_token) VALUES (?, ?, ?, ?, ?, ?)',
+      [userId, email, hashedPassword, firstName, lastName, emailVerificationToken]
     );
 
     if (insertResult.success) {
+      // Send verification email
+      try {
+        const verificationUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/verify-email?token=${emailVerificationToken}`;
+        const mailOptions = {
+          from: process.env.EMAIL_USER,
+          to: email,
+          subject: 'Verify Your Email Address',
+          html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+              <h2 style="color: #333;">Welcome to Our Store!</h2>
+              <p>Hi ${firstName},</p>
+              <p>Thank you for registering with us. Please verify your email address by clicking the button below:</p>
+              <div style="text-align: center; margin: 30px 0;">
+                <a href="${verificationUrl}" 
+                   style="background-color: #4F46E5; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">
+                  Verify Email Address
+                </a>
+              </div>
+              <p>If the button doesn't work, you can also copy and paste this link into your browser:</p>
+              <p style="word-break: break-all; color: #666;">${verificationUrl}</p>
+              <p>This verification link will expire in 24 hours.</p>
+              <p>If you didn't create an account with us, please ignore this email.</p>
+              <hr style="margin: 30px 0; border: none; border-top: 1px solid #eee;">
+              <p style="color: #666; font-size: 12px;">This is an automated email, please do not reply.</p>
+            </div>
+          `
+        };
+
+        await transporter.sendMail(mailOptions);
+      } catch (emailError) {
+        console.error('Failed to send verification email:', emailError);
+        // Don't fail registration if email fails, but log it
+      }
+
       const keyValueTable = {
         userId: userId,
         email: email,
         firstName: firstName,
-        lastName: lastName
+        lastName: lastName,
+        message: 'Registration successful. Please check your email to verify your account.'
       };
       res.status(201).json(ResponseFormatter.success(
-        'User registered successfully',
+        'User registered successfully. Verification email sent.',
         keyValueTable
       ));
     } else {
@@ -143,6 +181,16 @@ router.post('/login', loginLimiter, async (req, res) => {
     }
 
     const user = result.data[0];
+
+    // Check if email is verified (except for admin/staff users)
+    if (!user.email_verified && user.role === 'customer') {
+      const keyValueTable = { 
+        error: 'Please verify your email address before logging in',
+        needsVerification: true,
+        email: user.email
+      };
+      return res.status(403).json(ResponseFormatter.failure('Email not verified', keyValueTable));
+    }
 
     if (await bcrypt.compare(password, user.password_hash)) {
       // Compute isAdmin from role field
@@ -497,15 +545,41 @@ router.post('/forgot-password', forgotLimiter, async (req, res) => {
     }
 
     const userId = result.data[0].id;
-    const token = jwt.sign({ userId }, process.env.JWT_SECRET, { expiresIn: '1h' });
+    const user = result.data[0];
+    
+    // Generate secure reset token
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    const resetExpiry = new Date(Date.now() + 60 * 60 * 1000); // 1 hour from now
 
-    await DatabaseUtil.executeQuery('UPDATE users SET resetToken = ?, resetTokenExpiry = DATE_ADD(NOW(), INTERVAL 1 HOUR) WHERE id = ?', [token, userId]);
+    await DatabaseUtil.executeQuery(
+      'UPDATE users SET password_reset_token = ?, password_reset_expires = ? WHERE id = ?', 
+      [resetToken, resetExpiry, userId]
+    );
 
+    const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/reset-password?token=${resetToken}`;
     const mailOptions = {
       from: process.env.EMAIL_USER,
       to: email,
-      subject: 'Password Reset',
-      text: `You requested a password reset. Click this link to reset: http://yourdomain.com/reset-password?token=${token}`
+      subject: 'Password Reset Request',
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #333;">Password Reset Request</h2>
+          <p>Hi ${user.first_name},</p>
+          <p>We received a request to reset your password. If you made this request, click the button below to reset your password:</p>
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${resetUrl}" 
+               style="background-color: #DC2626; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">
+              Reset Password
+            </a>
+          </div>
+          <p>If the button doesn't work, you can also copy and paste this link into your browser:</p>
+          <p style="word-break: break-all; color: #666;">${resetUrl}</p>
+          <p><strong>This link will expire in 1 hour.</strong></p>
+          <p>If you didn't request a password reset, please ignore this email. Your password will remain unchanged.</p>
+          <hr style="margin: 30px 0; border: none; border-top: 1px solid #eee;">
+          <p style="color: #666; font-size: 12px;">This is an automated email, please do not reply.</p>
+        </div>
+      `
     };
 
     await transporter.sendMail(mailOptions);
@@ -516,6 +590,140 @@ router.post('/forgot-password', forgotLimiter, async (req, res) => {
     console.error('Forgot password error:', error);
     const keyValueTable = { error: error.message };
     res.status(500).json(ResponseFormatter.failure('Failed to process forgot password', keyValueTable));
+  }
+});
+
+/**
+ * POST /api/users/verify-email
+ * Verify user email address
+ * @param {string} token - Email verification token
+ */
+router.post('/verify-email', async (req, res) => {
+  try {
+    const { token } = req.body;
+
+    if (!token) {
+      const keyValueTable = { error: 'Verification token is required' };
+      return res.status(400).json(ResponseFormatter.failure('Missing token', keyValueTable));
+    }
+
+    // Find user with this verification token
+    const result = await DatabaseUtil.executeQuery(
+      'SELECT id, email, first_name, email_verified FROM users WHERE email_verification_token = ?',
+      [token]
+    );
+
+    if (!result.success || result.data.length === 0) {
+      const keyValueTable = { error: 'Invalid or expired verification token' };
+      return res.status(400).json(ResponseFormatter.failure('Invalid token', keyValueTable));
+    }
+
+    const user = result.data[0];
+
+    if (user.email_verified) {
+      const keyValueTable = { message: 'Email already verified' };
+      return res.json(ResponseFormatter.success('Email already verified', keyValueTable));
+    }
+
+    // Update user to mark email as verified and clear token
+    const updateResult = await DatabaseUtil.executeQuery(
+      'UPDATE users SET email_verified = TRUE, email_verification_token = NULL WHERE id = ?',
+      [user.id]
+    );
+
+    if (updateResult.success) {
+      const keyValueTable = { 
+        userId: user.id,
+        email: user.email,
+        message: 'Email verified successfully. You can now log in.'
+      };
+      res.json(ResponseFormatter.success('Email verified successfully', keyValueTable));
+    } else {
+      throw new Error('Failed to update user verification status');
+    }
+  } catch (error) {
+    console.error('Email verification error:', error);
+    const keyValueTable = { error: error.message };
+    res.status(500).json(ResponseFormatter.failure('Email verification failed', keyValueTable));
+  }
+});
+
+/**
+ * POST /api/users/resend-verification
+ * Resend email verification
+ * @param {string} email - User's email
+ */
+router.post('/resend-verification', async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      const keyValueTable = { error: 'Email is required' };
+      return res.status(400).json(ResponseFormatter.failure('Missing email', keyValueTable));
+    }
+
+    // Find user by email
+    const result = await DatabaseUtil.executeQuery(
+      'SELECT id, first_name, email_verified FROM users WHERE email = ?',
+      [email]
+    );
+
+    if (!result.success || result.data.length === 0) {
+      // Don't reveal if email exists for security
+      const keyValueTable = { message: 'If the email exists and is unverified, a verification email has been sent' };
+      return res.json(ResponseFormatter.success('Verification email sent if applicable', keyValueTable));
+    }
+
+    const user = result.data[0];
+
+    if (user.email_verified) {
+      const keyValueTable = { message: 'Email is already verified' };
+      return res.json(ResponseFormatter.success('Email already verified', keyValueTable));
+    }
+
+    // Generate new verification token
+    const emailVerificationToken = crypto.randomBytes(32).toString('hex');
+
+    // Update user with new token
+    await DatabaseUtil.executeQuery(
+      'UPDATE users SET email_verification_token = ? WHERE id = ?',
+      [emailVerificationToken, user.id]
+    );
+
+    // Send verification email
+    const verificationUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/verify-email?token=${emailVerificationToken}`;
+    const mailOptions = {
+      from: process.env.EMAIL_USER,
+      to: email,
+      subject: 'Verify Your Email Address',
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #333;">Email Verification</h2>
+          <p>Hi ${user.first_name},</p>
+          <p>Please verify your email address by clicking the button below:</p>
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${verificationUrl}" 
+               style="background-color: #4F46E5; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">
+              Verify Email Address
+            </a>
+          </div>
+          <p>If the button doesn't work, you can also copy and paste this link into your browser:</p>
+          <p style="word-break: break-all; color: #666;">${verificationUrl}</p>
+          <p>This verification link will expire in 24 hours.</p>
+          <hr style="margin: 30px 0; border: none; border-top: 1px solid #eee;">
+          <p style="color: #666; font-size: 12px;">This is an automated email, please do not reply.</p>
+        </div>
+      `
+    };
+
+    await transporter.sendMail(mailOptions);
+
+    const keyValueTable = { message: 'Verification email sent successfully' };
+    res.json(ResponseFormatter.success('Verification email sent', keyValueTable));
+  } catch (error) {
+    console.error('Resend verification error:', error);
+    const keyValueTable = { error: error.message };
+    res.status(500).json(ResponseFormatter.failure('Failed to resend verification email', keyValueTable));
   }
 });
 
@@ -534,15 +742,11 @@ router.post('/reset-password', async (req, res) => {
       return res.status(400).json(ResponseFormatter.failure('Missing required fields', keyValueTable));
     }
 
-    let decoded;
-    try {
-      decoded = jwt.verify(token, process.env.JWT_SECRET);
-    } catch (err) {
-      const keyValueTable = { error: 'Invalid or expired token' };
-      return res.status(400).json(ResponseFormatter.failure('Invalid token', keyValueTable));
-    }
-
-    const result = await DatabaseUtil.executeQuery('SELECT id FROM users WHERE resetToken = ? AND resetTokenExpiry > NOW()', [token]);
+    // Find user with valid reset token
+    const result = await DatabaseUtil.executeQuery(
+      'SELECT id, first_name FROM users WHERE password_reset_token = ? AND password_reset_expires > NOW()', 
+      [token]
+    );
 
     if (!result.success || result.data.length === 0) {
       const keyValueTable = { error: 'Invalid or expired token' };
@@ -550,10 +754,20 @@ router.post('/reset-password', async (req, res) => {
     }
 
     const userId = result.data[0].id;
+    
+    // Validate new password strength
+    if (newPassword.length < 8) {
+      const keyValueTable = { error: 'Password must be at least 8 characters long' };
+      return res.status(400).json(ResponseFormatter.failure('Password too weak', keyValueTable));
+    }
+
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(newPassword, salt);
 
-    await DatabaseUtil.executeQuery('UPDATE users SET password = ?, resetToken = NULL, resetTokenExpiry = NULL WHERE id = ?', [hashedPassword, userId]);
+    await DatabaseUtil.executeQuery(
+      'UPDATE users SET password_hash = ?, password_reset_token = NULL, password_reset_expires = NULL WHERE id = ?', 
+      [hashedPassword, userId]
+    );
 
     const keyValueTable = { message: 'Password has been reset' };
     res.json(ResponseFormatter.success('Password reset successful', keyValueTable));

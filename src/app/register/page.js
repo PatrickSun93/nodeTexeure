@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { apiRequest, isSuccessResponse } from '../../lib/api';
@@ -17,7 +17,61 @@ export default function Register() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(false);
+  const [passwordStrength, setPasswordStrength] = useState({
+    score: 0,
+    feedback: [],
+    isValid: false
+  });
+  const [showPasswordRequirements, setShowPasswordRequirements] = useState(false);
   const router = useRouter();
+
+  // Password strength validation
+  const validatePasswordStrength = (password) => {
+    const requirements = [
+      { test: password.length >= 8, message: 'At least 8 characters' },
+      { test: /[A-Z]/.test(password), message: 'One uppercase letter' },
+      { test: /[a-z]/.test(password), message: 'One lowercase letter' },
+      { test: /\d/.test(password), message: 'One number' },
+      { test: /[!@#$%^&*(),.?":{}|<>]/.test(password), message: 'One special character' }
+    ];
+
+    const passedRequirements = requirements.filter(req => req.test);
+    const failedRequirements = requirements.filter(req => !req.test);
+    
+    let score = 0;
+    let strengthText = '';
+    let strengthColor = '';
+
+    if (passedRequirements.length >= 5) {
+      score = 4;
+      strengthText = 'Very Strong';
+      strengthColor = 'text-green-600';
+    } else if (passedRequirements.length >= 4) {
+      score = 3;
+      strengthText = 'Strong';
+      strengthColor = 'text-green-500';
+    } else if (passedRequirements.length >= 3) {
+      score = 2;
+      strengthText = 'Medium';
+      strengthColor = 'text-yellow-500';
+    } else if (passedRequirements.length >= 2) {
+      score = 1;
+      strengthText = 'Weak';
+      strengthColor = 'text-orange-500';
+    } else {
+      score = 0;
+      strengthText = 'Very Weak';
+      strengthColor = 'text-red-500';
+    }
+
+    return {
+      score,
+      strengthText,
+      strengthColor,
+      requirements,
+      isValid: passedRequirements.length >= 4 // Require at least 4 out of 5 criteria
+    };
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -25,6 +79,12 @@ export default function Register() {
       ...prev,
       [name]: value
     }));
+
+    // Validate password strength on password change
+    if (name === 'password') {
+      const strength = validatePasswordStrength(value);
+      setPasswordStrength(strength);
+    }
   };
 
   const handleTermsChange = (e) => {
@@ -55,8 +115,8 @@ export default function Register() {
       return;
     }
 
-    if (formData.password.length < 6) {
-      setError('Password must be at least 6 characters long');
+    if (!passwordStrength.isValid) {
+      setError('Password does not meet security requirements');
       setLoading(false);
       return;
     }
@@ -73,8 +133,9 @@ export default function Register() {
       });
 
       if (isSuccessResponse(response)) {
-        // Registration successful
-        router.push('/login?message=Registration successful! Please sign in.');
+        // Registration successful - show success message with verification instructions
+        alert('Registration successful! Please check your email to verify your account before logging in.');
+        router.push('/login?message=Registration successful! Please check your email to verify your account.');
       } else {
         // Registration failed
         setError(response.message || 'Registration failed. Please try again.');
@@ -158,8 +219,48 @@ export default function Register() {
                 className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                 value={formData.password}
                 onChange={handleChange}
-                placeholder="Create a password (min. 6 characters)"
+                onFocus={() => setShowPasswordRequirements(true)}
+                onBlur={() => setShowPasswordRequirements(false)}
+                placeholder="Create a secure password"
               />
+              
+              {/* Password Strength Indicator */}
+              {formData.password && (
+                <div className="mt-2">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-xs text-gray-600">Password Strength:</span>
+                    <span className={`text-xs font-medium ${passwordStrength.strengthColor}`}>
+                      {passwordStrength.strengthText}
+                    </span>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-2">
+                    <div 
+                      className={`h-2 rounded-full transition-all duration-300 ${
+                        passwordStrength.score === 0 ? 'bg-red-500 w-1/5' :
+                        passwordStrength.score === 1 ? 'bg-orange-500 w-2/5' :
+                        passwordStrength.score === 2 ? 'bg-yellow-500 w-3/5' :
+                        passwordStrength.score === 3 ? 'bg-green-500 w-4/5' :
+                        'bg-green-600 w-full'
+                      }`}
+                    ></div>
+                  </div>
+                </div>
+              )}
+
+              {/* Password Requirements */}
+              {(showPasswordRequirements || formData.password) && (
+                <div className="mt-2 p-3 bg-gray-50 rounded-md">
+                  <p className="text-xs font-medium text-gray-700 mb-2">Password Requirements:</p>
+                  <ul className="space-y-1">
+                    {passwordStrength.requirements?.map((req, index) => (
+                      <li key={index} className={`text-xs flex items-center ${req.test ? 'text-green-600' : 'text-gray-500'}`}>
+                        <span className="mr-2">{req.test ? '✓' : '○'}</span>
+                        {req.message}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </div>
 
             <div>
@@ -171,11 +272,24 @@ export default function Register() {
                 name="confirmPassword"
                 type="password"
                 required
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                className={`mt-1 block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 ${
+                  formData.confirmPassword && formData.password !== formData.confirmPassword 
+                    ? 'border-red-300 focus:border-red-500 focus:ring-red-500' 
+                    : 'border-gray-300'
+                }`}
                 value={formData.confirmPassword}
                 onChange={handleChange}
                 placeholder="Confirm your password"
               />
+              {formData.confirmPassword && formData.password !== formData.confirmPassword && (
+                <p className="mt-1 text-xs text-red-600">Passwords do not match</p>
+              )}
+              {formData.confirmPassword && formData.password === formData.confirmPassword && formData.password && (
+                <p className="mt-1 text-xs text-green-600 flex items-center">
+                  <span className="mr-1">✓</span>
+                  Passwords match
+                </p>
+              )}
             </div>
 
             

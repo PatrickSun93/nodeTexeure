@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { signIn, useSession, getSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import Header from '../../components/Header';
 import Footer from '../../components/Footer';
 
@@ -11,6 +12,8 @@ export default function LoginPage() {
   const [password, setPassword] = useState('Customer@123');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [needsVerification, setNeedsVerification] = useState(false);
+  const [isResendingVerification, setIsResendingVerification] = useState(false);
   const router = useRouter();
   const { status } = useSession();
 
@@ -20,10 +23,37 @@ export default function LoginPage() {
     }
   }, [status, router]);
 
+  const handleResendVerification = async () => {
+    setIsResendingVerification(true);
+    try {
+      const response = await fetch('/api/users/resend-verification', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email }),
+      });
+
+      const data = await response.json();
+      
+      if (response.ok) {
+        setError('Verification email sent! Please check your inbox.');
+      } else {
+        setError(data.message || 'Failed to resend verification email');
+      }
+    } catch (error) {
+      console.error('Resend verification error:', error);
+      setError('Network error. Please try again.');
+    } finally {
+      setIsResendingVerification(false);
+    }
+  };
+
   const handleSubmit = async (event) => {
     event.preventDefault();
     setIsLoading(true);
     setError('');
+    setNeedsVerification(false);
 
     const result = await signIn('credentials', {
       redirect: false,
@@ -34,7 +64,13 @@ export default function LoginPage() {
     setIsLoading(false);
 
     if (result?.error) {
-      setError('Login failed. Please check credentials.');
+      // Check if it's an email verification error
+      if (result.error.includes('verify your email')) {
+        setNeedsVerification(true);
+        setError('Please verify your email address before logging in. Check your inbox for a verification email.');
+      } else {
+        setError('Login failed. Please check credentials.');
+      }
     } else if (result?.ok) {
       // Get the updated session to check user role
       const session = await getSession();
@@ -61,6 +97,18 @@ export default function LoginPage() {
           {error && (
             <div className="p-3 mb-4 text-sm text-red-700 bg-red-100 rounded" role="alert">
               {error}
+              {needsVerification && (
+                <div className="mt-2">
+                  <button
+                    type="button"
+                    onClick={handleResendVerification}
+                    disabled={isResendingVerification}
+                    className="text-sm text-blue-600 hover:text-blue-800 underline disabled:opacity-50"
+                  >
+                    {isResendingVerification ? 'Sending...' : 'Resend verification email'}
+                  </button>
+                </div>
+              )}
             </div>
           )}
           <div className="mb-4">
@@ -97,6 +145,25 @@ export default function LoginPage() {
             >
               {isLoading ? 'Signing In...' : 'Sign In'}
             </button>
+          </div>
+          
+          <div className="text-center mt-4">
+            <Link 
+              href="/forgot-password" 
+              className="text-sm text-blue-600 hover:text-blue-800 underline"
+            >
+              Forgot your password?
+            </Link>
+          </div>
+          
+          <div className="text-center mt-2">
+            <span className="text-sm text-gray-600">Don't have an account? </span>
+            <Link 
+              href="/register" 
+              className="text-sm text-blue-600 hover:text-blue-800 underline"
+            >
+              Sign up
+            </Link>
           </div>
         </form>
       </div>

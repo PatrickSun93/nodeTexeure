@@ -166,11 +166,16 @@ function FilterSidebar({ filters, onFilterChange }) {
 export function ProductCard({ product, onAddToCart, onToggleWishlist }) {
   const [isWishlisted, setIsWishlisted] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [addSuccess, setAddSuccess] = useState(false);
 
   const handleAddToCart = async () => {
     setIsLoading(true);
     try {
-      await onAddToCart(product);
+      const success = await onAddToCart(product);
+      if (success) {
+        setAddSuccess(true);
+        setTimeout(() => setAddSuccess(false), 2000);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -201,9 +206,20 @@ export function ProductCard({ product, onAddToCart, onToggleWishlist }) {
           <button 
             onClick={handleAddToCart}
             disabled={isLoading}
-            className="aesop-button-primary aesop-product-add-to-cart"
+            className={`aesop-button-primary aesop-product-add-to-cart ${isLoading ? 'aesop-button-loading' : ''} ${addSuccess ? 'aesop-button-success' : ''}`}
           >
-            {isLoading ? 'Adding...' : 'Add to Cart'}
+            {addSuccess ? (
+              <>
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+                Added!
+              </>
+            ) : isLoading ? (
+              'Adding...'
+            ) : (
+              'Add to Cart'
+            )}
           </button>
           <div className="aesop-product-actions">
             <button 
@@ -253,6 +269,7 @@ export default function Shop() {
   const [viewMode, setViewMode] = useState('grid');
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [pagination, setPagination] = useState({ page: 1, total: 0, limit: 20 });
 
   // Sample products data (fallback)
@@ -314,6 +331,7 @@ export default function Shop() {
   const fetchProducts = async () => {
     try {
       setLoading(true);
+      setError('');
       const params = new URLSearchParams();
       
       if (filters.category !== 'All') {
@@ -350,8 +368,9 @@ export default function Shop() {
         // Fallback to sample data if API fails
         setProducts(sampleProducts);
       }
-    } catch (error) {
-      console.error('Error fetching products:', error);
+    } catch (err) {
+      console.error('Error fetching products:', err);
+      setError('Failed to load products. Showing sample data.');
       // Fallback to sample data
       setProducts(sampleProducts);
     } finally {
@@ -396,8 +415,10 @@ export default function Shop() {
       if (typeof window !== 'undefined') {
         window.dispatchEvent(new Event('cart:updated'));
       }
+      return true;
     } catch (error) {
       console.error('Error adding to cart:', error);
+      return false;
     }
   };
 
@@ -467,6 +488,15 @@ export default function Shop() {
           </aside>
           
           <main className="aesop-shop-main">
+            {error && (
+              <div className="aesop-error-banner">
+                <svg className="aesop-error-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                {error}
+              </div>
+            )}
+            
             <div className="aesop-shop-toolbar">
               <div className="aesop-shop-results">
                 <span className="aesop-results-count">
