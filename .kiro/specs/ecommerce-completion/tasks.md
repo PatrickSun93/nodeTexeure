@@ -76,7 +76,7 @@
   - Add Stripe webhook endpoint for payment status updates
   - _Requirements: 1.1, 1.2, 1.3, 1.4_
 
-- [ ] 12. Implement payment processing API endpoints
+- [x] 12. Implement payment processing API endpoints
   - Create POST /api/payments/create-intent endpoint
   - Create POST /api/payments/confirm endpoint  
   - Create POST /api/payments/webhook endpoint for Stripe events
