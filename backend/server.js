@@ -70,6 +70,10 @@ app.use('/api/orders', require('./routes/orderRoutes'));
 const adminRoutes = require('./routes/adminRoutes');
 app.use('/api/admin', protect, admin, adminRoutes);
 
+// Image routes (protected)
+const imageRoutes = require('./routes/imageRoutes');
+app.use('/api/images', protect, admin, imageRoutes);
+
 // Backward compatibility - redirect old endpoints to new structure
 app.get('/api/health', (req, res) => {
   res.redirect(301, '/api/status/health');

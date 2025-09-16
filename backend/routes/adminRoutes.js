@@ -314,7 +314,8 @@ function createMulterForProduct(productId) {
   });
 }
 
-// POST /api/admin/products/:id/image - upload a single primary thumbnail and store URL in products.thumbnail_small_url
+// POST /api/admin/products/:id/image - upload a single primary thumbnail (legacy endpoint)
+// Note: For bulk uploads and advanced features, use /api/images/products/:id/upload
 router.post('/products/:id/image', adminWriteLimiter, csrfProtection, async (req, res) => {
   try {
     const productId = req.params.id;
@@ -351,7 +352,7 @@ router.post('/products/:id/image', adminWriteLimiter, csrfProtection, async (req
       const baseUrl = `${req.protocol}://${req.get('host')}`; // respects env and proxy
       const publicUrl = `${baseUrl}/uploads/products/${productId}/${encodeURIComponent(req.file.filename)}`;
 
-      // Update product thumbnail_small_url
+      // Update product thumbnail_small_url (legacy behavior)
       const updateResult = await DatabaseUtil.executeQuery(
         'UPDATE products SET thumbnail_small_url = ?, updated_at = NOW() WHERE id = ?',
         [publicUrl, productId]
