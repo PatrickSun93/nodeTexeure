@@ -82,6 +82,10 @@ app.use('/api/inventory', inventoryRoutes);
 const paymentRoutes = require('./routes/paymentRoutes');
 app.use('/api/payments', paymentRoutes);
 
+// Email routes
+const emailRoutes = require('./routes/emailRoutes');
+app.use('/api/emails', emailRoutes);
+
 // Backward compatibility - redirect old endpoints to new structure
 app.get('/api/health', (req, res) => {
   res.redirect(301, '/api/status/health');
