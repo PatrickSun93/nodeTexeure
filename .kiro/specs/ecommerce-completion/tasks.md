@@ -83,7 +83,7 @@
   - Update order status based on payment confirmation
   - _Requirements: 1.1, 1.2, 1.4_
 
-- [ ] 13. Build checkout payment form frontend
+- [x] 13. Build checkout payment form frontend
   - Integrate Stripe Elements in checkout page
   - Handle payment form submission and confirmation
   - Display payment success/error messages
@@ -118,7 +118,7 @@
   - Integrate shipping calculation into checkout process
   - _Requirements: 2.1, 2.2, 2.3_
 
-- [ ] 18. Add tax calculation functionality
+- [ ] 18. Add tax calculation functiona lity
   - Create tax rates management system
   - Build tax calculation service based on customer address
   - Create API endpoints for tax calculation

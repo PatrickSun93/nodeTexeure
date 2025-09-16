@@ -2,9 +2,12 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useSession } from 'next-auth/react';
 import Header from '../../components/Header';
 import Footer from '../../components/Footer';
 import MobileLoading from '../../components/MobileLoading';
+import StripeProvider from '../../components/StripeProvider';
+import PaymentForm from '../../components/PaymentForm';
 
 function CheckoutPage() {
   const [cartItems, setCartItems] = useState([]);
@@ -26,13 +29,18 @@ function CheckoutPage() {
   const [guestEmail, setGuestEmail] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  const [isLoggedIn, setIsLoggedIn] = useState(false); // TODO: Check auth
+  const { data: session, status } = useSession();
+  const isLoggedIn = status === 'authenticated';
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [applyCouponLoading, setApplyCouponLoading] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
   const [sameAsBilling, setSameAsBilling] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [clientSecret, setClientSecret] = useState('');
+  const [paymentIntentId, setPaymentIntentId] = useState('');
+  const [orderId, setOrderId] = useState('');
+  const [paymentProcessing, setPaymentProcessing] = useState(false);
   const router = useRouter();
 
   // Detect mobile screen size
@@ -47,14 +55,25 @@ function CheckoutPage() {
   }, []);
 
   useEffect(() => {
-    fetchCart();
-  }, []);
+    if (status !== 'loading') {
+      fetchCart();
+    }
+  }, [status]);
 
   const fetchCart = async () => {
     try {
       setLoading(true);
       setError('');
-      const res = await fetch('/api/cart');
+      
+      const headers = {
+        'Content-Type': 'application/json',
+      };
+      
+      if (session?.accessToken) {
+        headers.Authorization = `Bearer ${session.accessToken}`;
+      }
+      
+      const res = await fetch('/api/cart', { headers });
       if (res.ok) {
         const data = await res.json();
         setCartId(data.cartId); // Assuming backend returns cartId
@@ -80,9 +99,17 @@ function CheckoutPage() {
       setError('');
       setSuccess('');
       
+      const headers = {
+        'Content-Type': 'application/json',
+      };
+      
+      if (session?.accessToken) {
+        headers.Authorization = `Bearer ${session.accessToken}`;
+      }
+      
       const res = await fetch('/api/orders/apply-coupon', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({ cartId, couponCode })
       });
       const data = await res.json();
@@ -100,12 +127,13 @@ function CheckoutPage() {
     }
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!cartId) return setError('Cart not found');
+  const createOrder = async () => {
+    if (!cartId) {
+      setError('Cart not found');
+      return null;
+    }
     
     try {
-      setSubmitting(true);
       setError('');
       
       const payload = {
@@ -116,23 +144,87 @@ function CheckoutPage() {
         guestEmail: isLoggedIn ? null : guestEmail
       };
       
+      const headers = {
+        'Content-Type': 'application/json',
+      };
+      
+      if (session?.accessToken) {
+        headers.Authorization = `Bearer ${session.accessToken}`;
+      }
+      
       const res = await fetch('/api/orders/create', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify(payload)
       });
       const data = await res.json();
       
       if (data.status === 'success') {
-        router.push(`/order/confirmation/${data.data.orderId}`);
+        return data.data.orderId;
       } else {
         setError(data.message || 'Failed to create order');
+        return null;
       }
     } catch (err) {
-      setError('Error processing order');
-    } finally {
-      setSubmitting(false);
+      setError('Error creating order');
+      return null;
     }
+  };
+
+  const createPaymentIntent = async (orderIdToUse) => {
+    try {
+      setError('');
+      
+      const headers = {
+        'Content-Type': 'application/json',
+      };
+      
+      if (session?.accessToken) {
+        headers.Authorization = `Bearer ${session.accessToken}`;
+      }
+      
+      const res = await fetch('/api/payments/create-intent', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          amount: total,
+          currency: 'usd',
+          orderId: orderIdToUse,
+          metadata: {
+            cartId,
+            guestEmail: isLoggedIn ? null : guestEmail
+          }
+        })
+      });
+      const data = await res.json();
+      
+      if (data.status === 'success') {
+        setClientSecret(data.data.clientSecret);
+        setPaymentIntentId(data.data.paymentIntentId);
+        return true;
+      } else {
+        setError(data.message || 'Failed to create payment intent');
+        return false;
+      }
+    } catch (err) {
+      setError('Error creating payment intent');
+      return false;
+    }
+  };
+
+  const handlePaymentSuccess = (paymentIntent) => {
+    setPaymentProcessing(false);
+    // Payment success is handled by Stripe redirect
+    // The success page will handle the confirmation
+  };
+
+  const handlePaymentError = (error) => {
+    setPaymentProcessing(false);
+    setError(error.message || 'Payment failed. Please try again.');
+  };
+
+  const handlePaymentProcessing = (paymentIntent) => {
+    setPaymentProcessing(true);
   };
 
   const updateTotal = () => {
@@ -144,12 +236,23 @@ function CheckoutPage() {
   // Step navigation
   const steps = [
     { id: 1, name: 'Information', description: 'Contact & Shipping' },
-    { id: 2, name: 'Payment', description: 'Payment Method' },
-    { id: 3, name: 'Review', description: 'Order Review' }
+    { id: 2, name: 'Payment', description: 'Payment Method' }
   ];
 
-  const nextStep = () => {
-    if (currentStep < 3) setCurrentStep(currentStep + 1);
+  const nextStep = async () => {
+    if (currentStep === 1) {
+      // Moving from information to payment - create order and payment intent
+      setSubmitting(true);
+      const newOrderId = await createOrder();
+      if (newOrderId) {
+        setOrderId(newOrderId);
+        const paymentCreated = await createPaymentIntent(newOrderId);
+        if (paymentCreated) {
+          setCurrentStep(2);
+        }
+      }
+      setSubmitting(false);
+    }
   };
 
   const prevStep = () => {
@@ -474,73 +577,45 @@ function CheckoutPage() {
               <div className="checkout-step-content">
                 <div className="checkout-section">
                   <h2 className="checkout-section-title">Payment Method</h2>
-                  <div className="checkout-payment-placeholder">
-                    <p>Payment integration will be implemented in a future task.</p>
-                    <p>For now, you can proceed to review your order.</p>
-                  </div>
-                </div>
-
-                <div className="checkout-actions">
-                  <button onClick={prevStep} className="checkout-btn-secondary">
-                    Back to Information
-                  </button>
-                  <button onClick={nextStep} className="checkout-btn-primary">
-                    Continue to Review
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* Step 3: Review */}
-            {currentStep === 3 && (
-              <div className="checkout-step-content">
-                <div className="checkout-section">
-                  <h2 className="checkout-section-title">Order Review</h2>
-                  
-                  <div className="checkout-review-section">
-                    <h3>Contact Information</h3>
-                    <p>{isLoggedIn ? 'Logged in user' : guestEmail}</p>
-                  </div>
-
-                  <div className="checkout-review-section">
-                    <h3>Shipping Address</h3>
-                    <div className="checkout-address-display">
-                      <p>{shippingAddress.first_name} {shippingAddress.last_name}</p>
-                      <p>{shippingAddress.address_line_1}</p>
-                      <p>{shippingAddress.city}, {shippingAddress.state} {shippingAddress.postal_code}</p>
-                      <p>{shippingAddress.country}</p>
-                      {shippingAddress.phone && <p>{shippingAddress.phone}</p>}
+                  {clientSecret ? (
+                    <StripeProvider options={{ clientSecret }}>
+                      <PaymentForm
+                        clientSecret={clientSecret}
+                        onPaymentSuccess={handlePaymentSuccess}
+                        onPaymentError={handlePaymentError}
+                        onPaymentProcessing={handlePaymentProcessing}
+                        disabled={paymentProcessing}
+                        returnUrl={typeof window !== 'undefined' ? `${window.location.origin}/checkout/success` : '/checkout/success'}
+                      />
+                    </StripeProvider>
+                  ) : error ? (
+                    <div className="checkout-error">
+                      <svg className="checkout-error-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      {error}
                     </div>
-                  </div>
-
-                  {!sameAsBilling && (
-                    <div className="checkout-review-section">
-                      <h3>Billing Address</h3>
-                      <div className="checkout-address-display">
-                        <p>{billingAddress.first_name} {billingAddress.last_name}</p>
-                        <p>{billingAddress.address_line_1}</p>
-                        <p>{billingAddress.city}, {billingAddress.state} {billingAddress.postal_code}</p>
-                        <p>{billingAddress.country}</p>
-                        {billingAddress.phone && <p>{billingAddress.phone}</p>}
-                      </div>
+                  ) : (
+                    <div className="checkout-loading">
+                      <div className="checkout-spinner"></div>
+                      <p>Setting up payment...</p>
                     </div>
                   )}
                 </div>
 
                 <div className="checkout-actions">
-                  <button onClick={prevStep} className="checkout-btn-secondary">
-                    Back to Payment
-                  </button>
                   <button 
-                    onClick={handleSubmit} 
-                    disabled={submitting}
-                    className="checkout-btn-primary"
+                    onClick={prevStep} 
+                    className="checkout-btn-secondary"
+                    disabled={paymentProcessing}
                   >
-                    {submitting ? 'Placing Order...' : 'Place Order'}
+                    Back to Information
                   </button>
                 </div>
               </div>
             )}
+
+
           </div>
 
           <div className="checkout-sidebar">
