@@ -13,6 +13,7 @@ import { useMobilePerformance } from '../../../components/MobileOptimizations';
 import { useMobileGestures, useMobileImageOptimization } from '../../../components/MobilePerformanceOptimizer';
 import { apiRequest } from '../../../lib/api';
 import { generateMetaTags, generateStructuredData, generateBreadcrumbs } from '../../../lib/seo';
+import { useRecentlyViewed } from '../../../components/RecentlyViewed';
 
 function ProductHeader({ productName, breadcrumbs }) {
   return (
@@ -38,8 +39,11 @@ export default function ProductDetails() {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [quantity, setQuantity] = useState(1);
   const [activeTab, setActiveTab] = useState('description');
+  const [availability, setAvailability] = useState(null);
+  const [checkingAvailability, setCheckingAvailability] = useState(false);
   const { isMobile, optimizeForMobile } = useMobilePerformance();
   const { getOptimizedImageUrl, isSlowConnection } = useMobileImageOptimization();
+  const { addToRecentlyViewed } = useRecentlyViewed();
   const galleryRef = useRef(null);
 
   // Fetch product details
@@ -54,6 +58,19 @@ export default function ProductDetails() {
         if (data?.status === "SUCCESS") {
           const details = data.keyValueTable || null;
           setProduct(details);
+          
+          // Add to recently viewed
+          if (details) {
+            addToRecentlyViewed({
+              id: details.id,
+              name: details.name,
+              price: details.base_price,
+              image: details.images?.[0]?.original_url || '/api/placeholder/200/200',
+              category: details.category,
+              rating: details.rating
+            });
+          }
+          
           // Preselect first variant if available
           if (details?.variants?.length) {
             setSelectedVariantId(details.variants[0].id);
@@ -77,6 +94,36 @@ export default function ProductDetails() {
     };
     if (id) fetchProduct();
   }, [id]);
+
+  // Fetch availability when product or variant changes
+  useEffect(() => {
+    const fetchAvailability = async () => {
+      if (!product) return;
+      
+      try {
+        setCheckingAvailability(true);
+        const params = new URLSearchParams({ product_id: product.id });
+        if (selectedVariantId) {
+          params.append('variant_id', selectedVariantId);
+        }
+        
+        const res = await fetch(`/api/inventory/availability/${product.id}?${params}`);
+        const data = await res.json();
+        
+        if (data?.status === "SUCCESS") {
+          setAvailability(data.keyValueTable);
+        } else {
+          console.error('Failed to fetch availability:', data?.message);
+        }
+      } catch (err) {
+        console.error('Error fetching availability:', err);
+      } finally {
+        setCheckingAvailability(false);
+      }
+    };
+    
+    fetchAvailability();
+  }, [product, selectedVariantId]);
 
   // Image gallery functions
   const selectImage = (imageUrl, index) => {
@@ -377,12 +424,48 @@ export default function ProductDetails() {
                   value={selectedVariantId ?? ''}
                   onChange={(e) => setSelectedVariantId(Number(e.target.value))}
                 >
-                  {product.variants.map((v) => (
-                    <option key={v.id} value={v.id}>
-                      {v.size} - {v.color} (+${v.price_adjustment})
-                    </option>
-                  ))}
+                  {product.variants.map((v) => {
+                    const variantPrice = parseFloat(product.base_price) + parseFloat(v.price_adjustment || 0);
+                    return (
+                      <option key={v.id} value={v.id}>
+                        {v.size} - {v.color} (+${v.price_adjustment}) - ${variantPrice.toFixed(2)}
+                      </option>
+                    );
+                  })}
                 </select>
+              </div>
+            )}
+
+            {/* Availability Status */}
+            {checkingAvailability ? (
+              <div className="product-availability">
+                <div className="product-loading-spinner"></div>
+                <span>Checking availability...</span>
+              </div>
+            ) : availability && (
+              <div className="product-availability">
+                {availability.in_stock ? (
+                  <div className="product-in-stock">
+                    <svg className="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                    </svg>
+                    <span className="text-green-600 font-medium">
+                      In Stock ({availability.available} available)
+                    </span>
+                  </div>
+                ) : (
+                  <div className="product-out-of-stock">
+                    <svg className="w-5 h-5 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                    </svg>
+                    <span className="text-red-600 font-medium">Out of Stock</span>
+                  </div>
+                )}
+                {availability.reserved > 0 && (
+                  <div className="text-sm text-gray-500 mt-1">
+                    {availability.reserved} reserved in other carts
+                  </div>
+                )}
               </div>
             )}
 
@@ -402,29 +485,47 @@ export default function ProductDetails() {
                     id="quantity"
                     type="number" 
                     min="1" 
+                    max={availability?.available || 999}
                     value={quantity} 
-                    onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
+                    onChange={(e) => {
+                      const newQuantity = Math.max(1, parseInt(e.target.value) || 1);
+                      const maxQuantity = availability?.available || 999;
+                      setQuantity(Math.min(newQuantity, maxQuantity));
+                    }}
                     className="product-quantity-input"
                   />
                   <button 
-                    onClick={() => setQuantity(quantity + 1)}
+                    onClick={() => {
+                      const maxQuantity = availability?.available || 999;
+                      setQuantity(Math.min(quantity + 1, maxQuantity));
+                    }}
                     className="product-quantity-btn"
+                    disabled={availability && quantity >= availability.available}
                   >
                     +
                   </button>
                 </div>
+                {availability && quantity > availability.available && (
+                  <div className="text-sm text-red-500 mt-1">
+                    Only {availability.available} available
+                  </div>
+                )}
               </div>
               
               <button
                 onClick={handleAddToCart}
-                disabled={adding}
-                className="product-add-to-cart"
+                disabled={adding || !availability?.in_stock || quantity > (availability?.available || 0)}
+                className={`product-add-to-cart ${
+                  !availability?.in_stock ? 'product-add-to-cart-disabled' : ''
+                }`}
               >
                 {adding ? (
                   <>
                     <div className="product-loading-spinner"></div>
                     Adding to Cart...
                   </>
+                ) : !availability?.in_stock ? (
+                  'Out of Stock'
                 ) : (
                   'Add to Cart'
                 )}

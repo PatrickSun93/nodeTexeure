@@ -74,6 +74,14 @@ app.use('/api/admin', protect, admin, adminRoutes);
 const imageRoutes = require('./routes/imageRoutes');
 app.use('/api/images', protect, admin, imageRoutes);
 
+// Inventory routes
+const inventoryRoutes = require('./routes/inventoryRoutes');
+app.use('/api/inventory', inventoryRoutes);
+
+// Payment routes
+const paymentRoutes = require('./routes/paymentRoutes');
+app.use('/api/payments', paymentRoutes);
+
 // Backward compatibility - redirect old endpoints to new structure
 app.get('/api/health', (req, res) => {
   res.redirect(301, '/api/status/health');

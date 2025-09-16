@@ -10,6 +10,8 @@ import Breadcrumb from '../../components/Breadcrumb';
 import LazyImage from '../../components/LazyImage';
 import { apiRequest } from '../../lib/api';
 import { generateMetaTags, generateStructuredData, generateBreadcrumbs } from '../../lib/seo';
+import { useWishlist } from '../../components/Wishlist';
+import { useProductComparison } from '../../components/ProductComparison';
 
 // Shop Header Component
 function ShopHeader({ breadcrumbs }) {
@@ -179,8 +181,7 @@ function FilterSidebar({ filters, onFilterChange, isMobile = false, isOpen = fal
 }
 
 // Product Card Component
-export function ProductCard({ product, onAddToCart, onToggleWishlist }) {
-  const [isWishlisted, setIsWishlisted] = useState(false);
+export function ProductCard({ product, onAddToCart, onToggleWishlist, onAddToComparison }) {
   const [isLoading, setIsLoading] = useState(false);
   const [addSuccess, setAddSuccess] = useState(false);
 
@@ -198,9 +199,14 @@ export function ProductCard({ product, onAddToCart, onToggleWishlist }) {
   };
 
   const handleToggleWishlist = () => {
-    setIsWishlisted(!isWishlisted);
     if (onToggleWishlist) {
-      onToggleWishlist(product, !isWishlisted);
+      onToggleWishlist(product);
+    }
+  };
+
+  const handleAddToComparison = () => {
+    if (onAddToComparison) {
+      onAddToComparison(product);
     }
   };
 
@@ -243,11 +249,20 @@ export function ProductCard({ product, onAddToCart, onToggleWishlist }) {
           <div className="aesop-product-actions">
             <button 
               onClick={handleToggleWishlist}
-              className={`aesop-icon-button ${isWishlisted ? 'aesop-icon-button-active' : ''}`}
+              className="aesop-icon-button"
               title="Add to Wishlist"
             >
-              <svg className="w-5 h-5" fill={isWishlisted ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+              </svg>
+            </button>
+            <button 
+              onClick={handleAddToComparison}
+              className="aesop-icon-button"
+              title="Add to Comparison"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
               </svg>
             </button>
             <Link href={`/products/${product.id}`} className="aesop-icon-button" title="View Details">
@@ -292,6 +307,10 @@ function ShopContent() {
   const [pagination, setPagination] = useState({ page: 1, total: 0, limit: 20 });
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  
+  // Advanced features hooks
+  const { toggleWishlist } = useWishlist();
+  const { addToComparison } = useProductComparison();
 
   // Detect mobile screen size
   useEffect(() => {
@@ -454,9 +473,16 @@ function ShopContent() {
     }
   };
 
-  const handleToggleWishlist = (product, isWishlisted) => {
-    // Implement wishlist functionality
-    console.log(`${isWishlisted ? 'Added to' : 'Removed from'} wishlist:`, product.name);
+  const handleToggleWishlist = (product) => {
+    const result = toggleWishlist(product);
+    // You could show a toast notification here
+    console.log(result.message);
+  };
+
+  const handleAddToComparison = (product) => {
+    const result = addToComparison(product);
+    // You could show a toast notification here
+    console.log(result.message);
   };
 
   // Filter products based on current filters
@@ -681,6 +707,7 @@ function ShopContent() {
                       product={product} 
                       onAddToCart={handleAddToCart}
                       onToggleWishlist={handleToggleWishlist}
+                      onAddToComparison={handleAddToComparison}
                     />
                   ))
                 ) : (

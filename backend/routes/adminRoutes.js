@@ -1,8 +1,10 @@
 const express = require('express');
 const rateLimit = require('express-rate-limit');
 const { csrfProtection } = require('../middleware/csrfMiddleware');
+const { protect, admin } = require('../middleware/authMiddleware');
 const DatabaseUtil = require('../utils/database');
 const ResponseFormatter = require('../utils/responseFormatter');
+const NotificationService = require('../services/notificationService');
 const path = require('path');
 const fs = require('fs');
 
@@ -40,6 +42,8 @@ const adminWriteLimiter = rateLimit({
 });
 
 router.use(adminLimiter);
+router.use(protect); // Require authentication for all admin routes
+router.use(admin);   // Require admin role for all admin routes
 router.use(csrfProtection);
 
 // Admin logout
@@ -60,12 +64,16 @@ router.post('/products', adminWriteLimiter, csrfProtection, async (req, res) => 
     if (!idResult.success) throw new Error(idResult.error);
     const id = idResult.data[0].id;
     const created_by = req.user.id; // From auth middleware
+    
+    // Set status to pending_approval for staff users, approved for admin users
+    const status = req.user.role === 'admin' ? 'approved' : 'pending_approval';
+    
     const insertResult = await DatabaseUtil.executeQuery(
-      'INSERT INTO products (id, sku, name, slug, description, short_description, category_id, base_price, product_details, created_by, meta_title, meta_description, meta_keywords) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-      [id, sku, name, slug, description, short_description, category_id, base_price, JSON.stringify(product_details), created_by, meta_title, meta_description, meta_keywords]
+      'INSERT INTO products (id, sku, name, slug, description, short_description, category_id, base_price, product_details, status, created_by, meta_title, meta_description, meta_keywords) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      [id, sku, name, slug, description, short_description, category_id, base_price, JSON.stringify(product_details), status, created_by, meta_title, meta_description, meta_keywords]
     );
     if (!insertResult.success) throw new Error(insertResult.error);
-    res.status(201).json(ResponseFormatter.success('Product added successfully', { id }));
+    res.status(201).json(ResponseFormatter.success('Product added successfully', { id, status }));
   } catch (error) {
     console.error(error);
     res.status(500).json(ResponseFormatter.failure('Server error', { error: error.message }));
@@ -239,9 +247,213 @@ router.delete('/users/:id', adminWriteLimiter, csrfProtection, async (req, res) 
 // List products (read-only; CSRF not required)
 router.get('/products', adminReadLimiter, async (req, res) => {
   try {
-    const listResult = await DatabaseUtil.executeQuery('SELECT * FROM products');
+    const { status } = req.query;
+    let query = 'SELECT p.*, u.first_name, u.last_name FROM products p LEFT JOIN users u ON p.created_by = u.id';
+    let params = [];
+    
+    if (status) {
+      query += ' WHERE p.status = ?';
+      params.push(status);
+    }
+    
+    query += ' ORDER BY p.created_at DESC';
+    
+    const listResult = await DatabaseUtil.executeQuery(query, params);
     if (!listResult.success) throw new Error(listResult.error);
     res.json(ResponseFormatter.success('Products fetched successfully', { products: listResult.data }));
+  } catch (error) {
+    console.error(error);
+    res.status(500).json(ResponseFormatter.failure('Server error', { error: error.message }));
+  }
+});
+
+// Get products pending approval
+router.get('/products/pending-approval', adminReadLimiter, async (req, res) => {
+  try {
+    const query = `
+      SELECT p.*, u.first_name, u.last_name, u.email as creator_email
+      FROM products p 
+      LEFT JOIN users u ON p.created_by = u.id 
+      WHERE p.status = 'pending_approval' 
+      ORDER BY p.created_at ASC
+    `;
+    
+    const listResult = await DatabaseUtil.executeQuery(query);
+    if (!listResult.success) throw new Error(listResult.error);
+    res.json(ResponseFormatter.success('Pending products fetched successfully', { products: listResult.data }));
+  } catch (error) {
+    console.error(error);
+    res.status(500).json(ResponseFormatter.failure('Server error', { error: error.message }));
+  }
+});
+
+// Approve product
+router.post('/products/:id/approve', adminWriteLimiter, csrfProtection, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { notes } = req.body;
+    const approved_by = req.user.id;
+    const approved_at = new Date().toISOString();
+    
+    // Get current approval details to preserve history
+    const productResult = await DatabaseUtil.executeQuery('SELECT approval_details FROM products WHERE id = ?', [id]);
+    if (!productResult.success) throw new Error(productResult.error);
+    if (!productResult.data || productResult.data.length === 0) {
+      return res.status(404).json(ResponseFormatter.failure('Product not found'));
+    }
+    
+    const currentApprovalDetails = productResult.data[0].approval_details ? JSON.parse(productResult.data[0].approval_details) : {};
+    const approvalHistory = currentApprovalDetails.approval_history || [];
+    
+    // Add new approval to history
+    approvalHistory.push({
+      action: 'approved',
+      approved_by,
+      approved_at,
+      notes: notes || '',
+      timestamp: approved_at
+    });
+    
+    const approvalDetails = {
+      status: 'approved',
+      notes: notes || '',
+      approved_by,
+      approved_at,
+      approval_history: approvalHistory
+    };
+    
+    const updateResult = await DatabaseUtil.executeQuery(
+      'UPDATE products SET status = ?, approval_details = ?, updated_at = NOW() WHERE id = ?',
+      ['approved', JSON.stringify(approvalDetails), id]
+    );
+    
+    if (!updateResult.success) throw new Error(updateResult.error);
+    
+    // Send approval notification
+    await NotificationService.sendProductApprovalNotification(id, 'approved', approvalDetails);
+    
+    res.json(ResponseFormatter.success('Product approved successfully', { id, status: 'approved' }));
+  } catch (error) {
+    console.error(error);
+    res.status(500).json(ResponseFormatter.failure('Server error', { error: error.message }));
+  }
+});
+
+// Reject product
+router.post('/products/:id/reject', adminWriteLimiter, csrfProtection, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { rejection_reason, notes } = req.body;
+    const rejected_by = req.user.id;
+    const rejected_at = new Date().toISOString();
+    
+    if (!rejection_reason) {
+      return res.status(400).json(ResponseFormatter.failure('Rejection reason is required'));
+    }
+    
+    // Get current approval details to preserve history
+    const productResult = await DatabaseUtil.executeQuery('SELECT approval_details FROM products WHERE id = ?', [id]);
+    if (!productResult.success) throw new Error(productResult.error);
+    if (!productResult.data || productResult.data.length === 0) {
+      return res.status(404).json(ResponseFormatter.failure('Product not found'));
+    }
+    
+    const currentApprovalDetails = productResult.data[0].approval_details ? JSON.parse(productResult.data[0].approval_details) : {};
+    const approvalHistory = currentApprovalDetails.approval_history || [];
+    
+    // Add new rejection to history
+    approvalHistory.push({
+      action: 'rejected',
+      rejected_by,
+      rejected_at,
+      rejection_reason,
+      notes: notes || '',
+      timestamp: rejected_at
+    });
+    
+    const approvalDetails = {
+      status: 'rejected',
+      rejection_reason,
+      notes: notes || '',
+      rejected_by,
+      rejected_at,
+      approval_history: approvalHistory
+    };
+    
+    const updateResult = await DatabaseUtil.executeQuery(
+      'UPDATE products SET status = ?, approval_details = ?, updated_at = NOW() WHERE id = ?',
+      ['rejected', JSON.stringify(approvalDetails), id]
+    );
+    
+    if (!updateResult.success) throw new Error(updateResult.error);
+    
+    // Send rejection notification
+    await NotificationService.sendProductApprovalNotification(id, 'rejected', approvalDetails);
+    
+    res.json(ResponseFormatter.success('Product rejected successfully', { id, status: 'rejected' }));
+  } catch (error) {
+    console.error(error);
+    res.status(500).json(ResponseFormatter.failure('Server error', { error: error.message }));
+  }
+});
+
+// Get product approval history
+router.get('/products/:id/approval-history', adminReadLimiter, async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    const query = `
+      SELECT p.approval_details, p.status, p.created_at,
+             creator.first_name as creator_first_name, creator.last_name as creator_last_name,
+             creator.email as creator_email
+      FROM products p
+      LEFT JOIN users creator ON p.created_by = creator.id
+      WHERE p.id = ?
+    `;
+    
+    const result = await DatabaseUtil.executeQuery(query, [id]);
+    if (!result.success) throw new Error(result.error);
+    if (!result.data || result.data.length === 0) {
+      return res.status(404).json(ResponseFormatter.failure('Product not found'));
+    }
+    
+    const product = result.data[0];
+    const approvalDetails = product.approval_details ? JSON.parse(product.approval_details) : {};
+    const approvalHistory = approvalDetails.approval_history || [];
+    
+    // Get user details for each approval/rejection action
+    const userIds = [...new Set(approvalHistory.map(h => h.approved_by || h.rejected_by).filter(Boolean))];
+    let users = {};
+    
+    if (userIds.length > 0) {
+      const userQuery = 'SELECT id, first_name, last_name, email FROM users WHERE id IN (' + userIds.map(() => '?').join(',') + ')';
+      const userResult = await DatabaseUtil.executeQuery(userQuery, userIds);
+      if (userResult.success) {
+        userResult.data.forEach(user => {
+          users[user.id] = user;
+        });
+      }
+    }
+    
+    // Enrich history with user details
+    const enrichedHistory = approvalHistory.map(entry => ({
+      ...entry,
+      user: users[entry.approved_by || entry.rejected_by] || null
+    }));
+    
+    const responseData = {
+      product_id: id,
+      current_status: product.status,
+      created_at: product.created_at,
+      creator: {
+        first_name: product.creator_first_name,
+        last_name: product.creator_last_name,
+        email: product.creator_email
+      },
+      approval_history: enrichedHistory
+    };
+    
+    res.json(ResponseFormatter.success('Approval history fetched successfully', responseData));
   } catch (error) {
     console.error(error);
     res.status(500).json(ResponseFormatter.failure('Server error', { error: error.message }));
@@ -266,6 +478,302 @@ router.get('/inventory', adminReadLimiter, async (req, res) => {
     const listResult = await DatabaseUtil.executeQuery('SELECT * FROM inventory');
     if (!listResult.success) throw new Error(listResult.error);
     res.json(ResponseFormatter.success('Inventory fetched successfully', { inventory: listResult.data }));
+  } catch (error) {
+    console.error(error);
+    res.status(500).json(ResponseFormatter.failure('Server error', { error: error.message }));
+  }
+});
+
+// Sales Analytics Dashboard
+router.get('/analytics/dashboard', adminReadLimiter, async (req, res) => {
+  try {
+    const { period = '30' } = req.query; // days
+    
+    // Total sales for period
+    const salesQuery = `
+      SELECT 
+        COUNT(*) as total_orders,
+        COALESCE(SUM(total_amount), 0) as total_revenue,
+        COALESCE(AVG(total_amount), 0) as average_order_value
+      FROM orders 
+      WHERE status != 'cancelled' 
+      AND created_at >= DATE_SUB(NOW(), INTERVAL ? DAY)
+    `;
+    const salesResult = await DatabaseUtil.executeQuery(salesQuery, [period]);
+    
+    // Daily sales for chart
+    const dailySalesQuery = `
+      SELECT 
+        DATE(created_at) as date,
+        COUNT(*) as orders,
+        COALESCE(SUM(total_amount), 0) as revenue
+      FROM orders 
+      WHERE status != 'cancelled' 
+      AND created_at >= DATE_SUB(NOW(), INTERVAL ? DAY)
+      GROUP BY DATE(created_at)
+      ORDER BY date DESC
+    `;
+    const dailySalesResult = await DatabaseUtil.executeQuery(dailySalesQuery, [period]);
+    
+    // Top products
+    const topProductsQuery = `
+      SELECT 
+        oi.product_name,
+        oi.product_sku,
+        SUM(oi.quantity) as total_sold,
+        SUM(oi.total_price) as total_revenue
+      FROM order_items oi
+      JOIN orders o ON oi.order_id = o.id
+      WHERE o.status != 'cancelled' 
+      AND o.created_at >= DATE_SUB(NOW(), INTERVAL ? DAY)
+      GROUP BY oi.product_id, oi.product_name, oi.product_sku
+      ORDER BY total_sold DESC
+      LIMIT 10
+    `;
+    const topProductsResult = await DatabaseUtil.executeQuery(topProductsQuery, [period]);
+    
+    // Order status breakdown
+    const orderStatusQuery = `
+      SELECT 
+        status,
+        COUNT(*) as count
+      FROM orders 
+      WHERE created_at >= DATE_SUB(NOW(), INTERVAL ? DAY)
+      GROUP BY status
+    `;
+    const orderStatusResult = await DatabaseUtil.executeQuery(orderStatusQuery, [period]);
+    
+    // Recent orders
+    const recentOrdersQuery = `
+      SELECT 
+        o.id,
+        o.order_number,
+        o.status,
+        o.total_amount,
+        o.created_at,
+        COALESCE(CONCAT(u.first_name, ' ', u.last_name), o.guest_email) as customer_name
+      FROM orders o
+      LEFT JOIN users u ON o.user_id = u.id
+      ORDER BY o.created_at DESC
+      LIMIT 10
+    `;
+    const recentOrdersResult = await DatabaseUtil.executeQuery(recentOrdersQuery);
+    
+    const analytics = {
+      summary: salesResult.success ? salesResult.data[0] : {},
+      daily_sales: dailySalesResult.success ? dailySalesResult.data : [],
+      top_products: topProductsResult.success ? topProductsResult.data : [],
+      order_status: orderStatusResult.success ? orderStatusResult.data : [],
+      recent_orders: recentOrdersResult.success ? recentOrdersResult.data : []
+    };
+    
+    res.json(ResponseFormatter.success('Analytics fetched successfully', analytics));
+  } catch (error) {
+    console.error(error);
+    res.status(500).json(ResponseFormatter.failure('Server error', { error: error.message }));
+  }
+});
+
+// Order Management
+router.get('/orders', adminReadLimiter, async (req, res) => {
+  try {
+    const { status, page = 1, limit = 20 } = req.query;
+    const offset = (page - 1) * limit;
+    
+    let query = `
+      SELECT 
+        o.id,
+        o.order_number,
+        o.status,
+        o.total_amount,
+        o.created_at,
+        o.updated_at,
+        COALESCE(CONCAT(u.first_name, ' ', u.last_name), o.guest_email) as customer_name,
+        u.email as customer_email
+      FROM orders o
+      LEFT JOIN users u ON o.user_id = u.id
+    `;
+    let params = [];
+    
+    if (status) {
+      query += ' WHERE o.status = ?';
+      params.push(status);
+    }
+    
+    query += ' ORDER BY o.created_at DESC LIMIT ? OFFSET ?';
+    params.push(parseInt(limit), parseInt(offset));
+    
+    const ordersResult = await DatabaseUtil.executeQuery(query, params);
+    
+    // Get total count for pagination
+    let countQuery = 'SELECT COUNT(*) as total FROM orders o';
+    let countParams = [];
+    if (status) {
+      countQuery += ' WHERE o.status = ?';
+      countParams.push(status);
+    }
+    const countResult = await DatabaseUtil.executeQuery(countQuery, countParams);
+    
+    res.json(ResponseFormatter.success('Orders fetched successfully', {
+      orders: ordersResult.success ? ordersResult.data : [],
+      total: countResult.success ? countResult.data[0].total : 0,
+      page: parseInt(page),
+      limit: parseInt(limit)
+    }));
+  } catch (error) {
+    console.error(error);
+    res.status(500).json(ResponseFormatter.failure('Server error', { error: error.message }));
+  }
+});
+
+// Get order details
+router.get('/orders/:id', adminReadLimiter, async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    // Get order details
+    const orderQuery = `
+      SELECT 
+        o.*,
+        COALESCE(CONCAT(u.first_name, ' ', u.last_name), o.guest_email) as customer_name,
+        u.email as customer_email,
+        u.phone as customer_phone
+      FROM orders o
+      LEFT JOIN users u ON o.user_id = u.id
+      WHERE o.id = ?
+    `;
+    const orderResult = await DatabaseUtil.executeQuery(orderQuery, [id]);
+    
+    if (!orderResult.success || !orderResult.data.length) {
+      return res.status(404).json(ResponseFormatter.failure('Order not found'));
+    }
+    
+    // Get order items
+    const itemsQuery = `
+      SELECT 
+        oi.*,
+        p.thumbnail_small_url
+      FROM order_items oi
+      LEFT JOIN products p ON oi.product_id = p.id
+      WHERE oi.order_id = ?
+    `;
+    const itemsResult = await DatabaseUtil.executeQuery(itemsQuery, [id]);
+    
+    const order = orderResult.data[0];
+    order.items = itemsResult.success ? itemsResult.data : [];
+    
+    // Parse JSON fields
+    if (order.shipping_address_json) {
+      order.shipping_address = JSON.parse(order.shipping_address_json);
+    }
+    if (order.billing_address_json) {
+      order.billing_address = JSON.parse(order.billing_address_json);
+    }
+    
+    res.json(ResponseFormatter.success('Order details fetched successfully', order));
+  } catch (error) {
+    console.error(error);
+    res.status(500).json(ResponseFormatter.failure('Server error', { error: error.message }));
+  }
+});
+
+// Update order status
+router.put('/orders/:id/status', adminWriteLimiter, csrfProtection, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status, notes } = req.body;
+    
+    const validStatuses = ['pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled', 'refunded'];
+    if (!validStatuses.includes(status)) {
+      return res.status(400).json(ResponseFormatter.failure('Invalid status'));
+    }
+    
+    // Update order status
+    const updateResult = await DatabaseUtil.executeQuery(
+      'UPDATE orders SET status = ?, updated_at = NOW() WHERE id = ?',
+      [status, id]
+    );
+    
+    if (!updateResult.success) {
+      throw new Error(updateResult.error);
+    }
+    
+    // Log status change (if you have an order_history table)
+    // For now, we'll just update the order
+    
+    res.json(ResponseFormatter.success('Order status updated successfully', { id, status }));
+  } catch (error) {
+    console.error(error);
+    res.status(500).json(ResponseFormatter.failure('Server error', { error: error.message }));
+  }
+});
+
+// Bulk product operations
+router.post('/products/bulk-update', adminWriteLimiter, csrfProtection, async (req, res) => {
+  try {
+    const { productIds, updates } = req.body;
+    
+    if (!Array.isArray(productIds) || productIds.length === 0) {
+      return res.status(400).json(ResponseFormatter.failure('Product IDs array is required'));
+    }
+    
+    if (!updates || Object.keys(updates).length === 0) {
+      return res.status(400).json(ResponseFormatter.failure('Updates object is required'));
+    }
+    
+    const updateFields = [];
+    const updateValues = [];
+    
+    for (const [key, value] of Object.entries(updates)) {
+      if (key === 'product_details') {
+        updateFields.push(`${key} = ?`);
+        updateValues.push(JSON.stringify(value));
+      } else {
+        updateFields.push(`${key} = ?`);
+        updateValues.push(value);
+      }
+    }
+    
+    const placeholders = productIds.map(() => '?').join(',');
+    const query = `UPDATE products SET ${updateFields.join(', ')}, updated_at = NOW() WHERE id IN (${placeholders})`;
+    const params = [...updateValues, ...productIds];
+    
+    const updateResult = await DatabaseUtil.executeQuery(query, params);
+    
+    if (!updateResult.success) {
+      throw new Error(updateResult.error);
+    }
+    
+    res.json(ResponseFormatter.success('Bulk update completed successfully', { 
+      updated_count: updateResult.affectedRows || productIds.length 
+    }));
+  } catch (error) {
+    console.error(error);
+    res.status(500).json(ResponseFormatter.failure('Server error', { error: error.message }));
+  }
+});
+
+// Bulk product delete
+router.delete('/products/bulk-delete', adminWriteLimiter, csrfProtection, async (req, res) => {
+  try {
+    const { productIds } = req.body;
+    
+    if (!Array.isArray(productIds) || productIds.length === 0) {
+      return res.status(400).json(ResponseFormatter.failure('Product IDs array is required'));
+    }
+    
+    const placeholders = productIds.map(() => '?').join(',');
+    const query = `DELETE FROM products WHERE id IN (${placeholders})`;
+    
+    const deleteResult = await DatabaseUtil.executeQuery(query, productIds);
+    
+    if (!deleteResult.success) {
+      throw new Error(deleteResult.error);
+    }
+    
+    res.json(ResponseFormatter.success('Bulk delete completed successfully', { 
+      deleted_count: deleteResult.affectedRows || productIds.length 
+    }));
   } catch (error) {
     console.error(error);
     res.status(500).json(ResponseFormatter.failure('Server error', { error: error.message }));

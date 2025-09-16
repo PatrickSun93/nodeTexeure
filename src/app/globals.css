@@ -2,6 +2,7 @@
 @import "../styles/aesop-design-system.css";
 @import "../styles/noirae-theme.css";
 @import "../styles/mobile-enhancements.css";
+@import "../styles/advanced-features.css";
 
 :root {
   --background: #F7F7F7;

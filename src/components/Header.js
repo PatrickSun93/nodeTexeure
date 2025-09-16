@@ -7,10 +7,18 @@ import { useRouter } from 'next/navigation';
 import { useCartCount } from '../lib';
 import CartDrawer from './CartDrawer';
 import MobileSearch from './MobileSearch';
+import AdvancedSearch from './AdvancedSearch';
+import ProductComparison, { useProductComparison } from './ProductComparison';
+import Wishlist, { useWishlist } from './Wishlist';
+import RecentlyViewed, { useRecentlyViewed } from './RecentlyViewed';
 
   export default function Header({ siteName = 'Noiraé' }) {
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isAdvancedSearchOpen, setIsAdvancedSearchOpen] = useState(false);
+  const [isComparisonOpen, setIsComparisonOpen] = useState(false);
+  const [isWishlistOpen, setIsWishlistOpen] = useState(false);
+  const [isRecentlyViewedOpen, setIsRecentlyViewedOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchSuggestions, setSearchSuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -19,6 +27,9 @@ import MobileSearch from './MobileSearch';
   const [isMobile, setIsMobile] = useState(false);
   const { data: session, status } = useSession();
   const { count } = useCartCount();
+  const { comparisonCount } = useProductComparison();
+  const { wishlistCount } = useWishlist();
+  const { recentlyViewedCount } = useRecentlyViewed();
   const router = useRouter();
 
   // Detect mobile screen size
@@ -90,13 +101,17 @@ import MobileSearch from './MobileSearch';
   };
 
   const toggleSearch = () => {
-    setIsSearchOpen(!isSearchOpen);
-    if (!isSearchOpen) {
-      // Focus on search input when opening
-      setTimeout(() => {
-        const searchInput = document.getElementById('search-input');
-        if (searchInput) searchInput.focus();
-      }, 100);
+    if (isMobile) {
+      setIsSearchOpen(!isSearchOpen);
+      if (!isSearchOpen) {
+        // Focus on search input when opening
+        setTimeout(() => {
+          const searchInput = document.getElementById('search-input');
+          if (searchInput) searchInput.focus();
+        }, 100);
+      }
+    } else {
+      setIsAdvancedSearchOpen(true);
     }
   };
 
@@ -162,6 +177,60 @@ import MobileSearch from './MobileSearch';
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
                 </svg>
               </button>
+            )}
+
+            {/* Advanced Features - Desktop Only */}
+            {!isMobile && (
+              <>
+                {/* Recently Viewed */}
+                <button
+                  onClick={() => setIsRecentlyViewedOpen(true)}
+                  className="aesop-icon-button"
+                  title="Recently viewed products"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                  </svg>
+                  {recentlyViewedCount > 0 && (
+                    <span className="aesop-feature-count">
+                      {recentlyViewedCount}
+                    </span>
+                  )}
+                </button>
+
+                {/* Wishlist */}
+                <button
+                  onClick={() => setIsWishlistOpen(true)}
+                  className="aesop-icon-button"
+                  title="My wishlist"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                  </svg>
+                  {wishlistCount > 0 && (
+                    <span className="aesop-feature-count">
+                      {wishlistCount}
+                    </span>
+                  )}
+                </button>
+
+                {/* Product Comparison */}
+                <button
+                  onClick={() => setIsComparisonOpen(true)}
+                  className="aesop-icon-button"
+                  title="Compare products"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                  </svg>
+                  {comparisonCount > 0 && (
+                    <span className="aesop-feature-count">
+                      {comparisonCount}
+                    </span>
+                  )}
+                </button>
+              </>
             )}
 
             {/* Search */}
@@ -382,6 +451,30 @@ import MobileSearch from './MobileSearch';
           setIsSearchOpen(false);
           setShowSuggestions(false);
         }} 
+      />
+
+      {/* Advanced Search Modal */}
+      <AdvancedSearch 
+        isOpen={isAdvancedSearchOpen} 
+        onClose={() => setIsAdvancedSearchOpen(false)} 
+      />
+
+      {/* Product Comparison Modal */}
+      <ProductComparison 
+        isOpen={isComparisonOpen} 
+        onClose={() => setIsComparisonOpen(false)} 
+      />
+
+      {/* Wishlist Modal */}
+      <Wishlist 
+        isOpen={isWishlistOpen} 
+        onClose={() => setIsWishlistOpen(false)} 
+      />
+
+      {/* Recently Viewed Modal */}
+      <RecentlyViewed 
+        isOpen={isRecentlyViewedOpen} 
+        onClose={() => setIsRecentlyViewedOpen(false)} 
       />
     </header>
   );
