@@ -4,7 +4,11 @@ const stripeService = require('../services/stripeService');
 const logger = require('../utils/logger');
 const ResponseFormatter = require('../utils/responseFormatter');
 const { protect } = require('../middleware/authMiddleware');
+const EmailQueueService = require('../services/emailQueueService');
 const db = require('../utils/database');
+
+// Initialize email queue service
+const emailQueueService = new EmailQueueService();
 
 /**
  * POST /api/payments/create-intent
@@ -217,6 +221,46 @@ async function handlePaymentSucceeded(paymentIntent) {
         orderId,
         paymentIntentId: paymentIntent.id
       });
+
+      // Queue order status update email for payment confirmation
+      try {
+        // Get order details for email
+        const orderResult = await db.query(
+          `SELECT o.*, u.email, u.first_name, u.last_name 
+           FROM orders o 
+           LEFT JOIN users u ON o.user_id = u.id 
+           WHERE o.id = ?`,
+          [orderId]
+        );
+
+        if (orderResult.length > 0) {
+          const order = orderResult[0];
+          const customerEmail = order.email || order.guest_email;
+          
+          if (customerEmail) {
+            const orderData = {
+              orderNumber: order.order_number,
+              orderId: order.id,
+              status: 'confirmed',
+              totalAmount: `$${order.total_amount.toFixed(2)}`,
+              customerName: order.first_name ? `${order.first_name} ${order.last_name || ''}`.trim() : 'Guest'
+            };
+
+            await emailQueueService.queueOrderStatusUpdate(customerEmail, orderData);
+            logger.info('Order status update email queued for payment confirmation', {
+              orderId,
+              customerEmail
+            });
+          }
+        }
+      } catch (emailError) {
+        logger.error('Failed to queue order status update email for payment confirmation', {
+          error: emailError.message,
+          orderId,
+          paymentIntentId: paymentIntent.id
+        });
+        // Don't fail the payment processing if email fails
+      }
     }
 
   } catch (error) {

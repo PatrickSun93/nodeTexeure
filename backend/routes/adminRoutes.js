@@ -5,8 +5,12 @@ const { protect, admin } = require('../middleware/authMiddleware');
 const DatabaseUtil = require('../utils/database');
 const ResponseFormatter = require('../utils/responseFormatter');
 const NotificationService = require('../services/notificationService');
+const EmailQueueService = require('../services/emailQueueService');
 const path = require('path');
 const fs = require('fs');
+
+// Initialize email queue service
+const emailQueueService = new EmailQueueService();
 
 // Multer setup (installed separately). Using disk storage inside backend/uploads
 let multer;
@@ -688,6 +692,21 @@ router.put('/orders/:id/status', adminWriteLimiter, csrfProtection, async (req, 
       return res.status(400).json(ResponseFormatter.failure('Invalid status'));
     }
     
+    // Get order details before updating for email notification
+    const orderResult = await DatabaseUtil.executeQuery(
+      `SELECT o.*, u.email, u.first_name, u.last_name 
+       FROM orders o 
+       LEFT JOIN users u ON o.user_id = u.id 
+       WHERE o.id = ?`,
+      [id]
+    );
+
+    if (!orderResult.success || orderResult.data.length === 0) {
+      return res.status(404).json(ResponseFormatter.failure('Order not found'));
+    }
+
+    const order = orderResult.data[0];
+    
     // Update order status
     const updateResult = await DatabaseUtil.executeQuery(
       'UPDATE orders SET status = ?, updated_at = NOW() WHERE id = ?',
@@ -698,8 +717,38 @@ router.put('/orders/:id/status', adminWriteLimiter, csrfProtection, async (req, 
       throw new Error(updateResult.error);
     }
     
-    // Log status change (if you have an order_history table)
-    // For now, we'll just update the order
+    // Queue email notification for status update
+    try {
+      const customerEmail = order.email || order.guest_email;
+      
+      if (customerEmail) {
+        const orderData = {
+          orderNumber: order.order_number,
+          orderId: order.id,
+          status: status,
+          totalAmount: `$${order.total_amount.toFixed(2)}`,
+          customerName: order.first_name ? `${order.first_name} ${order.last_name || ''}`.trim() : 'Guest',
+          notes: notes || ''
+        };
+
+        // For shipped status, send shipping notification instead of status update
+        if (status === 'shipped') {
+          // Add tracking information if available
+          orderData.trackingNumber = order.tracking_number || 'TBD';
+          orderData.estimatedDelivery = order.estimated_delivery_date || 'Within 3-5 business days';
+          orderData.trackingUrl = order.tracking_number ? `https://www.fedex.com/fedextrack/?trknbr=${order.tracking_number}` : null;
+          
+          await emailQueueService.queueShippingNotification(customerEmail, orderData);
+          console.log(`Shipping notification email queued for order ${order.order_number}`);
+        } else {
+          await emailQueueService.queueOrderStatusUpdate(customerEmail, orderData);
+          console.log(`Order status update email queued for order ${order.order_number}`);
+        }
+      }
+    } catch (emailError) {
+      console.error('Failed to queue order status email:', emailError);
+      // Don't fail the status update if email fails
+    }
     
     res.json(ResponseFormatter.success('Order status updated successfully', { id, status }));
   } catch (error) {

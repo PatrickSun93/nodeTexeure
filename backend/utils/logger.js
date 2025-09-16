@@ -175,6 +175,36 @@ class Logger {
     const logEntry = this.formatLogEntry('ERROR', requestInfo, apiPath, errorData);
     await this.writeLog(logEntry);
   }
+
+  /**
+   * General info logging (for service use)
+   */
+  info(message, data = null) {
+    const timestamp = new Date().toISOString();
+    const logLine = `[${timestamp}] INFO | ${message}${data ? ' | Data: ' + JSON.stringify(data) : ''}`;
+    console.log(logLine);
+    
+    // Also write to file asynchronously
+    this.writeLog(logLine).catch(err => console.error('Failed to write info log:', err));
+  }
+
+  /**
+   * General error logging (for service use)
+   */
+  error(message, error = null) {
+    const timestamp = new Date().toISOString();
+    const errorData = error ? {
+      message: error.message,
+      stack: error.stack,
+      code: error.code
+    } : null;
+    
+    const logLine = `[${timestamp}] ERROR | ${message}${errorData ? ' | Error: ' + JSON.stringify(errorData) : ''}`;
+    console.error(logLine);
+    
+    // Also write to file asynchronously
+    this.writeLog(logLine).catch(err => console.error('Failed to write error log:', err));
+  }
 }
 
 // Export singleton instance

@@ -7,7 +7,11 @@ const DatabaseUtil = require('../utils/database');
 const ResponseFormatter = require('../utils/responseFormatter');
 const { protect, admin } = require('../middleware/authMiddleware');
 const { generateCSRFToken } = require('../middleware/csrfMiddleware');
+const EmailQueueService = require('../services/emailQueueService');
 const crypto = require('crypto');
+
+// Initialize email queue service
+const emailQueueService = new EmailQueueService();
 
 const router = express.Router();
 
@@ -106,6 +110,22 @@ router.post('/register', async (req, res) => {
       } catch (emailError) {
         console.error('Failed to send verification email:', emailError);
         // Don't fail registration if email fails, but log it
+      }
+
+      // Queue welcome email
+      try {
+        const userData = {
+          firstName: firstName,
+          lastName: lastName,
+          email: email,
+          userId: userId
+        };
+        
+        await emailQueueService.queueWelcomeEmail(email, userData);
+        console.log(`Welcome email queued for new user: ${email}`);
+      } catch (welcomeEmailError) {
+        console.error('Failed to queue welcome email:', welcomeEmailError);
+        // Don't fail registration if welcome email fails
       }
 
       const keyValueTable = {

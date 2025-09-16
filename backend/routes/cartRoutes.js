@@ -3,8 +3,14 @@ const { protect, protectOptional } = require('../middleware/authMiddleware');
 const DatabaseUtil = require('../utils/database');
 const InventoryService = require('../services/inventoryService');
 const ResponseFormatter = require('../utils/responseFormatter');
+const EmailQueueService = require('../services/emailQueueService');
+const AbandonedCartService = require('../services/abandonedCartService');
 const crypto = require('crypto');
 const router = express.Router();
+
+// Initialize services
+const emailQueueService = new EmailQueueService();
+const abandonedCartService = new AbandonedCartService();
 
 // Helper to get or create cart
 async function getOrCreateCart(req, res) {
@@ -67,6 +73,11 @@ router.get('/', protectOptional, async (req, res) => {
       in_stock: item.quantity_available >= item.quantity,
       available_quantity: item.quantity_available || 0
     }));
+
+    // Track cart activity for abandonment detection
+    const userEmail = req.user ? req.user.email : null;
+    const sessionId = req.cookies.sessionId || null;
+    await abandonedCartService.trackCartActivity(cartId, userEmail, sessionId);
     
     res.json(ResponseFormatter.success('Cart fetched', { 
       cartId, 
@@ -146,6 +157,11 @@ router.post('/add', protectOptional, async (req, res) => {
         [itemId, cartId, product_id, variant_id, quantity, price]
       );
     }
+
+    // Track cart activity for abandonment detection
+    const userEmail = req.user ? req.user.email : null;
+    const sessionId = req.cookies.sessionId || null;
+    await abandonedCartService.trackCartActivity(cartId, userEmail, sessionId);
     
     res.json(ResponseFormatter.success('Item added to cart'));
   } catch (error) {
@@ -253,6 +269,118 @@ router.post('/reserve-stock', protectOptional, async (req, res) => {
   } catch (error) {
     console.error('Error reserving stock:', error);
     res.status(500).json(ResponseFormatter.failure('Failed to reserve stock', { error: error.message }));
+  }
+});
+
+/**
+ * POST /api/cart/track-abandonment
+ * Track cart abandonment and schedule recovery emails
+ */
+router.post('/track-abandonment', protectOptional, async (req, res) => {
+  try {
+    const cartId = await getOrCreateCart(req, res);
+    
+    // Get cart items to check if cart has items
+    const cartItemsResult = await DatabaseUtil.executeQuery(
+      `SELECT ci.*, p.name, p.price 
+       FROM cart_items ci 
+       JOIN products p ON ci.product_id = p.id 
+       WHERE ci.cart_id = ?`,
+      [cartId]
+    );
+
+    if (!cartItemsResult.success || cartItemsResult.data.length === 0) {
+      return res.json(ResponseFormatter.success('No items in cart to track'));
+    }
+
+    // Get customer email
+    let customerEmail = null;
+    let customerName = 'Guest';
+
+    if (req.user) {
+      customerEmail = req.user.email;
+      customerName = `${req.user.firstName || ''} ${req.user.lastName || ''}`.trim() || 'Customer';
+    } else if (req.body.guestEmail) {
+      customerEmail = req.body.guestEmail;
+    }
+
+    if (!customerEmail) {
+      return res.json(ResponseFormatter.success('No email available for cart abandonment tracking'));
+    }
+
+    // Calculate cart total
+    let totalAmount = 0;
+    const items = cartItemsResult.data.map(item => {
+      const itemTotal = item.price * item.quantity;
+      totalAmount += itemTotal;
+      return {
+        name: item.name,
+        quantity: item.quantity,
+        price: `$${item.price.toFixed(2)}`
+      };
+    });
+
+    // Prepare cart data for email
+    const cartData = {
+      items: items,
+      totalAmount: `$${totalAmount.toFixed(2)}`,
+      checkoutUrl: `${process.env.BASE_URL || 'http://localhost:3000'}/checkout`,
+      customerName: customerName
+    };
+
+    // Cancel any existing abandoned cart emails for this customer
+    await emailQueueService.cancelAbandonedCartEmails(customerEmail);
+
+    // Queue the abandoned cart email sequence
+    const queueIds = [];
+    for (let step = 1; step <= 3; step++) {
+      const queueId = await emailQueueService.queueAbandonedCartEmail(customerEmail, cartData, step);
+      queueIds.push(queueId);
+    }
+
+    console.log(`Abandoned cart email sequence queued for ${customerEmail}:`, queueIds);
+
+    res.json(ResponseFormatter.success('Cart abandonment tracking started', {
+      customerEmail,
+      queueIds,
+      totalAmount: cartData.totalAmount,
+      itemCount: items.length
+    }));
+
+  } catch (error) {
+    console.error('Error tracking cart abandonment:', error);
+    res.status(500).json(ResponseFormatter.failure('Failed to track cart abandonment', { error: error.message }));
+  }
+});
+
+/**
+ * POST /api/cart/cancel-abandonment
+ * Cancel abandoned cart emails (called when customer completes purchase)
+ */
+router.post('/cancel-abandonment', protectOptional, async (req, res) => {
+  try {
+    let customerEmail = null;
+
+    if (req.user) {
+      customerEmail = req.user.email;
+    } else if (req.body.guestEmail) {
+      customerEmail = req.body.guestEmail;
+    }
+
+    if (!customerEmail) {
+      return res.json(ResponseFormatter.success('No email to cancel abandonment tracking'));
+    }
+
+    const cancelledCount = await emailQueueService.cancelAbandonedCartEmails(customerEmail);
+
+    res.json(ResponseFormatter.success('Abandoned cart emails cancelled', {
+      customerEmail,
+      cancelledCount
+    }));
+
+  } catch (error) {
+    console.error('Error cancelling cart abandonment:', error);
+    res.status(500).json(ResponseFormatter.failure('Failed to cancel cart abandonment', { error: error.message }));
   }
 });
 

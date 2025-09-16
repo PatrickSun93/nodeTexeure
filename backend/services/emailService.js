@@ -1,4 +1,5 @@
 const { SESClient, SendEmailCommand, SendTemplatedEmailCommand } = require('@aws-sdk/client-ses');
+const AbandonedCartEmailTemplates = require('./abandonedCartEmailTemplates');
 // Simple logger wrapper for email service
 const logger = {
   info: (message, data) => console.log(`[INFO] ${message}`, data || ''),
@@ -19,6 +20,9 @@ class EmailService {
     this.fromEmail = process.env.AWS_SES_FROM_EMAIL || 'noreply@example.com';
     this.fromName = process.env.AWS_SES_FROM_NAME || 'Bed Texture Store';
     this.replyToEmail = process.env.AWS_SES_REPLY_TO_EMAIL || 'support@example.com';
+    
+    // Initialize enhanced email templates
+    this.abandonedCartTemplates = new AbandonedCartEmailTemplates(this.fromName, this.replyToEmail);
   }
 
   /**
@@ -141,8 +145,8 @@ class EmailService {
     };
 
     const subject = subjects[sequenceStep] || subjects[1];
-    const htmlContent = this.renderAbandonedCartTemplate(cartData, sequenceStep);
-    const textContent = this.renderAbandonedCartText(cartData, sequenceStep);
+    const htmlContent = this.abandonedCartTemplates.renderAbandonedCartTemplate(cartData, sequenceStep);
+    const textContent = this.abandonedCartTemplates.renderAbandonedCartText(cartData, sequenceStep);
 
     return await this.sendEmail(customerEmail, subject, htmlContent, textContent);
   }

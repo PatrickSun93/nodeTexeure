@@ -86,6 +86,22 @@ app.use('/api/payments', paymentRoutes);
 const emailRoutes = require('./routes/emailRoutes');
 app.use('/api/emails', emailRoutes);
 
+// Abandoned cart routes
+const abandonedCartRoutes = require('./routes/abandonedCartRoutes');
+app.use('/api/abandoned-cart', abandonedCartRoutes);
+
+// Shipping routes
+const shippingRoutes = require('./routes/shippingRoutes');
+app.use('/api/shipping', shippingRoutes);
+
+// Tax routes
+const taxRoutes = require('./routes/taxRoutes');
+app.use('/api/tax', taxRoutes);
+
+// FedEx routes
+const fedexRoutes = require('./routes/fedexRoutes');
+app.use('/api/fedex', fedexRoutes);
+
 // Backward compatibility - redirect old endpoints to new structure
 app.get('/api/health', (req, res) => {
   res.redirect(301, '/api/status/health');

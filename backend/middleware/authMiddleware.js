@@ -70,3 +70,34 @@ exports.protectOptional = (req, res, next) => {
   }
   next();
 };
+
+// Alias for protect (for compatibility)
+exports.authenticateToken = exports.protect;
+
+// Role-based access control middleware
+exports.requireRole = (roles) => {
+  return (req, res, next) => {
+    if (!req.user) {
+      const keyValueTable = { error: 'Authentication required' };
+      return res.status(401).json(
+        ResponseFormatter.failure('Not authorized, no user context', keyValueTable)
+      );
+    }
+
+    const userRole = req.user.role || 'customer';
+    const allowedRoles = Array.isArray(roles) ? roles : [roles];
+    
+    if (!allowedRoles.includes(userRole)) {
+      const keyValueTable = { 
+        error: 'Insufficient permissions',
+        userRole: userRole,
+        requiredRoles: allowedRoles
+      };
+      return res.status(403).json(
+        ResponseFormatter.failure('Access denied', keyValueTable)
+      );
+    }
+
+    next();
+  };
+};

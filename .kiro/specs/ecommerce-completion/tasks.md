@@ -104,28 +104,28 @@
   - Add welcome email for new user registrations
   - _Requirements: 4.1, 4.2, 4.3, 4.5_
 
-- [ ] 16. Implement abandoned cart recovery system
+- [x] 16. Implement abandoned cart recovery system
   - Create abandoned cart detection and tracking
   - Build email sequence system (1 hour, 24 hours, 3 days)
   - Create abandoned cart recovery email templates
   - Add cart recovery tracking and analytics
   - _Requirements: 4.4_
 
-- [ ] 17. Implement shipping calculation system
+- [x] 17. Implement shipping calculation system
   - Create shipping zones and rates management tables
   - Build shipping calculator service for weight and zone-based pricing
   - Create API endpoints for shipping cost calculation
   - Integrate shipping calculation into checkout process
   - _Requirements: 2.1, 2.2, 2.3_
 
-- [ ] 18. Add tax calculation functiona lity
+- [x] 18. Add tax calculation functiona lity
   - Create tax rates management system
   - Build tax calculation service based on customer address
   - Create API endpoints for tax calculation
   - Integrate tax calculation into checkout and order totals
   - _Requirements: 2.2_
 
-- [ ] 19. Integrate FedEx API for shipping and tracking
+- [x] 19. Integrate FedEx API for shipping and tracking
   - Set up FedEx developer account and API credentials
   - Create FedEx service class for rate calculation and tracking
   - Implement shipment creation and tracking number generation

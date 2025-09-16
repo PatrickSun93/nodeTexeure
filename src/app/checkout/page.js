@@ -15,7 +15,10 @@ function CheckoutPage() {
   const [subtotal, setSubtotal] = useState(0);
   const [discount, setDiscount] = useState(0);
   const [tax, setTax] = useState(0);
-  const [shipping, setShipping] = useState(10); // Fixed shipping for now
+  const [shipping, setShipping] = useState(0);
+  const [shippingOptions, setShippingOptions] = useState([]);
+  const [selectedShippingOption, setSelectedShippingOption] = useState(null);
+  const [shippingLoading, setShippingLoading] = useState(false);
   const [total, setTotal] = useState(0);
   const [couponCode, setCouponCode] = useState('');
   const [shippingAddress, setShippingAddress] = useState({ 
@@ -227,6 +230,76 @@ function CheckoutPage() {
     setPaymentProcessing(true);
   };
 
+  // Calculate shipping when address changes
+  const calculateShipping = async (address) => {
+    if (!address.country || cartItems.length === 0) {
+      setShippingOptions([]);
+      setSelectedShippingOption(null);
+      setShipping(0);
+      return;
+    }
+
+    try {
+      setShippingLoading(true);
+      setError('');
+
+      const headers = {
+        'Content-Type': 'application/json',
+      };
+      
+      if (session?.accessToken) {
+        headers.Authorization = `Bearer ${session.accessToken}`;
+      }
+
+      const response = await fetch('/api/shipping/calculate', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          address,
+          items: cartItems.map(item => ({
+            product_id: item.product_id,
+            variant_id: item.variant_id,
+            quantity: item.quantity
+          }))
+        })
+      });
+
+      const data = await response.json();
+
+      if (data.status === 'success') {
+        setShippingOptions(data.data.options);
+        // Auto-select the cheapest option
+        if (data.data.options.length > 0) {
+          const cheapestOption = data.data.options.reduce((prev, current) => 
+            prev.cost < current.cost ? prev : current
+          );
+          setSelectedShippingOption(cheapestOption);
+          setShipping(cheapestOption.cost);
+        }
+      } else {
+        setError(data.message || 'Failed to calculate shipping');
+        setShippingOptions([]);
+        setSelectedShippingOption(null);
+        setShipping(0);
+      }
+    } catch (err) {
+      console.error('Error calculating shipping:', err);
+      setError('Error calculating shipping costs');
+      setShippingOptions([]);
+      setSelectedShippingOption(null);
+      setShipping(0);
+    } finally {
+      setShippingLoading(false);
+    }
+  };
+
+  // Update shipping when address changes
+  useEffect(() => {
+    if (shippingAddress.country && shippingAddress.state && shippingAddress.postal_code) {
+      calculateShipping(shippingAddress);
+    }
+  }, [shippingAddress.country, shippingAddress.state, shippingAddress.postal_code, cartItems]);
+
   const updateTotal = () => {
     setTotal(subtotal + tax + shipping - discount);
   };
@@ -436,8 +509,17 @@ function CheckoutPage() {
               <span>${subtotal.toFixed(2)}</span>
             </div>
             <div className="checkout-total-row">
-              <span>Shipping</span>
-              <span>${shipping.toFixed(2)}</span>
+              <span>
+                Shipping
+                {selectedShippingOption && (
+                  <span className="checkout-shipping-method">
+                    ({selectedShippingOption.name})
+                  </span>
+                )}
+              </span>
+              <span>
+                {shipping === 0 ? 'Free' : `$${shipping.toFixed(2)}`}
+              </span>
             </div>
             <div className="checkout-total-row">
               <span>Tax</span>
@@ -539,6 +621,50 @@ function CheckoutPage() {
                     title="Shipping Address" 
                   />
                 </div>
+
+                {/* Shipping Options */}
+                {shippingOptions.length > 0 && (
+                  <div className="checkout-section">
+                    <h3 className="checkout-form-title">Shipping Method</h3>
+                    <div className="checkout-shipping-options">
+                      {shippingOptions.map((option) => (
+                        <div key={option.id} className="checkout-shipping-option">
+                          <input
+                            type="radio"
+                            id={`shipping-${option.id}`}
+                            name="shipping"
+                            value={option.id}
+                            checked={selectedShippingOption?.id === option.id}
+                            onChange={() => {
+                              setSelectedShippingOption(option);
+                              setShipping(option.cost);
+                            }}
+                          />
+                          <label htmlFor={`shipping-${option.id}`} className="checkout-shipping-label">
+                            <div className="checkout-shipping-info">
+                              <div className="checkout-shipping-name">{option.name}</div>
+                              <div className="checkout-shipping-time">
+                                {option.estimatedDays.min === option.estimatedDays.max 
+                                  ? `${option.estimatedDays.min} days`
+                                  : `${option.estimatedDays.min}-${option.estimatedDays.max} days`
+                                }
+                              </div>
+                            </div>
+                            <div className="checkout-shipping-price">
+                              ${option.cost.toFixed(2)}
+                            </div>
+                          </label>
+                        </div>
+                      ))}
+                    </div>
+                    {shippingLoading && (
+                      <div className="checkout-shipping-loading">
+                        <div className="checkout-spinner"></div>
+                        <span>Calculating shipping rates...</span>
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 <div className="checkout-section">
                   <div className="checkout-checkbox">
