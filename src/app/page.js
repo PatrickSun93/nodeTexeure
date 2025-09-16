@@ -1,10 +1,12 @@
 "use client";
 
 import Link from 'next/link';
+import Head from 'next/head';
 import { useBackendHealth } from '../lib';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import { fetchSettings } from '../lib/fetchSettings';
+import { generateMetaTags, generateStructuredData, defaultSEO } from '../lib/seo';
 import { useRef, useState, useEffect } from 'react';
 
 // Hero Section Component
@@ -205,28 +207,67 @@ export default function Home() {
     }, []);
 
     const siteName = settings?.site_name || 'Noiraé';
+    
+    // Generate SEO data for home page
+    const homeMetaTags = generateMetaTags({
+        title: 'Premium Bed Textures & Luxury Linens',
+        description: 'Transform your bedroom with our luxurious collection of high-quality bed textures, premium linens, and home textiles. Shop Egyptian cotton sheets, silk pillowcases, and more.',
+        keywords: 'bed textures, luxury linens, Egyptian cotton sheets, silk pillowcases, premium bedding, home textiles, bedroom decor, luxury bedding',
+        url: '/',
+        type: 'website'
+    });
+
+    const homeStructuredData = generateStructuredData('website');
 
     return (
-        <div className="noirae-page">
-            <Header siteName={siteName} />
-            <main className="noirae-main">
-                <HeroSection />
-                <FeaturedProducts />
-                <FeaturesSection />
-            </main>
-            <Footer />
+        <>
+            <Head>
+                <title>{homeMetaTags.title}</title>
+                <meta name="description" content={homeMetaTags.description} />
+                <meta name="keywords" content={homeMetaTags.keywords} />
+                <link rel="canonical" href={homeMetaTags.canonical} />
+                
+                {/* Open Graph */}
+                <meta property="og:title" content={homeMetaTags.openGraph.title} />
+                <meta property="og:description" content={homeMetaTags.openGraph.description} />
+                <meta property="og:url" content={homeMetaTags.openGraph.url} />
+                <meta property="og:type" content={homeMetaTags.openGraph.type} />
+                
+                {/* Twitter Card */}
+                <meta name="twitter:card" content={homeMetaTags.twitter.card} />
+                <meta name="twitter:title" content={homeMetaTags.twitter.title} />
+                <meta name="twitter:description" content={homeMetaTags.twitter.description} />
+                
+                {/* Structured Data */}
+                <script
+                    type="application/ld+json"
+                    dangerouslySetInnerHTML={{
+                        __html: JSON.stringify(homeStructuredData)
+                    }}
+                />
+            </Head>
             
-            {/* Backend Health Status */}
-            {loading && (
-                <div className="aesop-status aesop-status-loading">
-                    Checking backend connection...
-                </div>
-            )}
-            {!loading && !isConnected && (
-                <div className="aesop-status aesop-status-error">
-                    Backend connection failed
-                </div>
-            )}
-        </div>
+            <div className="noirae-page">
+                <Header siteName={siteName} />
+                <main className="noirae-main">
+                    <HeroSection />
+                    <FeaturedProducts />
+                    <FeaturesSection />
+                </main>
+                <Footer />
+                
+                {/* Backend Health Status */}
+                {loading && (
+                    <div className="aesop-status aesop-status-loading">
+                        Checking backend connection...
+                    </div>
+                )}
+                {!loading && !isConnected && (
+                    <div className="aesop-status aesop-status-error">
+                        Backend connection failed
+                    </div>
+                )}
+            </div>
+        </>
     );
 }

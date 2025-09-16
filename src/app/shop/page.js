@@ -2,18 +2,23 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Head from 'next/head';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Header from '../../components/Header';
 import Footer from '../../components/Footer';
+import Breadcrumb from '../../components/Breadcrumb';
 import { apiRequest } from '../../lib/api';
+import { generateMetaTags, generateStructuredData, generateBreadcrumbs } from '../../lib/seo';
 
-// Breadcrumb Component
-function Breadcrumb() {
+// Shop Header Component
+function ShopHeader({ breadcrumbs }) {
   return (
-    <div className="aesop-container">
-      <Link href="/" className="aesop-breadcrumb-link">Home</Link>
-      <span className="aesop-breadcrumb-separator">&gt;</span>
-      <span className="aesop-breadcrumb-current">Shop</span>
+    <div className="aesop-shop-hero">
+      <div className="aesop-container">
+        <Breadcrumb items={breadcrumbs} />
+        <h1 className="aesop-shop-title">Shop</h1>
+        <p className="aesop-shop-subtitle">Discover our premium collection of home textiles</p>
+      </div>
     </div>
   );
 }
@@ -469,17 +474,63 @@ export default function Shop() {
     }
   });
 
+  // Generate SEO data for shop page
+  const breadcrumbs = generateBreadcrumbs('shop', { category: filters.category });
+  
+  const shopTitle = filters.category && filters.category !== 'All' 
+    ? `${filters.category} - Premium Bed Textures` 
+    : 'Shop Premium Bed Textures & Luxury Linens';
+    
+  const shopDescription = filters.category && filters.category !== 'All'
+    ? `Shop premium ${filters.category.toLowerCase()} collection. High-quality bed textures and luxury linens for your bedroom.`
+    : 'Discover our complete collection of premium bed textures, luxury linens, and home textiles. Shop Egyptian cotton sheets, silk pillowcases, and more.';
+
+  const shopMetaTags = generateMetaTags({
+    title: shopTitle,
+    description: shopDescription,
+    keywords: `shop, bed textures, luxury linens, ${filters.category !== 'All' ? filters.category.toLowerCase() : 'bedding'}, premium bedding, home textiles`,
+    url: `/shop${filters.category && filters.category !== 'All' ? `?category=${encodeURIComponent(filters.category)}` : ''}`,
+    type: 'website'
+  });
+
+  const shopStructuredData = generateStructuredData('collection', {
+    name: shopTitle,
+    description: shopDescription,
+    url: `/shop${filters.category && filters.category !== 'All' ? `?category=${encodeURIComponent(filters.category)}` : ''}`,
+    products: sortedProducts
+  });
+
   return (
-    <div className="aesop-page">
-      <Header />
-      <Breadcrumb />
+    <>
+      <Head>
+        <title>{shopMetaTags.title}</title>
+        <meta name="description" content={shopMetaTags.description} />
+        <meta name="keywords" content={shopMetaTags.keywords} />
+        <link rel="canonical" href={shopMetaTags.canonical} />
+        
+        {/* Open Graph */}
+        <meta property="og:title" content={shopMetaTags.openGraph.title} />
+        <meta property="og:description" content={shopMetaTags.openGraph.description} />
+        <meta property="og:url" content={shopMetaTags.openGraph.url} />
+        <meta property="og:type" content={shopMetaTags.openGraph.type} />
+        
+        {/* Twitter Card */}
+        <meta name="twitter:card" content={shopMetaTags.twitter.card} />
+        <meta name="twitter:title" content={shopMetaTags.twitter.title} />
+        <meta name="twitter:description" content={shopMetaTags.twitter.description} />
+        
+        {/* Collection Structured Data */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(shopStructuredData)
+          }}
+        />
+      </Head>
       
-      <div className="aesop-shop-hero">
-        <div className="aesop-container">
-          <h1 className="aesop-shop-title">Shop</h1>
-          <p className="aesop-shop-subtitle">Discover our premium collection of home textiles</p>
-        </div>
-      </div>
+      <div className="aesop-page">
+        <Header />
+        <ShopHeader breadcrumbs={breadcrumbs} />
 
       <div className="aesop-container">
         <div className="aesop-shop-content">
@@ -604,5 +655,6 @@ export default function Shop() {
       </div>
       <Footer />
     </div>
+    </>
   );
 }

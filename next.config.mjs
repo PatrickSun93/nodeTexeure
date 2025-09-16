@@ -26,6 +26,37 @@ const nextConfig = {
       destination: `${backendUrl}/api/${route}/:path*`,
     }));
   },
+  
+  async redirects() {
+    return [
+      // SEO-friendly category redirects
+      {
+        source: '/shop/:category',
+        destination: '/categories/:category',
+        permanent: true,
+      },
+      // Legacy product URLs
+      {
+        source: '/product/:id',
+        destination: '/products/:id',
+        permanent: true,
+      },
+      // Category parameter redirects to SEO-friendly URLs
+      {
+        source: '/shop',
+        has: [
+          {
+            type: 'query',
+            key: 'category',
+            value: '(?<category>sheets|pillows|blankets|mattresses|accessories)',
+          },
+        ],
+        destination: '/categories/:category',
+        permanent: false,
+      },
+    ];
+  },
+  
   images: {
     remotePatterns: [
       {
@@ -36,6 +67,17 @@ const nextConfig = {
       },
     ],
   },
+  
+  // Enable experimental features for better SEO
+  experimental: {
+    optimizeCss: true,
+  },
+  
+  // Compress responses for better performance
+  compress: true,
+  
+  // Generate static pages for better SEO
+  trailingSlash: false,
 };
 
 export default nextConfig;

@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { FooterSiteLinks } from './InternalLinks';
 
 export default function Footer() {
   return (
@@ -17,45 +18,19 @@ export default function Footer() {
           </p>
         </div>
 
-        {/* Second Row - 3 Columns */}
-        <div className="aesop-header-content aesop-mb-8">
-          <div className="aesop-header-left">
-            {/* Shop Column */}
-            <div>
-              <h4 className="aesop-heading-4 aesop-mb-4">Shop</h4>
-              <ul className="aesop-space-y-2">
-                <li><Link href="/shop" className="aesop-text-muted aesop-hover-text-primary">All Products</Link></li>
-                <li><Link href="/shop?category=sheets" className="aesop-text-muted aesop-hover-text-primary">Sheets</Link></li>
-                <li><Link href="/shop?category=pillows" className="aesop-text-muted aesop-hover-text-primary">Pillows</Link></li>
-                <li><Link href="/shop?category=blankets" className="aesop-text-muted aesop-hover-text-primary">Blankets</Link></li>
-              </ul>
-            </div>
-          </div>
-          
-          <div className="aesop-header-center">
-            {/* Support Column */}
-            <div>
-              <h4 className="aesop-heading-4 aesop-mb-4">Support</h4>
-              <ul className="aesop-space-y-2">
-                <li><Link href="/contact" className="aesop-text-muted aesop-hover-text-primary">Contact</Link></li>
-                <li><Link href="/about" className="aesop-text-muted aesop-hover-text-primary">About</Link></li>
-                <li><Link href="/shipping" className="aesop-text-muted aesop-hover-text-primary">Shipping</Link></li>
-                <li><Link href="/returns" className="aesop-text-muted aesop-hover-text-primary">Returns</Link></li>
-              </ul>
-            </div>
-          </div>
-          
-          <div className="aesop-header-right">
-            {/* Connect Column */}
-            <div>
-              <h4 className="aesop-heading-4 aesop-mb-4">Connect</h4>
-              <ul className="aesop-space-y-2">
-                <li><a href="#newsletter" className="aesop-text-muted aesop-hover-text-primary">Newsletter</a></li>
-                <li><a href="#" className="aesop-text-muted aesop-hover-text-primary">Instagram</a></li>
-                <li><a href="#" className="aesop-text-muted aesop-hover-text-primary">Pinterest</a></li>
-                <li><a href="#" className="aesop-text-muted aesop-hover-text-primary">Facebook</a></li>
-              </ul>
-            </div>
+        {/* SEO-optimized Footer Links */}
+        <FooterSiteLinks className="aesop-mb-8" />
+        
+        {/* Newsletter and Social */}
+        <div className="aesop-text-center aesop-mb-8">
+          <h4 className="aesop-heading-4 aesop-mb-4">Stay Connected</h4>
+          <p className="aesop-text-muted aesop-mb-4">
+            Subscribe to our newsletter for the latest updates on premium bed textures and exclusive offers.
+          </p>
+          <div className="aesop-flex aesop-justify-center aesop-space-x-4">
+            <a href="#" className="aesop-text-muted aesop-hover-text-primary" aria-label="Follow us on Instagram">Instagram</a>
+            <a href="#" className="aesop-text-muted aesop-hover-text-primary" aria-label="Follow us on Pinterest">Pinterest</a>
+            <a href="#" className="aesop-text-muted aesop-hover-text-primary" aria-label="Follow us on Facebook">Facebook</a>
           </div>
         </div>
       </div>

@@ -3,23 +3,20 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
+import Head from 'next/head';
 import Header from '../../../components/Header';
 import Footer from '../../../components/Footer';
+import Breadcrumb from '../../../components/Breadcrumb';
 import { apiRequest } from '../../../lib/api';
+import { generateMetaTags, generateStructuredData, generateBreadcrumbs } from '../../../lib/seo';
 
-function Breadcrumb({ productName }) {
+function ProductHeader({ productName, breadcrumbs }) {
   return (
     <div className="bg-amber-50 py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center">
           <h1 className="text-4xl font-bold text-gray-900 mb-4">{productName}</h1>
-          <nav className="flex justify-center items-center space-x-2 text-sm">
-            <Link href="/" className="text-gray-600 hover:text-amber-600">Home</Link>
-            <span className="text-gray-400">&gt;</span>
-            <Link href="/shop" className="text-gray-600 hover:text-amber-600">Shop</Link>
-            <span className="text-gray-400">&gt;</span>
-            <span className="text-gray-900 font-medium">{productName}</span>
-          </nav>
+          <Breadcrumb items={breadcrumbs} className="flex justify-center" />
         </div>
       </div>
     </div>
@@ -160,11 +157,59 @@ export default function ProductDetails() {
     </div>
   );
 
+  // Generate SEO data for product page
+  const breadcrumbs = generateBreadcrumbs('product', {
+    name: product.name,
+    id: product.id,
+    category: product.category
+  });
+
+  const productMetaTags = generateMetaTags({
+    title: `${product.name} - Premium Bed Textures`,
+    description: product.description || `Shop ${product.name} - Premium quality bed textures and luxury linens at Noiraé. ${product.long_description ? product.long_description.substring(0, 100) + '...' : ''}`,
+    keywords: `${product.name}, bed textures, luxury linens, ${product.category || 'bedding'}, premium bedding`,
+    image: product.images?.[0]?.original_url,
+    url: `/products/${product.id}`,
+    type: 'product'
+  });
+
+  const productStructuredData = generateStructuredData('product', product);
+
   return (
-    <div className="aesop-page">
-      <Header />
-      <Breadcrumb productName={product.name} />
-      <div className="product-detail-container">
+    <>
+      <Head>
+        <title>{productMetaTags.title}</title>
+        <meta name="description" content={productMetaTags.description} />
+        <meta name="keywords" content={productMetaTags.keywords} />
+        <link rel="canonical" href={productMetaTags.canonical} />
+        
+        {/* Open Graph */}
+        <meta property="og:title" content={productMetaTags.openGraph.title} />
+        <meta property="og:description" content={productMetaTags.openGraph.description} />
+        <meta property="og:url" content={productMetaTags.openGraph.url} />
+        <meta property="og:type" content={productMetaTags.openGraph.type} />
+        {productMetaTags.openGraph.images.map((image, index) => (
+          <meta key={index} property="og:image" content={image.url} />
+        ))}
+        
+        {/* Twitter Card */}
+        <meta name="twitter:card" content={productMetaTags.twitter.card} />
+        <meta name="twitter:title" content={productMetaTags.twitter.title} />
+        <meta name="twitter:description" content={productMetaTags.twitter.description} />
+        
+        {/* Product Structured Data */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(productStructuredData)
+          }}
+        />
+      </Head>
+      
+      <div className="aesop-page">
+        <Header />
+        <ProductHeader productName={product.name} breadcrumbs={breadcrumbs} />
+        <div className="product-detail-container">
         <div className="product-detail-grid">
           <div className="product-gallery">
             {/* Main image */}
@@ -411,5 +456,6 @@ export default function ProductDetails() {
       </div>
       <Footer />
     </div>
+    </>
   );
 }
