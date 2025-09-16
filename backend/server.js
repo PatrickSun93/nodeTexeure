@@ -4,6 +4,7 @@ const path = require('path');
 const cookieParser = require('cookie-parser');
 const LoggingMiddleware = require('./middleware/loggingMiddleware');
 const ResponseFormatter = require('./utils/responseFormatter');
+const { basicSecurity, enhancedSecurity, adminSecurity } = require('./middleware/securityMiddleware');
 
 const app = express();
 const PORT = process.env.PORT || 6666;
@@ -15,8 +16,12 @@ app.use(cors({
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'X-CSRF-Token']
 }));
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+
+// Apply basic security middleware to all routes
+app.use(basicSecurity);
+
+app.use(express.json({ limit: '10mb' })); // Set JSON payload limit
+app.use(express.urlencoded({ extended: true, limit: '10mb' })); // Set URL-encoded payload limit
 app.use(cookieParser());
 
 // Comprehensive logging middleware
@@ -66,21 +71,21 @@ app.use('/api/cart', require('./routes/cartRoutes'));
 // Order routes
 app.use('/api/orders', require('./routes/orderRoutes'));
 
-// Admin routes (protected)
+// Admin routes (protected with enhanced security)
 const adminRoutes = require('./routes/adminRoutes');
-app.use('/api/admin', protect, admin, adminRoutes);
+app.use('/api/admin', adminSecurity, protect, admin, adminRoutes);
 
-// Image routes (protected)
+// Image routes (protected with enhanced security)
 const imageRoutes = require('./routes/imageRoutes');
-app.use('/api/images', protect, admin, imageRoutes);
+app.use('/api/images', enhancedSecurity, protect, admin, imageRoutes);
 
 // Inventory routes
 const inventoryRoutes = require('./routes/inventoryRoutes');
 app.use('/api/inventory', inventoryRoutes);
 
-// Payment routes
+// Payment routes (with enhanced security)
 const paymentRoutes = require('./routes/paymentRoutes');
-app.use('/api/payments', paymentRoutes);
+app.use('/api/payments', enhancedSecurity, paymentRoutes);
 
 // Email routes
 const emailRoutes = require('./routes/emailRoutes');

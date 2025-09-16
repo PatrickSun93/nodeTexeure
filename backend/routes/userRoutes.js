@@ -7,6 +7,8 @@ const DatabaseUtil = require('../utils/database');
 const ResponseFormatter = require('../utils/responseFormatter');
 const { protect, admin } = require('../middleware/authMiddleware');
 const { generateCSRFToken } = require('../middleware/csrfMiddleware');
+const { validateInput } = require('../middleware/validationMiddleware');
+const { authRateLimit } = require('../middleware/rateLimitMiddleware');
 const EmailQueueService = require('../services/emailQueueService');
 const crypto = require('crypto');
 
@@ -26,7 +28,7 @@ const router = express.Router();
  * @param {string} lastName - User's last name
  * @param {string} address - User's address
  */
-router.post('/register', async (req, res) => {
+router.post('/register', validateInput('userRegistration'), async (req, res) => {
   try {
     const { email, password, firstName, lastName } = req.body;
 
@@ -183,7 +185,7 @@ const transporter = nodemailer.createTransport({
  * @param {string} email - User's email
  * @param {string} password - User's password
  */
-router.post('/login', loginLimiter, async (req, res) => {
+router.post('/login', authRateLimit, validateInput('userLogin'), async (req, res) => {
   try {
     const { email, password } = req.body;
 

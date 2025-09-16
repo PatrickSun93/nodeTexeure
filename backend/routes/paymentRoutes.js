@@ -4,6 +4,7 @@ const stripeService = require('../services/stripeService');
 const logger = require('../utils/logger');
 const ResponseFormatter = require('../utils/responseFormatter');
 const { protect } = require('../middleware/authMiddleware');
+const { paymentRateLimit } = require('../middleware/rateLimitMiddleware');
 const EmailQueueService = require('../services/emailQueueService');
 const InventoryService = require('../services/inventoryService');
 const db = require('../utils/database');
@@ -15,7 +16,7 @@ const emailQueueService = new EmailQueueService();
  * POST /api/payments/create-intent
  * Create a payment intent for checkout
  */
-router.post('/create-intent', protect, async (req, res) => {
+router.post('/create-intent', paymentRateLimit, protect, async (req, res) => {
   try {
     const { amount, currency = 'usd', orderId, metadata = {} } = req.body;
 
