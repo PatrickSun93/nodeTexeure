@@ -73,11 +73,7 @@ class DatabaseUtil {
       }
       
       // Execute the query
-      console.log('sql', sql);
-      console.log('bindParams', bindParams);
       const [rows, fields] = await connection.execute(sql, bindParams);
-      console.log('rows', rows);
-      console.log('fields', fields);
       // Commit transaction if required
       if (!commit) {
         await connection.commit();
