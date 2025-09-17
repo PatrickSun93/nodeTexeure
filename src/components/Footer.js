@@ -10,7 +10,6 @@ export default function Footer() {
         {/* First Row - Logo and Description */}
         <div className="aesop-text-center aesop-mb-8">
           <div className="aesop-flex aesop-items-center aesop-justify-center aesop-space-x-2 aesop-mb-4">
-            <div className="aesop-w-8 aesop-h-8 aesop-bg-primary aesop-rounded"></div>
             <span className="aesop-heading-2">Noiraé</span>
           </div>
           <p className="aesop-text-muted">
