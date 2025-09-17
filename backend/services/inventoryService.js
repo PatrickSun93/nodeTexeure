@@ -1,4 +1,6 @@
 const DatabaseUtil = require('../utils/database');
+const ErrorUtils = require('../utils/errorUtils');
+const logger = require('../utils/logger');
 
 class InventoryService {
   /**
@@ -125,94 +127,228 @@ class InventoryService {
   }
 
   /**
-   * Reserve stock for checkout
+   * Reserve stock for checkout with enhanced error handling
    * @param {Array} items - Items to reserve [{product_id, variant_id, quantity}]
    * @param {string} cartId - Cart ID
    * @param {string} userId - User ID (optional)
    * @returns {Promise<Object>} Reservation result
    */
   static async reserveStock(items, cartId, userId = null) {
-    try {
-      const reservations = [];
-      
-      for (const item of items) {
-        const { product_id, variant_id, quantity } = item;
-        
-        // Check available stock
-        const stockQuery = `
-          SELECT quantity_available, quantity_reserved 
-          FROM inventory 
-          WHERE product_id = ? AND variant_id ${variant_id ? '= ?' : 'IS NULL'}
-        `;
-        const stockParams = variant_id ? [product_id, variant_id] : [product_id];
-        
-        const stockResult = await DatabaseUtil.executeQuery(stockQuery, stockParams);
-        if (!stockResult.success || stockResult.data.length === 0) {
-          throw new Error(`Inventory not found for product ${product_id}`);
+    return await ErrorUtils.retryWithBackoff(
+      async () => {
+        try {
+          // Validate input parameters
+          if (!Array.isArray(items) || items.length === 0) {
+            const error = new Error('Items array is required and cannot be empty');
+            error.type = 'validation_error';
+            throw error;
+          }
+
+          if (!cartId) {
+            const error = new Error('Cart ID is required');
+            error.type = 'validation_error';
+            throw error;
+          }
+
+          const reservations = [];
+          const conflicts = [];
+          
+          // Process reservations with conflict detection
+          for (const item of items) {
+            try {
+              const reservation = await this._reserveSingleItem(item, cartId, userId);
+              reservations.push(reservation);
+            } catch (error) {
+              if (error.message.includes('Insufficient stock')) {
+                conflicts.push({
+                  product_id: item.product_id,
+                  variant_id: item.variant_id,
+                  requested: item.quantity,
+                  available: error.available || 0,
+                  error: error.message
+                });
+              } else {
+                throw error; // Re-throw non-stock errors
+              }
+            }
+          }
+
+          // If there are conflicts, rollback successful reservations
+          if (conflicts.length > 0) {
+            await this._rollbackReservations(reservations);
+            
+            const error = new Error('Stock conflicts detected');
+            error.type = 'inventory_conflict';
+            error.conflicts = conflicts;
+            error.userMessage = 'Some items in your cart are no longer available in the requested quantities.';
+            throw error;
+          }
+          
+          logger.info('Stock reservations created successfully', {
+            cart_id: cartId,
+            user_id: userId,
+            reservation_count: reservations.length
+          });
+
+          return {
+            success: true,
+            data: reservations
+          };
+        } catch (error) {
+          ErrorUtils.logError(error, {
+            operation: 'reserve_stock',
+            cart_id: cartId,
+            user_id: userId,
+            items_count: items.length
+          });
+
+          // Enhance error with inventory-specific context
+          if (!error.type) {
+            error.type = 'inventory_error';
+          }
+
+          return {
+            success: false,
+            error: error.message,
+            type: error.type,
+            conflicts: error.conflicts,
+            userMessage: error.userMessage || ErrorUtils.createUserFriendlyMessage(error)
+          };
         }
-        
-        const inventory = stockResult.data[0];
-        if (inventory.quantity_available < quantity) {
-          throw new Error(`Insufficient stock for product ${product_id}. Available: ${inventory.quantity_available}, Requested: ${quantity}`);
-        }
-        
-        // Create reservation
-        const reservationIdResult = await DatabaseUtil.executeQuery('SELECT get_next_id("STOCK") as id');
-        const reservationId = reservationIdResult.data[0].id;
-        
-        const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour from now
-        
-        const reservationQuery = `
-          INSERT INTO stock_reservations 
-          (id, product_id, variant_id, cart_id, user_id, quantity, expires_at)
-          VALUES (?, ?, ?, ?, ?, ?, ?)
-        `;
-        
-        const reservationResult = await DatabaseUtil.executeQuery(reservationQuery, [
-          reservationId,
-          product_id,
-          variant_id,
-          cartId,
-          userId,
-          quantity,
-          expiresAt
-        ]);
-        
-        if (!reservationResult.success) {
-          throw new Error(`Failed to create reservation for product ${product_id}`);
-        }
-        
-        // Update inventory reserved quantity
+      },
+      2, // maxRetries
+      500, // baseDelay
+      2000 // maxDelay
+    );
+  }
+
+  /**
+   * Reserve a single item with enhanced error handling
+   */
+  static async _reserveSingleItem(item, cartId, userId) {
+    const { product_id, variant_id, quantity } = item;
+    
+    // Validate item data
+    if (!product_id || !quantity || quantity <= 0) {
+      const error = new Error(`Invalid item data: product_id=${product_id}, quantity=${quantity}`);
+      error.type = 'validation_error';
+      throw error;
+    }
+
+    // Check available stock with row locking to prevent race conditions
+    const stockQuery = `
+      SELECT quantity_available, quantity_reserved 
+      FROM inventory 
+      WHERE product_id = ? AND variant_id ${variant_id ? '= ?' : 'IS NULL'}
+      FOR UPDATE
+    `;
+    const stockParams = variant_id ? [product_id, variant_id] : [product_id];
+    
+    const stockResult = await DatabaseUtil.executeQuery(stockQuery, stockParams);
+    if (!stockResult.success || stockResult.data.length === 0) {
+      const error = new Error(`Inventory not found for product ${product_id}`);
+      error.type = 'inventory_not_found';
+      throw error;
+    }
+    
+    const inventory = stockResult.data[0];
+    if (inventory.quantity_available < quantity) {
+      const error = new Error(`Insufficient stock for product ${product_id}. Available: ${inventory.quantity_available}, Requested: ${quantity}`);
+      error.type = 'insufficient_stock';
+      error.available = inventory.quantity_available;
+      error.requested = quantity;
+      error.product_id = product_id;
+      error.variant_id = variant_id;
+      throw error;
+    }
+    
+    // Create reservation
+    const reservationIdResult = await DatabaseUtil.executeQuery('SELECT get_next_id("STOCK") as id');
+    if (!reservationIdResult.success) {
+      throw new Error('Failed to generate reservation ID');
+    }
+    
+    const reservationId = reservationIdResult.data[0].id;
+    const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour from now
+    
+    const reservationQuery = `
+      INSERT INTO stock_reservations 
+      (id, product_id, variant_id, cart_id, user_id, quantity, expires_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `;
+    
+    const reservationResult = await DatabaseUtil.executeQuery(reservationQuery, [
+      reservationId,
+      product_id,
+      variant_id,
+      cartId,
+      userId,
+      quantity,
+      expiresAt
+    ]);
+    
+    if (!reservationResult.success) {
+      throw new Error(`Failed to create reservation for product ${product_id}: ${reservationResult.error}`);
+    }
+    
+    // Update inventory reserved quantity
+    const updateQuery = `
+      UPDATE inventory 
+      SET quantity_reserved = quantity_reserved + ?
+      WHERE product_id = ? AND variant_id ${variant_id ? '= ?' : 'IS NULL'}
+    `;
+    const updateParams = variant_id ? [quantity, product_id, variant_id] : [quantity, product_id];
+    
+    const updateResult = await DatabaseUtil.executeQuery(updateQuery, updateParams);
+    if (!updateResult.success) {
+      // Rollback the reservation if inventory update fails
+      await DatabaseUtil.executeQuery('DELETE FROM stock_reservations WHERE id = ?', [reservationId]);
+      throw new Error(`Failed to update reserved quantity for product ${product_id}: ${updateResult.error}`);
+    }
+    
+    return {
+      reservation_id: reservationId,
+      product_id,
+      variant_id,
+      quantity,
+      expires_at: expiresAt
+    };
+  }
+
+  /**
+   * Rollback reservations in case of conflicts
+   */
+  static async _rollbackReservations(reservations) {
+    for (const reservation of reservations) {
+      try {
+        // Remove reservation record
+        await DatabaseUtil.executeQuery(
+          'DELETE FROM stock_reservations WHERE id = ?',
+          [reservation.reservation_id]
+        );
+
+        // Update inventory to release reserved quantity
         const updateQuery = `
           UPDATE inventory 
-          SET quantity_reserved = quantity_reserved + ?
-          WHERE product_id = ? AND variant_id ${variant_id ? '= ?' : 'IS NULL'}
+          SET quantity_reserved = quantity_reserved - ?
+          WHERE product_id = ? AND variant_id ${reservation.variant_id ? '= ?' : 'IS NULL'}
         `;
-        const updateParams = variant_id ? [quantity, product_id, variant_id] : [quantity, product_id];
+        const updateParams = reservation.variant_id 
+          ? [reservation.quantity, reservation.product_id, reservation.variant_id]
+          : [reservation.quantity, reservation.product_id];
+
+        await DatabaseUtil.executeQuery(updateQuery, updateParams);
         
-        const updateResult = await DatabaseUtil.executeQuery(updateQuery, updateParams);
-        if (!updateResult.success) {
-          throw new Error(`Failed to update reserved quantity for product ${product_id}`);
-        }
-        
-        reservations.push({
-          reservation_id: reservationId,
-          product_id,
-          variant_id,
-          quantity,
-          expires_at: expiresAt
+        logger.info('Reservation rolled back', {
+          reservation_id: reservation.reservation_id,
+          product_id: reservation.product_id
+        });
+      } catch (rollbackError) {
+        logger.error('Failed to rollback reservation', {
+          reservation_id: reservation.reservation_id,
+          error: rollbackError.message
         });
       }
-      
-      return {
-        success: true,
-        data: reservations
-      };
-    } catch (error) {
-      return {
-        success: false,
-        error: error.message
-      };
     }
   }
 

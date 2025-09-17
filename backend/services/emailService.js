@@ -1,11 +1,7 @@
 const { SESClient, SendEmailCommand, SendTemplatedEmailCommand } = require('@aws-sdk/client-ses');
 const AbandonedCartEmailTemplates = require('./abandonedCartEmailTemplates');
-// Simple logger wrapper for email service
-const logger = {
-  info: (message, data) => console.log(`[INFO] ${message}`, data || ''),
-  error: (message, data) => console.error(`[ERROR] ${message}`, data || ''),
-  warn: (message, data) => console.warn(`[WARN] ${message}`, data || '')
-};
+const ErrorUtils = require('../utils/errorUtils');
+const logger = require('../utils/logger');
 
 class EmailService {
   constructor() {
@@ -26,7 +22,7 @@ class EmailService {
   }
 
   /**
-   * Send a simple email with HTML content
+   * Send a simple email with HTML content with enhanced error handling
    * @param {string} to - Recipient email address
    * @param {string} subject - Email subject
    * @param {string} htmlContent - HTML content of the email
@@ -34,58 +30,181 @@ class EmailService {
    * @returns {Promise<Object>} - SES response
    */
   async sendEmail(to, subject, htmlContent, textContent = null) {
-    try {
-      const params = {
-        Source: `${this.fromName} <${this.fromEmail}>`,
-        Destination: {
-          ToAddresses: [to],
-        },
-        Message: {
-          Subject: {
-            Data: subject,
-            Charset: 'UTF-8',
-          },
-          Body: {
-            Html: {
-              Data: htmlContent,
-              Charset: 'UTF-8',
+    return await ErrorUtils.retryWithBackoff(
+      async () => {
+        try {
+          // Validate input parameters
+          if (!to || !this._isValidEmail(to)) {
+            const error = new Error(`Invalid email address: ${to}`);
+            error.type = 'validation_error';
+            throw error;
+          }
+
+          if (!subject || subject.trim().length === 0) {
+            const error = new Error('Email subject is required');
+            error.type = 'validation_error';
+            throw error;
+          }
+
+          if (!htmlContent || htmlContent.trim().length === 0) {
+            const error = new Error('Email content is required');
+            error.type = 'validation_error';
+            throw error;
+          }
+
+          const params = {
+            Source: `${this.fromName} <${this.fromEmail}>`,
+            Destination: {
+              ToAddresses: [to],
             },
-          },
-        },
-        ReplyToAddresses: [this.replyToEmail],
-      };
+            Message: {
+              Subject: {
+                Data: subject,
+                Charset: 'UTF-8',
+              },
+              Body: {
+                Html: {
+                  Data: htmlContent,
+                  Charset: 'UTF-8',
+                },
+              },
+            },
+            ReplyToAddresses: [this.replyToEmail],
+          };
 
-      // Add text content if provided
-      if (textContent) {
-        params.Message.Body.Text = {
-          Data: textContent,
-          Charset: 'UTF-8',
-        };
-      }
+          // Add text content if provided
+          if (textContent) {
+            params.Message.Body.Text = {
+              Data: textContent,
+              Charset: 'UTF-8',
+            };
+          }
 
-      const command = new SendEmailCommand(params);
-      const result = await this.sesClient.send(command);
-      
-      logger.info(`Email sent successfully to ${to}`, {
-        messageId: result.MessageId,
-        subject: subject,
-      });
+          const command = new SendEmailCommand(params);
+          const result = await this.sesClient.send(command);
+          
+          logger.info(`Email sent successfully to ${to}`, {
+            messageId: result.MessageId,
+            subject: subject,
+          });
 
-      return {
-        success: true,
-        messageId: result.MessageId,
-        to: to,
-        subject: subject,
-      };
-    } catch (error) {
-      logger.error('Failed to send email', {
-        error: error.message,
-        to: to,
-        subject: subject,
-      });
-      
-      throw new Error(`Email sending failed: ${error.message}`);
+          return {
+            success: true,
+            messageId: result.MessageId,
+            to: to,
+            subject: subject,
+          };
+        } catch (error) {
+          // Enhance error with email-specific context
+          const enhancedError = this._enhanceEmailError(error, {
+            operation: 'send_email',
+            to,
+            subject
+          });
+
+          ErrorUtils.logError(enhancedError, {
+            operation: 'send_email',
+            recipient: to,
+            subject
+          });
+
+          throw enhancedError;
+        }
+      },
+      3, // maxRetries
+      2000, // baseDelay
+      10000 // maxDelay
+    );
+  }
+
+  /**
+   * Validate email address format
+   */
+  _isValidEmail(email) {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  }
+
+  /**
+   * Enhance email errors with additional context
+   */
+  _enhanceEmailError(error, context = {}) {
+    const enhancedError = new Error(error.message);
+    enhancedError.originalError = error;
+    enhancedError.context = context;
+    enhancedError.timestamp = new Date().toISOString();
+
+    // Set error type based on AWS SES error
+    if (error.name) {
+      enhancedError.type = `email_${error.name.toLowerCase()}`;
+    } else {
+      enhancedError.type = 'email_error';
     }
+
+    // Add AWS-specific properties
+    enhancedError.code = error.code || error.$metadata?.httpStatusCode;
+    enhancedError.requestId = error.$metadata?.requestId;
+
+    // Add user-friendly message
+    enhancedError.userMessage = this._getEmailErrorUserMessage(error);
+
+    // Add recovery suggestions
+    enhancedError.recoverySuggestions = this._getEmailErrorRecovery(error);
+
+    return enhancedError;
+  }
+
+  /**
+   * Get user-friendly message for email errors
+   */
+  _getEmailErrorUserMessage(error) {
+    const errorMessages = {
+      'MessageRejected': 'Email address is invalid or blocked.',
+      'MailFromDomainNotVerified': 'Email service configuration error.',
+      'ConfigurationSetDoesNotExist': 'Email service configuration error.',
+      'AccountSendingPausedException': 'Email service is temporarily unavailable.',
+      'SendingPausedException': 'Email sending is temporarily paused.',
+      'Throttling': 'Email service is busy. Please try again later.',
+      'ServiceUnavailable': 'Email service is temporarily unavailable.',
+      'InternalFailure': 'Email service error. Please try again.'
+    };
+
+    const errorType = error.name || error.code || 'unknown';
+    return errorMessages[errorType] || 'Failed to send email. Please try again.';
+  }
+
+  /**
+   * Get recovery suggestions for email errors
+   */
+  _getEmailErrorRecovery(error) {
+    const errorType = error.name || error.code;
+    
+    const recoveryMap = {
+      'MessageRejected': [
+        'Check the email address for typos',
+        'Verify the recipient email is valid',
+        'Contact support if the email should be valid'
+      ],
+      'Throttling': [
+        'Wait a moment before trying again',
+        'Reduce email sending frequency'
+      ],
+      'ServiceUnavailable': [
+        'Try again in a few minutes',
+        'Check AWS service status',
+        'Contact support if urgent'
+      ],
+      'InternalFailure': [
+        'Try again immediately',
+        'Contact support if problem persists'
+      ]
+    };
+
+    return recoveryMap[errorType] || [
+      'Try again in a moment',
+      'Check your internet connection',
+      'Contact support if the problem persists'
+    ];
   }
 
   /**

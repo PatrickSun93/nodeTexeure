@@ -153,7 +153,7 @@
   - Add order search and filtering for admin dashboard
   - _Requirements: 7.1, 7.2, 7.3, 7.4, 7.5_
 
-- [ ] 23. Implement multi-language support foundation
+- [-] 23. Implement multi-language support foundation
   - Set up internationalization (i18n) framework
   - Create language switching functionality
   - Add English and Simplified Chinese translations
@@ -188,7 +188,7 @@
   - Implement proper SSL/TLS configuration
   - _Requirements: 10.3, 10.5_
 
-- [-] 28. Create comprehensive error handling
+- [x] 28. Create comprehensive error handling
   - Implement payment error handling and retry logic
   - Add inventory error handling for stock conflicts
   - Create email delivery error handling and queuing

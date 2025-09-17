@@ -1,10 +1,6 @@
 const EmailService = require('./emailService');
-// Simple logger wrapper for email service
-const logger = {
-  info: (message, data) => console.log(`[INFO] ${message}`, data || ''),
-  error: (message, data) => console.error(`[ERROR] ${message}`, data || ''),
-  warn: (message, data) => console.warn(`[WARN] ${message}`, data || '')
-};
+const ErrorUtils = require('../utils/errorUtils');
+const logger = require('../utils/logger');
 const db = require('../utils/database');
 
 class EmailQueueService {
@@ -184,72 +180,121 @@ class EmailQueueService {
   }
 
   /**
-   * Process individual email item
+   * Process individual email item with enhanced error handling
    */
   async processEmailItem(emailItem) {
+    const startTime = Date.now();
+    
     try {
+      // Validate email item
+      if (!emailItem.recipient || !emailItem.type || !emailItem.data) {
+        throw new Error('Invalid email item: missing required fields');
+      }
+
       const data = JSON.parse(emailItem.data);
       let result;
 
-      // Send email based on type
-      switch (emailItem.type) {
-        case 'order_confirmation':
-          result = await this.emailService.sendOrderConfirmation(emailItem.recipient, data);
-          break;
-        case 'order_status_update':
-          result = await this.emailService.sendOrderStatusUpdate(emailItem.recipient, data);
-          break;
-        case 'shipping_notification':
-          result = await this.emailService.sendShippingNotification(emailItem.recipient, data);
-          break;
-        case 'abandoned_cart':
-          result = await this.emailService.sendAbandonedCartEmail(emailItem.recipient, data, data.sequenceStep);
-          break;
-        case 'welcome_email':
-          result = await this.emailService.sendWelcomeEmail(emailItem.recipient, data);
-          break;
-        case 'low_stock_alert':
-          result = await this.emailService.sendLowStockAlert([emailItem.recipient], data.products);
-          result = result[0]; // Get first result since we're sending to one email
-          break;
-        default:
-          throw new Error(`Unknown email type: ${emailItem.type}`);
-      }
+      // Use circuit breaker pattern for email sending
+      const emailSender = ErrorUtils.createCircuitBreaker(
+        async () => await this._sendEmailByType(emailItem.type, emailItem.recipient, data),
+        { failureThreshold: 5, resetTimeout: 60000 }
+      );
+
+      result = await emailSender();
 
       // Mark as completed
       await this.markEmailCompleted(emailItem.id, result.messageId);
 
+      const processingTime = Date.now() - startTime;
       logger.info(`Email sent successfully`, {
         queueId: emailItem.id,
         type: emailItem.type,
         recipient: emailItem.recipient,
-        messageId: result.messageId
+        messageId: result.messageId,
+        processingTime: `${processingTime}ms`,
+        retryCount: emailItem.retry_count
       });
 
     } catch (error) {
+      const processingTime = Date.now() - startTime;
+      
+      // Enhanced error logging
+      ErrorUtils.logError(error, {
+        operation: 'process_email_item',
+        queue_id: emailItem.id,
+        email_type: emailItem.type,
+        recipient: emailItem.recipient,
+        retry_count: emailItem.retry_count,
+        processing_time: processingTime
+      });
+
       await this.handleEmailFailure(emailItem, error);
     }
   }
 
   /**
-   * Handle email sending failure with retry logic
+   * Send email by type with proper error handling
+   */
+  async _sendEmailByType(type, recipient, data) {
+    switch (type) {
+      case 'order_confirmation':
+        return await this.emailService.sendOrderConfirmation(recipient, data);
+      
+      case 'order_status_update':
+        return await this.emailService.sendOrderStatusUpdate(recipient, data);
+      
+      case 'shipping_notification':
+        return await this.emailService.sendShippingNotification(recipient, data);
+      
+      case 'abandoned_cart':
+        return await this.emailService.sendAbandonedCartEmail(recipient, data, data.sequenceStep);
+      
+      case 'welcome_email':
+        return await this.emailService.sendWelcomeEmail(recipient, data);
+      
+      case 'low_stock_alert':
+        const results = await this.emailService.sendLowStockAlert([recipient], data.products);
+        return results[0]; // Get first result since we're sending to one email
+      
+      default:
+        const error = new Error(`Unknown email type: ${type}`);
+        error.type = 'validation_error';
+        throw error;
+    }
+  }
+
+  /**
+   * Handle email sending failure with enhanced retry logic
    */
   async handleEmailFailure(emailItem, error) {
     const newRetryCount = emailItem.retry_count + 1;
+    const isRetryable = this._isEmailErrorRetryable(error);
 
-    if (newRetryCount >= this.maxRetries) {
-      // Max retries reached, mark as failed
-      await this.markEmailFailed(emailItem.id, error.message);
+    // Don't retry non-retryable errors (like invalid email addresses)
+    if (!isRetryable || newRetryCount >= this.maxRetries) {
+      // Max retries reached or non-retryable error, mark as failed
+      await this.markEmailFailed(emailItem.id, error.message, error.type);
       
-      logger.error(`Email failed permanently after ${this.maxRetries} attempts`, {
+      logger.error(`Email failed permanently`, {
         queueId: emailItem.id,
         type: emailItem.type,
         recipient: emailItem.recipient,
-        error: error.message
+        error: error.message,
+        errorType: error.type,
+        retryCount: newRetryCount,
+        retryable: isRetryable,
+        reason: !isRetryable ? 'non-retryable error' : 'max retries exceeded'
       });
+
+      // Send alert for critical email failures
+      if (this._isCriticalEmailType(emailItem.type)) {
+        await this._alertAdminsOfEmailFailure(emailItem, error);
+      }
     } else {
-      // Schedule retry with exponential backoff
-      const retryDelay = this.retryDelays[newRetryCount - 1] || this.retryDelays[this.retryDelays.length - 1];
+      // Calculate retry delay with exponential backoff and jitter
+      const baseDelay = this.retryDelays[newRetryCount - 1] || this.retryDelays[this.retryDelays.length - 1];
+      const jitter = Math.random() * 1000; // Add up to 1 second of jitter
+      const retryDelay = baseDelay + jitter;
       const nextRetryAt = new Date(Date.now() + retryDelay);
 
       await this.scheduleRetry(emailItem.id, newRetryCount, nextRetryAt, error.message);
@@ -259,7 +304,103 @@ class EmailQueueService {
         type: emailItem.type,
         recipient: emailItem.recipient,
         nextRetryAt,
-        error: error.message
+        retryDelay: `${Math.round(retryDelay)}ms`,
+        error: error.message,
+        errorType: error.type
+      });
+    }
+  }
+
+  /**
+   * Determine if an email error is retryable
+   */
+  _isEmailErrorRetryable(error) {
+    // Non-retryable errors
+    const nonRetryableErrors = [
+      'MessageRejected',
+      'MailFromDomainNotVerified',
+      'ConfigurationSetDoesNotExist',
+      'validation_error'
+    ];
+
+    const errorType = error.type || error.name || error.code;
+    
+    // Check if it's a non-retryable error
+    if (nonRetryableErrors.some(nonRetryable => 
+        errorType && errorType.toLowerCase().includes(nonRetryable.toLowerCase()))) {
+      return false;
+    }
+
+    // Check for invalid email patterns in the message
+    if (error.message && (
+        error.message.includes('invalid email') ||
+        error.message.includes('malformed') ||
+        error.message.includes('bounce') ||
+        error.message.includes('suppressed')
+    )) {
+      return false;
+    }
+
+    // Default to retryable for network/service errors
+    return true;
+  }
+
+  /**
+   * Check if email type is critical and requires admin notification on failure
+   */
+  _isCriticalEmailType(emailType) {
+    const criticalTypes = ['order_confirmation', 'shipping_notification', 'low_stock_alert'];
+    return criticalTypes.includes(emailType);
+  }
+
+  /**
+   * Alert administrators of critical email failures
+   */
+  async _alertAdminsOfEmailFailure(emailItem, error) {
+    try {
+      // Get admin emails from database
+      const adminQuery = `
+        SELECT email FROM users 
+        WHERE role = 'admin' AND status = 'active'
+      `;
+      
+      const adminResult = await db.executeQuery(adminQuery);
+      
+      if (adminResult.success && adminResult.data.length > 0) {
+        const adminEmails = adminResult.data.map(admin => admin.email);
+        
+        // Queue alert emails for admins (with lower priority to avoid infinite loops)
+        for (const adminEmail of adminEmails) {
+          await this.queueEmail(
+            'email_failure_alert',
+            adminEmail,
+            {
+              failedEmail: {
+                id: emailItem.id,
+                type: emailItem.type,
+                recipient: emailItem.recipient,
+                retryCount: emailItem.retry_count
+              },
+              error: {
+                message: error.message,
+                type: error.type,
+                timestamp: new Date().toISOString()
+              }
+            },
+            5, // Low priority
+            null
+          );
+        }
+        
+        logger.info(`Queued email failure alerts for ${adminEmails.length} admins`, {
+          failedEmailId: emailItem.id,
+          failedEmailType: emailItem.type
+        });
+      }
+    } catch (alertError) {
+      logger.error('Failed to alert admins of email failure', {
+        originalEmailId: emailItem.id,
+        alertError: alertError.message
       });
     }
   }

@@ -3,6 +3,7 @@ import ServiceWorkerRegistration from '../components/ServiceWorkerRegistration';
 import PerformanceMonitor from '../components/PerformanceMonitor';
 import MobileOptimizations from '../components/MobileOptimizations';
 import MobilePerformanceOptimizer from '../components/MobilePerformanceOptimizer';
+import ErrorBoundary from '../components/ErrorBoundary';
 import { Inter, Playfair_Display } from "next/font/google";
 import "./globals.css";
 import "../styles/aesop-design-system.css";
@@ -73,14 +74,16 @@ export default function RootLayout({ children }) {
       <body
         className={`${inter.variable} ${playfairDisplay.variable} antialiased`}
       >
-        <Providers>
-          <MobilePerformanceOptimizer>
-            <MobileOptimizations />
-            {children}
-            <ServiceWorkerRegistration />
-            <PerformanceMonitor />
-          </MobilePerformanceOptimizer>
-        </Providers>
+        <ErrorBoundary>
+          <Providers>
+            <MobilePerformanceOptimizer>
+              <MobileOptimizations />
+              {children}
+              <ServiceWorkerRegistration />
+              <PerformanceMonitor />
+            </MobilePerformanceOptimizer>
+          </Providers>
+        </ErrorBoundary>
       </body>
     </html>
   );
