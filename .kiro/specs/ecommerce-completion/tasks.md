@@ -153,7 +153,7 @@
   - Add order search and filtering for admin dashboard
   - _Requirements: 7.1, 7.2, 7.3, 7.4, 7.5_
 
-- [-] 23. Implement multi-language support foundation
+- [x] 23. Implement multi-language support foundation
   - Set up internationalization (i18n) framework
   - Create language switching functionality
   - Add English and Simplified Chinese translations
