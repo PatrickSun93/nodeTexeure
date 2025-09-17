@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import Head from 'next/head';
+import { useTranslations } from 'next-intl';
 import { useBackendHealth } from '../../lib';
 import Header from '../../components/Header';
 import Footer from '../../components/Footer';
@@ -10,22 +11,23 @@ import { fetchSettings } from '../../lib/fetchSettings';
 import { generateMetaTags, generateStructuredData, defaultSEO } from '../../lib/seo';
 import { usePerformance } from '../../lib/usePerformance';
 import { useRef, useState, useEffect } from 'react';
-import { useTranslations } from 'next-intl';
 
 // Hero Section Component
-function HeroSection({ t }) {
+function HeroSection() {
+    const t = useTranslations('common');
+    
     return (
         <section className="noirae-hero">
             <div className="aesop-container">
                 <div className="aesop-hero-content">
                     <h1 className="noirae-hero-title">
-                        {t('heroTitle')}
+                        Premium Bed Textures
                     </h1>
                     <p className="noirae-hero-subtitle">
-                        {t('heroSubtitle')}
+                        Transform your bedroom with our luxurious collection of high-quality bed textures and linens
                     </p>
                     <Link href="/shop" className="noirae-cta-button">
-                        {t('shopNow')}
+                        {t('shop') || 'Shop Now'}
                     </Link>
                 </div>
             </div>
@@ -133,7 +135,7 @@ function ProductCard({ images = [], slug, title }) {
 }
 
 // Featured Products Component (now a gallery of image collections)
-function FeaturedProducts({ t }) {
+function FeaturedProducts() {
     // One full-width, hero-like collection that scrubs on hover
     const images = Array.from({ length: 10 }, (_, i) => {
         const w = 800 + i * 40;
@@ -141,7 +143,7 @@ function FeaturedProducts({ t }) {
         return `/api/placeholder/${w}/${h}`;
     });
     const slug = 'luxury-cotton-sheets';
-    const title = t('featuredProductTitle');
+    const title = 'Luxury Cotton Sheets';
 
     return (
         <section className="aesop-section aesop-fullstrip aesop-fullstrip-hero">
@@ -151,21 +153,21 @@ function FeaturedProducts({ t }) {
 }
 
 // Features Section Component
-function FeaturesSection({ t }) {
+function FeaturesSection() {
     const features = [
         {
-            title: t('feature1Title'),
-            description: t('feature1Desc'),
+            title: "Premium Quality",
+            description: "Crafted from the finest materials for ultimate comfort and durability",
             icon: "✨"
         },
         {
-            title: t('feature2Title'),
-            description: t('feature2Desc'),
+            title: "Sustainable",
+            description: "Ethically sourced and environmentally conscious production methods",
             icon: "🌱"
         },
         {
-            title: t('feature3Title'),
-            description: t('feature3Desc'),
+            title: "Expert Craftsmanship",
+            description: "Meticulously designed by textile artisans with decades of experience",
             icon: "👥"
         }
     ];
@@ -188,10 +190,10 @@ function FeaturesSection({ t }) {
 }
 
 export default function Home() {
-    const t = useTranslations('Home');
     const { isConnected, loading } = useBackendHealth();
     const [settings, setSettings] = useState(null);
     const performanceMetrics = usePerformance();
+    const t = useTranslations('common');
 
     useEffect(() => {
         let mounted = true;
@@ -219,9 +221,9 @@ export default function Home() {
     
     // Generate SEO data for home page
     const homeMetaTags = generateMetaTags({
-        title: t('metaTitle'),
-        description: t('metaDescription'),
-        keywords: t('metaKeywords'),
+        title: 'Premium Bed Textures & Luxury Linens',
+        description: 'Transform your bedroom with our luxurious collection of high-quality bed textures, premium linens, and home textiles. Shop Egyptian cotton sheets, silk pillowcases, and more.',
+        keywords: 'bed textures, luxury linens, Egyptian cotton sheets, silk pillowcases, premium bedding, home textiles, bedroom decor, luxury bedding',
         url: '/',
         type: 'website'
     });
@@ -259,21 +261,21 @@ export default function Home() {
             <div className="noirae-page">
                 <Header siteName={siteName} />
                 <main className="noirae-main">
-                    <HeroSection t={t} />
-                    <FeaturedProducts t={t} />
-                    <FeaturesSection t={t} />
+                    <HeroSection />
+                    <FeaturedProducts />
+                    <FeaturesSection />
                 </main>
                 <Footer />
                 
                 {/* Backend Health Status */}
                 {loading && (
                     <div className="aesop-status aesop-status-loading">
-                        {t('backendConnecting')}
+                        {t('loading')}
                     </div>
                 )}
                 {!loading && !isConnected && (
                     <div className="aesop-status aesop-status-error">
-                        {t('backendFailed')}
+                        Backend connection failed
                     </div>
                 )}
             </div>
