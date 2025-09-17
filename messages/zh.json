@@ -186,7 +186,15 @@
     "priceRange": "价格范围",
     "brand": "品牌",
     "rating": "评分",
-    "availability": "库存状态"
+    "availability": "库存状态",
+    "searching": "搜索中...",
+    "listening": "正在听...",
+    "clearAll": "清除全部",
+    "clear": "清除",
+    "viewAllResults": "查看所有结果",
+    "noResultsMessage": "尝试不同的关键词或浏览我们的分类",
+    "browseAllProducts": "浏览所有产品",
+    "resultsFound": "个结果"
   },
   "footer": {
     "company": "公司",

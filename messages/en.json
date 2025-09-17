@@ -186,7 +186,15 @@
     "priceRange": "Price Range",
     "brand": "Brand",
     "rating": "Rating",
-    "availability": "Availability"
+    "availability": "Availability",
+    "searching": "Searching...",
+    "listening": "Listening...",
+    "clearAll": "Clear All",
+    "clear": "Clear",
+    "viewAllResults": "View All Results",
+    "noResultsMessage": "Try different keywords or browse our categories",
+    "browseAllProducts": "Browse All Products",
+    "resultsFound": "results found"
   },
   "footer": {
     "company": "Company",

@@ -115,6 +115,10 @@ app.use('/api/coupons', couponRoutes);
 const currencyRoutes = require('./routes/currencyRoutes');
 app.use('/api/currency', currencyRoutes);
 
+// Search routes
+const searchRoutes = require('./routes/searchRoutes');
+app.use('/api/search', searchRoutes);
+
 // Backward compatibility - redirect old endpoints to new structure
 app.get('/api/health', (req, res) => {
   res.redirect(301, '/api/status/health');

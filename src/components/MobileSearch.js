@@ -2,21 +2,27 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
+import { useLocale } from 'next-intl';
+import { apiRequest } from '../lib/api';
 
 /**
  * Enhanced Mobile Search Component
  * Provides mobile-optimized search with suggestions and voice search
  */
-export default function MobileSearch({ isOpen, onClose, placeholder = "Search products..." }) {
+export default function MobileSearch({ isOpen, onClose, placeholder }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchSuggestions, setSearchSuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [recentSearches, setRecentSearches] = useState([]);
   const [isVoiceSearchSupported, setIsVoiceSearchSupported] = useState(false);
   const [isListening, setIsListening] = useState(false);
+  const [popularTerms, setPopularTerms] = useState([]);
   const searchInputRef = useRef(null);
   const recognitionRef = useRef(null);
   const router = useRouter();
+  const t = useTranslations('search');
+  const locale = useLocale();
 
   // Initialize voice search
   useEffect(() => {
@@ -26,7 +32,7 @@ export default function MobileSearch({ isOpen, onClose, placeholder = "Search pr
       recognitionRef.current = new SpeechRecognition();
       recognitionRef.current.continuous = false;
       recognitionRef.current.interimResults = false;
-      recognitionRef.current.lang = 'en-US';
+      recognitionRef.current.lang = locale === 'zh' ? 'zh-CN' : 'en-US';
 
       recognitionRef.current.onresult = (event) => {
         const transcript = event.results[0][0].transcript;
@@ -44,7 +50,7 @@ export default function MobileSearch({ isOpen, onClose, placeholder = "Search pr
     }
   }, []);
 
-  // Load recent searches from localStorage
+  // Load recent searches and popular terms
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('recentSearches');
@@ -52,7 +58,21 @@ export default function MobileSearch({ isOpen, onClose, placeholder = "Search pr
         setRecentSearches(JSON.parse(saved));
       }
     }
-  }, []);
+    
+    // Load popular terms for current locale
+    loadPopularTerms();
+  }, [locale]);
+
+  const loadPopularTerms = async () => {
+    try {
+      const response = await apiRequest(`/search/popular?locale=${locale}&limit=5`);
+      if (response.status === 'SUCCESS' && response.keyValueTable?.popularTerms) {
+        setPopularTerms(response.keyValueTable.popularTerms);
+      }
+    } catch (error) {
+      console.log('Failed to load popular terms:', error);
+    }
+  };
 
   // Focus input when opened
   useEffect(() => {
@@ -63,9 +83,40 @@ export default function MobileSearch({ isOpen, onClose, placeholder = "Search pr
     }
   }, [isOpen]);
 
-  const generateSearchSuggestions = (query) => {
-    // Enhanced suggestions with categories
-    const allSuggestions = [
+  const generateSearchSuggestions = async (query) => {
+    try {
+      // Get suggestions from enhanced API with locale support
+      const response = await apiRequest(`/search/suggestions?q=${encodeURIComponent(query)}&locale=${locale}`);
+      if (response.status === 'SUCCESS' && response.keyValueTable?.suggestions) {
+        const apiSuggestions = response.keyValueTable.suggestions.map(item => ({
+          text: typeof item === 'string' ? item : item.suggestion,
+          category: typeof item === 'object' ? item.type : 'Product'
+        }));
+        return apiSuggestions.slice(0, 6);
+      }
+    } catch (error) {
+      console.log('API suggestions not available, using fallback');
+    }
+
+    // Fallback to locale-specific suggestions
+    const allSuggestions = locale === 'zh' ? [
+      { text: '棉质床单', category: '床品' },
+      { text: '丝绸枕套', category: '枕头' },
+      { text: '记忆泡沫床垫', category: '床垫' },
+      { text: '竹纤维被子', category: '床品' },
+      { text: '亚麻床品', category: '床品' },
+      { text: '羽绒枕头', category: '枕头' },
+      { text: '重力毯', category: '毯子' },
+      { text: '床垫保护套', category: '配件' },
+      { text: '埃及棉', category: '材质' },
+      { text: '有机床品', category: '环保' },
+      { text: '奢华床单', category: '高端' },
+      { text: '支数', category: '特性' },
+      { text: '特大号', category: '尺寸' },
+      { text: '大号', category: '尺寸' },
+      { text: '单人', category: '尺寸' },
+      { text: '加州特大号', category: '尺寸' }
+    ] : [
       { text: 'Cotton Sheets', category: 'Bedding' },
       { text: 'Silk Pillowcase', category: 'Pillows' },
       { text: 'Memory Foam Mattress', category: 'Mattresses' },
@@ -91,12 +142,12 @@ export default function MobileSearch({ isOpen, onClose, placeholder = "Search pr
       .slice(0, 6);
   };
 
-  const handleSearchInputChange = (e) => {
+  const handleSearchInputChange = async (e) => {
     const value = e.target.value;
     setSearchQuery(value);
     
     if (value.trim().length > 1) {
-      const suggestions = generateSearchSuggestions(value.trim());
+      const suggestions = await generateSearchSuggestions(value.trim());
       setSearchSuggestions(suggestions);
       setShowSuggestions(suggestions.length > 0);
     } else {
@@ -165,7 +216,7 @@ export default function MobileSearch({ isOpen, onClose, placeholder = "Search pr
               type="text"
               value={searchQuery}
               onChange={handleSearchInputChange}
-              placeholder={placeholder}
+              placeholder={placeholder || t('placeholder')}
               className="mobile-search-input"
               onKeyPress={(e) => {
                 if (e.key === 'Enter') {
@@ -200,7 +251,7 @@ export default function MobileSearch({ isOpen, onClose, placeholder = "Search pr
           {isListening && (
             <div className="mobile-voice-indicator">
               <div className="voice-wave"></div>
-              <span>Listening...</span>
+              <span>{t('listening', { defaultMessage: 'Listening...' })}</span>
             </div>
           )}
         </div>
@@ -209,7 +260,7 @@ export default function MobileSearch({ isOpen, onClose, placeholder = "Search pr
           {/* Search Suggestions */}
           {showSuggestions && searchSuggestions.length > 0 && (
             <div className="mobile-search-section">
-              <h3 className="mobile-search-section-title">Suggestions</h3>
+              <h3 className="mobile-search-section-title">{t('suggestions')}</h3>
               <div className="mobile-search-suggestions">
                 {searchSuggestions.map((suggestion, index) => (
                   <button
@@ -234,12 +285,12 @@ export default function MobileSearch({ isOpen, onClose, placeholder = "Search pr
           {!showSuggestions && recentSearches.length > 0 && (
             <div className="mobile-search-section">
               <div className="mobile-search-section-header">
-                <h3 className="mobile-search-section-title">Recent Searches</h3>
+                <h3 className="mobile-search-section-title">{t('recentSearches')}</h3>
                 <button
                   onClick={clearRecentSearches}
                   className="mobile-clear-recent-btn"
                 >
-                  Clear
+                  {t('clear', { defaultMessage: 'Clear' })}
                 </button>
               </div>
               <div className="mobile-recent-searches">
@@ -262,9 +313,12 @@ export default function MobileSearch({ isOpen, onClose, placeholder = "Search pr
           {/* Popular Searches */}
           {!showSuggestions && recentSearches.length === 0 && (
             <div className="mobile-search-section">
-              <h3 className="mobile-search-section-title">Popular Searches</h3>
+              <h3 className="mobile-search-section-title">{t('popularSearches')}</h3>
               <div className="mobile-popular-searches">
-                {['Cotton Sheets', 'Silk Pillowcase', 'Memory Foam', 'Bamboo Bedding', 'Down Pillow'].map((search, index) => (
+                {(popularTerms.length > 0 ? popularTerms : 
+                  locale === 'zh' ? ['棉质床单', '丝绸枕套', '记忆泡沫', '竹纤维床品', '羽绒枕头'] :
+                  ['Cotton Sheets', 'Silk Pillowcase', 'Memory Foam', 'Bamboo Bedding', 'Down Pillow']
+                ).map((search, index) => (
                   <button
                     key={index}
                     className="mobile-popular-search"

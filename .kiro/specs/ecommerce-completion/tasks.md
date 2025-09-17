@@ -167,7 +167,7 @@
   - Update pricing and checkout to handle multiple currencies
   - _Requirements: 9.2, 9.3_
 
-- [ ] 25. Enhance search functionality for multi-language
+- [x] 25. Enhance search functionality for multi-language
   - Update product search to handle Chinese characters
   - Implement language-specific search indexing
   - Add search result filtering and sorting
