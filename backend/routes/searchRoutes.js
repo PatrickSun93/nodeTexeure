@@ -13,7 +13,6 @@ router.get('/', async (req, res) => {
   try {
     const {
       q: query,
-      locale = 'en',
       page = 1,
       limit = 20,
       sortBy = 'relevance',
@@ -62,7 +61,6 @@ router.get('/', async (req, res) => {
 
     const searchParams = {
       query: query.trim(),
-      locale,
       page: parseInt(page),
       limit: parseInt(limit),
       sortBy,
@@ -86,13 +84,13 @@ router.get('/', async (req, res) => {
 // GET /api/search/suggestions - Search suggestions endpoint
 router.get('/suggestions', async (req, res) => {
   try {
-    const { q: query, locale = 'en' } = req.query;
+    const { q: query } = req.query;
 
     if (!query || query.trim().length < 2) {
       return res.json(ResponseFormatter.success('Suggestions retrieved', { suggestions: [] }));
     }
 
-    const suggestions = await SearchService.getSearchSuggestions(query.trim(), locale);
+    const suggestions = await SearchService.getSearchSuggestions(query.trim());
     
     res.json(ResponseFormatter.success('Suggestions retrieved successfully', { suggestions }));
   } catch (error) {
@@ -104,13 +102,12 @@ router.get('/suggestions', async (req, res) => {
 // GET /api/search/popular - Popular search terms endpoint
 router.get('/popular', async (req, res) => {
   try {
-    const { locale = 'en', limit = 10 } = req.query;
+    const { limit = 10 } = req.query;
 
-    const popularTerms = await SearchService.getPopularSearchTerms(locale, parseInt(limit));
+    const popularTerms = await SearchService.getPopularSearchTerms(parseInt(limit));
     
     res.json(ResponseFormatter.success('Popular terms retrieved successfully', { 
       popularTerms,
-      locale,
       limit: parseInt(limit)
     }));
   } catch (error) {
@@ -122,13 +119,12 @@ router.get('/popular', async (req, res) => {
 // GET /api/search/trends - Search trends endpoint
 router.get('/trends', async (req, res) => {
   try {
-    const { locale = 'en', limit = 10 } = req.query;
+    const { limit = 10 } = req.query;
 
-    const trends = SearchService.getSearchTrends(locale, parseInt(limit));
+    const trends = SearchService.getSearchTrends(parseInt(limit));
     
     res.json(ResponseFormatter.success('Search trends retrieved successfully', { 
       trends,
-      locale,
       limit: parseInt(limit)
     }));
   } catch (error) {

@@ -7,8 +7,7 @@ import LazyImage from './LazyImage';
 import { apiRequest } from '../lib/api';
 import { useDebounce } from '../lib/hooks';
 import { storage } from '../lib/utils';
-import { useTranslations } from 'next-intl';
-import { useLocale } from 'next-intl';
+
 
 const SEARCH_HISTORY_KEY = 'search_history';
 const MAX_SEARCH_HISTORY = 10;
@@ -29,21 +28,19 @@ export default function AdvancedSearch({ isOpen, onClose, initialQuery = '' }) {
   const searchInputRef = useRef(null);
   const suggestionsRef = useRef(null);
   const debouncedQuery = useDebounce(query, 300);
-  const t = useTranslations('search');
-  const locale = useLocale();
 
   // Load search history and popular terms on mount
   useEffect(() => {
     const history = storage.get(SEARCH_HISTORY_KEY, []);
     setSearchHistory(history);
     
-    // Load popular terms for current locale
+    // Load popular terms
     loadPopularTerms();
-  }, [locale]);
+  }, []);
 
   const loadPopularTerms = async () => {
     try {
-      const response = await apiRequest(`/search/popular?locale=${locale}&limit=6`);
+      const response = await apiRequest(`/search/popular?limit=6`);
       if (response.status === 'SUCCESS' && response.keyValueTable?.popularTerms) {
         setPopularTerms(response.keyValueTable.popularTerms);
       }
@@ -77,7 +74,7 @@ export default function AdvancedSearch({ isOpen, onClose, initialQuery = '' }) {
       
       // Get suggestions from enhanced API with locale support
       try {
-        const response = await apiRequest(`/search/suggestions?q=${encodeURIComponent(searchQuery)}&locale=${locale}`);
+        const response = await apiRequest(`/search/suggestions?q=${encodeURIComponent(searchQuery)}`);
         if (response.status === 'SUCCESS' && response.keyValueTable?.suggestions) {
           const apiSuggestions = response.keyValueTable.suggestions.map(item => 
             typeof item === 'string' ? item : item.suggestion
@@ -89,15 +86,8 @@ export default function AdvancedSearch({ isOpen, onClose, initialQuery = '' }) {
         console.log('API suggestions not available, using fallback');
       }
 
-      // Fallback to locale-specific predefined suggestions
-      const predefinedSuggestions = locale === 'zh' ? [
-        '棉质床单', '丝绸枕套', '记忆泡沫床垫', '竹纤维被子',
-        '亚麻床品', '羽绒枕头', '重力毯', '床垫保护套',
-        '埃及棉', '有机床品', '奢华床单', '支数',
-        '特大号', '大号', '单人', '加州特大号',
-        '防过敏', '凉感床单', '法兰绒床单', '高支棉床单',
-        '贡缎床单', '针织床单', '超细纤维', '天丝床单'
-      ] : [
+      // Fallback to English predefined suggestions
+      const predefinedSuggestions = [
         'Cotton Sheets', 'Silk Pillowcase', 'Memory Foam Mattress', 'Bamboo Duvet',
         'Linen Bedding', 'Down Pillow', 'Weighted Blanket', 'Mattress Protector',
         'Egyptian Cotton', 'Organic Bedding', 'Luxury Sheets', 'Thread Count',
@@ -116,7 +106,7 @@ export default function AdvancedSearch({ isOpen, onClose, initialQuery = '' }) {
     } finally {
       setLoading(false);
     }
-  }, [locale]);
+  }, []);
 
   const performSearch = useCallback(async (searchQuery) => {
     if (!searchQuery.trim()) return;
@@ -126,7 +116,7 @@ export default function AdvancedSearch({ isOpen, onClose, initialQuery = '' }) {
       setSearchMode('results');
       
       // Use enhanced search API with locale support
-      const response = await apiRequest(`/search?q=${encodeURIComponent(searchQuery.trim())}&locale=${locale}&limit=6&sortBy=relevance`);
+      const response = await apiRequest(`/search?q=${encodeURIComponent(searchQuery.trim())}&limit=6&sortBy=relevance`);
       
       if (response.status === 'SUCCESS') {
         const products = response.keyValueTable?.products || [];
@@ -140,7 +130,7 @@ export default function AdvancedSearch({ isOpen, onClose, initialQuery = '' }) {
     } finally {
       setLoading(false);
     }
-  }, [locale]);
+  }, []);
 
   const addToSearchHistory = (searchQuery) => {
     const history = storage.get(SEARCH_HISTORY_KEY, []);
@@ -269,7 +259,7 @@ export default function AdvancedSearch({ isOpen, onClose, initialQuery = '' }) {
                 onFocus={handleInputFocus}
                 onBlur={handleInputBlur}
                 onKeyDown={handleKeyDown}
-                placeholder={t('placeholder')}
+                placeholder="Search products..."
                 className="advanced-search-input"
                 autoComplete="off"
               />
@@ -307,14 +297,14 @@ export default function AdvancedSearch({ isOpen, onClose, initialQuery = '' }) {
           {loading && (
             <div className="advanced-search-loading">
               <div className="advanced-search-spinner"></div>
-              <span>{t('searching', { defaultMessage: 'Searching...' })}</span>
+              <span>Searching...</span>
             </div>
           )}
 
           {/* Search Suggestions */}
           {showSuggestions && searchMode === 'suggestions' && suggestions.length > 0 && (
             <div className="advanced-search-suggestions">
-              <h3 className="advanced-search-section-title">{t('suggestions')}</h3>
+              <h3 className="advanced-search-section-title">Suggestions</h3>
               <div className="advanced-search-suggestion-list">
                 {suggestions.map((suggestion, index) => (
                   <button
@@ -338,12 +328,12 @@ export default function AdvancedSearch({ isOpen, onClose, initialQuery = '' }) {
           {showSuggestions && searchMode === 'history' && searchHistory.length > 0 && (
             <div className="advanced-search-history">
               <div className="advanced-search-history-header">
-                <h3 className="advanced-search-section-title">{t('recentSearches')}</h3>
+                <h3 className="advanced-search-section-title">Recent Searches</h3>
                 <button 
                   onClick={clearSearchHistory}
                   className="advanced-search-clear-history"
                 >
-                  {t('clearAll', { defaultMessage: 'Clear All' })}
+                  Clear All
                 </button>
               </div>
               <div className="advanced-search-history-list">
@@ -385,14 +375,14 @@ export default function AdvancedSearch({ isOpen, onClose, initialQuery = '' }) {
                 <>
                   <div className="advanced-search-results-header">
                     <h3 className="advanced-search-section-title">
-                      {t('results')} ({searchResults.length})
+                      Results ({searchResults.length})
                     </h3>
                     <Link 
                       href={`/shop?search=${encodeURIComponent(query)}`}
                       className="advanced-search-view-all"
                       onClick={onClose}
                     >
-                      {t('viewAllResults', { defaultMessage: 'View All Results' })}
+                      View All Results
                     </Link>
                   </div>
                   <div className="advanced-search-results-grid">
@@ -426,14 +416,14 @@ export default function AdvancedSearch({ isOpen, onClose, initialQuery = '' }) {
                   <svg className="advanced-search-no-results-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                   </svg>
-                  <h3>{t('noResults')}</h3>
-                  <p>{t('noResultsMessage', { defaultMessage: 'Try different keywords or browse our categories' })}</p>
+                  <h3>No Results Found</h3>
+                  <p>Try different keywords or browse our categories</p>
                   <Link 
                     href="/shop" 
                     className="aesop-button-primary"
                     onClick={onClose}
                   >
-                    {t('browseAllProducts', { defaultMessage: 'Browse All Products' })}
+                    Browse All Products
                   </Link>
                 </div>
               )}
@@ -443,7 +433,7 @@ export default function AdvancedSearch({ isOpen, onClose, initialQuery = '' }) {
           {/* Popular Searches */}
           {searchMode === 'history' && searchHistory.length === 0 && (
             <div className="advanced-search-categories">
-              <h3 className="advanced-search-section-title">{t('popularSearches')}</h3>
+              <h3 className="advanced-search-section-title">Popular Searches</h3>
               <div className="advanced-search-category-grid">
                 {popularTerms.length > 0 ? popularTerms.map((term, index) => (
                   <button
@@ -455,12 +445,12 @@ export default function AdvancedSearch({ isOpen, onClose, initialQuery = '' }) {
                     <span className="advanced-search-category-name">{term}</span>
                   </button>
                 )) : [
-                  { name: locale === 'zh' ? '床单' : 'Sheets', icon: '🛏️' },
-                  { name: locale === 'zh' ? '枕头' : 'Pillows', icon: '🛌' },
-                  { name: locale === 'zh' ? '毯子' : 'Blankets', icon: '🧸' },
-                  { name: locale === 'zh' ? '床垫' : 'Mattresses', icon: '🛏️' },
-                  { name: locale === 'zh' ? '棉质' : 'Cotton', icon: '🌿' },
-                  { name: locale === 'zh' ? '丝绸' : 'Silk', icon: '✨' }
+                  { name: 'Sheets', icon: '🛏️' },
+                  { name: 'Pillows', icon: '🛌' },
+                  { name: 'Blankets', icon: '🧸' },
+                  { name: 'Mattresses', icon: '🛏️' },
+                  { name: 'Cotton', icon: '🌿' },
+                  { name: 'Silk', icon: '✨' }
                 ].map((category) => (
                   <button
                     key={category.name}

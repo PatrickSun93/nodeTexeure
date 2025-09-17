@@ -11,7 +11,7 @@ export default function SEO({
   image,
   url,
   type = 'website',
-  locale = 'en_US',
+
   noindex = false,
   nofollow = false,
   structuredData = null,
@@ -43,7 +43,7 @@ export default function SEO({
       <meta property="og:description" content={metaTags.openGraph.description} />
       <meta property="og:url" content={metaTags.openGraph.url} />
       <meta property="og:site_name" content={metaTags.openGraph.siteName} />
-      <meta property="og:locale" content={metaTags.openGraph.locale} />
+      <meta property="og:locale" content="en_US" />
       <meta property="og:type" content={metaTags.openGraph.type} />
       {metaTags.openGraph.images.map((image, index) => (
         <meta key={index} property="og:image" content={image.url} />
@@ -63,7 +63,7 @@ export default function SEO({
       {/* Additional Meta Tags */}
       <meta name="viewport" content="width=device-width, initial-scale=1" />
       <meta httpEquiv="Content-Type" content="text/html; charset=utf-8" />
-      <meta name="language" content={locale} />
+      <meta name="language" content="en_US" />
       <meta name="author" content="Noiraé" />
 
       {/* Structured Data */}

@@ -344,7 +344,7 @@ curl -X GET http://localhost:6666/api/currency/detect
 
 ### Translation Integration
 - Currency names translated in multiple languages
-- Integration with next-intl for consistent translations
+- Consistent currency formatting across the application
 - Support for RTL languages (future enhancement)
 
 ## Future Enhancements

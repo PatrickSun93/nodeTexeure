@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useTranslations } from 'next-intl';
 import { useSession, signIn, signOut } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useCartCount } from '../lib';
@@ -12,8 +11,6 @@ import AdvancedSearch from './AdvancedSearch';
 import ProductComparison, { useProductComparison } from './ProductComparison';
 import Wishlist, { useWishlist } from './Wishlist';
 import RecentlyViewed, { useRecentlyViewed } from './RecentlyViewed';
-import LanguageSwitcher from './LanguageSwitcher';
-import { useLocaleRouter } from '../hooks/useLocaleRouter';
 
 export default function LocalizedHeader({ siteName = 'Noiraé' }) {
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
@@ -34,13 +31,7 @@ export default function LocalizedHeader({ siteName = 'Noiraé' }) {
   const { comparisonCount } = useProductComparison();
   const { wishlistCount } = useWishlist();
   const { recentlyViewedCount } = useRecentlyViewed();
-  const router = useLocaleRouter();
-  
-  // Translations
-  const t = useTranslations('navigation');
-  const tCommon = useTranslations('common');
-  const tSearch = useTranslations('search');
-  const tAuth = useTranslations('auth');
+  const router = useRouter();
 
   // Detect mobile screen size
   useEffect(() => {
@@ -89,11 +80,11 @@ export default function LocalizedHeader({ siteName = 'Noiraé' }) {
   };
 
   const navigationItems = [
-    { key: 'home', href: '/' },
-    { key: 'shop', href: '/shop' },
-    { key: 'categories', href: '/categories' },
-    { key: 'about', href: '/about' },
-    { key: 'contact', href: '/contact' }
+    { key: 'home', href: '/', label: 'Home' },
+    { key: 'shop', href: '/shop', label: 'Shop' },
+    { key: 'categories', href: '/categories', label: 'Categories' },
+    { key: 'about', href: '/about', label: 'About' },
+    { key: 'contact', href: '/contact', label: 'Contact' }
   ];
 
   return (
@@ -115,7 +106,7 @@ export default function LocalizedHeader({ siteName = 'Noiraé' }) {
                   {navigationItems.map((item) => (
                     <li key={item.key} className="aesop-nav-item">
                       <Link href={item.href} className="aesop-nav-link">
-                        {t(item.key)}
+                        {item.label}
                       </Link>
                     </li>
                   ))}
@@ -131,7 +122,7 @@ export default function LocalizedHeader({ siteName = 'Noiraé' }) {
                     type="text"
                     value={searchQuery}
                     onChange={handleSearchInputChange}
-                    placeholder={tSearch('placeholder')}
+                    placeholder="Search products..."
                     className="aesop-search-input"
                     onFocus={() => searchQuery.length > 2 && setShowSuggestions(true)}
                     onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
@@ -171,7 +162,7 @@ export default function LocalizedHeader({ siteName = 'Noiraé' }) {
               <button
                 onClick={() => setIsAdvancedSearchOpen(true)}
                 className="aesop-action-button"
-                title={tSearch('filters')}
+                title="Search Filters"
               >
                 <svg className="aesop-action-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4" />
@@ -224,7 +215,7 @@ export default function LocalizedHeader({ siteName = 'Noiraé' }) {
               <button
                 onClick={() => setIsCartOpen(true)}
                 className="aesop-action-button"
-                title={t('cart')}
+                title="Shopping Cart"
               >
                 <svg className="aesop-action-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-1.5 6M7 13l-1.5 6m0 0h9m-9 0h9" />
@@ -254,13 +245,13 @@ export default function LocalizedHeader({ siteName = 'Noiraé' }) {
                     {isUserMenuOpen && (
                       <div className="aesop-dropdown-menu">
                         <Link href="/profile" className="aesop-dropdown-item">
-                          {t('profile')}
+                          Profile
                         </Link>
                         <Link href="/orders" className="aesop-dropdown-item">
-                          {t('orders')}
+                          Orders
                         </Link>
                         <button onClick={handleSignOut} className="aesop-dropdown-item">
-                          {tAuth('logout')}
+                          Logout
                         </button>
                       </div>
                     )}
@@ -268,10 +259,10 @@ export default function LocalizedHeader({ siteName = 'Noiraé' }) {
                 ) : (
                   <div className="aesop-auth-buttons">
                     <Link href="/login" className="aesop-auth-link">
-                      {tAuth('login')}
+                      Login
                     </Link>
                     <Link href="/register" className="aesop-auth-link aesop-auth-primary">
-                      {tAuth('register')}
+                      Register
                     </Link>
                   </div>
                 )}
@@ -302,7 +293,7 @@ export default function LocalizedHeader({ siteName = 'Noiraé' }) {
                     className="aesop-mobile-nav-link"
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
-                    {t(item.key)}
+                    {item.label}
                   </Link>
                 ))}
               </nav>

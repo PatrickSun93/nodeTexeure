@@ -18,7 +18,6 @@ class SearchService {
   async searchProducts(params) {
     const {
       query,
-      locale = 'en',
       page = 1,
       limit = 20,
       sortBy = 'relevance',
@@ -28,10 +27,10 @@ class SearchService {
 
     try {
       // Track search analytics
-      this.trackSearch(query, locale);
+      this.trackSearch(query);
 
-      // Build search query based on language
-      const searchResults = await this.buildLanguageSpecificSearch(query, locale, {
+      // Build search query
+      const searchResults = await this.buildLanguageSpecificSearch(query, {
         page: parseInt(page),
         limit: Math.min(parseInt(limit), 100),
         sortBy,
@@ -60,47 +59,15 @@ class SearchService {
    * @param {Object} options - Search options
    * @returns {Object} Search results
    */
-  async buildLanguageSpecificSearch(query, locale, options) {
+  async buildLanguageSpecificSearch(query, options) {
     const { page, limit, sortBy, sortOrder, filters } = options;
     const offset = (page - 1) * limit;
 
-    // Enhanced search query with language support
-    let baseQuery, countQuery, searchParams, countParams;
+    // Enhanced search query
     const searchPattern = `%${query}%`;
-
-    if (locale === 'zh') {
-      // Enhanced Chinese character search
-      baseQuery = `
-        SELECT p.*, 0 as exact_match_score, 0 as relevance_score
-        FROM products p
-        WHERE p.status = 'approved'
-          AND (
-            p.name LIKE ?
-            OR p.description LIKE ?
-            OR p.short_description LIKE ?
-            OR JSON_UNQUOTE(JSON_EXTRACT(p.product_details, '$.name_zh')) LIKE ?
-            OR JSON_UNQUOTE(JSON_EXTRACT(p.product_details, '$.description_zh')) LIKE ?
-          )
-      `;
-
-      countQuery = `
-        SELECT COUNT(*) as total
-        FROM products p
-        WHERE p.status = 'approved'
-          AND (
-            p.name LIKE ?
-            OR p.description LIKE ?
-            OR p.short_description LIKE ?
-            OR JSON_UNQUOTE(JSON_EXTRACT(p.product_details, '$.name_zh')) LIKE ?
-            OR JSON_UNQUOTE(JSON_EXTRACT(p.product_details, '$.description_zh')) LIKE ?
-          )
-      `;
-
-      searchParams = [searchPattern, searchPattern, searchPattern, searchPattern, searchPattern];
-      countParams = [searchPattern, searchPattern, searchPattern, searchPattern, searchPattern];
-    } else {
-      // English and other languages
-      baseQuery = `
+    
+    // English search
+    const baseQuery = `
         SELECT p.*, 0 as exact_match_score, 0 as relevance_score
         FROM products p
         WHERE p.status = 'approved'
@@ -111,7 +78,7 @@ class SearchService {
           )
       `;
 
-      countQuery = `
+    const countQuery = `
         SELECT COUNT(*) as total
         FROM products p
         WHERE p.status = 'approved'
@@ -122,9 +89,8 @@ class SearchService {
           )
       `;
 
-      searchParams = [searchPattern, searchPattern, searchPattern];
-      countParams = [searchPattern, searchPattern, searchPattern];
-    }
+    const searchParams = [searchPattern, searchPattern, searchPattern];
+    const countParams = [searchPattern, searchPattern, searchPattern];
 
     // Apply filters
     const { filterQuery, filterParams } = this.buildFilterQuery(filters);
@@ -168,21 +134,20 @@ class SearchService {
     const total = parseInt(countResult.data[0]?.total || 0);
 
     return {
-      products,
-      pagination: {
-        page,
-        limit,
-        total,
-        totalPages: Math.ceil(total / limit),
-        hasNext: page < Math.ceil(total / limit),
-        hasPrev: page > 1
-      },
-      query,
-      locale,
-      sortBy,
-      sortOrder,
-      filters
-    };
+        products,
+        pagination: {
+          page,
+          limit,
+          total,
+          totalPages: Math.ceil(total / limit),
+          hasNext: page < Math.ceil(total / limit),
+          hasPrev: page > 1
+        },
+        query,
+        sortBy,
+        sortOrder,
+        filters
+      };
   }
 
   /**
@@ -268,49 +233,26 @@ class SearchService {
    * @param {string} locale - Language locale
    * @returns {Array} Search suggestions
    */
-  async getSearchSuggestions(query, locale = 'en') {
+  async getSearchSuggestions(query) {
     if (!query || query.length < 2) {
       return [];
     }
 
     try {
-      let suggestionQuery;
-      let params;
-
-      if (locale === 'zh') {
-        // Chinese suggestions
-        suggestionQuery = `
-          SELECT DISTINCT 
-            p.name as suggestion,
-            'product' as type,
-            COUNT(*) as frequency
-          FROM products p
-          WHERE p.status = 'approved'
-            AND (
-              p.name LIKE ?
-              OR JSON_UNQUOTE(JSON_EXTRACT(p.product_details, '$.name_zh')) LIKE ?
-            )
-          GROUP BY p.name
-          ORDER BY frequency DESC, p.name ASC
-          LIMIT 8
-        `;
-        params = [`%${query}%`, `%${query}%`];
-      } else {
-        // English suggestions
-        suggestionQuery = `
-          SELECT DISTINCT 
-            p.name as suggestion,
-            'product' as type,
-            COUNT(*) as frequency
-          FROM products p
-          WHERE p.status = 'approved'
-            AND p.name LIKE ?
-          GROUP BY p.name
-          ORDER BY frequency DESC, p.name ASC
-          LIMIT 8
-        `;
-        params = [`%${query}%`];
-      }
+      // English suggestions
+      const suggestionQuery = `
+        SELECT DISTINCT 
+          p.name as suggestion,
+          'product' as type,
+          COUNT(*) as frequency
+        FROM products p
+        WHERE p.status = 'approved'
+          AND p.name LIKE ?
+        GROUP BY p.name
+        ORDER BY frequency DESC, p.name ASC
+        LIMIT 8
+      `;
+      const params = [`%${query}%`];
 
       const result = await DatabaseUtil.executeQuery(suggestionQuery, params);
       if (!result.success) {
@@ -330,24 +272,17 @@ class SearchService {
    * @param {number} limit - Number of terms to return
    * @returns {Array} Popular search terms
    */
-  async getPopularSearchTerms(locale = 'en', limit = 10) {
+  async getPopularSearchTerms(limit = 10) {
     try {
       // This would typically come from a search_analytics table
-      // For now, return predefined popular terms by language
-      const popularTerms = {
-        'en': [
-          'Cotton Sheets', 'Silk Pillowcase', 'Memory Foam Mattress', 
-          'Bamboo Duvet', 'Linen Bedding', 'Down Pillow', 
-          'Weighted Blanket', 'Mattress Protector', 'Egyptian Cotton', 'Luxury Sheets'
-        ],
-        'zh': [
-          '棉质床单', '丝绸枕套', '记忆泡沫床垫', 
-          '竹纤维被子', '亚麻床品', '羽绒枕头', 
-          '重力毯', '床垫保护套', '埃及棉', '奢华床单'
-        ]
-      };
+      // For now, return predefined popular terms
+      const popularTerms = [
+        'Cotton Sheets', 'Silk Pillowcase', 'Memory Foam Mattress', 
+        'Bamboo Duvet', 'Linen Bedding', 'Down Pillow', 
+        'Weighted Blanket', 'Mattress Protector', 'Egyptian Cotton', 'Luxury Sheets'
+      ];
 
-      return (popularTerms[locale] || popularTerms['en']).slice(0, limit);
+      return popularTerms.slice(0, limit);
     } catch (error) {
       console.error('Popular terms error:', error);
       return [];
@@ -359,15 +294,14 @@ class SearchService {
    * @param {string} query - Search query
    * @param {string} locale - Language locale
    */
-  trackSearch(query, locale) {
-    const key = `${locale}:${query.toLowerCase()}`;
+  trackSearch(query) {
+    const key = query.toLowerCase();
     const current = this.searchAnalytics.get(key) || { count: 0, lastSearched: null };
     
     this.searchAnalytics.set(key, {
       count: current.count + 1,
       lastSearched: new Date(),
-      query,
-      locale
+      query
     });
 
     // Keep only recent searches (last 1000)
@@ -392,9 +326,8 @@ class SearchService {
       .filter(item => item.query.toLowerCase().includes(query.toLowerCase()))
       .reduce((acc, item) => {
         acc.totalSearches += item.count;
-        acc.languages[item.locale] = (acc.languages[item.locale] || 0) + item.count;
         return acc;
-      }, { totalSearches: 0, languages: {} });
+      }, { totalSearches: 0 });
 
     return analytics;
   }
@@ -405,9 +338,8 @@ class SearchService {
    * @param {number} limit - Number of trends to return
    * @returns {Array} Search trends
    */
-  getSearchTrends(locale = 'en', limit = 10) {
+  getSearchTrends(limit = 10) {
     const trends = Array.from(this.searchAnalytics.values())
-      .filter(item => item.locale === locale)
       .sort((a, b) => b.count - a.count)
       .slice(0, limit)
       .map(item => ({

@@ -24,7 +24,7 @@ export function generateMetaTags({
   image,
   url,
   type = 'website',
-  locale = 'en_US',
+
   noindex = false,
   nofollow = false
 }) {
@@ -52,7 +52,7 @@ export function generateMetaTags({
           alt: fullTitle,
         }
       ],
-      locale: locale,
+      locale: 'en_US',
       type: type,
     },
     twitter: {

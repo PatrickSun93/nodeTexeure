@@ -266,16 +266,9 @@ class CurrencyService {
    * @param {string} locale - Locale for formatting
    * @returns {string} - Formatted currency string
    */
-  formatCurrency(amount, currency = 'USD', locale = 'en-US') {
-    const localeMap = {
-      'en': 'en-US',
-      'zh': 'zh-CN'
-    };
-    
-    const formatLocale = localeMap[locale] || locale;
-    
+  formatCurrency(amount, currency = 'USD') {
     try {
-      return new Intl.NumberFormat(formatLocale, {
+      return new Intl.NumberFormat('en-US', {
         style: 'currency',
         currency: currency,
         minimumFractionDigits: 2,
@@ -295,7 +288,7 @@ class CurrencyService {
    * @param {string} locale - Locale for formatting
    * @returns {Object} - Conversion info
    */
-  getConversionInfo(baseAmount, targetCurrency, locale = 'en-US') {
+  getConversionInfo(baseAmount, targetCurrency) {
     const convertedAmount = this.convertFromBase(baseAmount, targetCurrency);
     const rate = this.getExchangeRate(targetCurrency);
     
@@ -305,8 +298,8 @@ class CurrencyService {
       convertedAmount,
       targetCurrency,
       exchangeRate: rate,
-      formattedOriginal: this.formatCurrency(baseAmount, this.baseCurrency, locale),
-      formattedConverted: this.formatCurrency(convertedAmount, targetCurrency, locale),
+      formattedOriginal: this.formatCurrency(baseAmount, this.baseCurrency),
+      formattedConverted: this.formatCurrency(convertedAmount, targetCurrency),
       lastUpdate: this.lastUpdate
     };
   }

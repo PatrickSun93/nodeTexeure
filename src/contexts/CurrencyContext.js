@@ -153,25 +153,11 @@ export function CurrencyProvider({ children }) {
   };
 
   // Format currency amount
-  const formatCurrency = (amount, currency = state.currentCurrency, locale) => {
-    if (!amount || isNaN(amount)) return formatCurrencyFallback(0, currency);
-    
-    // Determine locale based on currency if not provided
-    if (!locale) {
-      const localeMap = {
-        'USD': 'en-US',
-        'CNY': 'zh-CN',
-        'EUR': 'de-DE',
-        'GBP': 'en-GB',
-        'JPY': 'ja-JP',
-        'CAD': 'en-CA',
-        'AUD': 'en-AU'
-      };
-      locale = localeMap[currency] || 'en-US';
-    }
+  const formatCurrency = (amount, currency = state.currentCurrency) => {
+    if (!amount && amount !== 0) return '';
     
     try {
-      return new Intl.NumberFormat(locale, {
+      return new Intl.NumberFormat('en-US', {
         style: 'currency',
         currency: currency,
         minimumFractionDigits: 2,

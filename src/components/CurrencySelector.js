@@ -2,8 +2,6 @@
 
 import React, { useState } from 'react';
 import { useCurrency } from '../contexts/CurrencyContext';
-import { useTranslations } from 'next-intl';
-
 export default function CurrencySelector({ className = '', showLabel = true }) {
   const {
     currentCurrency,
@@ -14,8 +12,6 @@ export default function CurrencySelector({ className = '', showLabel = true }) {
     getCurrencyName,
     loading
   } = useCurrency();
-  
-  const t = useTranslations('common');
   const [isOpen, setIsOpen] = useState(false);
 
   const handleCurrencyChange = (currency) => {
@@ -31,7 +27,7 @@ export default function CurrencySelector({ className = '', showLabel = true }) {
     <div className={`relative ${className}`}>
       {showLabel && (
         <label className="block text-sm font-medium text-gray-700 mb-1">
-          {t('currency')}
+          Currency
         </label>
       )}
       

@@ -1,20 +1,17 @@
 'use client';
 
-import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import LanguageSwitcher from './LanguageSwitcher';
 
 export default function Navigation() {
-  const t = useTranslations('navigation');
   const pathname = usePathname();
 
   const navigationItems = [
-    { key: 'home', href: '/' },
-    { key: 'shop', href: '/shop' },
-    { key: 'categories', href: '/categories' },
-    { key: 'about', href: '/about' },
-    { key: 'contact', href: '/contact' }
+    { key: 'home', href: '/', label: 'Home' },
+    { key: 'shop', href: '/shop', label: 'Shop' },
+    { key: 'categories', href: '/categories', label: 'Categories' },
+    { key: 'about', href: '/about', label: 'About' },
+    { key: 'contact', href: '/contact', label: 'Contact' }
   ];
 
   const isActive = (href) => {
@@ -48,7 +45,7 @@ export default function Navigation() {
                       : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
                   }`}
                 >
-                  {t(item.key)}
+                  {item.label}
                 </Link>
               ))}
             </div>
@@ -76,8 +73,7 @@ export default function Navigation() {
               </svg>
             </Link>
 
-            {/* Language Switcher */}
-            <LanguageSwitcher />
+
           </div>
         </div>
       </div>

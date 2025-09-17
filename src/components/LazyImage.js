@@ -14,7 +14,7 @@ export default function LazyImage({
   height,
   className = '',
   priority = false,
-  placeholder = 'blur',
+  placeholder = 'empty',
   blurDataURL,
   sizes,
   fill = false,
@@ -160,7 +160,6 @@ export default function LazyImage({
   }
 
   const webpSrc = getWebPSrc(src);
-  const fallbackBlurDataURL = blurDataURL || (typeof window !== 'undefined' ? generateBlurDataURL() : undefined);
 
   return (
     <div className={`lazy-image-container ${className}`} ref={imgRef}>
@@ -179,7 +178,6 @@ export default function LazyImage({
           fill={fill}
           priority={priority}
           placeholder={placeholder}
-          blurDataURL={fallbackBlurDataURL}
           sizes={sizes}
           quality={quality}
           className={`lazy-image ${isLoaded ? 'lazy-image-loaded' : 'lazy-image-loading'}`}
