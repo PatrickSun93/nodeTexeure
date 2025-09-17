@@ -18,7 +18,9 @@
     "close": "Close",
     "open": "Open",
     "yes": "Yes",
-    "no": "No"
+    "no": "No",
+    "currency": "Currency",
+    "language": "Language"
   },
   "navigation": {
     "home": "Home",
@@ -237,5 +239,36 @@
     "itemAddedToCart": "Item added to cart",
     "itemRemovedFromCart": "Item removed from cart",
     "cartUpdated": "Cart updated successfully"
+  },
+  "currency": {
+    "title": "Currency",
+    "select": "Select Currency",
+    "current": "Current Currency",
+    "convert": "Convert",
+    "exchangeRate": "Exchange Rate",
+    "lastUpdated": "Last Updated",
+    "conversionInfo": "Conversion Info",
+    "baseCurrency": "Base Currency",
+    "targetCurrency": "Target Currency",
+    "originalPrice": "Original Price",
+    "convertedPrice": "Converted Price",
+    "currencies": {
+      "USD": "US Dollar",
+      "CNY": "Chinese Yuan",
+      "EUR": "Euro",
+      "GBP": "British Pound",
+      "JPY": "Japanese Yen",
+      "CAD": "Canadian Dollar",
+      "AUD": "Australian Dollar"
+    },
+    "symbols": {
+      "USD": "$",
+      "CNY": "¥",
+      "EUR": "€",
+      "GBP": "£",
+      "JPY": "¥",
+      "CAD": "C$",
+      "AUD": "A$"
+    }
   }
 }

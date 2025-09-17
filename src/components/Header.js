@@ -11,6 +11,7 @@ import AdvancedSearch from './AdvancedSearch';
 import ProductComparison, { useProductComparison } from './ProductComparison';
 import Wishlist, { useWishlist } from './Wishlist';
 import RecentlyViewed, { useRecentlyViewed } from './RecentlyViewed';
+import { CompactCurrencySelector } from './CurrencySelector';
 
   export default function Header({ siteName = 'Noiraé' }) {
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
@@ -322,6 +323,9 @@ import RecentlyViewed, { useRecentlyViewed } from './RecentlyViewed';
                 </button>
               )}
             </div>
+
+            {/* Currency Selector */}
+            <CompactCurrencySelector className="hidden sm:block" />
 
             <button
               type="button"

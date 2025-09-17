@@ -8,6 +8,7 @@ import Footer from '../../components/Footer';
 import MobileLoading from '../../components/MobileLoading';
 import StripeProvider from '../../components/StripeProvider';
 import PaymentForm from '../../components/PaymentForm';
+import PriceDisplay from '../../components/PriceDisplay';
 
 function CheckoutPage() {
   const [cartItems, setCartItems] = useState([]);
@@ -434,7 +435,7 @@ function CheckoutPage() {
             Order Summary
             {isMobile && (
               <span className="checkout-summary-total-mobile">
-                ${total.toFixed(2)}
+                <PriceDisplay price={total} size="lg" />
               </span>
             )}
           </h3>
@@ -506,7 +507,7 @@ function CheckoutPage() {
           <div className="checkout-totals">
             <div className="checkout-total-row">
               <span>Subtotal</span>
-              <span>${subtotal.toFixed(2)}</span>
+              <span><PriceDisplay price={subtotal} /></span>
             </div>
             <div className="checkout-total-row">
               <span>
@@ -518,12 +519,12 @@ function CheckoutPage() {
                 )}
               </span>
               <span>
-                {shipping === 0 ? 'Free' : `$${shipping.toFixed(2)}`}
+                {shipping === 0 ? 'Free' : <PriceDisplay price={shipping} />}
               </span>
             </div>
             <div className="checkout-total-row">
               <span>Tax</span>
-              <span>${tax.toFixed(2)}</span>
+              <span><PriceDisplay price={tax} /></span>
             </div>
             {discount > 0 && (
               <div className="checkout-total-row checkout-discount">
@@ -533,7 +534,7 @@ function CheckoutPage() {
             )}
             <div className="checkout-total-row checkout-total-final">
               <span>Total</span>
-              <span>${total.toFixed(2)}</span>
+              <span><PriceDisplay price={total} size="lg" /></span>
             </div>
           </div>
         </>

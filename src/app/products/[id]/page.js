@@ -14,6 +14,7 @@ import { useMobileGestures, useMobileImageOptimization } from '../../../componen
 import { apiRequest } from '../../../lib/api';
 import { generateMetaTags, generateStructuredData, generateBreadcrumbs } from '../../../lib/seo';
 import { useRecentlyViewed } from '../../../components/RecentlyViewed';
+import PriceDisplay, { DiscountedPriceDisplay } from '../../../components/PriceDisplay';
 
 function ProductHeader({ productName, breadcrumbs }) {
   return (
@@ -381,9 +382,20 @@ export default function ProductDetails() {
             <div className="product-header">
               <h1 className="product-title">{product.name}</h1>
               <div className="product-price">
-                <span className="product-current-price">${product.base_price}</span>
-                {product.original_price && product.original_price > product.base_price && (
-                  <span className="product-original-price">${product.original_price}</span>
+                {product.original_price && product.original_price > product.base_price ? (
+                  <DiscountedPriceDisplay 
+                    originalPrice={product.original_price}
+                    discountedPrice={product.base_price}
+                    size="xl"
+                    className="product-price-display"
+                    showPercentage={true}
+                  />
+                ) : (
+                  <PriceDisplay 
+                    price={product.base_price}
+                    size="xl"
+                    className="product-current-price"
+                  />
                 )}
               </div>
               
