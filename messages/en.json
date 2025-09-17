@@ -278,5 +278,22 @@
       "CAD": "C$",
       "AUD": "A$"
     }
+  },
+  "Home": {
+    "heroTitle": "Premium Bed Textures",
+    "heroSubtitle": "Transform your bedroom with our luxurious collection of high-quality bed textures and linens",
+    "shopNow": "Shop Now",
+    "featuredProductTitle": "Luxury Cotton Sheets",
+    "feature1Title": "Premium Quality",
+    "feature1Desc": "Crafted from the finest materials for ultimate comfort and durability",
+    "feature2Title": "Sustainable",
+    "feature2Desc": "Ethically sourced and environmentally conscious production methods",
+    "feature3Title": "Expert Craftsmanship",
+    "feature3Desc": "Meticulously designed by textile artisans with decades of experience",
+    "metaTitle": "Premium Bed Textures & Luxury Linens",
+    "metaDescription": "Transform your bedroom with our luxurious collection of high-quality bed textures, premium linens, and home textiles. Shop Egyptian cotton sheets, silk pillowcases, and more.",
+    "metaKeywords": "bed textures, luxury linens, Egyptian cotton sheets, silk pillowcases, premium bedding, home textiles, bedroom decor, luxury bedding",
+    "backendConnecting": "Checking backend connection...",
+    "backendFailed": "Backend connection failed"
   }
 }

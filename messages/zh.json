@@ -278,5 +278,22 @@
       "CAD": "C$",
       "AUD": "A$"
     }
+  },
+  "Home": {
+    "heroTitle": "优质床品",
+    "heroSubtitle": "用我们豪华系列的高品质床品和床单改造您的卧室",
+    "shopNow": "立即购买",
+    "featuredProductTitle": "豪华棉床单",
+    "feature1Title": "优质",
+    "feature1Desc": "采用最优质的材料制成，提供极致的舒适性和耐用性",
+    "feature2Title": "可持续",
+    "feature2Desc": "采用符合道德规范和环保的生产方法",
+    "feature3Title": "专业工艺",
+    "feature3Desc": "由拥有数十年经验的纺织工匠精心设计",
+    "metaTitle": "优质床品和豪华床单",
+    "metaDescription": "用我们豪华系列的高品质床品、优质床单和家用纺织品改造您的卧室。购买埃及棉床单、丝绸枕套等。",
+    "metaKeywords": "床品, 豪华床单, 埃及棉床单, 丝绸枕套, 高级床上用品, 家用纺织品, 卧室装饰, 豪华床上用品",
+    "backendConnecting": "正在检查后端连接...",
+    "backendFailed": "后端连接失败"
   }
 }

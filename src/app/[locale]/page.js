@@ -2,7 +2,6 @@
 
 import Link from 'next/link';
 import Head from 'next/head';
-import { useTranslations } from 'next-intl';
 import { useBackendHealth } from '../../lib';
 import Header from '../../components/Header';
 import Footer from '../../components/Footer';
@@ -11,23 +10,22 @@ import { fetchSettings } from '../../lib/fetchSettings';
 import { generateMetaTags, generateStructuredData, defaultSEO } from '../../lib/seo';
 import { usePerformance } from '../../lib/usePerformance';
 import { useRef, useState, useEffect } from 'react';
+import { useTranslations } from 'next-intl';
 
 // Hero Section Component
-function HeroSection() {
-    const t = useTranslations('common');
-    
+function HeroSection({ t }) {
     return (
         <section className="noirae-hero">
             <div className="aesop-container">
                 <div className="aesop-hero-content">
                     <h1 className="noirae-hero-title">
-                        Premium Bed Textures
+                        {t('heroTitle')}
                     </h1>
                     <p className="noirae-hero-subtitle">
-                        Transform your bedroom with our luxurious collection of high-quality bed textures and linens
+                        {t('heroSubtitle')}
                     </p>
                     <Link href="/shop" className="noirae-cta-button">
-                        {t('shop') || 'Shop Now'}
+                        {t('shopNow')}
                     </Link>
                 </div>
             </div>
@@ -135,7 +133,7 @@ function ProductCard({ images = [], slug, title }) {
 }
 
 // Featured Products Component (now a gallery of image collections)
-function FeaturedProducts() {
+function FeaturedProducts({ t }) {
     // One full-width, hero-like collection that scrubs on hover
     const images = Array.from({ length: 10 }, (_, i) => {
         const w = 800 + i * 40;
@@ -143,7 +141,7 @@ function FeaturedProducts() {
         return `/api/placeholder/${w}/${h}`;
     });
     const slug = 'luxury-cotton-sheets';
-    const title = 'Luxury Cotton Sheets';
+    const title = t('featuredProductTitle');
 
     return (
         <section className="aesop-section aesop-fullstrip aesop-fullstrip-hero">
@@ -153,21 +151,21 @@ function FeaturedProducts() {
 }
 
 // Features Section Component
-function FeaturesSection() {
+function FeaturesSection({ t }) {
     const features = [
         {
-            title: "Premium Quality",
-            description: "Crafted from the finest materials for ultimate comfort and durability",
+            title: t('feature1Title'),
+            description: t('feature1Desc'),
             icon: "✨"
         },
         {
-            title: "Sustainable",
-            description: "Ethically sourced and environmentally conscious production methods",
+            title: t('feature2Title'),
+            description: t('feature2Desc'),
             icon: "🌱"
         },
         {
-            title: "Expert Craftsmanship",
-            description: "Meticulously designed by textile artisans with decades of experience",
+            title: t('feature3Title'),
+            description: t('feature3Desc'),
             icon: "👥"
         }
     ];
@@ -190,10 +188,10 @@ function FeaturesSection() {
 }
 
 export default function Home() {
+    const t = useTranslations('Home');
     const { isConnected, loading } = useBackendHealth();
     const [settings, setSettings] = useState(null);
     const performanceMetrics = usePerformance();
-    const t = useTranslations('common');
 
     useEffect(() => {
         let mounted = true;
@@ -221,9 +219,9 @@ export default function Home() {
     
     // Generate SEO data for home page
     const homeMetaTags = generateMetaTags({
-        title: 'Premium Bed Textures & Luxury Linens',
-        description: 'Transform your bedroom with our luxurious collection of high-quality bed textures, premium linens, and home textiles. Shop Egyptian cotton sheets, silk pillowcases, and more.',
-        keywords: 'bed textures, luxury linens, Egyptian cotton sheets, silk pillowcases, premium bedding, home textiles, bedroom decor, luxury bedding',
+        title: t('metaTitle'),
+        description: t('metaDescription'),
+        keywords: t('metaKeywords'),
         url: '/',
         type: 'website'
     });
@@ -261,21 +259,21 @@ export default function Home() {
             <div className="noirae-page">
                 <Header siteName={siteName} />
                 <main className="noirae-main">
-                    <HeroSection />
-                    <FeaturedProducts />
-                    <FeaturesSection />
+                    <HeroSection t={t} />
+                    <FeaturedProducts t={t} />
+                    <FeaturesSection t={t} />
                 </main>
                 <Footer />
                 
                 {/* Backend Health Status */}
                 {loading && (
                     <div className="aesop-status aesop-status-loading">
-                        {t('loading')}
+                        {t('backendConnecting')}
                     </div>
                 )}
                 {!loading && !isConnected && (
                     <div className="aesop-status aesop-status-error">
-                        Backend connection failed
+                        {t('backendFailed')}
                     </div>
                 )}
             </div>
