@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 
 export async function GET(request, { params }) {
   try {
-    const { id } = params;
+    const { id } = await params;
     
     // Forward the request to the backend
     const headers = {
