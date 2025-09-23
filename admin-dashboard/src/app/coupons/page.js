@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { adminAPI } from '../../utils/api';
 
 const CouponsPage = () => {
   const [coupons, setCoupons] = useState([]);
@@ -41,29 +42,17 @@ const CouponsPage = () => {
       setLoading(true);
       setError('');
 
-      const queryParams = new URLSearchParams({
+      const params = {
         page: currentPage.toString(),
         limit: '20',
         ...Object.fromEntries(
           Object.entries(filters).filter(([_, value]) => value !== '')
         )
-      });
+      };
 
-      const response = await fetch(`http://localhost:6666/api/coupons?${queryParams}`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('adminToken')}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      const data = await response.json();
-
-      if (data.success) {
-        setCoupons(data.data.coupons);
-        setTotalPages(data.data.pagination.totalPages);
-      } else {
-        setError(data.message || 'Failed to fetch coupons');
-      }
+      const data = await adminAPI.getCoupons(params);
+      setCoupons(data.data.coupons);
+      setTotalPages(data.data.pagination.totalPages);
     } catch (err) {
       console.error('Error fetching coupons:', err);
       setError('Error loading coupons');
@@ -90,25 +79,11 @@ const CouponsPage = () => {
         expiresAt: formData.expiresAt || null
       };
 
-      const response = await fetch('http://localhost:6666/api/coupons', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('adminToken')}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(payload)
-      });
-
-      const data = await response.json();
-
-      if (data.success) {
-        setSuccess('Coupon created successfully');
-        setShowCreateModal(false);
-        resetForm();
-        fetchCoupons();
-      } else {
-        setError(data.message || 'Failed to create coupon');
-      }
+      const data = await adminAPI.createCoupon(payload);
+      setSuccess('Coupon created successfully');
+      setShowCreateModal(false);
+      resetForm();
+      fetchCoupons();
     } catch (err) {
       console.error('Error creating coupon:', err);
       setError('Error creating coupon');
@@ -131,25 +106,11 @@ const CouponsPage = () => {
         usageLimitPerCustomer: parseInt(formData.usageLimitPerCustomer)
       };
 
-      const response = await fetch(`http://localhost:6666/api/coupons/${editingCoupon.id}`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('adminToken')}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(payload)
-      });
-
-      const data = await response.json();
-
-      if (data.success) {
-        setSuccess('Coupon updated successfully');
-        setEditingCoupon(null);
-        resetForm();
-        fetchCoupons();
-      } else {
-        setError(data.message || 'Failed to update coupon');
-      }
+      const data = await adminAPI.updateCoupon(editingCoupon.id, payload);
+      setSuccess('Coupon updated successfully');
+      setEditingCoupon(null);
+      resetForm();
+      fetchCoupons();
     } catch (err) {
       console.error('Error updating coupon:', err);
       setError('Error updating coupon');
@@ -165,22 +126,9 @@ const CouponsPage = () => {
       setError('');
       setSuccess('');
 
-      const response = await fetch(`http://localhost:6666/api/coupons/${couponId}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('adminToken')}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      const data = await response.json();
-
-      if (data.success) {
-        setSuccess('Coupon deleted successfully');
-        fetchCoupons();
-      } else {
-        setError(data.message || 'Failed to delete coupon');
-      }
+      const data = await adminAPI.deleteCoupon(couponId);
+      setSuccess('Coupon deleted successfully');
+      fetchCoupons();
     } catch (err) {
       console.error('Error deleting coupon:', err);
       setError('Error deleting coupon');

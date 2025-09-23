@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import { adminAPI } from '../../../utils/api';
 
 export default function AdminOrderDetailsPage() {
   const params = useParams();
@@ -30,11 +31,7 @@ export default function AdminOrderDetailsPage() {
   const fetchOrderDetails = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`/api/admin/orders/${params.id}`, {
-        credentials: 'include',
-      });
-
-      const result = await response.json();
+      const result = await adminAPI.getOrder(params.id);
 
       if (result.success) {
         setOrder(result.data);
@@ -55,16 +52,11 @@ export default function AdminOrderDetailsPage() {
     if (!statusUpdate.status) return;
 
     try {
-      const response = await fetch(`/api/admin/orders/${params.id}/status`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify(statusUpdate)
-      });
-
-      const result = await response.json();
+      const result = await adminAPI.updateOrderStatus(
+        params.id, 
+        statusUpdate.status, 
+        statusUpdate.notes
+      );
 
       if (result.success) {
         setShowStatusModal(false);
@@ -82,16 +74,11 @@ export default function AdminOrderDetailsPage() {
     if (!refundData.amount || !refundData.reason) return;
 
     try {
-      const response = await fetch(`/api/admin/orders/${params.id}/refund`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify(refundData)
-      });
-
-      const result = await response.json();
+      const result = await adminAPI.refundOrder(
+        params.id, 
+        refundData.amount, 
+        `${refundData.reason}: ${refundData.reasonNotes}`
+      );
 
       if (result.success) {
         setShowRefundModal(false);
@@ -111,16 +98,7 @@ export default function AdminOrderDetailsPage() {
     if (!reason) return;
 
     try {
-      const response = await fetch(`/api/admin/orders/${params.id}/cancel`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify({ reason })
-      });
-
-      const result = await response.json();
+      const result = await adminAPI.cancelOrder(params.id, reason);
 
       if (result.success) {
         fetchOrderDetails(); // Refresh order details

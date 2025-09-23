@@ -1,4 +1,5 @@
 import React, { useState, useCallback } from 'react';
+import { adminAPI } from '../utils/api';
 
 const ImageUpload = ({ productId, onUploadComplete }) => {
   const [uploading, setUploading] = useState(false);
@@ -31,20 +32,9 @@ const ImageUpload = ({ productId, onUploadComplete }) => {
         formData.append('images', file);
       });
 
-      // Get CSRF token (you'll need to implement this based on your auth system)
-      const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+      const result = await adminAPI.uploadProductImage(productId, formData);
 
-      const response = await fetch(`/api/images/products/${productId}/upload`, {
-        method: 'POST',
-        body: formData,
-        headers: {
-          'X-CSRF-Token': csrfToken
-        }
-      });
-
-      const result = await response.json();
-
-      if (response.ok) {
+      if (result.success) {
         setUploadProgress(100);
         setTimeout(() => {
           setUploadProgress(null);

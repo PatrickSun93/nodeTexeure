@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { adminAPI } from '../../utils/api';
 
 export default function OrdersPage() {
   const router = useRouter();
@@ -37,17 +38,13 @@ export default function OrdersPage() {
   const fetchOrders = async () => {
     try {
       setLoading(true);
-      const queryParams = new URLSearchParams({
+      const params = {
         page: pagination.currentPage,
         limit: pagination.limit,
         ...Object.fromEntries(Object.entries(filters).filter(([_, v]) => v !== ''))
-      });
+      };
 
-      const response = await fetch(`/api/admin/orders?${queryParams}`, {
-        credentials: 'include',
-      });
-
-      const result = await response.json();
+      const result = await adminAPI.getOrders(params);
 
       if (result.success) {
         setOrders(result.data.orders);
@@ -84,16 +81,11 @@ export default function OrdersPage() {
     if (!selectedOrder || !statusUpdate.status) return;
 
     try {
-      const response = await fetch(`/api/admin/orders/${selectedOrder.id}/status`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify(statusUpdate)
-      });
-
-      const result = await response.json();
+      const result = await adminAPI.updateOrderStatus(
+        selectedOrder.id, 
+        statusUpdate.status, 
+        statusUpdate.notes
+      );
 
       if (result.success) {
         setShowStatusModal(false);
@@ -113,16 +105,7 @@ export default function OrdersPage() {
     if (!reason) return;
 
     try {
-      const response = await fetch(`/api/admin/orders/${orderId}/cancel`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify({ reason })
-      });
-
-      const result = await response.json();
+      const result = await adminAPI.cancelOrder(orderId, reason);
 
       if (result.success) {
         fetchOrders(); // Refresh the list

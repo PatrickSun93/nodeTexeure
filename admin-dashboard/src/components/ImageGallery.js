@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { adminAPI } from '../utils/api';
 
 const ImageGallery = ({ productId, onImagesChange }) => {
   const [images, setImages] = useState([]);
@@ -9,10 +10,9 @@ const ImageGallery = ({ productId, onImagesChange }) => {
   // Fetch images for the product
   const fetchImages = useCallback(async () => {
     try {
-      const response = await fetch(`/api/images/products/${productId}`);
-      const result = await response.json();
+      const result = await adminAPI.getProductImages(productId);
       
-      if (response.ok) {
+      if (result.success) {
         setImages(result.data.images || []);
         onImagesChange?.(result.data.images || []);
       } else {
@@ -34,23 +34,15 @@ const ImageGallery = ({ productId, onImagesChange }) => {
   // Set primary image
   const setPrimaryImage = async (imageId) => {
     try {
-      const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-      
-      const response = await fetch(`/api/images/products/${productId}/primary/${imageId}`, {
-        method: 'PUT',
-        headers: {
-          'X-CSRF-Token': csrfToken
-        }
-      });
+      const result = await adminAPI.setPrimaryImage(productId, imageId);
 
-      if (response.ok) {
+      if (result.success) {
         // Update local state
         setImages(prev => prev.map(img => ({
           ...img,
           is_primary: img.id === imageId
         })));
       } else {
-        const result = await response.json();
         alert(`Failed to set primary image: ${result.message}`);
       }
     } catch (error) {
@@ -66,25 +58,13 @@ const ImageGallery = ({ productId, onImagesChange }) => {
     if (!confirm(`Delete ${selectedImages.size} selected image(s)?`)) return;
 
     try {
-      const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-      
-      const response = await fetch('/api/images/bulk', {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRF-Token': csrfToken
-        },
-        body: JSON.stringify({
-          imageIds: Array.from(selectedImages)
-        })
-      });
+      const result = await adminAPI.deleteImages(Array.from(selectedImages));
 
-      if (response.ok) {
+      if (result.success) {
         // Remove deleted images from local state
         setImages(prev => prev.filter(img => !selectedImages.has(img.id)));
         setSelectedImages(new Set());
       } else {
-        const result = await response.json();
         alert(`Failed to delete images: ${result.message}`);
       }
     } catch (error) {
@@ -96,24 +76,14 @@ const ImageGallery = ({ productId, onImagesChange }) => {
   // Update alt text
   const updateAltText = async (imageId, altText) => {
     try {
-      const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-      
-      const response = await fetch(`/api/images/${imageId}/alt-text`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRF-Token': csrfToken
-        },
-        body: JSON.stringify({ alt_text: altText })
-      });
+      const result = await adminAPI.updateImageAltText(imageId, altText);
 
-      if (response.ok) {
+      if (result.success) {
         // Update local state
         setImages(prev => prev.map(img => 
           img.id === imageId ? { ...img, alt_text: altText } : img
         ));
       } else {
-        const result = await response.json();
         alert(`Failed to update alt text: ${result.message}`);
       }
     } catch (error) {
@@ -157,25 +127,15 @@ const ImageGallery = ({ productId, onImagesChange }) => {
     }));
 
     try {
-      const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-      
-      const response = await fetch(`/api/images/products/${productId}/order`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRF-Token': csrfToken
-        },
-        body: JSON.stringify({ imageOrders })
-      });
+      const result = await adminAPI.updateImageOrder(productId, imageOrders);
 
-      if (response.ok) {
+      if (result.success) {
         // Update local state with new order
         setImages(newImages.map((img, index) => ({
           ...img,
           sort_order: index
         })));
       } else {
-        const result = await response.json();
         alert(`Failed to update image order: ${result.message}`);
       }
     } catch (error) {

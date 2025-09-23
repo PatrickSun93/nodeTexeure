@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { adminAPI } from '../utils/api';
 
 /**
  * Abandoned Cart Analytics Component
@@ -21,25 +22,8 @@ export default function AbandonedCartAnalytics() {
       setLoading(true);
       setError(null);
 
-      const response = await fetch(`http://localhost:6666/api/abandoned-cart/analytics?days=${timeRange}`, {
-        method: 'GET',
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch analytics');
-      }
-
-      const result = await response.json();
-      
-      if (result.status === 'success') {
-        setAnalytics(result.data);
-      } else {
-        throw new Error(result.message || 'Failed to fetch analytics');
-      }
+      const result = await adminAPI.getAbandonedCartAnalytics(timeRange);
+      setAnalytics(result.data);
     } catch (err) {
       console.error('Error fetching abandoned cart analytics:', err);
       setError(err.message);
@@ -50,22 +34,9 @@ export default function AbandonedCartAnalytics() {
 
   const triggerDetection = async () => {
     try {
-      const response = await fetch('http://localhost:6666/api/abandoned-cart/detect', {
-        method: 'POST',
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-        }
-      });
-
-      const result = await response.json();
-      
-      if (result.status === 'success') {
-        alert(`Detection completed! Processed ${result.data.processedCarts} carts.`);
-        fetchAnalytics(); // Refresh analytics
-      } else {
-        throw new Error(result.message || 'Failed to trigger detection');
-      }
+      const result = await adminAPI.triggerAbandonedCartDetection();
+      alert(`Detection completed! Processed ${result.data.processedCarts} carts.`);
+      fetchAnalytics(); // Refresh analytics
     } catch (err) {
       console.error('Error triggering detection:', err);
       alert('Failed to trigger detection: ' + err.message);
@@ -78,22 +49,9 @@ export default function AbandonedCartAnalytics() {
     }
 
     try {
-      const response = await fetch('http://localhost:6666/api/abandoned-cart/cleanup', {
-        method: 'POST',
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-        }
-      });
-
-      const result = await response.json();
-      
-      if (result.status === 'success') {
-        alert(`Cleanup completed! Deleted ${result.data.deletedRecords} old records.`);
-        fetchAnalytics(); // Refresh analytics
-      } else {
-        throw new Error(result.message || 'Failed to cleanup records');
-      }
+      const result = await adminAPI.cleanupAbandonedCarts();
+      alert(`Cleanup completed! Deleted ${result.data.deletedRecords} old records.`);
+      fetchAnalytics(); // Refresh analytics
     } catch (err) {
       console.error('Error cleaning up records:', err);
       alert('Failed to cleanup records: ' + err.message);

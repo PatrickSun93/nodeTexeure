@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { adminAPI } from '../utils/api';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -16,16 +17,7 @@ export default function Login() {
     setError('');
     
     try {
-      const res = await fetch('/api/users/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        credentials: 'include',
-        body: JSON.stringify({ email, password })
-      });
-      
-      const data = await res.json();
+      const data = await adminAPI.login({ email, password });
       
       if (data.success && data.data.isAdmin) {
         // Auth cookies are set; no localStorage anymore

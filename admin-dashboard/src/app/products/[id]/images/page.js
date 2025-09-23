@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
+import { adminAPI } from '../../../../utils/api';
 import ImageUpload from '../../../../components/ImageUpload';
 import ImageGallery from '../../../../components/ImageGallery';
 
@@ -16,14 +17,8 @@ export default function ProductImagesPage() {
   useEffect(() => {
     const fetchProduct = async () => {
       try {
-        const response = await fetch(`/api/products/${productId}`);
-        const result = await response.json();
-        
-        if (response.ok) {
-          setProduct(result.data);
-        } else {
-          console.error('Failed to fetch product:', result.message);
-        }
+        const result = await adminAPI.getProduct(productId);
+        setProduct(result.data);
       } catch (error) {
         console.error('Error fetching product:', error);
       } finally {

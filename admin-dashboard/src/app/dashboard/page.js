@@ -2,17 +2,17 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { apiFetch, ensureCsrfToken } from '../../utils/api';
+import { apiFetch, adminAPI } from '../../utils/api';
 
 export default function Dashboard() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const router = useRouter();
 
   useEffect(() => {
-    // Guard: verify auth and ensure CSRF token is present
+    // Guard: verify auth by attempting to get dashboard stats
     (async () => {
       try {
-        await ensureCsrfToken();
+        await adminAPI.getDashboardStats();
       } catch (e) {
         // Not authenticated or not admin
         router.push('/');
@@ -22,7 +22,7 @@ export default function Dashboard() {
 
   const handleLogout = async () => {
     try {
-      await apiFetch('http://localhost:6666/api/admin/logout', { method: 'POST' });
+      await adminAPI.logout();
       router.push('/');
     } catch (e) {
       // If unauthorized or other issue, still return to login
@@ -75,18 +75,18 @@ function ProductManagement() {
   }, [statusFilter]);
 
   const fetchData = async () => {
-    const url = statusFilter === 'all' 
-      ? 'http://localhost:6666/api/admin/products'
-      : `http://localhost:6666/api/admin/products?status=${statusFilter}`;
-    const data = await apiFetch(url);
+    const params = statusFilter === 'all' ? {} : { status: statusFilter };
+    const data = await adminAPI.getProducts(params);
     if (data.success) setProducts(data.data.products);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const method = editingId ? 'PUT' : 'POST';
-    const url = editingId ? `http://localhost:6666/api/admin/products/${editingId}` : 'http://localhost:6666/api/admin/products';
-    await apiFetch(url, { method, body: JSON.stringify(formData) });
+    if (editingId) {
+      await adminAPI.updateProduct(editingId, formData);
+    } else {
+      await adminAPI.createProduct(formData);
+    }
     await fetchData();
     setFormData({});
     setEditingId(null);
@@ -94,7 +94,7 @@ function ProductManagement() {
 
   const handleDelete = async (id) => {
     if (confirm('Are you sure you want to delete this product?')) {
-      await apiFetch(`http://localhost:6666/api/admin/products/${id}`, { method: 'DELETE' });
+      await adminAPI.deleteProduct(id);
       await fetchData();
     }
   };

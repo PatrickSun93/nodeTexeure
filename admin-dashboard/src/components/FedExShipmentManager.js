@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { adminAPI } from '../utils/api';
 
 export default function FedExShipmentManager() {
   const [orders, setOrders] = useState([]);
@@ -24,14 +25,8 @@ export default function FedExShipmentManager() {
 
   const fetchConfirmedOrders = async () => {
     try {
-      const response = await fetch('/api/admin/orders?status=confirmed', {
-        credentials: 'include'
-      });
-      const result = await response.json();
-      
-      if (result.success) {
-        setOrders(result.data || []);
-      }
+      const result = await adminAPI.getOrders({ status: 'confirmed' });
+      setOrders(result.data || []);
     } catch (error) {
       console.error('Error fetching orders:', error);
     }
@@ -48,29 +43,11 @@ export default function FedExShipmentManager() {
     setMessage('');
 
     try {
-      const response = await fetch('/api/shipping/fedex/create-shipment', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        credentials: 'include',
-        body: JSON.stringify({
-          orderId: selectedOrder,
-          serviceType: serviceType
-        })
-      });
-
-      const result = await response.json();
-
-      if (result.success) {
-        setMessage(`Shipment created successfully! Tracking: ${result.data.trackingNumber}`);
-        setMessageType('success');
-        setSelectedOrder('');
-        fetchConfirmedOrders(); // Refresh orders
-      } else {
-        setMessage(result.message || 'Failed to create shipment');
-        setMessageType('error');
-      }
+      const result = await adminAPI.createFedExShipment(selectedOrder, serviceType);
+      setMessage(`Shipment created successfully! Tracking: ${result.data.trackingNumber}`);
+      setMessageType('success');
+      setSelectedOrder('');
+      fetchConfirmedOrders(); // Refresh orders
     } catch (error) {
       setMessage('Error creating shipment');
       setMessageType('error');
@@ -85,14 +62,8 @@ export default function FedExShipmentManager() {
     setMessage('');
 
     try {
-      const response = await fetch('/api/fedex/validate-credentials', {
-        method: 'POST',
-        credentials: 'include'
-      });
-
-      const result = await response.json();
-
-      if (result.success && result.data.valid) {
+      const result = await adminAPI.validateFedExCredentials();
+      if (result.data.valid) {
         setMessage('FedEx credentials are valid');
         setMessageType('success');
       } else {
