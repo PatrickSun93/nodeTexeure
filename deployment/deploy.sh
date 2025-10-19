@@ -71,12 +71,6 @@ if ! curl -f http://localhost:3000; then
     exit 1
 fi
 
-# Check admin dashboard
-if ! curl -f http://localhost:3005; then
-    echo "❌ Error: Admin dashboard health check failed"
-    exit 1
-fi
-
 # Run database migrations
 echo "🗄️ Running database migrations..."
 docker-compose -f deployment/docker-compose.prod.yml exec backend npm run migrate
@@ -88,7 +82,6 @@ curl -s http://localhost:3000 > /dev/null
 
 echo "✅ Deployment completed successfully!"
 echo "🌐 Frontend: http://localhost:3000"
-echo "🔧 Admin: http://localhost:3005"
 echo "🔌 API: http://localhost:6666"
 
 # Show running containers

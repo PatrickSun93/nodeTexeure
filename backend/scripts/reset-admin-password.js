@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 /**
- * Reset Admin Password Script
- * - Updates the hashed password of admin@example.com to 'admin123' (bcrypt, saltRounds=10)
- * - Uses backend/.env for DB connection via utils/database.js
+ * Deprecated: Legacy Admin Password Reset Script
+ * - This script targeted the deprecated admin dashboard user (admin@example.com).
+ * - Internal operations tools now provide RBAC-protected password reset flows.
+ * - If you must reset a specific user's password, use generic user reset tooling or run a targeted DB update with proper audit controls.
  */
 
 const path = require('path');

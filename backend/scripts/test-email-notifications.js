@@ -101,7 +101,7 @@ async function testEmailNotifications() {
 
     console.log('\n📧 Email Types Implemented:');
     console.log('1. Order Confirmation - Sent when order is created');
-    console.log('2. Order Status Updates - Sent when admin updates order status');
+    console.log('2. Order Status Updates - Sent when order status changes');
     console.log('3. Shipping Notifications - Sent when order status becomes "shipped"');
     console.log('4. Welcome Emails - Sent when new user registers');
     console.log('5. Abandoned Cart Recovery - 3-email sequence (1hr, 24hr, 3 days)');
@@ -109,7 +109,7 @@ async function testEmailNotifications() {
     console.log('\n🔗 Integration Points:');
     console.log('- Order creation (orderRoutes.js)');
     console.log('- Payment success (paymentRoutes.js)');
-    console.log('- Admin order status updates (adminRoutes.js)');
+    console.log('- Order status updates (orderRoutes.js)');
     console.log('- User registration (userRoutes.js)');
     console.log('- Cart abandonment tracking (cartRoutes.js)');
 

@@ -178,7 +178,7 @@ inventory {
 
 **Low Stock Alerts:**
 - Configurable reorder points per product/variant
-- Admin-only notifications
+- Authorized staff-only notifications
 - Automatic reorder suggestions
 
 #### 5. Order Processing

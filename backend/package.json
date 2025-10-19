@@ -8,8 +8,7 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
-    "seed:rnd": "node scripts/seed-rnd.js",
-    "reset:admin": "node scripts/reset-admin-password.js"
+    "seed:rnd": "node scripts/seed-rnd.js"
   },
   "keywords": [
     "express",

@@ -53,7 +53,7 @@
   - Extend inventory system to handle product variants
   - Create variant-specific stock tracking
   - Update cart and checkout to handle variant inventory
-  - Add variant inventory display in admin dashboard
+  - Add variant inventory display in product detail and internal tools
   - _Requirements: 5.5_
 
 - [x] 9. Add advanced frontend features
@@ -63,11 +63,11 @@
   - Build advanced search with autocomplete and suggestions
   - _Requirements: 8.1, 9.5_
 
-- [x] 10. Build comprehensive admin dashboard
-  - Create sales analytics and metrics dashboard
+- [x] 10. Build internal operations tools (no separate admin dashboard)
+  - Create sales analytics and metrics views
   - Implement bulk product management operations
   - Add order management interface with status updates
-  - Create user management with role assignment
+  - Create user management with role assignment (role-based access)
   - _Requirements: 8.1, 8.2, 8.3, 8.4, 8.5_
 
 - [x] 11. Set up Stripe payment integration foundation
@@ -150,7 +150,7 @@
   - Create order status update system with history tracking
   - Implement order cancellation and refund processing
   - Build customer order history and tracking pages
-  - Add order search and filtering for admin dashboard
+  - Add order search and filtering for internal tools and customer history
   - _Requirements: 7.1, 7.2, 7.3, 7.4, 7.5_
 
 - [x] 23. Implement multi-language support foundation
@@ -177,7 +177,7 @@
 - [x] 26. Implement security and rate limiting
   - Add API rate limiting middleware (1000/15min, 10000/hour)
   - Enhance audit logging for sensitive operations
-  - Implement CSRF protection for admin operations
+  - Implement CSRF protection for sensitive write operations
   - Add input validation and sanitization
   - _Requirements: 10.1, 10.2, 10.4_
 

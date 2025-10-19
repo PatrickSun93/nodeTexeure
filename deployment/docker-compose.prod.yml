@@ -18,22 +18,6 @@ services:
     networks:
       - app-network
 
-  # Admin Dashboard
-  admin:
-    build:
-      context: ./admin-dashboard
-      dockerfile: ../deployment/Dockerfile.admin
-    ports:
-      - "3005:3005"
-    environment:
-      - NODE_ENV=production
-      - NEXT_PUBLIC_API_URL=https://api.yourdomain.com
-    depends_on:
-      - backend
-    restart: unless-stopped
-    networks:
-      - app-network
-
   # Backend API
   backend:
     build:
@@ -107,7 +91,6 @@ services:
     depends_on:
       - frontend
       - backend
-      - admin
     restart: unless-stopped
     networks:
       - app-network

@@ -285,34 +285,34 @@ class EmailService {
   }
 
   /**
-   * Send email failure alert to admin users
-   * @param {string} adminEmail - Admin email address
+   * Send email failure alert to authorized staff
+   * @param {string} staffEmail - Authorized staff email address
    * @param {Object} failureData - Email failure information
    * @returns {Promise<Object>} - Email sending result
    */
-  async sendEmailFailureAlert(adminEmail, failureData) {
+  async sendEmailFailureAlert(staffEmail, failureData) {
     const subject = `Email System Alert - Failed to send ${failureData.failedEmail.type}`;
     const htmlContent = this.renderEmailFailureAlertTemplate(failureData);
     const textContent = this.renderEmailFailureAlertText(failureData);
 
-    return await this.sendEmail(adminEmail, subject, htmlContent, textContent);
+    return await this.sendEmail(staffEmail, subject, htmlContent, textContent);
   }
 
   /**
-   * Send low stock alert to admin users
-   * @param {Array} adminEmails - Array of admin email addresses
+   * Send low stock alert to authorized staff
+   * @param {Array} staffEmails - Array of authorized staff email addresses
    * @param {Array} lowStockProducts - Array of products with low stock
    * @returns {Promise<Array>} - Array of email sending results
    */
-  async sendLowStockAlert(adminEmails, lowStockProducts) {
+  async sendLowStockAlert(staffEmails, lowStockProducts) {
     const subject = `Low Stock Alert - ${lowStockProducts.length} products need attention`;
     const htmlContent = this.renderLowStockAlertTemplate(lowStockProducts);
     const textContent = this.renderLowStockAlertText(lowStockProducts);
 
     const results = [];
-    for (const adminEmail of adminEmails) {
+    for (const staffEmail of staffEmails) {
       try {
-        const result = await this.sendEmail(adminEmail, subject, htmlContent, textContent);
+        const result = await this.sendEmail(staffEmail, subject, htmlContent, textContent);
         results.push(result);
       } catch (error) {
         results.push({

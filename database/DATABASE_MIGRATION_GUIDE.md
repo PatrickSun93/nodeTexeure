@@ -334,9 +334,9 @@ VALUES
 
 #### Production Data
 ```sql
--- Create production admin user
+-- Create production operations user (admin role)
 INSERT INTO users (email, password_hash, first_name, last_name, role, status, email_verified)
-VALUES ('admin@yourdomain.com', '$2b$10$production_hash_here', 'Admin', 'User', 'admin', 'active', true);
+VALUES ('ops@yourdomain.com', '$2b$10$production_hash_here', 'Ops', 'User', 'admin', 'active', true);
 
 -- Set production system settings
 UPDATE system_settings SET setting_value = 'Bed Texture Store' WHERE setting_key = 'site_name';

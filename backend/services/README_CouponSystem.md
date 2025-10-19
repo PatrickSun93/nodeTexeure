@@ -271,7 +271,7 @@ node backend/scripts/test-coupon-system.js
 ## Security Considerations
 
 ### Access Control
-- Admin-only endpoints for coupon management
+- Authorized staff-only endpoints for coupon management
 - Public validation endpoint with rate limiting
 - User-specific usage tracking
 

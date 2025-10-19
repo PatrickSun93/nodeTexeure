@@ -108,7 +108,6 @@ docker-compose -f deployment/docker-compose.prod.yml logs -f
 # Test endpoints
 curl -f http://localhost:6666/api/health
 curl -f http://localhost:3000
-curl -f http://localhost:3005
 ```
 
 ## Monitoring Setup
@@ -307,6 +306,6 @@ docker-compose -f deployment/docker-compose.prod.yml up -d --scale backend=1
 ## Additional Resources
 
 - [API Documentation](./API_DOCUMENTATION.md)
-- [Admin User Guide](./ADMIN_USER_GUIDE.md)
+- Internal Operations Tools Guide (admin materials archived)
 - [Troubleshooting Guide](./TROUBLESHOOTING.md)
 - [Security Guidelines](./SECURITY_GUIDELINES.md)

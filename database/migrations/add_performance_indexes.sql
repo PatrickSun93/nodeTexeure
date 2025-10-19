@@ -20,7 +20,7 @@ ALTER TABLE product_variants ADD INDEX idx_product_active_color (product_id, is_
 ALTER TABLE inventory ADD INDEX idx_product_variant_available (product_id, variant_id, quantity_available);
 ALTER TABLE inventory ADD INDEX idx_low_stock_check (quantity_available, reorder_point, product_id);
 
--- Orders: Admin dashboard and customer history
+-- Orders: Customer history and internal reporting
 ALTER TABLE orders ADD INDEX idx_user_status_created (user_id, status, created_at);
 ALTER TABLE orders ADD INDEX idx_status_created_total (status, created_at, total_amount);
 ALTER TABLE orders ADD INDEX idx_guest_email_created (guest_email, created_at);
@@ -49,7 +49,7 @@ ALTER TABLE payments ADD INDEX idx_gateway_transaction_status (gateway_transacti
 ALTER TABLE email_queue ADD INDEX idx_status_scheduled_attempts (status, scheduled_at, attempts);
 ALTER TABLE email_queue ADD INDEX idx_template_status_created (template_id, status, created_at);
 
--- Audit logs: Admin reporting and security
+-- Audit logs: Security and reporting
 ALTER TABLE audit_logs ADD INDEX idx_user_action_created (user_id, action, created_at);
 ALTER TABLE audit_logs ADD INDEX idx_resource_created (resource_type, resource_id, created_at);
 

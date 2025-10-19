@@ -202,32 +202,6 @@ await fetch('/api/images/products/PROD001/order', {
 });
 ```
 
-### Admin Dashboard Integration
-
-```javascript
-// Display images with different sizes
-const ImageGallery = ({ images }) => (
-  <div className="image-gallery">
-    {images.map(img => (
-      <div key={img.id} className="image-item">
-        <img 
-          src={img.thumbnail_medium_url} 
-          alt={img.alt_text}
-          loading="lazy"
-        />
-        <div className="image-controls">
-          <button onClick={() => setPrimary(img.id)}>
-            Set Primary
-          </button>
-          <button onClick={() => deleteImage(img.id)}>
-            Delete
-          </button>
-        </div>
-      </div>
-    ))}
-  </div>
-);
-```
 
 ## Performance Considerations
 
@@ -253,7 +227,7 @@ The service includes comprehensive error handling:
 - Rate limiting (50 uploads per 15 minutes)
 - File type validation
 - Secure filename sanitization
-- Admin-only access to upload endpoints
+- Authenticated access to upload endpoints
 
 ## Monitoring and Logging
 
@@ -265,4 +239,4 @@ All operations are logged with:
 
 ## Migration from Legacy System
 
-The service maintains backward compatibility with the existing single image upload endpoint (`/api/admin/products/:id/image`) while providing enhanced functionality through the new endpoints.
+Legacy single-image upload endpoint has been retired. Use `/api/images/products/:id/upload` for bulk uploads and `/api/images/products/:id` to retrieve images.

@@ -167,8 +167,7 @@ app.use(basicSecurity);
 // Enhanced security for sensitive routes
 app.use('/api/payments', enhancedSecurity, paymentRoutes);
 
-// Admin security with CSRF protection
-app.use('/api/admin', adminSecurity, protect, admin, adminRoutes);
+// Admin dashboard security removed; internal operations tools integrated and protected by RBAC
 ```
 
 ### Route-Level Security

@@ -86,7 +86,7 @@ async function testLowStockScenario() {
           console.log(`✓ Low stock alert processed`);
           console.log(`  - Alert sent: ${alertResult.data.alert_sent}`);
           if (alertResult.data.alert_sent) {
-            console.log(`  - Admin count: ${alertResult.data.admin_count}`);
+            console.log(`  - Authorized staff recipient count: ${alertResult.data.recipient_count}`);
             console.log(`  - Product: ${alertResult.data.product}`);
             console.log(`  - Variant: ${alertResult.data.variant}`);
           } else {

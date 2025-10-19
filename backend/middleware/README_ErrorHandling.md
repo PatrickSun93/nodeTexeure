@@ -415,5 +415,5 @@ This provides detailed logs for:
 For questions or issues with the error handling system:
 - Check the logs in `/logs` directory
 - Run the test suite to verify system health
-- Review error statistics in the admin dashboard
+- Review error statistics in the monitoring dashboard (e.g., Grafana)
 - Contact the development team with specific error IDs for investigation

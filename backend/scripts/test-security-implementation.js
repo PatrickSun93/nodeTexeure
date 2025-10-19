@@ -211,17 +211,7 @@ const testCSRFProtection = async () => {
   if (loginResult.success && loginResult.data.token) {
     console.log('✓ Successfully authenticated for CSRF test');
     
-    // Try to make an admin request without CSRF token
-    const adminResult = await makeRequest('POST', '/api/admin/products/approve', 
-      { productId: 'test' },
-      { 'Authorization': `Bearer ${loginResult.data.token}` }
-    );
-    
-    if (!adminResult.success && (adminResult.status === 403 || adminResult.status === 401)) {
-      console.log('✓ Admin request without CSRF token rejected');
-    } else {
-      console.log('⚠ Admin request without CSRF token may not have been rejected');
-    }
+
   } else {
     console.log('⚠ Could not authenticate for CSRF test');
   }

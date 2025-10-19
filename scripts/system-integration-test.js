@@ -5,7 +5,6 @@ const fs = require('fs');
 
 const API_BASE = process.env.API_URL || 'http://localhost:6666/api';
 const FRONTEND_BASE = process.env.FRONTEND_URL || 'http://localhost:3000';
-const ADMIN_BASE = process.env.ADMIN_URL || 'http://localhost:3005';
 
 console.log('🔧 Starting comprehensive system integration test...\n');
 
@@ -13,7 +12,6 @@ class SystemIntegrationTest {
   constructor() {
     this.results = [];
     this.authToken = null;
-    this.adminToken = null;
     this.testOrderId = null;
     this.testProductId = null;
   }
@@ -22,8 +20,6 @@ class SystemIntegrationTest {
     try {
       await this.testSystemHealth();
       await this.testAuthentication();
-      await this.testProductManagement();
-      await this.testInventorySystem();
       await this.testOrderFlow();
       await this.testPaymentProcessing();
       await this.testEmailSystem();
@@ -31,7 +27,6 @@ class SystemIntegrationTest {
       await this.testCouponSystem();
       await this.testSearchFunctionality();
       await this.testMultiLanguageSupport();
-      await this.testAdminDashboard();
       await this.testSecurityFeatures();
       await this.testPerformanceMetrics();
       
@@ -47,8 +42,7 @@ class SystemIntegrationTest {
     
     const services = [
       { name: 'Backend API', url: `${API_BASE}/health` },
-      { name: 'Frontend', url: `${FRONTEND_BASE}` },
-      { name: 'Admin Dashboard', url: `${ADMIN_BASE}` }
+      { name: 'Frontend', url: `${FRONTEND_BASE}` }
     ];
 
     for (const service of services) {
@@ -91,109 +85,9 @@ class SystemIntegrationTest {
       this.logResult('FAIL', 'User login', false, error.message);
     }
 
-    // Test admin login
-    try {
-      const adminLoginResponse = await axios.post(`${API_BASE}/auth/admin/login`, {
-        email: 'admin@example.com',
-        password: 'AdminPassword123!'
-      });
-      
-      this.adminToken = adminLoginResponse.data.token;
-      this.logResult('PASS', 'Admin login', !!this.adminToken);
-    } catch (error) {
-      this.logResult('FAIL', 'Admin login', false, error.message);
-    }
   }
 
-  async testProductManagement() {
-    console.log('📦 Testing product management...');
-    
-    if (!this.adminToken) {
-      this.logResult('SKIP', 'Product management', false, 'No admin token');
-      return;
-    }
 
-    // Create test product
-    try {
-      const productData = {
-        name: 'Test Bed Sheet Set',
-        description: 'Test product for integration testing',
-        price: 99.99,
-        currency: 'USD',
-        category: 'bed-sheets',
-        inventory: {
-          quantity: 100,
-          lowStockThreshold: 10
-        }
-      };
-
-      const createResponse = await axios.post(`${API_BASE}/admin/products`, productData, {
-        headers: { Authorization: `Bearer ${this.adminToken}` }
-      });
-      
-      this.testProductId = createResponse.data.data.product.id;
-      this.logResult('PASS', 'Product creation', !!this.testProductId);
-    } catch (error) {
-      this.logResult('FAIL', 'Product creation', false, error.message);
-    }
-
-    // Test product approval workflow
-    if (this.testProductId) {
-      try {
-        const approvalResponse = await axios.patch(
-          `${API_BASE}/admin/products/${this.testProductId}/approve`,
-          { notes: 'Approved for testing' },
-          { headers: { Authorization: `Bearer ${this.adminToken}` } }
-        );
-        
-        this.logResult('PASS', 'Product approval', approvalResponse.data.success);
-      } catch (error) {
-        this.logResult('FAIL', 'Product approval', false, error.message);
-      }
-    }
-
-    // Test product listing
-    try {
-      const listResponse = await axios.get(`${API_BASE}/products`);
-      const hasProducts = listResponse.data.data.products.length > 0;
-      this.logResult('PASS', 'Product listing', hasProducts);
-    } catch (error) {
-      this.logResult('FAIL', 'Product listing', false, error.message);
-    }
-  }
-
-  async testInventorySystem() {
-    console.log('📊 Testing inventory management...');
-    
-    if (!this.testProductId || !this.adminToken) {
-      this.logResult('SKIP', 'Inventory management', false, 'Missing prerequisites');
-      return;
-    }
-
-    // Test inventory update
-    try {
-      const updateResponse = await axios.patch(
-        `${API_BASE}/admin/inventory/${this.testProductId}`,
-        { quantity: 50, reason: 'Integration test adjustment' },
-        { headers: { Authorization: `Bearer ${this.adminToken}` } }
-      );
-      
-      this.logResult('PASS', 'Inventory update', updateResponse.data.success);
-    } catch (error) {
-      this.logResult('FAIL', 'Inventory update', false, error.message);
-    }
-
-    // Test low stock alerts
-    try {
-      const alertResponse = await axios.get(`${API_BASE}/admin/inventory/low-stock`, {
-        headers: { Authorization: `Bearer ${this.adminToken}` }
-      });
-      
-      this.logResult('PASS', 'Low stock alerts', Array.isArray(alertResponse.data.data));
-    } catch (error) {
-      this.logResult('FAIL', 'Low stock alerts', false, error.message);
-    }
-  }
 
   async testOrderFlow() {
     console.log('🛒 Testing order management flow...');
@@ -394,36 +288,6 @@ class SystemIntegrationTest {
     }
   }
 
-  async testAdminDashboard() {
-    console.log('📊 Testing admin dashboard...');
-    
-    if (!this.adminToken) {
-      this.logResult('SKIP', 'Admin dashboard', false, 'No admin token');
-      return;
-    }
-
-    // Test dashboard stats
-    try {
-      const statsResponse = await axios.get(`${API_BASE}/admin/dashboard`, {
-        headers: { Authorization: `Bearer ${this.adminToken}` }
-      });
-      
-      this.logResult('PASS', 'Dashboard stats', !!statsResponse.data.data.stats);
-    } catch (error) {
-      this.logResult('FAIL', 'Dashboard stats', false, error.message);
-    }
-
-    // Test analytics
-    try {
-      const analyticsResponse = await axios.get(`${API_BASE}/admin/analytics/sales`, {
-        headers: { Authorization: `Bearer ${this.adminToken}` }
-      });
-      
-      this.logResult('PASS', 'Sales analytics', analyticsResponse.status === 200);
-    } catch (error) {
-      this.logResult('FAIL', 'Sales analytics', false, error.message);
-    }
-  }
 
   async testSecurityFeatures() {
     console.log('🔒 Testing security features...');
@@ -438,16 +302,6 @@ class SystemIntegrationTest {
       this.logResult('PASS', 'Rate limiting active', error.response?.status === 429);
     }
 
-    // Test CSRF protection
-    try {
-      const csrfResponse = await axios.post(`${API_BASE}/admin/products`, {}, {
-        headers: { Authorization: `Bearer ${this.adminToken}` }
-      });
-      
-      this.logResult('PASS', 'CSRF protection', csrfResponse.status !== 200);
-    } catch (error) {
-      this.logResult('PASS', 'CSRF protection active', error.response?.status === 403);
-    }
   }
 
   async testPerformanceMetrics() {

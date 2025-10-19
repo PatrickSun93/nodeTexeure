@@ -208,7 +208,7 @@ const stats = await fetch('/api/emails/queue/stats', {
 - **Trigger**: Product inventory below threshold
 - **Content**: List of low stock products
 - **Priority**: Low (4)
-- **Recipients**: Admin users only
+- **Recipients**: Authorized staff only
 
 ## Queue Processing
 

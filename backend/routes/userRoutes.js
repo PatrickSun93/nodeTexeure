@@ -227,7 +227,7 @@ router.post('/login', authRateLimit, validateInput('userLogin'), async (req, res
       
       await DatabaseUtil.executeQuery('INSERT INTO refresh_tokens (id, user_id, token, expiry) VALUES (?, ?, ?, ?)', [refreshId, user.id, refreshToken, refreshExpiry]);
       
-      // Issue HttpOnly authentication cookie for admin logins
+      // Issue HttpOnly authentication cookie for privileged operations (legacy cookie name: 'admin_auth')
       // Secure in production, SameSite=Strict, Path=/, configurable TTL via ADMIN_AUTH_COOKIE_TTL_MS (default: 24h)
       if (isAdmin) {
         const ttlMs = Number.parseInt(process.env.ADMIN_AUTH_COOKIE_TTL_MS || '86400000', 10);

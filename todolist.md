@@ -37,13 +37,13 @@ This todo list is based on the system architecture design discussions for the be
   - [x] Create order creation endpoint: Calculate totals, apply coupons.
   - [x] Validate coupons: Check expiration, min_order_value, max_percentage.
   - [x] Handle invalid coupons: Return warning message to user.
-- [ ] Add admin dashboard and product management:
-  - Implement role-based access: Check user role in middleware.
+- [ ] Build internal operations tools (no separate admin dashboard):
+  - Implement role-based access: Check user roles in middleware.
   - Create endpoints for managing products: Add, update, delete.
   - Add coupon management: Create, edit (including expiration), delete.
   - Manage inventory and users via dedicated routes.
-  - the admin dashboard port is 3005
-  - the tech stack is nodejs, mysql and nextjs
+  - Integrate analytics views and operational metrics within the existing frontend.
+  - Note: internal tools run within the main app (port 3000), protected by RBAC.
 
 ## Phase 3: Integrations
 - [ ] Integrate Stripe for payments:
@@ -56,7 +56,7 @@ This todo list is based on the system architecture design discussions for the be
   - Add basic email analytics tracking.
 - [ ] Implement inventory management:
   - Set up basic stock tracking: Update stock on order placement.
-  - (Low priority) Add low stock alerts: Check thresholds and send emails to admins.
+  - (Low priority) Add low stock alerts: Check thresholds and send emails to authorized staff.
 
 ## Phase 4: Enhancements and Testing
 - [ ] Add security measures:

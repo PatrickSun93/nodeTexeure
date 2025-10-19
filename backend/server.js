@@ -30,7 +30,7 @@ try {
 
 // Middleware
 app.use(cors({
-  origin: ['http://localhost:3000', 'http://127.0.0.1:3000', 'http://localhost:3005'], // Add admin dashboard
+  origin: ['http://localhost:3000', 'http://127.0.0.1:3000'],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'X-CSRF-Token']
@@ -98,9 +98,6 @@ app.use('/api/cart', require('./routes/cartRoutes'));
 // Order routes
 app.use('/api/orders', require('./routes/orderRoutes'));
 
-// Admin routes (protected with enhanced security)
-const adminRoutes = require('./routes/adminRoutes');
-app.use('/api/admin', adminSecurity, protect, admin, adminRoutes);
 
 // Image routes (protected with enhanced security)
 const imageRoutes = require('./routes/imageRoutes');

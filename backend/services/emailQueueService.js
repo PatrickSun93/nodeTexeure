@@ -127,12 +127,12 @@ class EmailQueueService {
   }
 
   /**
-   * Queue low stock alert for admin users
+   * Queue low stock alert for authorized staff
    */
-  async queueLowStockAlert(adminEmails, lowStockProducts) {
+  async queueLowStockAlert(staffEmails, lowStockProducts) {
     const results = [];
-    for (const adminEmail of adminEmails) {
-      const queueId = await this.queueEmail('low_stock_alert', adminEmail, { products: lowStockProducts }, 4);
+    for (const staffEmail of staffEmails) {
+      const queueId = await this.queueEmail('low_stock_alert', staffEmail, { products: lowStockProducts }, 4);
       results.push(queueId);
     }
     return results;

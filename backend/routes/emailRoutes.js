@@ -204,8 +204,8 @@ router.post('/queue/welcome', authenticateToken, async (req, res) => {
 
 /**
  * @route POST /api/emails/queue/low-stock-alert
- * @desc Queue low stock alert emails for admin users
- * @access Private (Admin only)
+ * @desc Queue low stock alert emails for authorized staff
+ * @access Private (Authorized staff only)
  */
 router.post('/queue/low-stock-alert', authenticateToken, requireRole(['admin']), async (req, res) => {
   try {
@@ -214,7 +214,7 @@ router.post('/queue/low-stock-alert', authenticateToken, requireRole(['admin']),
     if (!adminEmails || !Array.isArray(adminEmails) || !lowStockProducts) {
       return res.status(400).json({
         success: false,
-        message: 'Admin emails array and low stock products are required'
+        message: 'Authorized staff emails array and low stock products are required'
       });
     }
 

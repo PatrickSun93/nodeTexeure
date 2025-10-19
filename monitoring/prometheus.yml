@@ -36,13 +36,6 @@ scrape_configs:
     metrics_path: '/api/metrics'
     scrape_interval: 30s
 
-  # Admin Dashboard
-  - job_name: 'admin-dashboard'
-    static_configs:
-      - targets: ['admin:3005']
-    metrics_path: '/api/metrics'
-    scrape_interval: 30s
-
   # MySQL Database
   - job_name: 'mysql'
     static_configs:

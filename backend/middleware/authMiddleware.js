@@ -6,10 +6,10 @@ const logger = require('../utils/logger');
 /**
  * Extract JWT from request using the following priority:
  * 1) Authorization: Bearer <token> header
- * 2) HttpOnly cookie named 'admin_auth'
+ * 2) HttpOnly cookie named 'admin_auth' (legacy name; used for privileged operations)
  *
  * This allows backward compatibility with existing header-based auth
- * while enabling cookie-based auth for the admin app.
+ * while enabling cookie-based auth for internal operations tools.
  * @param {import('express').Request} req
  * @returns {string|null}
  */
@@ -18,7 +18,7 @@ const extractAuthToken = (req) => {
   if (req.headers.authorization && req.headers.authorization.startsWith('Bearer ')) {
     return req.headers.authorization.split(' ')[1];
   }
-  // Fallback to cookie-based auth for admin
+  // Fallback to cookie-based auth for internal operations tools (legacy cookie name)
   if (req.cookies && req.cookies.admin_auth) {
     return req.cookies.admin_auth;
   }

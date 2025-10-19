@@ -854,23 +854,23 @@ class InventoryService {
         };
       }
       
-      // Get admin users
-      const adminQuery = `
+      // Get authorized staff recipients
+      const staffQuery = `
         SELECT email, CONCAT(first_name, ' ', last_name) as name
         FROM users
         WHERE role = 'admin' AND status = 'active'
       `;
       
-      const adminResult = await DatabaseUtil.executeQuery(adminQuery);
+      const staffResult = await DatabaseUtil.executeQuery(staffQuery);
       
-      if (!adminResult.success || adminResult.data.length === 0) {
+      if (!staffResult.success || staffResult.data.length === 0) {
         return {
           success: false,
-          error: 'No admin users found to send alert'
+          error: 'No authorized staff recipients found to send alert'
         };
       }
       
-      // Create email queue entries for each admin
+      // Create email queue entries for each authorized staff recipient
       const emailIdResult = await DatabaseUtil.executeQuery('SELECT get_next_id("EMAIL") as id');
       const emailId = emailIdResult.data[0].id;
       
@@ -926,7 +926,7 @@ class InventoryService {
         success: true,
         data: {
           alert_sent: true,
-          admin_count: adminResult.data.length,
+          recipient_count: staffResult.data.length,
           product: inventoryItem.product_name,
           variant: variant
         }

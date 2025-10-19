@@ -9,7 +9,7 @@ This design document outlines the architecture and implementation approach for c
 ### System Architecture
 - **Backend**: Node.js/Express monolithic API on port 6666
 - **Frontend**: Next.js application with server-side rendering for SEO
-- **Admin Dashboard**: Separate Next.js application on port 3005
+- **Internal Operations Dashboard (optional)**: Integrated into existing frontend with role-based access (no separate app on port 3005)
 - **Database**: MySQL with existing schema extensions
 - **External Services**: Stripe (payments), AWS SES (email), FedEx API (shipping)
 - **File Storage**: AWS S3 for production, local storage for development
@@ -22,7 +22,6 @@ This design document outlines the architecture and implementation approach for c
 ├── inventory/         # Enhanced inventory management
 ├── notifications/     # Email and notification system
 ├── coupons/          # Discount code management
-├── admin/            # Enhanced admin operations
 └── orders/           # Extended order management
 ```
 
@@ -96,7 +95,7 @@ class EmailService {
   async sendStatusUpdate(orderId, newStatus)
   async sendShippingNotification(orderId, trackingInfo)
   async sendAbandonedCartEmail(cartId, customerEmail, sequence)
-  async sendLowStockAlert(adminEmails, products)
+  async sendLowStockAlert(staffEmails, products)
 }
 ```
 
@@ -105,7 +104,7 @@ class EmailService {
 - Status updates for each order stage
 - Shipping notifications with tracking links
 - Abandoned cart recovery (3 email sequence)
-- Low stock alerts for admin users
+- Low stock alerts for authorized staff
 
 ### 5. Product Management Enhancement
 

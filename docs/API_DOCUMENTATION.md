@@ -144,11 +144,11 @@ GET /products/{id}
 }
 ```
 
-### Create Product (Admin Only)
+### Create Product (Authorized staff only - RBAC)
 
 ```http
 POST /products
-Authorization: Bearer {admin_token}
+Authorization: Bearer {staff_token}
 Content-Type: application/json
 
 {
@@ -241,11 +241,11 @@ GET /orders/{id}
 Authorization: Bearer {token}
 ```
 
-### Update Order Status (Admin Only)
+### Update Order Status (Authorized staff only - RBAC)
 
 ```http
 PATCH /orders/{id}/status
-Authorization: Bearer {admin_token}
+Authorization: Bearer {staff_token}
 Content-Type: application/json
 
 {
@@ -437,14 +437,14 @@ Content-Type: application/json
 
 ```http
 GET /inventory/{product_id}
-Authorization: Bearer {admin_token}
+Authorization: Bearer {staff_token}
 ```
 
 ### Update Inventory
 
 ```http
 PATCH /inventory/{product_id}
-Authorization: Bearer {admin_token}
+Authorization: Bearer {staff_token}
 Content-Type: application/json
 
 {
@@ -530,41 +530,15 @@ Content-Type: application/json
 }
 ```
 
-## Admin API
+## Internal Operations (RBAC-protected)
 
-### Get Dashboard Stats
+Note: The legacy Admin API endpoints have been deprecated in favor of integrated internal operations tools within the main application. Privileged actions are protected by role-based access control (RBAC).
 
-```http
-GET /admin/dashboard
-Authorization: Bearer {admin_token}
-```
+- Previous examples using `/admin/*` endpoints and `{admin_token}` have been removed.
+- Use the standard API endpoints (e.g., `/orders`, `/inventory`, `/users`) with appropriate roles/permissions in the access token (`{staff_token}`).
+- See `backend/routes/README.md` and `backend/middleware/README_Security.md` for the current patterns and best practices.
 
-**Response:**
-```json
-{
-  "success": true,
-  "data": {
-    "stats": {
-      "total_orders": 1250,
-      "total_revenue": 125000.00,
-      "pending_orders": 15,
-      "low_stock_products": 8,
-      "new_customers": 45
-    },
-    "recent_orders": [...],
-    "top_products": [...],
-    "revenue_chart": [...]
-  }
-}
-```
-
-### Get All Users (Admin Only)
-
-```http
-GET /admin/users
-Authorization: Bearer {admin_token}
-```
-
+If you need guidance for operations workflows, consult the Internal Operations Tools documentation (archived admin materials have been migrated).
 ## Error Handling
 
 ### Error Response Format

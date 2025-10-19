@@ -20,7 +20,7 @@ The enhanced inventory management system provides comprehensive stock tracking, 
 
 ### 3. Low Stock Alert System
 - Automatic detection of low stock items based on reorder points
-- Email notifications sent to admin users
+- Email notifications sent to authorized staff
 - Cooldown period to prevent spam (24 hours between alerts for same product)
 - Configurable alert thresholds and settings
 
@@ -110,7 +110,7 @@ Processes inventory updates for multiple order items with comprehensive error ha
 Checks if inventory item is low stock and triggers alert if needed.
 
 #### triggerLowStockAlert(inventoryItem)
-Sends low stock alert emails to admin users with cooldown protection.
+Sends low stock alert emails to authorized staff with cooldown protection.
 
 #### getMovementHistory(inventoryId, filters)
 Retrieves detailed movement history with filtering and pagination.
@@ -142,7 +142,7 @@ System settings control alert behavior:
 1. Inventory update triggers low stock check
 2. If quantity ≤ reorder point, alert is triggered
 3. System checks for recent alerts (24-hour cooldown)
-4. Email notifications sent to all active admin users
+4. Email notifications sent to all active authorized staff users
 5. Alert details stored in email queue
 
 ### Email Template
@@ -222,7 +222,7 @@ Shows recent inventory movements with product and user details.
 - Order cancellation can restore inventory
 - Refunds handled through return movements
 
-### Admin Dashboard
+### Internal Operations Tools
 - Real-time inventory levels
 - Low stock alerts and notifications
 - Movement history and audit trails
@@ -277,7 +277,7 @@ Shows recent inventory movements with product and user details.
 ## Security
 
 ### Access Control
-- Admin-only access to sensitive inventory operations
+- Authorized staff-only access to sensitive inventory operations
 - User authentication for all inventory modifications
 - Audit trail for all changes
 

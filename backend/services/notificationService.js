@@ -97,7 +97,7 @@ class NotificationService {
             <p>Your product has been rejected by ${approverName}. Please review the feedback below and resubmit.</p>
             <p><strong>Rejection Reason:</strong> ${details.rejection_reason?.replace('_', ' ')}</p>
             ${details.notes ? `<p><strong>Additional Notes:</strong> ${details.notes}</p>` : ''}
-            <p>You can edit and resubmit your product through the admin dashboard.</p>
+            <p>You can edit and resubmit your product by replying to this email or contacting support.</p>
           `}
         </div>
         
@@ -127,7 +127,7 @@ Your product has been rejected by ${approverName}. Please review the feedback be
 Rejection Reason: ${details.rejection_reason?.replace('_', ' ')}
 ${details.notes ? `Additional Notes: ${details.notes}` : ''}
 
-You can edit and resubmit your product through the admin dashboard.
+You can edit and resubmit your product by replying to this email or contacting support.
 `}
 
 This is an automated notification from the Bed Texture E-commerce Platform.
@@ -172,27 +172,27 @@ This is an automated notification from the Bed Texture E-commerce Platform.
   }
   
   /**
-   * Send low stock alert to admin users
+   * Send low stock alert to authorized staff
    */
   static async sendLowStockAlert(products) {
     try {
-      // Get admin users
-      const adminResult = await DatabaseUtil.executeQuery(
+      // Get authorized staff recipients
+      const staffResult = await DatabaseUtil.executeQuery(
         'SELECT email, first_name, last_name FROM users WHERE role = "admin" AND status = "active"'
       );
       
-      if (!adminResult.success || !adminResult.data.length) {
-        return { success: false, error: 'No admin users found' };
+      if (!staffResult.success || !staffResult.data.length) {
+        return { success: false, error: 'No authorized staff recipients found' };
       }
       
       const subject = `Low Stock Alert - ${products.length} Product(s) Need Restocking`;
       const emailContent = this.generateLowStockEmailContent(products);
       
-      // Send to all admin users
-      for (const admin of adminResult.data) {
+      // Send to all authorized staff recipients
+      for (const staff of staffResult.data) {
         await this.queueEmail({
-          to_email: admin.email,
-          to_name: `${admin.first_name} ${admin.last_name}`,
+          to_email: staff.email,
+          to_name: `${staff.first_name} ${staff.last_name}`,
           subject,
           email_content: emailContent,
           template_data: { products }

@@ -16,7 +16,7 @@ This document outlines the requirements for completing the bed texture e-commerc
 2. WHEN payment is processed THEN the system SHALL handle successful payments and create payment records
 3. WHEN payment fails THEN the system SHALL display appropriate error messages and allow retry
 4. WHEN payment is completed THEN the system SHALL update order status to "confirmed"
-5. WHEN a refund is requested THEN admin users SHALL be able to process refunds through Stripe
+5. WHEN a refund is requested THEN authorized staff SHALL be able to process refunds through Stripe
 
 ### Requirement 2: Shipping Integration and Tax Calculation
 
@@ -27,7 +27,7 @@ This document outlines the requirements for completing the bed texture e-commerc
 1. WHEN customer enters shipping address THEN the system SHALL calculate shipping costs based on weight and zone
 2. WHEN customer's location is determined THEN the system SHALL calculate appropriate tax rates
 3. WHEN order is shipped THEN the system SHALL integrate with FedEx/UPS API for tracking
-4. WHEN shipping rates change THEN admin users SHALL be able to update shipping zones and rates
+4. WHEN shipping rates change THEN authorized staff SHALL be able to update shipping zones and rates
 
 ### Requirement 3: Enhanced Inventory Management
 
@@ -35,11 +35,11 @@ This document outlines the requirements for completing the bed texture e-commerc
 
 #### Acceptance Criteria
 
-1. WHEN inventory reaches reorder point THEN the system SHALL send low stock alerts to admin users
+1. WHEN inventory reaches reorder point THEN the system SHALL send low stock alerts to authorized staff
 2. WHEN products are sold THEN the system SHALL automatically update inventory quantities
 3. WHEN stock reservations expire THEN the system SHALL release reserved inventory back to available stock
 4. WHEN inventory movements occur THEN the system SHALL log all changes with audit trail
-5. WHEN admin updates inventory THEN the system SHALL validate quantities and prevent negative stock
+5. WHEN authorized staff updates inventory THEN the system SHALL validate quantities and prevent negative stock
 
 ### Requirement 4: Email Notification System
 
@@ -75,7 +75,7 @@ This document outlines the requirements for completing the bed texture e-commerc
 2. WHEN coupon is valid THEN the system SHALL apply appropriate discount (percentage or fixed amount)
 3. WHEN coupon has usage limits THEN the system SHALL enforce per-customer and total usage limits
 4. WHEN coupon has minimum order amount THEN the system SHALL validate order meets requirement
-5. WHEN admin creates coupon THEN the system SHALL allow setting all discount parameters and restrictions
+5. WHEN authorized staff creates coupon THEN the system SHALL allow setting all discount parameters and restrictions
 
 ### Requirement 7: Order Management and Tracking
 
@@ -89,9 +89,9 @@ This document outlines the requirements for completing the bed texture e-commerc
 4. WHEN customer views order history THEN the system SHALL display all past orders with details
 5. WHEN order is cancelled THEN the system SHALL handle refunds and inventory restoration
 
-### Requirement 8: Enhanced Admin Dashboard
+### Requirement 8: Internal Operations Dashboard (optional, not in current scope)
 
-**User Story:** As an admin, I want a comprehensive dashboard to manage all aspects of the e-commerce platform, so that I can efficiently run the business.
+**User Story:** As authorized staff, I want internal tools to manage key aspects of the e-commerce platform, so that operations can run efficiently.
 
 #### Acceptance Criteria
 

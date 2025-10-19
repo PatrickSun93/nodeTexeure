@@ -342,7 +342,6 @@ BLACKLISTED_IPS=
 NODE_ENV=development
 PORT=6666
 FRONTEND_URL=http://localhost:3000
-ADMIN_URL=http://localhost:3005
 
 # Company Information
 COMPANY_NAME=Bed Texture Store

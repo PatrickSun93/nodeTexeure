@@ -84,31 +84,6 @@ CREATE TABLE product_images (
 );
 ```
 
-### Frontend Components
-
-#### 1. ImageUpload Component (`admin-dashboard/src/components/ImageUpload.js`)
-React component for bulk image uploads:
-- Drag and drop interface
-- File validation and preview
-- Upload progress indication
-- Error handling and user feedback
-
-#### 2. ImageGallery Component (`admin-dashboard/src/components/ImageGallery.js`)
-React component for image management:
-- Grid layout with responsive design
-- Drag and drop reordering
-- Primary image selection
-- Bulk operations (select/delete)
-- Alt text editing
-- Real-time updates
-
-#### 3. Product Images Page (`admin-dashboard/src/app/products/[id]/images/page.js`)
-Complete admin interface for product image management:
-- Product information display
-- Upload and gallery components integration
-- Usage guidelines and help text
-- Responsive design for mobile devices
-
 ## File Organization
 
 ### Local Storage Structure
@@ -216,7 +191,7 @@ await fetch('/api/images/products/PROD001/order', {
 - Filename sanitization to prevent path traversal
 
 ### Access Control
-- Admin-only access to upload endpoints
+- Authenticated access to upload endpoints (role-based access for sensitive operations)
 - CSRF protection on all write operations
 - Secure file deletion with proper cleanup
 

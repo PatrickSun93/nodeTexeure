@@ -256,7 +256,7 @@ All operations are logged with structured data:
 
 ### Access Control
 
-- Admin-only endpoints protected
+- Authorized staff-only endpoints protected
 - Rate limiting on public endpoints
 - Input validation and sanitization
 - CSRF protection

@@ -14,9 +14,9 @@ A: I need to support paypal, master, visa and the more the better. the thrid par
 A: I do want to support it
 7. Will you have user reviews and ratings?
 A: yes
-8. Do you need admin dashboard for managing products/orders?
-A: yes, I want to have different roles, 
-admin, staff and customer
+8. Do you need an internal operations dashboard for managing products/orders?
+A: yes, I want to have different roles,
+ops/staff and customer
 9. Do you have a specific customer base?
 A: I do not have a specific customer base, I want to serve the general public
 10. Do you have a specific location where you want to ship to?

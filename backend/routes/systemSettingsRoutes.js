@@ -71,8 +71,8 @@ router.get('/public', async (req, res) => {
 
 /**
  * GET /api/settings/all
- * Fetch all system settings (admin only - requires authentication)
- * This endpoint would be used by admin dashboard
+ * Fetch all system settings (authorized staff only - requires authentication)
+ * This endpoint would be used by internal operations tools
  */
 router.get('/all', async (req, res) => {
   try {
@@ -80,7 +80,7 @@ router.get('/all', async (req, res) => {
     // For now, we'll return an error indicating authentication is required
     
     res.status(401).json(ResponseFormatter.failure('Authentication required', {
-      message: 'This endpoint requires admin authentication'
+      message: 'This endpoint requires authorized staff authentication'
     }));
   } catch (error) {
     console.error('Error fetching all system settings:', error);

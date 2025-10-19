@@ -37,13 +37,13 @@ This document describes the comprehensive email notification system implemented 
 - **Integration**: Managed by `abandonedCartService.js`
 
 ### 6. Low Stock Alert Emails
-- **Trigger**: Sent to admin users when products reach reorder point
-- **Template**: Professional admin notification
+- **Trigger**: Sent to authorized staff when products reach reorder point
+- **Template**: Professional operations notification
 - **Content**: List of low stock products with current quantities
 - **Integration**: Triggered by `inventoryService.js`
 
 ### 7. Email Failure Alert Emails
-- **Trigger**: Sent to admin users when critical emails fail permanently
+- **Trigger**: Sent to authorized staff when critical emails fail permanently
 - **Template**: System alert with failure details
 - **Content**: Failed email information, error details, action required
 - **Integration**: Automatic failure handling in `emailQueueService.js`
@@ -236,9 +236,9 @@ Use the admin API endpoints to send test emails and verify delivery.
 - AWS SES provides secure email delivery
 
 ### Access Control
-- Admin-only endpoints for queue management
+- Authorized staff-only endpoints for queue management
 - Authentication required for all email operations
-- Audit logging for administrative actions
+- Audit logging for privileged actions
 
 ## Requirements Compliance
 

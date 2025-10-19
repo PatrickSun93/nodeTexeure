@@ -20,14 +20,7 @@ const SENSITIVE_OPERATIONS = {
   'POST:/api/users/reset-password': 'PASSWORD_RESET',
   'POST:/api/users/verify-email': 'EMAIL_VERIFICATION',
   
-  // Admin operations
-  'POST:/api/admin/users': 'ADMIN_USER_CREATE',
-  'PUT:/api/admin/users': 'ADMIN_USER_UPDATE',
-  'DELETE:/api/admin/users': 'ADMIN_USER_DELETE',
-  'POST:/api/admin/products/approve': 'ADMIN_PRODUCT_APPROVE',
-  'POST:/api/admin/products/reject': 'ADMIN_PRODUCT_REJECT',
-  'PUT:/api/admin/products': 'ADMIN_PRODUCT_UPDATE',
-  'DELETE:/api/admin/products': 'ADMIN_PRODUCT_DELETE',
+  // Admin dashboard operations removed; privileged operations now handled via internal operations tools with RBAC
   
   // Payment operations
   'POST:/api/payments/create-intent': 'PAYMENT_INTENT_CREATE',
