@@ -6,6 +6,28 @@ The admin dashboard will be a comprehensive web-based interface built as a separ
 
 ## Architecture
 
+### Integration with Existing Codebase
+
+The admin dashboard will be built as an extension of the existing e-commerce platform, following established patterns and conventions:
+
+**API Integration:**
+- Use existing `ResponseFormatter` utility for consistent API responses
+- Follow existing route structure and middleware patterns
+- Leverage existing authentication middleware with enhanced admin permissions
+- Use existing database connection and query patterns
+
+**Frontend Patterns:**
+- Follow existing Next.js App Router structure
+- Use same Tailwind CSS classes and styling patterns
+- Implement same error handling and loading states
+- Use existing API calling patterns and response handling
+
+**Database Integration:**
+- Extend existing MySQL schema with admin-specific views
+- Use existing database utility functions and connection management
+- Follow existing transaction patterns and error handling
+- Leverage existing audit logging and security measures
+
 ### High-Level Architecture
 
 ```mermaid
@@ -30,18 +52,20 @@ graph TB
 ### Technology Stack
 
 **Frontend:**
-- **Framework:** Next.js 14+ with App Router
-- **UI Library:** Tailwind CSS with Headless UI components
-- **State Management:** React Context + useReducer for complex state
-- **Charts/Analytics:** Chart.js or Recharts for data visualization
-- **Real-time:** WebSocket connection for live updates
-- **Authentication:** JWT tokens with HttpOnly cookies
+- **Framework:** Next.js 14+ with App Router (following existing frontend patterns)
+- **UI Library:** Tailwind CSS (consistent with existing styles)
+- **State Management:** React hooks and context (following existing patterns)
+- **Charts/Analytics:** ECharts for data visualization and interactive charts
+- **API Communication:** Same fetch patterns and response formatting as existing frontend
+- **Authentication:** JWT tokens with HttpOnly cookies (using existing auth system)
 
 **Backend Integration:**
-- **API Communication:** Existing Express.js backend with new admin-specific routes
-- **Authentication:** Enhanced role-based access control using existing auth middleware
-- **Database:** Existing MySQL database with new admin-specific views and procedures
-- **File Upload:** Integration with existing image service for bulk operations
+- **Framework:** Node.js with Express.js (extending existing backend)
+- **API Routes:** New admin routes following existing route structure and patterns
+- **Authentication:** Existing auth middleware with enhanced admin permissions
+- **Database:** MySQL with existing database connection and query patterns
+- **Response Format:** Same ResponseFormatter utility for consistent API responses
+- **File Upload:** Integration with existing image service and upload patterns
 
 ### Security Architecture
 
@@ -78,10 +102,11 @@ graph TB
 ```javascript
 // DashboardOverview.jsx
 - Real-time KPI widgets (sales, orders, customers)
-- Interactive charts for revenue trends
+- ECharts integration for revenue trends and analytics
 - Quick action buttons for common tasks
 - System health indicators
 - Recent activity feed
+- Uses existing API patterns and ResponseFormatter
 ```
 
 #### KPI Widgets
@@ -181,20 +206,57 @@ graph TB
 
 ### 7. Analytics and Reporting
 
-#### Analytics Dashboard
+#### Analytics Dashboard with ECharts
 ```javascript
 // AnalyticsDashboard.jsx
-- Interactive charts and graphs
-- Custom date range selection
-- Comparative analysis tools
-- Export capabilities (PDF, Excel)
+import * as echarts from 'echarts';
+
+// Revenue Trend Chart
+const revenueChartOptions = {
+  title: { text: 'Revenue Trend' },
+  tooltip: { trigger: 'axis' },
+  xAxis: { type: 'category', data: ['Jan', 'Feb', 'Mar', ...] },
+  yAxis: { type: 'value' },
+  series: [{
+    name: 'Revenue',
+    type: 'line',
+    data: [1200, 1900, 3000, ...]
+  }]
+};
+
+// Order Status Distribution (Pie Chart)
+const orderStatusOptions = {
+  title: { text: 'Order Status Distribution' },
+  tooltip: { trigger: 'item' },
+  series: [{
+    type: 'pie',
+    radius: '50%',
+    data: [
+      { value: 45, name: 'Pending' },
+      { value: 123, name: 'Confirmed' },
+      { value: 89, name: 'Shipped' }
+    ]
+  }]
+};
+
+// Top Products Bar Chart
+const topProductsOptions = {
+  title: { text: 'Top Selling Products' },
+  tooltip: { trigger: 'axis' },
+  xAxis: { type: 'category', data: ['Product A', 'Product B', ...] },
+  yAxis: { type: 'value' },
+  series: [{
+    type: 'bar',
+    data: [120, 200, 150, ...]
+  }]
+};
 ```
 
 #### Report Generator
-- **Sales Reports:** Revenue, profit margins, tax summaries
-- **Inventory Reports:** Turnover, aging, valuation
-- **Customer Reports:** Acquisition, retention, lifetime value
-- **Financial Reports:** Payment processing, refunds, fees
+- **Sales Reports:** Revenue, profit margins, tax summaries (ECharts line/bar charts)
+- **Inventory Reports:** Turnover, aging, valuation (ECharts heatmaps and gauges)
+- **Customer Reports:** Acquisition, retention, lifetime value (ECharts funnel and scatter plots)
+- **Financial Reports:** Payment processing, refunds, fees (ECharts pie and area charts)
 
 ### 8. System Configuration
 
@@ -217,6 +279,63 @@ graph TB
 ```
 
 ## Data Models
+
+### API Response Format (Following Existing Patterns)
+
+All admin API endpoints will use the existing `ResponseFormatter` utility:
+
+```javascript
+// Success Response (following existing pattern)
+{
+  success: true,
+  message: "Dashboard data retrieved successfully",
+  data: {
+    metrics: { ... },
+    charts: { ... }
+  },
+  keyValueTable: {
+    timestamp: "2025-01-15T10:30:00Z",
+    userId: "USER0000000001"
+  }
+}
+
+// Error Response (following existing pattern)
+{
+  success: false,
+  message: "Access denied",
+  data: null,
+  keyValueTable: {
+    error: "Insufficient permissions",
+    userId: "USER0000000001",
+    requiredRole: "admin"
+  }
+}
+```
+
+### Database Query Patterns
+
+Following existing database utility patterns:
+
+```javascript
+// Using existing database connection and query patterns
+const db = require('../utils/database');
+
+// Example admin analytics query following existing patterns
+const getDashboardMetrics = async (dateRange) => {
+  const query = `
+    SELECT 
+      COUNT(*) as total_orders,
+      SUM(total_amount) as total_revenue,
+      AVG(total_amount) as avg_order_value
+    FROM orders 
+    WHERE created_at BETWEEN ? AND ?
+    AND status NOT IN ('cancelled', 'refunded')
+  `;
+  
+  const results = await db.query(query, [dateRange.start, dateRange.end]);
+  return results[0];
+};
+```
 
 ### Admin User Model
 ```javascript
@@ -328,10 +447,10 @@ graph TB
 - **Pagination:** Efficient pagination for large datasets
 - **Background Jobs:** Queue heavy operations (bulk updates, reports)
 
-### Real-time Updates
-- **WebSocket Implementation:** Live updates for orders, inventory, and notifications
-- **Selective Updates:** Only update changed data to minimize bandwidth
-- **Connection Management:** Handle connection drops and reconnection
+### Data Updates
+- **Polling Strategy:** Regular API polling for dashboard updates (following existing patterns)
+- **Selective Updates:** Only fetch changed data to minimize server load
+- **Caching:** Client-side caching of frequently accessed data
 
 ## Deployment and Infrastructure
 
