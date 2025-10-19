@@ -102,6 +102,10 @@ app.use('/api/admin/orders', enhancedSecurity, adminOrderRoutes);
 const adminCustomerRoutes = require('./routes/adminCustomerRoutes');
 app.use('/api/admin', enhancedSecurity, adminCustomerRoutes);
 
+// Admin inventory routes (with enhanced security)
+const adminInventoryRoutes = require('./routes/adminInventoryRoutes');
+app.use('/api/admin/inventory', enhancedSecurity, adminInventoryRoutes);
+
 // Dashboard routes (admin only with enhanced security)
 const dashboardRoutes = require('./routes/dashboardRoutes');
 app.use('/api/dashboard', enhancedSecurity, dashboardRoutes);
