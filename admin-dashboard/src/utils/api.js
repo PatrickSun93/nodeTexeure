@@ -120,12 +120,12 @@ export const adminAPI = {
   }),
   
   // Dashboard data
-  getDashboardStats: () => apiFetch('/admin/dashboard/stats'),
+  getDashboardStats: () => apiFetch('/api/admin/dashboard/stats'),
   
   // Users management
   getUsers: (params = {}) => {
     const queryString = new URLSearchParams(params).toString();
-    return apiFetch(`/admin/users${queryString ? `?${queryString}` : ''}`);
+    return apiFetch(`/api/admin/users${queryString ? `?${queryString}` : ''}`);
   },
   
   // Products management
@@ -150,36 +150,22 @@ export const adminAPI = {
     method: 'DELETE'
   }),
   
-  // Orders management
-  getOrders: (params = {}) => {
-    const queryString = new URLSearchParams(params).toString();
-    return apiFetch(`/admin/orders${queryString ? `?${queryString}` : ''}`);
-  },
+  getProduct: (id) => apiFetch(`/api/products/${id}`),
   
-  getOrder: (id) => apiFetch(`/admin/orders/${id}`),
-  
-  updateOrder: (id, data) => apiFetch(`/admin/orders/${id}`, {
-    method: 'PUT',
-    body: JSON.stringify(data)
-  }),
-  
-  // Coupons
-  getCoupons: () => apiFetch('/admin/coupons'),
-  
-  createCoupon: (data) => apiFetch('/admin/coupons', {
+  createProduct: (data) => apiFetch('/api/admin/products', {
     method: 'POST',
     body: JSON.stringify(data)
   }),
   
-  updateCoupon: (id, data) => apiFetch(`/admin/coupons/${id}`, {
+  updateProduct: (id, data) => apiFetch(`/api/admin/products/${id}`, {
     method: 'PUT',
     body: JSON.stringify(data)
   }),
   
-  deleteCoupon: (id) => apiFetch(`/admin/coupons/${id}`, {
+  deleteProduct: (id) => apiFetch(`/api/admin/products/${id}`, {
     method: 'DELETE'
   }),
-
+  
   // Images
   getProductImages: (productId) => apiFetch(`/api/images/products/${productId}`),
   
@@ -251,7 +237,55 @@ export const adminAPI = {
     method: 'PUT',
     body: JSON.stringify(data)
   }),
-  deleteCoupon: (id) => apiFetch(`/api/coupons/${id}`, { method: 'DELETE' })
+  deleteCoupon: (id) => apiFetch(`/api/coupons/${id}`, { method: 'DELETE' }),
+
+  // Bulk product operations
+  bulkUpdateProducts: (productIds, updates) => apiFetch('/api/admin/products/bulk-update', {
+    method: 'POST',
+    body: JSON.stringify({ productIds, updates })
+  }),
+
+  bulkDeleteProducts: (productIds) => apiFetch('/api/admin/products/bulk-delete', {
+    method: 'DELETE',
+    body: JSON.stringify({ productIds })
+  }),
+
+  // Product approval operations
+  getPendingApprovalProducts: () => apiFetch('/api/admin/products/pending-approval'),
+  getProductApprovalHistory: (productId) => apiFetch(`/api/admin/products/${productId}/approval-history`),
+  approveProduct: (productId, notes = '') => apiFetch(`/api/admin/products/${productId}/approve`, {
+    method: 'POST',
+    body: JSON.stringify({ notes })
+  }),
+  rejectProduct: (productId, rejectionReason, notes = '') => apiFetch(`/api/admin/products/${productId}/reject`, {
+    method: 'POST',
+    body: JSON.stringify({ rejection_reason: rejectionReason, notes })
+  }),
+
+  // Inventory management
+  getInventory: () => apiFetch('/api/admin/inventory'),
+  getLowStockItems: () => apiFetch('/api/inventory/low-stock'),
+  updateInventory: (inventoryId, updates) => apiFetch(`/api/inventory/${inventoryId}`, {
+    method: 'PUT',
+    body: JSON.stringify(updates)
+  }),
+  releaseExpiredReservations: () => apiFetch('/api/inventory/release-expired', { method: 'POST' }),
+
+  // User management
+  createUser: (userData) => apiFetch('/api/admin/users', {
+    method: 'POST',
+    body: JSON.stringify(userData)
+  }),
+  updateUser: (userId, updates) => apiFetch(`/api/admin/users/${userId}`, {
+    method: 'PUT',
+    body: JSON.stringify(updates)
+  }),
+  deleteUser: (userId) => apiFetch(`/api/admin/users/${userId}`, {
+    method: 'DELETE'
+  }),
+
+  // Analytics
+  getAnalyticsDashboard: (period = 30) => apiFetch(`/api/admin/analytics/dashboard?period=${period}`)
 };
 
 // Export helper functions

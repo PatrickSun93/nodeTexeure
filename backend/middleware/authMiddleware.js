@@ -1,5 +1,7 @@
 const jwt = require('jsonwebtoken');
 const ResponseFormatter = require('../utils/responseFormatter');
+const sessionManager = require('../utils/sessionManager');
+const logger = require('../utils/logger');
 
 /**
  * Extract JWT from request using the following priority:
@@ -23,7 +25,7 @@ const extractAuthToken = (req) => {
   return null;
 };
 
-// Middleware to protect routes
+// Middleware to protect routes with secure session validation
 exports.protect = (req, res, next) => {
   const token = extractAuthToken(req);
 
@@ -35,13 +37,49 @@ exports.protect = (req, res, next) => {
   }
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = decoded;
+    // Validate session using secure session manager
+    const sessionData = sessionManager.validateSession(token, {
+      ipAddress: req.ip,
+      userAgent: req.get('User-Agent'),
+      strictIpValidation: process.env.STRICT_IP_VALIDATION === 'true'
+    });
+
+    // Attach user data to request
+    req.user = {
+      id: sessionData.userId,
+      email: sessionData.email,
+      role: sessionData.role,
+      sessionId: sessionData.sessionId,
+      isAdmin: sessionData.role === 'admin',
+      ...sessionData.sessionData
+    };
+
+    // Log successful authentication for audit
+    logger.info('User authenticated successfully', {
+      userId: sessionData.userId,
+      role: sessionData.role,
+      ip: req.ip,
+      userAgent: req.get('User-Agent'),
+      url: req.originalUrl,
+      method: req.method
+    });
+
     next();
   } catch (error) {
-    const keyValueTable = { error: 'Token is invalid' };
+    // Log authentication failure
+    logger.warn('Authentication failed', {
+      error: error.message,
+      ip: req.ip,
+      userAgent: req.get('User-Agent'),
+      url: req.originalUrl,
+      method: req.method
+    });
+
+    const keyValueTable = { 
+      error: error.message || 'Token validation failed'
+    };
     return res.status(401).json(
-      ResponseFormatter.failure('Not authorized, token failed', keyValueTable)
+      ResponseFormatter.failure('Not authorized, session invalid', keyValueTable)
     );
   }
 };
@@ -57,15 +95,31 @@ exports.admin = (req, res, next) => {
     .json(ResponseFormatter.failure('Not authorized as an admin', keyValueTable));
 };
 
-// Optional protect middleware
+// Optional protect middleware with secure session validation
 exports.protectOptional = (req, res, next) => {
   const token = extractAuthToken(req);
   if (token) {
     try {
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
-      req.user = decoded;
+      const sessionData = sessionManager.validateSession(token, {
+        ipAddress: req.ip,
+        userAgent: req.get('User-Agent'),
+        strictIpValidation: false // Less strict for optional auth
+      });
+
+      req.user = {
+        id: sessionData.userId,
+        email: sessionData.email,
+        role: sessionData.role,
+        sessionId: sessionData.sessionId,
+        isAdmin: sessionData.role === 'admin',
+        ...sessionData.sessionData
+      };
     } catch (error) {
       // Ignore error, proceed without user context
+      logger.debug('Optional authentication failed', {
+        error: error.message,
+        ip: req.ip
+      });
     }
   }
   next();

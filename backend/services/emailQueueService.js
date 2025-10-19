@@ -256,6 +256,9 @@ class EmailQueueService {
         const results = await this.emailService.sendLowStockAlert([recipient], data.products);
         return results[0]; // Get first result since we're sending to one email
       
+      case 'email_failure_alert':
+        return await this.emailService.sendEmailFailureAlert(recipient, data);
+      
       default:
         const error = new Error(`Unknown email type: ${type}`);
         error.type = 'validation_error';

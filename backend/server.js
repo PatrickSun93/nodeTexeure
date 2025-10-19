@@ -3,11 +3,41 @@ const cors = require('cors');
 const path = require('path');
 const cookieParser = require('cookie-parser');
 const LoggingMiddleware = require('./middleware/loggingMiddleware');
+const PerformanceMiddleware = require('./middleware/performanceMiddleware');
 const ResponseFormatter = require('./utils/responseFormatter');
 const { basicSecurity, enhancedSecurity, adminSecurity } = require('./middleware/securityMiddleware');
+const { validatePciEnvironment } = require('./middleware/pciComplianceMiddleware');
+const secureEnv = require('./utils/secureEnv');
+const sslConfig = require('./utils/sslConfig');
+const logger = require('./utils/logger');
 
 const app = express();
 const PORT = process.env.PORT || 6666;
+
+// Validate PCI compliance and environment security on startup
+try {
+  validatePciEnvironment();
+  const envValidation = secureEnv.loadAndValidate();
+  
+  if (!envValidation.valid) {
+    logger.error('Environment validation failed', {
+      errors: envValidation.errors,
+      warnings: envValidation.warnings
+    });
+    
+    if (process.env.NODE_ENV === 'production') {
+      process.exit(1); // Fail hard in production
+    }
+  }
+  
+  logger.info('PCI compliance and environment validation passed');
+} catch (error) {
+  logger.error('Startup validation failed', { error: error.message });
+  
+  if (process.env.NODE_ENV === 'production') {
+    process.exit(1);
+  }
+}
 
 // Middleware
 app.use(cors({
@@ -19,6 +49,14 @@ app.use(cors({
 
 // Apply basic security middleware to all routes
 app.use(basicSecurity);
+
+// Performance optimization middleware
+app.use(PerformanceMiddleware.compression());
+app.use(PerformanceMiddleware.requestTiming());
+app.use(PerformanceMiddleware.memoryMonitoring());
+app.use(PerformanceMiddleware.connectionPooling());
+app.use(PerformanceMiddleware.responseOptimization());
+app.use(PerformanceMiddleware.requestSizeLimit({ maxSize: 10 * 1024 * 1024 })); // 10MB limit
 
 app.use(express.json({ limit: '10mb' })); // Set JSON payload limit
 app.use(express.urlencoded({ extended: true, limit: '10mb' })); // Set URL-encoded payload limit
@@ -118,6 +156,14 @@ app.use('/api/currency', currencyRoutes);
 // Search routes
 const searchRoutes = require('./routes/searchRoutes');
 app.use('/api/search', searchRoutes);
+
+// Session management routes (with enhanced security)
+const sessionRoutes = require('./routes/sessionRoutes');
+app.use('/api/sessions', sessionRoutes);
+
+// Performance monitoring routes (admin only)
+const performanceRoutes = require('./routes/performanceRoutes');
+app.use('/api/performance', performanceRoutes);
 
 // Backward compatibility - redirect old endpoints to new structure
 app.get('/api/health', (req, res) => {

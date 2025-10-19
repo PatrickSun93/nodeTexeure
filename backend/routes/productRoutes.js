@@ -1,10 +1,17 @@
 const express = require('express');
 const DatabaseUtil = require('../utils/database');
 const ResponseFormatter = require('../utils/responseFormatter');
+const PerformanceMiddleware = require('../middleware/performanceMiddleware');
+const cacheManager = require('../utils/cacheManager');
 const router = express.Router();
 
-// GET /api/products - Product listing with pagination and filters
-router.get('/', async (req, res) => {
+// GET /api/products - Product listing with pagination and filters (with caching)
+router.get('/', PerformanceMiddleware.responseCache({
+  ttl: 300, // 5 minutes cache
+  cacheType: 'products',
+  keyGenerator: (req) => `products_list_${JSON.stringify(req.query)}`,
+  skipCache: (req) => req.query.nocache === 'true'
+}), async (req, res) => {
   try {
     const { page = 1, limit = 10, category, min_price, max_price, search } = req.query;
     const offset = (page - 1) * limit;
@@ -137,8 +144,13 @@ router.get('/by-ids', async (req, res) => {
   }
 });
 
-// GET /api/products/:id - Product details
-router.get('/:id', async (req, res) => {
+// GET /api/products/:id - Product details (with caching)
+router.get('/:id', PerformanceMiddleware.responseCache({
+  ttl: 600, // 10 minutes cache for individual products
+  cacheType: 'products',
+  keyGenerator: (req) => `product_${req.params.id}`,
+  skipCache: (req) => req.query.nocache === 'true'
+}), async (req, res) => {
   try {
     const { id: param } = req.params;
 

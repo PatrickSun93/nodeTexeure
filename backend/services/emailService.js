@@ -285,6 +285,20 @@ class EmailService {
   }
 
   /**
+   * Send email failure alert to admin users
+   * @param {string} adminEmail - Admin email address
+   * @param {Object} failureData - Email failure information
+   * @returns {Promise<Object>} - Email sending result
+   */
+  async sendEmailFailureAlert(adminEmail, failureData) {
+    const subject = `Email System Alert - Failed to send ${failureData.failedEmail.type}`;
+    const htmlContent = this.renderEmailFailureAlertTemplate(failureData);
+    const textContent = this.renderEmailFailureAlertText(failureData);
+
+    return await this.sendEmail(adminEmail, subject, htmlContent, textContent);
+  }
+
+  /**
    * Send low stock alert to admin users
    * @param {Array} adminEmails - Array of admin email addresses
    * @param {Array} lowStockProducts - Array of products with low stock
@@ -723,6 +737,84 @@ ${lowStockProducts.map(product => `- ${product.name} (ID: ${product.id}) - Curre
 Please review and restock these items as soon as possible to avoid stockouts.
 
 ${this.fromName} Admin System
+    `;
+  }
+
+  renderEmailFailureAlertTemplate(failureData) {
+    const { failedEmail, error } = failureData;
+    
+    return `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="UTF-8">
+        <title>Email System Alert</title>
+        <style>
+          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+          .header { background-color: #f8d7da; padding: 20px; text-align: center; border: 1px solid #f5c6cb; }
+          .alert { background-color: #fff3cd; border: 1px solid #ffeaa7; padding: 20px; margin: 20px 0; border-radius: 5px; }
+          .error-details { background-color: #f8f9fa; border: 1px solid #dee2e6; padding: 15px; margin: 10px 0; border-radius: 3px; }
+          .footer { text-align: center; color: #666; font-size: 12px; margin-top: 30px; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h1>⚠️ Email System Alert</h1>
+            <p>Critical email delivery failure detected</p>
+          </div>
+          
+          <div class="alert">
+            <h2>Failed Email Details</h2>
+            <div class="error-details">
+              <p><strong>Email Type:</strong> ${failedEmail.type.replace('_', ' ').toUpperCase()}</p>
+              <p><strong>Recipient:</strong> ${failedEmail.recipient}</p>
+              <p><strong>Queue ID:</strong> ${failedEmail.id}</p>
+              <p><strong>Retry Count:</strong> ${failedEmail.retryCount}</p>
+              <p><strong>Error Time:</strong> ${error.timestamp}</p>
+            </div>
+            
+            <h3>Error Information</h3>
+            <div class="error-details">
+              <p><strong>Error Type:</strong> ${error.type || 'Unknown'}</p>
+              <p><strong>Error Message:</strong> ${error.message}</p>
+            </div>
+          </div>
+          
+          <p><strong>Action Required:</strong> Please investigate this email delivery failure and take appropriate action.</p>
+          
+          <div class="footer">
+            <p>${this.fromName} Email System</p>
+            <p>This is an automated alert from the email monitoring system</p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+  }
+
+  renderEmailFailureAlertText(failureData) {
+    const { failedEmail, error } = failureData;
+    
+    return `
+Email System Alert - Critical Failure Detected
+
+Failed Email Details:
+- Email Type: ${failedEmail.type.replace('_', ' ').toUpperCase()}
+- Recipient: ${failedEmail.recipient}
+- Queue ID: ${failedEmail.id}
+- Retry Count: ${failedEmail.retryCount}
+- Error Time: ${error.timestamp}
+
+Error Information:
+- Error Type: ${error.type || 'Unknown'}
+- Error Message: ${error.message}
+
+Action Required: Please investigate this email delivery failure and take appropriate action.
+
+${this.fromName} Email System
+This is an automated alert from the email monitoring system
     `;
   }
 }

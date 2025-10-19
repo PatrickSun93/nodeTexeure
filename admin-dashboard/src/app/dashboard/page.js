@@ -120,13 +120,7 @@ function ProductManagement() {
     
     if (confirm(`Are you sure you want to update ${selectedProducts.length} products to ${newStatus} status?`)) {
       try {
-        await apiFetch('http://localhost:6666/api/admin/products/bulk-update', {
-          method: 'POST',
-          body: JSON.stringify({ 
-            productIds: selectedProducts, 
-            updates: { status: newStatus } 
-          })
-        });
+        await adminAPI.bulkUpdateProducts(selectedProducts, { status: newStatus });
         
         await fetchData();
         setSelectedProducts([]);
@@ -144,10 +138,7 @@ function ProductManagement() {
     
     if (confirm(`Are you sure you want to delete ${selectedProducts.length} products? This action cannot be undone.`)) {
       try {
-        await apiFetch('http://localhost:6666/api/admin/products/bulk-delete', {
-          method: 'DELETE',
-          body: JSON.stringify({ productIds: selectedProducts })
-        });
+        await adminAPI.bulkDeleteProducts(selectedProducts);
         
         await fetchData();
         setSelectedProducts([]);
@@ -374,7 +365,7 @@ function ProductApprovalManagement() {
 
   const fetchPendingProducts = async () => {
     try {
-      const data = await apiFetch('http://localhost:6666/api/admin/products/pending-approval');
+      const data = await adminAPI.getPendingApprovalProducts();
       if (data.success) setPendingProducts(data.data.products);
     } catch (error) {
       console.error('Error fetching pending products:', error);
@@ -383,7 +374,7 @@ function ProductApprovalManagement() {
 
   const fetchApprovalHistory = async (productId) => {
     try {
-      const data = await apiFetch(`http://localhost:6666/api/admin/products/${productId}/approval-history`);
+      const data = await adminAPI.getProductApprovalHistory(productId);
       if (data.success) setApprovalHistory(data.data);
     } catch (error) {
       console.error('Error fetching approval history:', error);
@@ -392,10 +383,7 @@ function ProductApprovalManagement() {
 
   const handleApprove = async () => {
     try {
-      await apiFetch(`http://localhost:6666/api/admin/products/${selectedProduct.id}/approve`, {
-        method: 'POST',
-        body: JSON.stringify({ notes: approvalNotes })
-      });
+      await adminAPI.approveProduct(selectedProduct.id, approvalNotes);
       
       setShowApprovalModal(false);
       setApprovalNotes('');
@@ -415,13 +403,7 @@ function ProductApprovalManagement() {
     }
     
     try {
-      await apiFetch(`http://localhost:6666/api/admin/products/${selectedProduct.id}/reject`, {
-        method: 'POST',
-        body: JSON.stringify({ 
-          rejection_reason: rejectionReason,
-          notes: rejectionNotes 
-        })
-      });
+      await adminAPI.rejectProduct(selectedProduct.id, rejectionReason, rejectionNotes);
       
       setShowRejectionModal(false);
       setRejectionReason('');
@@ -715,22 +697,24 @@ function CouponManagement() {
   }, []);
 
   const fetchData = async () => {
-    const data = await apiFetch('http://localhost:6666/api/admin/coupons');
+    const data = await adminAPI.getCoupons();
     if (data.success) setCoupons(data.data.coupons);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const method = editingId ? 'PUT' : 'POST';
-    const url = editingId ? `http://localhost:6666/api/admin/coupons/${editingId}` : 'http://localhost:6666/api/admin/coupons';
-    await apiFetch(url, { method, body: JSON.stringify(formData) });
+    if (editingId) {
+      await adminAPI.updateCoupon(editingId, formData);
+    } else {
+      await adminAPI.createCoupon(formData);
+    }
     await fetchData();
     setFormData({});
     setEditingId(null);
   };
 
   const handleDelete = async (id) => {
-    await apiFetch(`http://localhost:6666/api/admin/coupons/${id}`, { method: 'DELETE' });
+    await adminAPI.deleteCoupon(id);
     await fetchData();
   };
 
@@ -772,11 +756,11 @@ function InventoryManagement() {
     try {
       setLoading(true);
       // Fetch all inventory
-      const inventoryData = await apiFetch('http://localhost:6666/api/admin/inventory');
+      const inventoryData = await adminAPI.getInventory();
       if (inventoryData.success) setInventory(inventoryData.data.inventory);
       
       // Fetch low stock items
-      const lowStockData = await apiFetch('http://localhost:6666/api/inventory/low-stock');
+      const lowStockData = await adminAPI.getLowStockItems();
       if (lowStockData.success) setLowStockItems(lowStockData.data.items);
     } catch (error) {
       console.error('Error fetching inventory data:', error);
@@ -788,9 +772,7 @@ function InventoryManagement() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const method = 'PUT';
-      const url = `http://localhost:6666/api/inventory/${editingId}`;
-      await apiFetch(url, { method, body: JSON.stringify(formData) });
+      await adminAPI.updateInventory(editingId, formData);
       await fetchData();
       setEditingId(null);
       setFormData({});
@@ -801,7 +783,7 @@ function InventoryManagement() {
 
   const releaseExpiredReservations = async () => {
     try {
-      await apiFetch('http://localhost:6666/api/inventory/release-expired', { method: 'POST' });
+      await adminAPI.releaseExpiredReservations();
       await fetchData();
       alert('Expired reservations released successfully');
     } catch (error) {
@@ -1075,7 +1057,7 @@ function SalesAnalyticsDashboard() {
   const fetchAnalytics = async () => {
     try {
       setLoading(true);
-      const data = await apiFetch(`http://localhost:6666/api/admin/analytics/dashboard?period=${period}`);
+      const data = await adminAPI.getAnalyticsDashboard(period);
       if (data.success) setAnalytics(data.data);
     } catch (error) {
       console.error('Error fetching analytics:', error);
@@ -1245,10 +1227,8 @@ function OrderManagement() {
   const fetchOrders = async () => {
     try {
       setLoading(true);
-      const url = statusFilter === 'all' 
-        ? 'http://localhost:6666/api/admin/orders'
-        : `http://localhost:6666/api/admin/orders?status=${statusFilter}`;
-      const data = await apiFetch(url);
+      const params = statusFilter !== 'all' ? { status: statusFilter } : {};
+      const data = await adminAPI.getOrders(params);
       if (data.success) setOrders(data.data.orders);
     } catch (error) {
       console.error('Error fetching orders:', error);
@@ -1259,7 +1239,7 @@ function OrderManagement() {
 
   const fetchOrderDetails = async (orderId) => {
     try {
-      const data = await apiFetch(`http://localhost:6666/api/admin/orders/${orderId}`);
+      const data = await adminAPI.getOrder(orderId);
       if (data.success) {
         setSelectedOrder(data.data);
         setNewStatus(data.data.status);
@@ -1274,10 +1254,7 @@ function OrderManagement() {
     if (!selectedOrder || !newStatus) return;
     
     try {
-      await apiFetch(`http://localhost:6666/api/admin/orders/${selectedOrder.id}/status`, {
-        method: 'PUT',
-        body: JSON.stringify({ status: newStatus })
-      });
+      await adminAPI.updateOrderStatus(selectedOrder.id, newStatus);
       
       setShowOrderModal(false);
       setSelectedOrder(null);
@@ -1510,7 +1487,7 @@ function UserManagement() {
 
   const fetchData = async () => {
     try {
-      const data = await apiFetch('http://localhost:6666/api/admin/users');
+      const data = await adminAPI.getUsers();
       if (data.success) setUsers(data.data.users);
     } catch (error) {
       console.error('Error fetching users:', error);
@@ -1520,9 +1497,11 @@ function UserManagement() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const method = editingId ? 'PUT' : 'POST';
-      const url = editingId ? `http://localhost:6666/api/admin/users/${editingId}` : 'http://localhost:6666/api/admin/users';
-      await apiFetch(url, { method, body: JSON.stringify(formData) });
+      if (editingId) {
+        await adminAPI.updateUser(editingId, formData);
+      } else {
+        await adminAPI.createUser(formData);
+      }
       await fetchData();
       setFormData({});
       setEditingId(null);
@@ -1536,7 +1515,7 @@ function UserManagement() {
   const handleDelete = async (id) => {
     if (confirm('Are you sure you want to delete this user?')) {
       try {
-        await apiFetch(`http://localhost:6666/api/admin/users/${id}`, { method: 'DELETE' });
+        await adminAPI.deleteUser(id);  // This function doesn't exist yet
         await fetchData();
         alert('User deleted successfully!');
       } catch (error) {

@@ -5,6 +5,7 @@ const logger = require('../utils/logger');
 const ResponseFormatter = require('../utils/responseFormatter');
 const { protect } = require('../middleware/authMiddleware');
 const { paymentRateLimit } = require('../middleware/rateLimitMiddleware');
+const { pciCompliantPaymentMiddleware, basicPciMiddleware } = require('../middleware/pciComplianceMiddleware');
 const EmailQueueService = require('../services/emailQueueService');
 const InventoryService = require('../services/inventoryService');
 const db = require('../utils/database');
@@ -16,7 +17,7 @@ const emailQueueService = new EmailQueueService();
  * POST /api/payments/create-intent
  * Create a payment intent for checkout
  */
-router.post('/create-intent', paymentRateLimit, protect, async (req, res) => {
+router.post('/create-intent', pciCompliantPaymentMiddleware, paymentRateLimit, async (req, res) => {
   try {
     const { amount, currency = 'usd', orderId, metadata = {} } = req.body;
 
@@ -73,7 +74,7 @@ router.post('/create-intent', paymentRateLimit, protect, async (req, res) => {
  * POST /api/payments/confirm
  * Confirm a payment intent
  */
-router.post('/confirm', protect, async (req, res) => {
+router.post('/confirm', pciCompliantPaymentMiddleware, async (req, res) => {
   try {
     const { paymentIntentId, paymentMethodId } = req.body;
 
@@ -119,9 +120,9 @@ router.post('/confirm', protect, async (req, res) => {
 /**
  * POST /api/payments/webhook
  * Handle Stripe webhook events
- * Note: This endpoint should NOT use authentication middleware
+ * Note: This endpoint should NOT use authentication middleware but needs basic PCI compliance
  */
-router.post('/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
+router.post('/webhook', basicPciMiddleware, express.raw({ type: 'application/json' }), async (req, res) => {
   try {
     const signature = req.headers['stripe-signature'];
     
@@ -453,7 +454,7 @@ async function handlePaymentRequiresAction(paymentIntent) {
  * GET /api/payments/intent/:id
  * Retrieve payment intent details
  */
-router.get('/intent/:id', protect, async (req, res) => {
+router.get('/intent/:id', pciCompliantPaymentMiddleware, async (req, res) => {
   try {
     const { id } = req.params;
 
