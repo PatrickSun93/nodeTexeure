@@ -288,7 +288,7 @@ class CurrencyService {
    * @param {string} locale - Locale for formatting
    * @returns {Object} - Conversion info
    */
-  getConversionInfo(baseAmount, targetCurrency) {
+  getConversionInfo(baseAmount, targetCurrency, locale = 'en-US') {
     const convertedAmount = this.convertFromBase(baseAmount, targetCurrency);
     const rate = this.getExchangeRate(targetCurrency);
     
@@ -298,8 +298,8 @@ class CurrencyService {
       convertedAmount,
       targetCurrency,
       exchangeRate: rate,
-      formattedOriginal: this.formatCurrency(baseAmount, this.baseCurrency),
-      formattedConverted: this.formatCurrency(convertedAmount, targetCurrency),
+      formattedOriginal: this.formatCurrency(baseAmount, this.baseCurrency, locale),
+      formattedConverted: this.formatCurrency(convertedAmount, targetCurrency, locale),
       lastUpdate: this.lastUpdate
     };
   }

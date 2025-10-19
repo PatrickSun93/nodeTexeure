@@ -73,7 +73,8 @@ export default function Navigation() {
               </svg>
             </Link>
 
-
+            {/* Language Switcher */}
+            <LanguageSwitcher />
           </div>
         </div>
       </div>

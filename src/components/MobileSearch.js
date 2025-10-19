@@ -195,7 +195,7 @@ export default function MobileSearch({ isOpen, onClose, placeholder }) {
               type="text"
               value={searchQuery}
               onChange={handleSearchInputChange}
-              placeholder={placeholder || "Search products..."}
+              placeholder={placeholder || t('placeholder')}
               className="mobile-search-input"
               onKeyPress={(e) => {
                 if (e.key === 'Enter') {

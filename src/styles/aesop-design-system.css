@@ -3798,65 +3798,7 @@ select:focus {
   .aesop-loading-spinner {
     animation: spin 1s linear infinite;
   }
-}
-
-/* ===== ADDITIONAL UTILITIES ===== */
-
-/* Button utilities */
-.aesop-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: var(--space-3) var(--space-6);
-  border-radius: var(--radius-base);
-  font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-medium);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  cursor: pointer;
-  transition: all var(--transition-base);
-  text-decoration: none;
-  border: none;
-}
-
-.aesop-btn-primary {
-  background: var(--color-black);
-  color: var(--color-white);
-}
-
-.aesop-btn-primary:hover {
-  background: var(--color-gray-dark);
-  transform: translateY(-1px);
-}
-
-.aesop-btn-secondary {
-  background: transparent;
-  color: var(--color-black);
-  border: 1px solid var(--color-black);
-}
-
-.aesop-btn-secondary:hover {
-  background: var(--color-black);
-  color: var(--color-white);
-}
-
-.aesop-btn-sm {
-  padding: var(--space-2) var(--space-4);
-  font-size: var(--font-size-xs);
-}
-
-/* Form utilities */
-.aesop-label {
-  display: block;
-  font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-medium);
-  color: var(--color-black);
-}
-
-/* Width utilities */
-.aesop-w-full { width: 100%; }
-.aesop-w-4 { width: 1rem; }
-.aesop-w-6 { width: 1.5rem; }/* 
+}/* 
 ===== ERROR BANNER STYLES ===== */
 .aesop-error-banner {
   display: flex;

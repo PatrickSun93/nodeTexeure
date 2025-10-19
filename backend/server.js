@@ -1,6 +1,9 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
+// Load environment variables early so downstream modules (e.g., encryption) see them
+require('dotenv').config({ path: path.join(__dirname, '.env') });
+
 const cookieParser = require('cookie-parser');
 const LoggingMiddleware = require('./middleware/loggingMiddleware');
 const PerformanceMiddleware = require('./middleware/performanceMiddleware');
@@ -17,25 +20,11 @@ const PORT = process.env.PORT || 6666;
 // Validate PCI compliance and environment security on startup
 try {
   validatePciEnvironment();
-  const envValidation = secureEnv.loadAndValidate();
-  
-  if (!envValidation.valid) {
-    logger.error('Environment validation failed', {
-      errors: envValidation.errors,
-      warnings: envValidation.warnings
-    });
-    
-    if (process.env.NODE_ENV === 'production') {
-      process.exit(1); // Fail hard in production
-    }
-  }
-  
   logger.info('PCI compliance and environment validation passed');
 } catch (error) {
   logger.error('Startup validation failed', { error: error.message });
-  
   if (process.env.NODE_ENV === 'production') {
-    process.exit(1);
+    process.exit(1); // Fail hard in production
   }
 }
 

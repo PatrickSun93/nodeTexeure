@@ -52,7 +52,7 @@ export function generateMetaTags({
           alt: fullTitle,
         }
       ],
-      locale: 'en_US',
+      locale: locale,
       type: type,
     },
     twitter: {

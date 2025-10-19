@@ -27,7 +27,7 @@ export default function CurrencySelector({ className = '', showLabel = true }) {
     <div className={`relative ${className}`}>
       {showLabel && (
         <label className="block text-sm font-medium text-gray-700 mb-1">
-          Currency
+          {t('currency')}
         </label>
       )}
       

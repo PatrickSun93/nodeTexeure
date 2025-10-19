@@ -326,8 +326,9 @@ class SearchService {
       .filter(item => item.query.toLowerCase().includes(query.toLowerCase()))
       .reduce((acc, item) => {
         acc.totalSearches += item.count;
+        acc.languages[item.locale] = (acc.languages[item.locale] || 0) + item.count;
         return acc;
-      }, { totalSearches: 0 });
+      }, { totalSearches: 0, languages: {} });
 
     return analytics;
   }

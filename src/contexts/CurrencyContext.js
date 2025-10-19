@@ -156,8 +156,7 @@ export function CurrencyProvider({ children }) {
   const formatCurrency = (amount, currency = state.currentCurrency) => {
     if (!amount && amount !== 0) return '';
     
-    try {
-      return new Intl.NumberFormat('en-US', {
+    return new Intl.NumberFormat('en-US', {
         style: 'currency',
         currency: currency,
         minimumFractionDigits: 2,

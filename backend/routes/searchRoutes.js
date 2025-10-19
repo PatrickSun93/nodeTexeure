@@ -119,12 +119,13 @@ router.get('/popular', async (req, res) => {
 // GET /api/search/trends - Search trends endpoint
 router.get('/trends', async (req, res) => {
   try {
-    const { limit = 10 } = req.query;
+    const { locale = 'en', limit = 10 } = req.query;
 
-    const trends = SearchService.getSearchTrends(parseInt(limit));
+    const trends = SearchService.getSearchTrends(locale, parseInt(limit));
     
     res.json(ResponseFormatter.success('Search trends retrieved successfully', { 
       trends,
+      locale,
       limit: parseInt(limit)
     }));
   } catch (error) {

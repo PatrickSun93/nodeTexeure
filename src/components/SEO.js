@@ -63,7 +63,7 @@ export default function SEO({
       {/* Additional Meta Tags */}
       <meta name="viewport" content="width=device-width, initial-scale=1" />
       <meta httpEquiv="Content-Type" content="text/html; charset=utf-8" />
-      <meta name="language" content="en_US" />
+      <meta name="language" content={locale} />
       <meta name="author" content="Noiraé" />
 
       {/* Structured Data */}

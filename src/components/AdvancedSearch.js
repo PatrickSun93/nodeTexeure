@@ -445,12 +445,12 @@ export default function AdvancedSearch({ isOpen, onClose, initialQuery = '' }) {
                     <span className="advanced-search-category-name">{term}</span>
                   </button>
                 )) : [
-                  { name: 'Sheets', icon: '🛏️' },
-                  { name: 'Pillows', icon: '🛌' },
-                  { name: 'Blankets', icon: '🧸' },
-                  { name: 'Mattresses', icon: '🛏️' },
-                  { name: 'Cotton', icon: '🌿' },
-                  { name: 'Silk', icon: '✨' }
+                  { name: locale === 'zh' ? '床单' : 'Sheets', icon: '🛏️' },
+                  { name: locale === 'zh' ? '枕头' : 'Pillows', icon: '🛌' },
+                  { name: locale === 'zh' ? '毯子' : 'Blankets', icon: '🧸' },
+                  { name: locale === 'zh' ? '床垫' : 'Mattresses', icon: '🛏️' },
+                  { name: locale === 'zh' ? '棉质' : 'Cotton', icon: '🌿' },
+                  { name: locale === 'zh' ? '丝绸' : 'Silk', icon: '✨' }
                 ].map((category) => (
                   <button
                     key={category.name}

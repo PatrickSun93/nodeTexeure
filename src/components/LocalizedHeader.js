@@ -293,7 +293,7 @@ export default function LocalizedHeader({ siteName = 'Noiraé' }) {
                     className="aesop-mobile-nav-link"
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
-                    {item.label}
+                    {t(item.key)}
                   </Link>
                 ))}
               </nav>
