@@ -490,4 +490,241 @@ router.get('/users', protect, requireRole(['admin', 'staff']), async (req, res) 
   }
 });
 
+/**
+ * PUT /api/admin/users/:id/role
+ * Change user role (admin only)
+ */
+router.put('/users/:id/role', protect, requireRole(['admin']), async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { role } = req.body;
+
+    if (!role || !['admin', 'staff', 'customer'].includes(role)) {
+      const keyValueTable = { error: 'Invalid role', validRoles: ['admin', 'staff', 'customer'] };
+      return res.status(400).json(ResponseFormatter.failure('Invalid role specified', keyValueTable));
+    }
+
+    // Prevent admin from changing their own role
+    if (id === req.user.id) {
+      const keyValueTable = { error: 'Cannot change your own role' };
+      return res.status(400).json(ResponseFormatter.failure('Cannot modify own role', keyValueTable));
+    }
+
+    // Check if user exists
+    const userResult = await DatabaseUtil.executeQuery(
+      'SELECT id, email, role FROM users WHERE id = ?',
+      [id]
+    );
+
+    if (!userResult.success || userResult.data.length === 0) {
+      const keyValueTable = { error: 'User not found', userId: id };
+      return res.status(404).json(ResponseFormatter.failure('User not found', keyValueTable));
+    }
+
+    const targetUser = userResult.data[0];
+
+    // Update user role
+    const result = await DatabaseUtil.executeQuery(
+      'UPDATE users SET role = ?, updated_at = NOW() WHERE id = ?',
+      [role, id]
+    );
+
+    if (result.success) {
+      // Log the role change
+      logger.info('User role changed', {
+        targetUserId: id,
+        targetUserEmail: targetUser.email,
+        oldRole: targetUser.role,
+        newRole: role,
+        changedBy: req.user.id,
+        ip: req.ip,
+        timestamp: new Date().toISOString()
+      });
+
+      const keyValueTable = {
+        userId: id,
+        oldRole: targetUser.role,
+        newRole: role,
+        changedBy: req.user.id,
+        changedAt: new Date().toISOString()
+      };
+
+      res.json(ResponseFormatter.success('User role updated successfully', keyValueTable));
+    } else {
+      throw new Error('Failed to update user role');
+    }
+  } catch (error) {
+    logger.error('Change user role error', {
+      error: error.message,
+      targetUserId: req.params.id,
+      userId: req.user?.id,
+      ip: req.ip
+    });
+
+    const keyValueTable = { error: error.message };
+    res.status(500).json(ResponseFormatter.failure('Failed to change user role', keyValueTable));
+  }
+});
+
+/**
+ * PUT /api/admin/users/:id/status
+ * Change user status (delete/restore) (admin only)
+ */
+router.put('/users/:id/status', protect, requireRole(['admin']), async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { isDeleted } = req.body;
+
+    if (typeof isDeleted !== 'boolean') {
+      const keyValueTable = { error: 'isDeleted must be a boolean value' };
+      return res.status(400).json(ResponseFormatter.failure('Invalid status value', keyValueTable));
+    }
+
+    // Prevent admin from changing their own status
+    if (id === req.user.id) {
+      const keyValueTable = { error: 'Cannot change your own status' };
+      return res.status(400).json(ResponseFormatter.failure('Cannot modify own status', keyValueTable));
+    }
+
+    // Check if user exists
+    const userResult = await DatabaseUtil.executeQuery(
+      'SELECT id, email, isDeleted FROM users WHERE id = ?',
+      [id]
+    );
+
+    if (!userResult.success || userResult.data.length === 0) {
+      const keyValueTable = { error: 'User not found', userId: id };
+      return res.status(404).json(ResponseFormatter.failure('User not found', keyValueTable));
+    }
+
+    const targetUser = userResult.data[0];
+
+    // Update user status
+    const result = await DatabaseUtil.executeQuery(
+      'UPDATE users SET isDeleted = ?, updated_at = NOW() WHERE id = ?',
+      [isDeleted, id]
+    );
+
+    if (result.success) {
+      // Log the status change
+      logger.info('User status changed', {
+        targetUserId: id,
+        targetUserEmail: targetUser.email,
+        oldStatus: targetUser.isDeleted ? 'deleted' : 'active',
+        newStatus: isDeleted ? 'deleted' : 'active',
+        changedBy: req.user.id,
+        ip: req.ip,
+        timestamp: new Date().toISOString()
+      });
+
+      const keyValueTable = {
+        userId: id,
+        oldStatus: targetUser.isDeleted ? 'deleted' : 'active',
+        newStatus: isDeleted ? 'deleted' : 'active',
+        changedBy: req.user.id,
+        changedAt: new Date().toISOString()
+      };
+
+      res.json(ResponseFormatter.success('User status updated successfully', keyValueTable));
+    } else {
+      throw new Error('Failed to update user status');
+    }
+  } catch (error) {
+    logger.error('Change user status error', {
+      error: error.message,
+      targetUserId: req.params.id,
+      userId: req.user?.id,
+      ip: req.ip
+    });
+
+    const keyValueTable = { error: error.message };
+    res.status(500).json(ResponseFormatter.failure('Failed to change user status', keyValueTable));
+  }
+});
+
+/**
+ * POST /api/admin/users
+ * Create new user (admin only)
+ */
+router.post('/users', protect, requireRole(['admin']), validateInput('userRegistration'), async (req, res) => {
+  try {
+    const { email, password, firstName, lastName, phone, role = 'customer' } = req.body;
+
+    if (!email || !password || !firstName || !lastName) {
+      const keyValueTable = { error: 'Email, password, firstName, and lastName are required' };
+      return res.status(400).json(ResponseFormatter.failure('Missing required fields', keyValueTable));
+    }
+
+    if (!['admin', 'staff', 'customer'].includes(role)) {
+      const keyValueTable = { error: 'Invalid role', validRoles: ['admin', 'staff', 'customer'] };
+      return res.status(400).json(ResponseFormatter.failure('Invalid role specified', keyValueTable));
+    }
+
+    // Check if user already exists
+    const existingUserResult = await DatabaseUtil.executeQuery(
+      'SELECT id FROM users WHERE email = ?',
+      [email]
+    );
+
+    if (existingUserResult.success && existingUserResult.data.length > 0) {
+      const keyValueTable = { error: 'User with this email already exists', email };
+      return res.status(409).json(ResponseFormatter.failure('User already exists', keyValueTable));
+    }
+
+    // Generate user ID
+    const userIdResult = await DatabaseUtil.executeQuery('SELECT get_next_id("USER") as id');
+    if (!userIdResult.success) {
+      throw new Error('Failed to generate user ID');
+    }
+    const userId = userIdResult.data[0].id;
+
+    // Hash password
+    const salt = await bcrypt.genSalt(12);
+    const hashedPassword = await bcrypt.hash(password, salt);
+
+    // Create user
+    const result = await DatabaseUtil.executeQuery(
+      `INSERT INTO users (id, email, password_hash, first_name, last_name, phone, role, email_verified, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
+      [userId, email, hashedPassword, firstName, lastName, phone || null, role, true] // Admin-created users are auto-verified
+    );
+
+    if (result.success) {
+      // Log user creation
+      logger.info('User created by admin', {
+        newUserId: userId,
+        newUserEmail: email,
+        newUserRole: role,
+        createdBy: req.user.id,
+        ip: req.ip,
+        timestamp: new Date().toISOString()
+      });
+
+      const keyValueTable = {
+        userId: userId,
+        email: email,
+        firstName: firstName,
+        lastName: lastName,
+        role: role,
+        createdBy: req.user.id,
+        createdAt: new Date().toISOString()
+      };
+
+      res.status(201).json(ResponseFormatter.success('User created successfully', keyValueTable));
+    } else {
+      throw new Error('Failed to create user');
+    }
+  } catch (error) {
+    logger.error('Create user error', {
+      error: error.message,
+      email: req.body?.email,
+      userId: req.user?.id,
+      ip: req.ip
+    });
+
+    const keyValueTable = { error: error.message };
+    res.status(500).json(ResponseFormatter.failure('Failed to create user', keyValueTable));
+  }
+});
+
 module.exports = router;

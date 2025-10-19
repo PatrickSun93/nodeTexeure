@@ -284,6 +284,24 @@ export default function AdminDashboard() {
               >
                 Orders
               </a>
+              <a 
+                href="/settings"
+                className="text-sm text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md hover:bg-gray-100"
+              >
+                Settings
+              </a>
+              <a 
+                href="/users"
+                className="text-sm text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md hover:bg-gray-100"
+              >
+                Users
+              </a>
+              <a 
+                href="/email-templates"
+                className="text-sm text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md hover:bg-gray-100"
+              >
+                Email Templates
+              </a>
               <span className="text-sm text-gray-600">
                 Welcome, {user?.firstName || 'Admin'}
               </span>

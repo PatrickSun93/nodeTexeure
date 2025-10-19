@@ -114,6 +114,22 @@ app.use('/api/dashboard', enhancedSecurity, dashboardRoutes);
 const adminReportsRoutes = require('./routes/adminReportsRoutes');
 app.use('/api/admin/reports', enhancedSecurity, adminReportsRoutes);
 
+// Admin settings routes (with enhanced security)
+const adminSettingsRoutes = require('./routes/adminSettingsRoutes');
+app.use('/api/admin/settings', enhancedSecurity, adminSettingsRoutes);
+
+// Admin email templates routes (with enhanced security)
+const adminEmailTemplatesRoutes = require('./routes/adminEmailTemplatesRoutes');
+app.use('/api/admin/email-templates', enhancedSecurity, adminEmailTemplatesRoutes);
+
+// Admin content routes (with enhanced security)
+const adminContentRoutes = require('./routes/adminContentRoutes');
+app.use('/api/admin/content', enhancedSecurity, adminContentRoutes);
+
+// Admin security routes (with enhanced security)
+const adminSecurityRoutes = require('./routes/adminSecurityRoutes');
+app.use('/api/admin/security', enhancedSecurity, adminSecurityRoutes);
+
 // System settings routes
 app.use('/api/settings', systemSettingsRoutes);
 

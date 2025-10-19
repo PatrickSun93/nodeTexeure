@@ -149,6 +149,44 @@ export const adminUsers = {
   },
 
   /**
+   * Change user role
+   * @param {string} userId - User ID
+   * @param {string} role - New role
+   * @returns {Promise<object>} - Update response
+   */
+  async changeUserRole(userId, role) {
+    return apiRequest(`admin/users/${userId}/role`, {
+      method: 'PUT',
+      body: JSON.stringify({ role }),
+    });
+  },
+
+  /**
+   * Change user status (delete/restore)
+   * @param {string} userId - User ID
+   * @param {boolean} isDeleted - Whether user should be deleted
+   * @returns {Promise<object>} - Update response
+   */
+  async changeUserStatus(userId, isDeleted) {
+    return apiRequest(`admin/users/${userId}/status`, {
+      method: 'PUT',
+      body: JSON.stringify({ isDeleted }),
+    });
+  },
+
+  /**
+   * Create new user
+   * @param {object} userData - User data
+   * @returns {Promise<object>} - Creation response
+   */
+  async createUser(userData) {
+    return apiRequest('admin/users', {
+      method: 'POST',
+      body: JSON.stringify(userData),
+    });
+  },
+
+  /**
    * Get user by ID
    * @param {string} userId - User ID
    * @returns {Promise<object>} - User data
@@ -508,6 +546,150 @@ export function isAuthError(error) {
   return error instanceof ApiError && (error.status === 401 || error.status === 403);
 }
 
+/**
+ * Admin settings API calls
+ */
+export const adminSettings = {
+  /**
+   * Get all system settings
+   * @param {object} params - Query parameters
+   * @returns {Promise<object>} - Settings data
+   */
+  async getSettings(params = {}) {
+    const queryString = new URLSearchParams(params).toString();
+    const endpoint = queryString ? `admin/settings?${queryString}` : 'admin/settings';
+    return apiRequest(endpoint);
+  },
+
+  /**
+   * Get specific setting by key
+   * @param {string} key - Setting key
+   * @returns {Promise<object>} - Setting data
+   */
+  async getSetting(key) {
+    return apiRequest(`admin/settings/${key}`);
+  },
+
+  /**
+   * Update or create setting
+   * @param {string} key - Setting key
+   * @param {object} data - Setting data
+   * @returns {Promise<object>} - Update response
+   */
+  async updateSetting(key, data) {
+    return apiRequest(`admin/settings/${key}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  },
+
+  /**
+   * Bulk update settings
+   * @param {Array} settings - Array of setting objects
+   * @returns {Promise<object>} - Update response
+   */
+  async bulkUpdateSettings(settings) {
+    return apiRequest('admin/settings/bulk-update', {
+      method: 'POST',
+      body: JSON.stringify({ settings }),
+    });
+  },
+
+  /**
+   * Delete setting
+   * @param {string} key - Setting key
+   * @returns {Promise<object>} - Delete response
+   */
+  async deleteSetting(key) {
+    return apiRequest(`admin/settings/${key}`, {
+      method: 'DELETE',
+    });
+  },
+
+  /**
+   * Get setting categories
+   * @returns {Promise<object>} - Categories data
+   */
+  async getCategories() {
+    return apiRequest('admin/settings/categories/list');
+  },
+};
+
+/**
+ * Admin email templates API calls
+ */
+export const adminEmailTemplates = {
+  /**
+   * Get all email templates
+   * @param {object} params - Query parameters
+   * @returns {Promise<object>} - Templates data
+   */
+  async getTemplates(params = {}) {
+    const queryString = new URLSearchParams(params).toString();
+    const endpoint = queryString ? `admin/email-templates?${queryString}` : 'admin/email-templates';
+    return apiRequest(endpoint);
+  },
+
+  /**
+   * Get specific template by ID
+   * @param {string} id - Template ID
+   * @returns {Promise<object>} - Template data
+   */
+  async getTemplate(id) {
+    return apiRequest(`admin/email-templates/${id}`);
+  },
+
+  /**
+   * Create new template
+   * @param {object} templateData - Template data
+   * @returns {Promise<object>} - Creation response
+   */
+  async createTemplate(templateData) {
+    return apiRequest('admin/email-templates', {
+      method: 'POST',
+      body: JSON.stringify(templateData),
+    });
+  },
+
+  /**
+   * Update template
+   * @param {string} id - Template ID
+   * @param {object} templateData - Template data
+   * @returns {Promise<object>} - Update response
+   */
+  async updateTemplate(id, templateData) {
+    return apiRequest(`admin/email-templates/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(templateData),
+    });
+  },
+
+  /**
+   * Delete template
+   * @param {string} id - Template ID
+   * @returns {Promise<object>} - Delete response
+   */
+  async deleteTemplate(id) {
+    return apiRequest(`admin/email-templates/${id}`, {
+      method: 'DELETE',
+    });
+  },
+
+  /**
+   * Send test email
+   * @param {string} id - Template ID
+   * @param {string} testEmail - Test email address
+   * @param {object} testData - Test data
+   * @returns {Promise<object>} - Test response
+   */
+  async sendTestEmail(id, testEmail, testData = {}) {
+    return apiRequest(`admin/email-templates/${id}/test`, {
+      method: 'POST',
+      body: JSON.stringify({ testEmail, testData }),
+    });
+  },
+};
+
 export default {
   apiRequest,
   adminAuth,
@@ -516,6 +698,8 @@ export default {
   adminProducts,
   adminCustomers,
   adminOrders,
+  adminSettings,
+  adminEmailTemplates,
   getErrorMessage,
   isAuthError,
 };
