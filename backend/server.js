@@ -110,6 +110,10 @@ app.use('/api/admin/inventory', enhancedSecurity, adminInventoryRoutes);
 const dashboardRoutes = require('./routes/dashboardRoutes');
 app.use('/api/dashboard', enhancedSecurity, dashboardRoutes);
 
+// Admin reports routes (with enhanced security)
+const adminReportsRoutes = require('./routes/adminReportsRoutes');
+app.use('/api/admin/reports', enhancedSecurity, adminReportsRoutes);
+
 // System settings routes
 app.use('/api/settings', systemSettingsRoutes);
 
