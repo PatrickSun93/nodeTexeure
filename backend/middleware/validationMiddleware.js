@@ -221,6 +221,25 @@ const validationSchemas = {
     value: { required: true, type: 'number', min: 0 },
     expiresAt: { required: false, type: 'date' },
     usageLimit: { required: false, type: 'number', min: 1 }
+  },
+  
+  orderStatusUpdate: {
+    status: { 
+      required: true, 
+      type: 'string', 
+      enum: ['pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled', 'refunded'] 
+    },
+    notes: { required: false, type: 'string', maxLength: 1000 }
+  },
+  
+  refundRequest: {
+    amount: { required: false, type: 'number', min: 0 },
+    reason: { 
+      required: true, 
+      type: 'string', 
+      enum: ['customer_request', 'defective_product', 'wrong_item', 'damaged_shipping', 'other'] 
+    },
+    reasonNotes: { required: false, type: 'string', maxLength: 1000 }
   }
 };
 
