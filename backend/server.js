@@ -86,6 +86,10 @@ app.use('/api/database', databaseRoutes);
 // User routes
 app.use('/api/users', userRoutes);
 
+// Admin routes (with enhanced security)
+const adminRoutes = require('./routes/adminRoutes');
+app.use('/api/admin', enhancedSecurity, adminRoutes);
+
 // System settings routes
 app.use('/api/settings', systemSettingsRoutes);
 
