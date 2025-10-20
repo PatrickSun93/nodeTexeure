@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
+import { useAdmin } from '@/contexts/AdminContext';
 
 // Navigation items configuration
 const navigationItems = [
@@ -104,7 +105,7 @@ const navigationItems = [
 ];
 
 // Navigation Item Component
-function NavigationItem({ item, isActive, isExpanded, onToggle, level = 0 }) {
+function NavigationItem({ item, isActive, isExpanded, onToggle, level = 0, alertCount = 0 }) {
   const router = useRouter();
   const hasChildren = item.children && item.children.length > 0;
 
@@ -118,7 +119,7 @@ function NavigationItem({ item, isActive, isExpanded, onToggle, level = 0 }) {
   };
 
   const itemClasses = `
-    flex items-center w-full px-3 py-2 text-sm rounded-md transition-colors
+    flex items-center w-full px-3 py-2 text-sm rounded-md transition-colors relative
     ${level === 0 ? 'font-medium' : 'font-normal ml-4'}
     ${isActive 
       ? 'bg-blue-100 text-blue-700 border-r-2 border-blue-500' 
@@ -137,6 +138,14 @@ function NavigationItem({ item, isActive, isExpanded, onToggle, level = 0 }) {
           <span className="mr-3 text-base">{item.icon}</span>
         )}
         <span className="flex-1 text-left">{item.name}</span>
+        
+        {/* Alert Badge */}
+        {alertCount > 0 && (
+          <span className="ml-2 bg-red-500 text-white text-xs rounded-full px-2 py-1 min-w-[20px] text-center">
+            {alertCount > 99 ? '99+' : alertCount}
+          </span>
+        )}
+        
         {hasChildren && (
           <span className={`ml-2 transition-transform ${isExpanded ? 'rotate-90' : ''}`}>
             ▶
@@ -165,6 +174,12 @@ function NavigationItem({ item, isActive, isExpanded, onToggle, level = 0 }) {
 export default function Navigation({ isCollapsed, onToggleCollapse }) {
   const pathname = usePathname();
   const { user, logout } = useAuth();
+  const { 
+    showSuccess, 
+    showError,
+    inventoryAlerts,
+    notifications 
+  } = useAdmin();
   const router = useRouter();
   const [expandedItems, setExpandedItems] = useState(new Set());
 
@@ -179,8 +194,15 @@ export default function Navigation({ isCollapsed, onToggleCollapse }) {
   };
 
   const handleLogout = async () => {
-    await logout();
-    router.push('/login?logout=true');
+    try {
+      await logout();
+      showSuccess('Logged out successfully');
+      router.push('/login?logout=true');
+    } catch (error) {
+      showError('Failed to logout properly');
+      // Force logout anyway
+      router.push('/login?logout=true');
+    }
   };
 
   const isItemActive = (item) => {
@@ -232,15 +254,24 @@ export default function Navigation({ isCollapsed, onToggleCollapse }) {
 
       {/* Navigation Items */}
       <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
-        {navigationItems.map((item) => (
-          <NavigationItem
-            key={item.name}
-            item={item}
-            isActive={isItemActive(item)}
-            isExpanded={expandedItems.has(item.name)}
-            onToggle={() => toggleExpanded(item.name)}
-          />
-        ))}
+        {navigationItems.map((item) => {
+          // Calculate alert counts for specific sections
+          let alertCount = 0;
+          if (item.name === 'Inventory' && inventoryAlerts) {
+            alertCount = inventoryAlerts.length;
+          }
+          
+          return (
+            <NavigationItem
+              key={item.name}
+              item={item}
+              isActive={isItemActive(item)}
+              isExpanded={expandedItems.has(item.name)}
+              onToggle={() => toggleExpanded(item.name)}
+              alertCount={alertCount}
+            />
+          );
+        })}
       </nav>
 
       {/* Footer Actions */}

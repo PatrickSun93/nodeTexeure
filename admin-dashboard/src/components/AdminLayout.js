@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
+import { useAdmin } from '@/contexts/AdminContext';
 import Navigation from './Navigation';
 import ErrorBoundary from './ErrorBoundary';
 import LoadingSpinner from './LoadingSpinner';
@@ -75,12 +76,21 @@ export default function AdminLayout({
   subtitle, 
   actions,
   showBreadcrumb = true,
-  className = ''
+  className = '',
+  loading = false,
+  error = null
 }) {
   const { isAuthenticated, isLoading: authLoading, user } = useAuth();
+  const { 
+    sidebarCollapsed, 
+    toggleSidebar, 
+    notifications,
+    errors,
+    isLoading: adminLoading,
+    clearError
+  } = useAdmin();
   const router = useRouter();
   const pathname = usePathname();
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [pageLoading, setPageLoading] = useState(false);
 
   // Handle authentication
@@ -127,7 +137,7 @@ export default function AdminLayout({
         {/* Sidebar Navigation */}
         <Navigation 
           isCollapsed={sidebarCollapsed}
-          onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
+          onToggleCollapse={toggleSidebar}
         />
 
         {/* Main Content Area */}
@@ -157,14 +167,23 @@ export default function AdminLayout({
                     🔄
                   </button>
                   
-                  {/* Notifications (placeholder) */}
+                  {/* Notifications */}
                   <button
                     className="p-2 text-gray-400 hover:text-gray-600 transition-colors relative"
-                    title="Notifications"
+                    title={`${notifications.length} notifications`}
                   >
                     🔔
-                    <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+                    {notifications.length > 0 && (
+                      <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+                    )}
                   </button>
+
+                  {/* Global Loading Indicator */}
+                  {(Object.values(adminLoading).some(loading => loading) || loading) && (
+                    <div className="p-2" title="Loading...">
+                      <LoadingSpinner size="small" color="gray" />
+                    </div>
+                  )}
                 </div>
 
                 {/* User Menu */}
@@ -196,10 +215,28 @@ export default function AdminLayout({
               {/* Breadcrumb Navigation */}
               {showBreadcrumb && <Breadcrumb pathname={pathname} />}
 
+              {/* Global Error Display */}
+              {error && (
+                <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-md">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center">
+                      <span className="text-red-600 mr-2">❌</span>
+                      <p className="text-sm text-red-800">{error}</p>
+                    </div>
+                    <button
+                      onClick={() => clearError('layout')}
+                      className="text-red-600 hover:text-red-800"
+                    >
+                      ×
+                    </button>
+                  </div>
+                </div>
+              )}
+
               {/* Page Loading Overlay */}
-              {pageLoading && (
+              {(pageLoading || loading) && (
                 <div className="fixed inset-0 bg-white bg-opacity-75 flex items-center justify-center z-50">
-                  <LoadingSpinner size="large" />
+                  <LoadingSpinner size="large" text="Loading..." />
                 </div>
               )}
 
