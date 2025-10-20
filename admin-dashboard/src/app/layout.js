@@ -4,6 +4,10 @@ import { AdminProvider } from '@/contexts/AdminContext'
 import NotificationSystem from '@/components/NotificationSystem'
 import PerformanceMonitor from '@/components/PerformanceMonitor'
 import ServiceWorkerRegistration from '@/components/ServiceWorkerRegistration'
+import GlobalErrorHandler from '@/components/GlobalErrorHandler'
+import SessionManager from '@/components/SessionManager'
+import IntegrationTest from '@/components/IntegrationTest'
+import { GlobalLoadingOverlay } from '@/components/LoadingStateManager'
 
 export const metadata = {
   title: 'Admin Dashboard - Bed Texture',
@@ -18,6 +22,10 @@ export default function RootLayout({ children }) {
           <AdminProvider>
             {children}
             <NotificationSystem />
+            <GlobalLoadingOverlay />
+            <GlobalErrorHandler />
+            <SessionManager />
+            <IntegrationTest />
             <PerformanceMonitor 
               enabled={process.env.NODE_ENV === 'development'} 
               showWidget={false}

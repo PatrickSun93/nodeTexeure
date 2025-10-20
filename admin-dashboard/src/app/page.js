@@ -8,6 +8,8 @@ import { adminDashboard, getErrorMessage } from '@/lib/api';
 import { LineChart, PieChart, BarChart } from '@/components/charts';
 import AdminLayout from '@/components/AdminLayout';
 import LoadingSpinner from '@/components/LoadingSpinner';
+import { AsyncLoadingWrapper } from '@/components/LoadingStateManager';
+import useNavigation from '@/hooks/useNavigation';
 
 // KPI Widget Component
 function KPIWidget({ title, value, change, isLoading, prefix = '', suffix = '', changeLabel = 'from last period' }) {
@@ -136,7 +138,7 @@ function InventoryAlerts({ alerts, isLoading }) {
 }
 
 function DashboardContent() {
-  const { user, isAuthenticated, isLoading: authLoading } = useAuth();
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
   const { 
     dashboardData, 
     inventoryAlerts, 
@@ -146,9 +148,11 @@ function DashboardContent() {
     setError,
     clearError,
     showError,
-    showSuccess
+    showSuccess,
+    isLoading: adminLoading,
+    errors
   } = useAdmin();
-  const router = useRouter();
+  const { navigateTo, goToOrders, goToProducts, goToCustomers, goToReports } = useNavigation();
   
   // Dashboard state
   const [salesTrendData, setSalesTrendData] = useState([]);
@@ -161,9 +165,9 @@ function DashboardContent() {
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
-      router.push('/login');
+      navigateTo('/login');
     }
-  }, [isAuthenticated, authLoading, router]);
+  }, [isAuthenticated, authLoading, navigateTo]);
 
   // Fetch dashboard data
   const fetchDashboardData = useCallback(async () => {
@@ -336,22 +340,31 @@ function DashboardContent() {
           <div className="admin-card">
             <h2 className="text-lg font-semibold mb-4">Quick Actions</h2>
             <div className="grid grid-cols-2 gap-3">
-              <button className="admin-button admin-button-primary p-4 text-left hover:bg-blue-600 transition-colors">
+              <button 
+                onClick={goToProducts}
+                className="admin-button admin-button-primary p-4 text-left hover:bg-blue-600 transition-colors"
+              >
                 <div className="text-sm font-medium">Add Product</div>
                 <div className="text-xs opacity-75">Create new product</div>
               </button>
               <button 
-                onClick={() => router.push('/orders')}
+                onClick={goToOrders}
                 className="admin-button admin-button-primary p-4 text-left hover:bg-blue-600 transition-colors"
               >
                 <div className="text-sm font-medium">View Orders</div>
                 <div className="text-xs opacity-75">Manage orders</div>
               </button>
-              <button className="admin-button admin-button-primary p-4 text-left hover:bg-blue-600 transition-colors">
+              <button 
+                onClick={goToCustomers}
+                className="admin-button admin-button-primary p-4 text-left hover:bg-blue-600 transition-colors"
+              >
                 <div className="text-sm font-medium">Customers</div>
                 <div className="text-xs opacity-75">Manage customers</div>
               </button>
-              <button className="admin-button admin-button-primary p-4 text-left hover:bg-blue-600 transition-colors">
+              <button 
+                onClick={goToReports}
+                className="admin-button admin-button-primary p-4 text-left hover:bg-blue-600 transition-colors"
+              >
                 <div className="text-sm font-medium">Reports</div>
                 <div className="text-xs opacity-75">View analytics</div>
               </button>
@@ -367,26 +380,38 @@ function DashboardContent() {
           {/* Sales Trend Chart */}
           <div className="admin-card">
             <h2 className="text-lg font-semibold mb-4">Sales Trend</h2>
-            <LineChart
-              data={salesTrendData}
-              title=""
+            <AsyncLoadingWrapper
               loading={chartsLoading}
-              height={350}
-              smooth={true}
-              areaStyle={true}
-            />
+              error={errors.charts}
+              onRetry={fetchChartData}
+            >
+              <LineChart
+                data={salesTrendData}
+                title=""
+                loading={false}
+                height={350}
+                smooth={true}
+                areaStyle={true}
+              />
+            </AsyncLoadingWrapper>
           </div>
 
           {/* Order Status Distribution */}
           <div className="admin-card">
             <h2 className="text-lg font-semibold mb-4">Order Status Distribution</h2>
-            <PieChart
-              data={orderStatusData}
-              title=""
+            <AsyncLoadingWrapper
               loading={chartsLoading}
-              height={350}
-              showLegend={true}
-            />
+              error={errors.charts}
+              onRetry={fetchChartData}
+            >
+              <PieChart
+                data={orderStatusData}
+                title=""
+                loading={false}
+                height={350}
+                showLegend={true}
+              />
+            </AsyncLoadingWrapper>
           </div>
         </div>
 
@@ -394,13 +419,19 @@ function DashboardContent() {
         <div className="mt-8">
           <div className="admin-card">
             <h2 className="text-lg font-semibold mb-4">Top Products by Revenue</h2>
-            <BarChart
-              data={topProductsData}
-              title=""
+            <AsyncLoadingWrapper
               loading={chartsLoading}
-              height={400}
-              horizontal={false}
-            />
+              error={errors.charts}
+              onRetry={fetchChartData}
+            >
+              <BarChart
+                data={topProductsData}
+                title=""
+                loading={false}
+                height={400}
+                horizontal={false}
+              />
+            </AsyncLoadingWrapper>
           </div>
         </div>
 
