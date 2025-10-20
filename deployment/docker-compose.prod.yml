@@ -1,23 +1,6 @@
 version: '3.8'
 
 services:
-  # Frontend Application
-  frontend:
-    build:
-      context: .
-      dockerfile: deployment/Dockerfile.frontend
-    ports:
-      - "3000:3000"
-    environment:
-      - NODE_ENV=production
-      - NEXT_PUBLIC_API_URL=https://api.yourdomain.com
-      - NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=${STRIPE_PUBLISHABLE_KEY}
-    depends_on:
-      - backend
-    restart: unless-stopped
-    networks:
-      - app-network
-
   # Backend API
   backend:
     build:
@@ -43,16 +26,67 @@ services:
     volumes:
       - ./backend/uploads:/app/uploads
       - ./logs:/app/logs
-    depends_on:
-      - database
-      - redis
     restart: unless-stopped
     networks:
       - app-network
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:6666/api/status/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
 
-  # Database
+  # Frontend Application
+  frontend:
+    build:
+      context: .
+      dockerfile: deployment/Dockerfile.frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - NEXT_PUBLIC_API_URL=https://api.yourdomain.com
+      - NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=${STRIPE_PUBLISHABLE_KEY}
+    restart: unless-stopped
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:3000/ || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    depends_on:
+      backend:
+        condition: service_started
+
+  # Admin Dashboard (Next.js)
+  admin-dashboard:
+    build:
+      context: ./admin-dashboard
+      dockerfile: ../deployment/Dockerfile.admin-dashboard
+    ports:
+      - "3001:3001"
+    environment:
+      - NODE_ENV=production
+      - PRODUCTION_BACKEND_URL=http://backend:6666
+    restart: unless-stopped
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:3001/ || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    depends_on:
+      backend:
+        condition: service_started
+
+  # Database (MySQL)
   database:
     image: mysql:8.0
+    command: --default-authentication-plugin=mysql_native_password
     environment:
       - MYSQL_ROOT_PASSWORD=${DB_ROOT_PASSWORD}
       - MYSQL_DATABASE=${DB_NAME}
@@ -67,6 +101,12 @@ services:
     restart: unless-stopped
     networks:
       - app-network
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -p${DB_ROOT_PASSWORD} --silent"]
+      interval: 30s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
 
   # Redis for caching and sessions
   redis:
@@ -78,6 +118,12 @@ services:
     restart: unless-stopped
     networks:
       - app-network
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli ping | grep PONG"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
 
   # Nginx Reverse Proxy
   nginx:
@@ -86,11 +132,15 @@ services:
       - "80:80"
       - "443:443"
     volumes:
-      - ./deployment/nginx.conf:/etc/nginx/nginx.conf
-      - ./deployment/ssl:/etc/nginx/ssl
+      - ./deployment/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./deployment/ssl:/etc/nginx/ssl:ro
     depends_on:
-      - frontend
-      - backend
+      frontend:
+        condition: service_started
+      backend:
+        condition: service_started
+      admin-dashboard:
+        condition: service_started
     restart: unless-stopped
     networks:
       - app-network

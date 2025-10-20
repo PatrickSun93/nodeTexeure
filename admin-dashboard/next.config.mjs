@@ -1,5 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Serve admin-dashboard under subpath behind Nginx
+  // This ensures assets and routes work correctly when proxied at /admin
+  basePath: '/admin',
   // API rewrites for backend communication
   async rewrites() {
     const isDev = process.env.NODE_ENV === 'development';
