@@ -64,7 +64,7 @@ Stores queued emails for reliable delivery:
 - `data`: JSON data for email content
 - `priority`: Priority level (1-5, 1 being highest)
 - `status`: Current status (pending, completed, failed, cancelled)
-- `retry_count`: Number of retry attempts
+- `attempts`: Number of retry attempts (aligns with email_queue schema)
 - `scheduled_at`: When to send the email
 - `created_at`: When the email was queued
 - `completed_at`: When the email was sent/failed

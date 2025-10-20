@@ -227,7 +227,7 @@ CREATE TABLE email_queue (
   type VARCHAR(100) NOT NULL,
   recipient VARCHAR(255) NOT NULL,
   status ENUM('pending', 'completed', 'failed', 'cancelled') DEFAULT 'pending',
-  retry_count INT DEFAULT 0,
+  attempts INT DEFAULT 0,
   error_message TEXT,
   scheduled_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

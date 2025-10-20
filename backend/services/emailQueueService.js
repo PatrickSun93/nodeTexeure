@@ -33,7 +33,7 @@ class EmailQueueService {
       const query = `
         INSERT INTO email_queue (
           id, type, recipient, data, priority, status, 
-          retry_count, scheduled_at, created_at, to_email, subject, email_content
+          attempts, scheduled_at, created_at, to_email, subject, email_content
         ) VALUES (?, ?, ?, ?, ?, 'pending', 0, ?, ?, ?, ?, ?)
       `;
 
@@ -154,7 +154,7 @@ class EmailQueueService {
         SELECT * FROM email_queue 
         WHERE status = 'pending' 
         AND scheduled_at <= NOW() 
-        AND retry_count < ?
+        AND attempts < ?
         ORDER BY priority ASC, created_at ASC 
         LIMIT 10
       `;
@@ -212,7 +212,7 @@ class EmailQueueService {
         recipient: emailItem.recipient,
         messageId: result.messageId,
         processingTime: `${processingTime}ms`,
-        retryCount: emailItem.retry_count
+        attempts: emailItem.attempts
       });
 
     } catch (error) {
@@ -224,7 +224,7 @@ class EmailQueueService {
         queue_id: emailItem.id,
         email_type: emailItem.type,
         recipient: emailItem.recipient,
-        retry_count: emailItem.retry_count,
+        attempts: emailItem.attempts,
         processing_time: processingTime
       });
 
@@ -270,7 +270,8 @@ class EmailQueueService {
    * Handle email sending failure with enhanced retry logic
    */
   async handleEmailFailure(emailItem, error) {
-    const newRetryCount = emailItem.retry_count + 1;
+    // migrated: use 'attempts' field; see newAttempts computed from emailItem.attempts
+    const newAttempts = emailItem.attempts + 1; // align with schema column 'attempts'
     const isRetryable = this._isEmailErrorRetryable(error);
 
     // Don't retry non-retryable errors (like invalid email addresses)
@@ -300,9 +301,9 @@ class EmailQueueService {
       const retryDelay = baseDelay + jitter;
       const nextRetryAt = new Date(Date.now() + retryDelay);
 
-      await this.scheduleRetry(emailItem.id, newRetryCount, nextRetryAt, error.message);
+      await this.scheduleRetry(emailItem.id, newAttempts, nextRetryAt, error.message);
 
-      logger.warn(`Email failed, scheduling retry ${newRetryCount}/${this.maxRetries}`, {
+      logger.warn(`Email failed, scheduling retry ${newAttempts}/${this.maxRetries}`, {
         queueId: emailItem.id,
         type: emailItem.type,
         recipient: emailItem.recipient,
@@ -382,7 +383,7 @@ class EmailQueueService {
                 id: emailItem.id,
                 type: emailItem.type,
                 recipient: emailItem.recipient,
-                retryCount: emailItem.retry_count
+                attempts: emailItem.attempts
               },
               error: {
                 message: error.message,
@@ -414,8 +415,8 @@ class EmailQueueService {
   async markEmailCompleted(queueId, messageId) {
     const query = `
       UPDATE email_queue 
-      SET status = 'completed', 
-          completed_at = NOW(), 
+      SET status = 'sent', 
+          sent_at = NOW(), 
           message_id = ?,
           error_message = NULL
       WHERE id = ?
@@ -433,7 +434,6 @@ class EmailQueueService {
     const query = `
       UPDATE email_queue 
       SET status = 'failed', 
-          completed_at = NOW(), 
           error_message = ?
       WHERE id = ?
     `;
@@ -449,7 +449,7 @@ class EmailQueueService {
   async scheduleRetry(queueId, retryCount, nextRetryAt, errorMessage) {
     const query = `
       UPDATE email_queue 
-      SET retry_count = ?, 
+      SET attempts = ?, 
           scheduled_at = ?, 
           error_message = ?
       WHERE id = ?
@@ -466,13 +466,12 @@ class EmailQueueService {
   async cleanupOldEmails() {
     const query = `
       DELETE FROM email_queue 
-      WHERE status IN ('completed', 'failed') 
-      AND completed_at < DATE_SUB(NOW(), INTERVAL 7 DAY)
+      WHERE (status = 'sent' AND sent_at < DATE_SUB(NOW(), INTERVAL 7 DAY))
+         OR (status = 'failed' AND created_at < DATE_SUB(NOW(), INTERVAL 7 DAY))
     `;
     const result = await db.executeQuery(query);
-    
-    if (result.success && result.affectedRows > 0) {
-      logger.info(`Cleaned up ${result.affectedRows} old email records`);
+    if (!result.success) {
+      throw new Error(result.error);
     }
   }
 

@@ -80,7 +80,7 @@ This document describes the comprehensive email notification system implemented 
 - data: JSON payload with email data
 - priority: Priority level (1-5)
 - status: pending, completed, failed, cancelled
-- retry_count: Number of retry attempts
+- attempts: Number of retry attempts (schema field)
 - scheduled_at: When to send the email
 - completed_at: When email was sent/failed
 - message_id: AWS SES message ID
