@@ -6,7 +6,8 @@ import BaseChart from './BaseChart';
  * Gauge Chart Component for KPI Indicators and Progress Metrics
  */
 export default function GaugeChart({ 
-  value = 0,
+  data = [],
+  value,
   max = 100,
   title = '', 
   loading = false,
@@ -18,8 +19,12 @@ export default function GaugeChart({
     { value: 100, color: '#10b981' }  // Green
   ]
 }) {
+  // Handle both data array format and direct value prop
+  const chartValue = data && data.length > 0 ? data[0].value : (value || 0);
+  const chartTitle = data && data.length > 0 ? data[0].name : title;
+  
   // Calculate percentage
-  const percentage = Math.min((value / max) * 100, 100);
+  const percentage = Math.min((chartValue / max) * 100, 100);
   
   // Determine color based on thresholds
   const getColor = (val) => {
@@ -34,7 +39,7 @@ export default function GaugeChart({
   // Prepare chart option
   const option = {
     title: {
-      text: title,
+      text: chartTitle,
       left: 'center',
       top: '10%',
       textStyle: {
@@ -44,7 +49,7 @@ export default function GaugeChart({
       }
     },
     series: [{
-      name: title,
+      name: chartTitle,
       type: 'gauge',
       center: ['50%', '60%'],
       radius: '80%',
@@ -133,8 +138,8 @@ export default function GaugeChart({
         offsetCenter: [0, '40%']
       },
       data: [{
-        value: value,
-        name: title
+        value: chartValue,
+        name: chartTitle
       }]
     }]
   };

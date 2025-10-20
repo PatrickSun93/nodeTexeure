@@ -1,5 +1,7 @@
 import './globals.css'
 import { AuthProvider } from '@/contexts/AuthContext'
+import { AdminProvider } from '@/contexts/AdminContext'
+import NotificationSystem from '@/components/NotificationSystem'
 
 export const metadata = {
   title: 'Admin Dashboard - Bed Texture',
@@ -11,7 +13,10 @@ export default function RootLayout({ children }) {
     <html lang="en">
       <body className="bg-gray-50 text-gray-900 antialiased">
         <AuthProvider>
-          {children}
+          <AdminProvider>
+            {children}
+            <NotificationSystem />
+          </AdminProvider>
         </AuthProvider>
       </body>
     </html>

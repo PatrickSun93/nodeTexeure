@@ -133,3 +133,81 @@ body {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
 }
+
+/* Navigation styles */
+.admin-nav-item {
+  transition: all 0.2s ease;
+}
+
+.admin-nav-item:hover {
+  background-color: var(--secondary);
+}
+
+.admin-nav-item.active {
+  background-color: #dbeafe;
+  color: #1d4ed8;
+  border-right: 2px solid #3b82f6;
+}
+
+/* Notification styles */
+.notification-enter {
+  opacity: 0;
+  transform: translateX(100%);
+}
+
+.notification-enter-active {
+  opacity: 1;
+  transform: translateX(0);
+  transition: opacity 300ms, transform 300ms;
+}
+
+.notification-exit {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.notification-exit-active {
+  opacity: 0;
+  transform: translateX(100%);
+  transition: opacity 300ms, transform 300ms;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .admin-container {
+    padding: 0 0.5rem;
+  }
+  
+  .admin-card {
+    padding: 1rem;
+  }
+}
+
+/* Dark mode support (future enhancement) */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #111827;
+    --foreground: #f9fafb;
+    --primary: #374151;
+    --primary-foreground: #ffffff;
+    --secondary: #1f2937;
+    --secondary-foreground: #d1d5db;
+    --border: #374151;
+    --input: #1f2937;
+  }
+}
+
+/* Accessibility improvements */
+.admin-button:focus,
+.admin-input:focus {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+/* Print styles */
+@media print {
+  .admin-nav,
+  .notification-system {
+    display: none;
+  }
+}

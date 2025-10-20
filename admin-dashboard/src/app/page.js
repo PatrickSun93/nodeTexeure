@@ -3,8 +3,11 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
+import { useAdmin } from '@/contexts/AdminContext';
 import { adminDashboard, getErrorMessage } from '@/lib/api';
 import { LineChart, PieChart, BarChart } from '@/components/charts';
+import AdminLayout from '@/components/AdminLayout';
+import LoadingSpinner from '@/components/LoadingSpinner';
 
 // KPI Widget Component
 function KPIWidget({ title, value, change, isLoading, prefix = '', suffix = '', changeLabel = 'from last period' }) {
@@ -132,19 +135,27 @@ function InventoryAlerts({ alerts, isLoading }) {
   );
 }
 
-export default function AdminDashboard() {
-  const { user, isAuthenticated, isLoading: authLoading, logout } = useAuth();
+function DashboardContent() {
+  const { user, isAuthenticated, isLoading: authLoading } = useAuth();
+  const { 
+    dashboardData, 
+    inventoryAlerts, 
+    setDashboardData, 
+    setInventoryAlerts,
+    setLoading,
+    setError,
+    clearError,
+    showError,
+    showSuccess
+  } = useAdmin();
   const router = useRouter();
   
   // Dashboard state
-  const [dashboardData, setDashboardData] = useState(null);
-  const [inventoryAlerts, setInventoryAlerts] = useState([]);
   const [salesTrendData, setSalesTrendData] = useState([]);
   const [topProductsData, setTopProductsData] = useState([]);
   const [orderStatusData, setOrderStatusData] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [chartsLoading, setChartsLoading] = useState(true);
-  const [error, setError] = useState(null);
   const [selectedPeriod, setSelectedPeriod] = useState('month');
   const [lastUpdated, setLastUpdated] = useState(null);
 
@@ -158,7 +169,8 @@ export default function AdminDashboard() {
   const fetchDashboardData = useCallback(async () => {
     try {
       setIsLoading(true);
-      setError(null);
+      setLoading('dashboard', true);
+      clearError('dashboard');
 
       // Fetch overview data and inventory alerts in parallel
       const [overviewResponse, alertsResponse] = await Promise.all([
@@ -177,13 +189,17 @@ export default function AdminDashboard() {
       }
 
       setLastUpdated(new Date());
+      showSuccess('Dashboard data updated successfully');
     } catch (err) {
       console.error('Dashboard data fetch error:', err);
-      setError(getErrorMessage(err));
+      const errorMessage = getErrorMessage(err);
+      setError('dashboard', errorMessage);
+      showError(`Failed to load dashboard: ${errorMessage}`);
     } finally {
       setIsLoading(false);
+      setLoading('dashboard', false);
     }
-  }, [selectedPeriod]);
+  }, [selectedPeriod, setDashboardData, setInventoryAlerts, setLoading, setError, clearError, showError, showSuccess]);
 
   // Fetch chart data
   const fetchChartData = useCallback(async () => {
@@ -240,11 +256,6 @@ export default function AdminDashboard() {
     return () => clearInterval(interval);
   }, [isAuthenticated, fetchDashboardData]);
 
-  const handleLogout = async () => {
-    await logout();
-    router.push('/login?logout=true');
-  };
-
   const handleRefresh = () => {
     fetchDashboardData();
     fetchChartData();
@@ -253,8 +264,7 @@ export default function AdminDashboard() {
   if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="admin-spinner"></div>
-        <span className="ml-2">Loading...</span>
+        <LoadingSpinner size="large" text="Loading..." />
       </div>
     );
   }
@@ -264,87 +274,28 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white shadow-sm border-b">
-        <div className="admin-container">
-          <div className="flex items-center justify-between h-16">
-            <h1 className="text-xl font-semibold text-gray-900">
-              Admin Dashboard
-            </h1>
-            <nav className="flex items-center space-x-4">
-              <a 
-                href="/products"
-                className="text-sm text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md hover:bg-gray-100"
-              >
-                Products
-              </a>
-              <a 
-                href="/orders"
-                className="text-sm text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md hover:bg-gray-100"
-              >
-                Orders
-              </a>
-              <a 
-                href="/settings"
-                className="text-sm text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md hover:bg-gray-100"
-              >
-                Settings
-              </a>
-              <a 
-                href="/users"
-                className="text-sm text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md hover:bg-gray-100"
-              >
-                Users
-              </a>
-              <a 
-                href="/email-templates"
-                className="text-sm text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md hover:bg-gray-100"
-              >
-                Email Templates
-              </a>
-              <span className="text-sm text-gray-600">
-                Welcome, {user?.firstName || 'Admin'}
-              </span>
-              <button 
-                className="admin-button admin-button-secondary text-sm"
-                onClick={handleLogout}
-              >
-                Logout
-              </button>
-            </nav>
-          </div>
+    <div>
+      {/* Dashboard Controls */}
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center space-x-4">
+          <PeriodSelector 
+            selectedPeriod={selectedPeriod} 
+            onPeriodChange={setSelectedPeriod}
+          />
+          {lastUpdated && (
+            <span className="text-sm text-gray-500">
+              Last updated: {lastUpdated.toLocaleTimeString()}
+            </span>
+          )}
         </div>
-      </header>
-
-      <main className="admin-container py-8">
-        {/* Dashboard Controls */}
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center space-x-4">
-            <PeriodSelector 
-              selectedPeriod={selectedPeriod} 
-              onPeriodChange={setSelectedPeriod}
-            />
-            {lastUpdated && (
-              <span className="text-sm text-gray-500">
-                Last updated: {lastUpdated.toLocaleTimeString()}
-              </span>
-            )}
-          </div>
-          <button
-            onClick={handleRefresh}
-            disabled={isLoading}
-            className="admin-button admin-button-primary text-sm"
-          >
-            {isLoading ? 'Refreshing...' : 'Refresh'}
-          </button>
-        </div>
-
-        {/* Error Display */}
-        {error && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-md">
-            <p className="text-sm text-red-600">{error}</p>
-          </div>
-        )}
+        <button
+          onClick={handleRefresh}
+          disabled={isLoading}
+          className="admin-button admin-button-primary text-sm"
+        >
+          {isLoading ? 'Refreshing...' : 'Refresh'}
+        </button>
+      </div>
 
         {/* KPI Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
@@ -478,8 +429,18 @@ export default function AdminDashboard() {
             isLoading={isLoading}
             changeLabel="total quantity"
           />
-        </div>
-      </main>
+      </div>
     </div>
+  );
+}
+
+export default function AdminDashboard() {
+  return (
+    <AdminLayout 
+      title="Dashboard Overview" 
+      subtitle="Monitor your business performance and key metrics"
+    >
+      <DashboardContent />
+    </AdminLayout>
   );
 }

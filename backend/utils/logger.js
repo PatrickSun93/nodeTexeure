@@ -245,6 +245,9 @@ class Logger {
       // Write to audit log file
       await this.writeLog(auditLine, 'audit');
       
+      // Also store in database for enhanced audit trail
+      await this.storeAuditInDatabase(auditEvent);
+      
       // Also log critical security events to console
       if (this.isCriticalSecurityEvent(operation, success)) {
         console.warn(`SECURITY AUDIT: ${operation} - User: ${userId} - IP: ${ip} - Success: ${success}`);
@@ -257,6 +260,70 @@ class Logger {
       await this.writeLog(fallbackLine).catch(() => {
         console.error('Complete logging failure for audit event');
       });
+    }
+  }
+
+  /**
+   * Store audit event in database for enhanced querying and compliance
+   */
+  async storeAuditInDatabase(auditEvent) {
+    try {
+      const DatabaseUtil = require('./database');
+      
+      const auditId = `AUDIT${Date.now()}${Math.random().toString(36).substr(2, 5)}`;
+      const timestamp = auditEvent.timestamp || new Date().toISOString();
+      const operation = auditEvent.operation || 'UNKNOWN_OPERATION';
+      const userId = auditEvent.user?.userId || null;
+      const ip = auditEvent.user?.ip || null;
+      const userAgent = auditEvent.user?.userAgent || null;
+      
+      // Determine severity based on operation and success
+      let severity = 'LOW';
+      if (auditEvent.response?.success === false) {
+        severity = 'MEDIUM';
+      }
+      if (this.isCriticalSecurityEvent(operation, auditEvent.response?.success)) {
+        severity = 'HIGH';
+      }
+      if (operation === 'SECURITY_VIOLATION') {
+        severity = auditEvent.severity || 'HIGH';
+      }
+      
+      const insertQuery = `
+        INSERT INTO audit_logs (
+          id, user_id, action, resource_type, resource_id, 
+          old_values, new_values, session_details, 
+          operation_type, audit_details, severity, ip_address, user_agent,
+          created_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `;
+      
+      const params = [
+        auditId,
+        userId || 'system',
+        auditEvent.request?.method || operation,
+        auditEvent.metadata?.resourceType || 'system',
+        auditEvent.metadata?.resourceId || null,
+        auditEvent.request ? JSON.stringify(auditEvent.request) : null,
+        auditEvent.response ? JSON.stringify(auditEvent.response) : null,
+        auditEvent.user ? JSON.stringify(auditEvent.user) : null,
+        operation,
+        JSON.stringify(auditEvent),
+        severity,
+        ip,
+        userAgent,
+        timestamp
+      ];
+      
+      const result = await DatabaseUtil.executeQuery(insertQuery, params);
+      
+      if (!result.success) {
+        console.error('Failed to store audit in database:', result.error);
+      }
+      
+    } catch (error) {
+      console.error('Database audit storage error:', error);
+      // Don't throw - audit logging should not break the main flow
     }
   }
 
