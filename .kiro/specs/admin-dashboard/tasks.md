@@ -413,7 +413,7 @@ git push
   - _Requirements: All requirements_
   - **Commit Message:** `feat: complete admin dashboard integration with navigation and global state management`
 
-- [-] 11.2 Set up production deployment for separate admin dashboard
+- [x] 11.2 Set up production deployment for separate admin dashboard
   - Configure separate deployment for admin dashboard on different port/subdomain
   - Set up admin dashboard environment variables and CORS configuration
   - Configure SSL certificates and security settings for admin dashboard
@@ -421,7 +421,7 @@ git push
   - _Requirements: All requirements_
   - **Commit Message:** `feat: configure production deployment for admin dashboard with SSL and monitoring`
 
-- [ ] 11.3 Implement performance optimization
+- [-] 11.3 Implement performance optimization
   - Add code splitting and lazy loading for admin components
   - Implement caching strategies for frequently accessed data
   - Optimize ECharts rendering and data loading performance
