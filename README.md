@@ -11,6 +11,16 @@ A full-stack application with **Next.js frontend** (port 3000) and **Express.js 
 └── 📡 API Communication     → REST API calls
 ```
 
+## 📓 Development Notes
+
+- Unified restart policy: always and only run `npm run dev:full` from the project root (`/Volumes/externalssd/devitems/nodeTexeure`) to start or restart all services.
+- Do not start frontend or backend separately. The `dev:full` script manages both processes.
+- Ports: frontend should use `3000` and backend `6666`. If 3000 is occupied, Next.js may pick `3001`. Prefer freeing port 3000 to keep URLs consistent.
+- Before restarting, check ports and kill conflicting processes if needed:
+  - macOS: `lsof -i :3000` and `kill -9 $(lsof -ti:3000)`; same for `:6666`.
+- Environment: Next.js will load `.env.local` and `.env`. Ensure `BACKEND_URL=http://localhost:6666` is set in `.env.local`.
+- Health checks: backend health endpoint at `http://localhost:6666/api/status/health`.
+
 ## 🚀 Quick Start
 
 ### 1. Setup Database (First Time)
