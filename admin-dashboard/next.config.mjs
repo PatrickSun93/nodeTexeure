@@ -1,5 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // API rewrites for backend communication
   async rewrites() {
     const isDev = process.env.NODE_ENV === 'development';
     const backendUrl = isDev 
@@ -16,6 +17,7 @@ const nextConfig = {
     }));
   },
   
+  // Image optimization
   images: {
     remotePatterns: [
       {
@@ -24,14 +26,130 @@ const nextConfig = {
         port: '6666',
         pathname: '/uploads/**',
       },
+      {
+        protocol: 'https',
+        hostname: 'cdn.bedtexture.com',
+        pathname: '/**',
+      },
     ],
     formats: ['image/webp', 'image/avif'],
+    minimumCacheTTL: 86400,
   },
   
   // Performance optimizations
   experimental: {
     optimizeCss: true,
+    optimizePackageImports: [
+      '@/components',
+      '@/lib',
+      '@/contexts',
+      '@/hooks',
+      'echarts'
+    ],
+    serverComponentsExternalPackages: ['echarts'],
   },
+  
+  // Webpack configuration for performance
+  webpack: (config, { buildId, dev, isServer, defaultLoaders, webpack }) => {
+    // Performance optimizations for production
+    if (!dev && !isServer) {
+      // Advanced code splitting
+      config.optimization.splitChunks = {
+        chunks: 'all',
+        minSize: 20000,
+        maxSize: 244000,
+        cacheGroups: {
+          // Vendor chunks
+          vendor: {
+            test: /[\\/]node_modules[\\/]/,
+            name: 'vendors',
+            chunks: 'all',
+            priority: 10,
+          },
+          
+          // ECharts separate chunk (large library)
+          echarts: {
+            test: /[\\/]node_modules[\\/]echarts[\\/]/,
+            name: 'echarts',
+            chunks: 'all',
+            priority: 20,
+          },
+          
+          // React libraries
+          react: {
+            test: /[\\/]node_modules[\\/](react|react-dom)[\\/]/,
+            name: 'react',
+            chunks: 'all',
+            priority: 20,
+          },
+          
+          // Common admin components
+          adminComponents: {
+            test: /[\\/]src[\\/]components[\\/]/,
+            name: 'admin-components',
+            chunks: 'all',
+            minChunks: 2,
+            priority: 5,
+          },
+          
+          // Charts components
+          charts: {
+            test: /[\\/]src[\\/]components[\\/]charts[\\/]/,
+            name: 'charts',
+            chunks: 'all',
+            priority: 15,
+          },
+          
+          // Common utilities
+          common: {
+            name: 'common',
+            minChunks: 2,
+            chunks: 'all',
+            priority: 1,
+          },
+        },
+      };
+
+      // Tree shaking optimization
+      config.optimization.usedExports = true;
+      config.optimization.sideEffects = false;
+
+      // Module concatenation
+      config.optimization.concatenateModules = true;
+    }
+
+    // Bundle analyzer (optional)
+    if (process.env.ANALYZE === 'true') {
+      const { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer');
+      config.plugins.push(
+        new BundleAnalyzerPlugin({
+          analyzerMode: 'static',
+          openAnalyzer: false,
+          reportFilename: 'bundle-analyzer-report.html',
+        })
+      );
+    }
+
+    // Webpack performance hints
+    config.performance = {
+      hints: dev ? false : 'warning',
+      maxEntrypointSize: 512000,
+      maxAssetSize: 512000,
+    };
+
+    return config;
+  },
+
+  // Compiler options
+  compiler: {
+    // Remove console logs in production
+    removeConsole: process.env.NODE_ENV === 'production' ? {
+      exclude: ['error', 'warn'],
+    } : false,
+  },
+
+  // Output configuration
+  output: process.env.NODE_ENV === 'production' ? 'standalone' : undefined,
   
   compress: true,
   trailingSlash: false,
@@ -54,10 +172,26 @@ const nextConfig = {
             key: 'X-XSS-Protection',
             value: '1; mode=block',
           },
+          {
+            key: 'Referrer-Policy',
+            value: 'strict-origin-when-cross-origin',
+          },
+          {
+            key: 'Permissions-Policy',
+            value: 'camera=(), microphone=(), geolocation=()',
+          },
         ],
       },
     ];
   },
+
+  // Generate build ID for cache busting
+  generateBuildId: async () => {
+    return `admin-${Date.now()}`;
+  },
+
+  // Security
+  poweredByHeader: false,
 };
 
 export default nextConfig;
