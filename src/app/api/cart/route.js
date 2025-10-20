@@ -13,7 +13,13 @@ export async function GET(request) {
       headers.authorization = authHeader;
     }
     
-    const backendResponse = await fetch(`${process.env.BACKEND_URL}/api/cart`, {
+    const backendUrl = process.env.BACKEND_URL || 'http://localhost:6666';
+    const fullUrl = `${backendUrl}/api/cart`;
+    console.log('BACKEND_URL:', JSON.stringify(process.env.BACKEND_URL));
+    console.log('Full URL:', JSON.stringify(fullUrl));
+    console.log('URL length:', fullUrl.length);
+    
+    const backendResponse = await fetch(fullUrl, {
       method: 'GET',
       headers
     });

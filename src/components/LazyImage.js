@@ -178,7 +178,7 @@ export default function LazyImage({
           fill={fill}
           priority={priority}
           placeholder={placeholder}
-          blurDataURL={fallbackBlurDataURL}
+          blurDataURL={blurDataURL}
           sizes={sizes}
           quality={quality}
           className={`lazy-image ${isLoaded ? 'lazy-image-loaded' : 'lazy-image-loading'}`}

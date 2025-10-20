@@ -123,7 +123,7 @@ class PerformanceMiddleware {
         }
         
         // Log request timing
-        logger.debug(`${req.method} ${req.originalUrl} - ${res.statusCode} - ${duration}ms`);
+        logger.info(`${req.method} ${req.originalUrl} - ${res.statusCode} - ${duration}ms`);
         
         return originalEnd.apply(this, args);
       };

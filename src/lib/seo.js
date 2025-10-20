@@ -24,7 +24,7 @@ export function generateMetaTags({
   image,
   url,
   type = 'website',
-
+  locale = 'en-US',
   noindex = false,
   nofollow = false
 }) {
