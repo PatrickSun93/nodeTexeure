@@ -1326,22 +1326,8 @@ p {
   transition: width 200ms linear;
 }
 
-/* Grid for Featured section */
-.aesop-product-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: var(--space-6);
-}
-
-@media (max-width: 1024px) {
-  .aesop-product-grid { grid-template-columns: repeat(3, 1fr); }
-}
-@media (max-width: 768px) {
-  .aesop-product-grid { grid-template-columns: repeat(2, 1fr); }
-}
-@media (max-width: 480px) {
-  .aesop-product-grid { grid-template-columns: 1fr; }
-}
+/* Grid for Featured section: consolidated with unified product grid rules above.
+   Duplicate block removed to avoid conflicting layouts. */
 
 /* Section titles */
 .aesop-section { padding: var(--space-12) 0; }
@@ -1356,11 +1342,8 @@ p {
   color: var(--color-black);
 }
 
-.aesop-product-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: var(--space-8);
-}
+/* Duplicate .aesop-product-grid definition removed. Using the consolidated
+   rule defined near the top of the file to keep a single source of truth. */
 
 .aesop-product-card {
   background-color: var(--color-white);
@@ -1471,12 +1454,27 @@ p {
   padding: var(--space-16) 0 var(--space-8);
   margin-top: var(--space-20);
 }
+/* Prevent flex centering from collapsing the grid width inside footer */
+.aesop-footer .aesop-container {
+  display: block;
+  width: 100%;
+  padding: 0 var(--space-6);
+}
 
 .aesop-footer-content {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  width: 100%;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: var(--space-8);
   margin-bottom: var(--space-8);
+}
+
+/* Responsive footer columns */
+@media (max-width: 1024px) {
+  .aesop-footer-content { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 640px) {
+  .aesop-footer-content { grid-template-columns: 1fr; }
 }
 
 .aesop-footer-section h3 {
