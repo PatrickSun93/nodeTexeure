@@ -1458,7 +1458,10 @@ p {
 .aesop-footer .aesop-container {
   display: block;
   width: 100%;
-  padding: 0 var(--space-6);
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 var(--space-8);
+  box-sizing: border-box;
 }
 
 .aesop-footer-content {
