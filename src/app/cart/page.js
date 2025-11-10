@@ -6,22 +6,6 @@ import Header from '../../components/Header';
 import Footer from '../../components/Footer';
 import { apiRequest, extractResponseData } from '../../lib/api';
 
-function Breadcrumb() {
-  return (
-    <div className="aesop-breadcrumb">
-      <div className="aesop-container">
-        <div className="aesop-breadcrumb-content">
-          <h1 className="aesop-page-title">Shopping Cart</h1>
-          <nav className="aesop-breadcrumb-nav" aria-label="Breadcrumb">
-            <Link href="/" className="aesop-breadcrumb-link">Home</Link>
-            <span className="aesop-breadcrumb-separator">→</span>
-            <span className="aesop-breadcrumb-current">Cart</span>
-          </nav>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 export default function Cart() {
   const [cart, setCart] = useState({ id: null, items: [] });
@@ -102,7 +86,6 @@ export default function Cart() {
     return (
       <div className="aesop-page">
         <Header />
-        <Breadcrumb />
         <div className="aesop-container">
           <div className="aesop-loading-state">Loading your cart...</div>
         </div>
@@ -115,7 +98,6 @@ export default function Cart() {
     return (
       <div className="aesop-page">
         <Header />
-        <Breadcrumb />
         <div className="aesop-container">
           <div className="aesop-error-state">
             <p>{error}</p>
@@ -131,7 +113,6 @@ export default function Cart() {
     return (
       <div className="aesop-page">
         <Header />
-        <Breadcrumb />
         <div className="aesop-container">
           <div className="aesop-empty-state">
             <h2>Your cart is empty</h2>
@@ -148,7 +129,6 @@ export default function Cart() {
     return (
       <div className="aesop-page">
         <Header />
-        <Breadcrumb />
         <div className="aesop-container">
           <div className="aesop-cart-loading">Loading your cart...</div>
         </div>
@@ -161,7 +141,6 @@ export default function Cart() {
     return (
       <div className="aesop-page">
         <Header />
-        <Breadcrumb />
         <div className="aesop-container">
           <div className="aesop-cart-error">
             <p>Error loading cart: {error}</p>
@@ -179,7 +158,6 @@ export default function Cart() {
     return (
       <div className="aesop-page">
         <Header />
-        <Breadcrumb />
         <div className="aesop-container">
           <div className="aesop-cart-empty">
             <h2>Your cart is empty</h2>
@@ -197,7 +175,6 @@ export default function Cart() {
   return (
     <div className="aesop-page">
       <Header />
-      <Breadcrumb />
       <div className="aesop-container">
         <div className="aesop-cart-page">
           <div className="aesop-cart-content">

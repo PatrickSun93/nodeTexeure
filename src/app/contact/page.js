@@ -7,23 +7,6 @@ import Footer from '../../components/Footer';
 
 
 
-const Breadcrumb = () => {
-  return (
-    <div className="aesop-bg-muted aesop-py-8">
-      <div className="aesop-container">
-        <div className="aesop-text-center">
-          <h1 className="aesop-heading-1 aesop-mb-4">Contact Us</h1>
-          <nav className="aesop-flex aesop-justify-center aesop-items-center aesop-space-x-2 aesop-text-sm">
-            <Link href="/" className="aesop-text-muted aesop-hover-primary">Home</Link>
-            <span className="aesop-text-muted">&gt;</span>
-            <span className="aesop-text-primary aesop-font-medium">Contact</span>
-          </nav>
-        </div>
-      </div>
-    </div>
-  );
-};
-
 const ContactForm = () => {
   const [formData, setFormData] = useState({
     name: '',
@@ -265,7 +248,7 @@ const ContactContent = () => {
   return (
     <div className="aesop-container aesop-py-16">
       <div className="aesop-text-center aesop-mb-12">
-        <h2 className="aesop-heading-2 aesop-mb-4">We'd Love to Hear From You</h2>
+        <h2 className="aesop-heading-2 aesop-mb-4">We&apos;d Love to Hear From You</h2>
         <p className="aesop-text-lg aesop-text-muted aesop-max-width-2xl aesop-mx-auto">
           Have questions about our products, need help with an order, or want to share feedback? 
           Our team is here to help you every step of the way.
@@ -287,7 +270,6 @@ export default function ContactPage() {
     <div className="aesop-page">
       <Header />
       <main>
-        <Breadcrumb />
         <ContactContent />
       </main>
       <Footer />

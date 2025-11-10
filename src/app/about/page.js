@@ -4,16 +4,6 @@ import Link from 'next/link';
 import Header from '../../components/Header';
 import Footer from '../../components/Footer';
 
-const Breadcrumb = () => {
-  return (
-    <div className="aesop-container">
-      <Link href="/" className="aesop-breadcrumb-link">Home</Link>
-      <span className="aesop-breadcrumb-separator">&gt;</span>
-      <span className="aesop-breadcrumb-current">About</span>
-    </div>
-  );
-};
-
 const AboutContent = () => {
   return (
     <div className="aesop-container aesop-section">
@@ -22,7 +12,7 @@ const AboutContent = () => {
         <h2 className="aesop-heading-2 aesop-mb-6">Crafting Premium Bed Textures Since 2010</h2>
         <p className="aesop-text-lg aesop-text-muted aesop-max-width-3xl aesop-mx-auto">
           At Noiraé, we believe that quality sleep begins with exceptional bedding. Our passion for creating 
-          the finest bed textures has driven us to source the world's most luxurious materials and craft them 
+          the finest bed textures has driven us to source the world&apos;s most luxurious materials and craft them 
           into products that transform your bedroom into a sanctuary of comfort.
         </p>
       </div>
@@ -42,7 +32,7 @@ const AboutContent = () => {
             standards for comfort, durability, and style.
           </p>
           <p className="aesop-text-muted">
-            Today, we're proud to offer an extensive collection of premium bed textures, from Egyptian cotton 
+            Today, we&apos;re proud to offer an extensive collection of premium bed textures, from Egyptian cotton 
             sheets to bamboo fiber pillowcases, each designed to enhance your sleep experience.
           </p>
         </div>
@@ -75,7 +65,7 @@ const AboutContent = () => {
             </div>
             <h4 className="aesop-heading-4 aesop-mb-3">Sustainability</h4>
             <p className="aesop-text-muted">
-              We're committed to environmental responsibility, using eco-friendly materials and 
+              We&apos;re committed to environmental responsibility, using eco-friendly materials and 
               sustainable manufacturing processes wherever possible.
             </p>
           </div>
@@ -159,7 +149,6 @@ export default function AboutPage() {
     <div className="aesop-page">
       <Header />
       <main>
-        <Breadcrumb />
         <AboutContent />
       </main>
       <Footer />

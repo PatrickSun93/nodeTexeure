@@ -9,8 +9,14 @@ const nextConfig = {
   async rewrites() {
     const isDev = process.env.NODE_ENV === 'development';
     const backendUrl = isDev 
-      ? (process.env.BACKEND_URL || 'http://localhost:6666')
-      : process.env.PRODUCTION_BACKEND_URL;
+      ? (process.env.BACKEND_URL || 'http://localhost:5000')
+      : (process.env.PRODUCTION_BACKEND_URL || 'http://localhost:5000');
+    
+    // Only add rewrites if we have a valid backend URL
+    if (!backendUrl || backendUrl === 'undefined') {
+      console.warn('⚠️  No backend URL configured, skipping API rewrites');
+      return [];
+    }
     
     const routes = [
       'users', 'products', 'orders', 'cart', 'admin', 'status', 'database', 'settings'
@@ -31,7 +37,7 @@ const nextConfig = {
       {
         protocol: 'http',
         hostname: 'localhost',
-        port: '6666',
+        port: '5000',
         pathname: '/uploads/**',
       },
     ],

@@ -7,24 +7,6 @@ import Header from '../../../components/Header';
 import Footer from '../../../components/Footer';
 import { apiRequest } from '../../../lib/api';
 
-function Breadcrumb({ productName }) {
-  return (
-    <div className="bg-amber-50 py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">{productName}</h1>
-          <nav className="flex justify-center items-center space-x-2 text-sm">
-            <Link href="/" className="text-gray-600 hover:text-amber-600">Home</Link>
-            <span className="text-gray-400">&gt;</span>
-            <Link href="/shop" className="text-gray-600 hover:text-amber-600">Shop</Link>
-            <span className="text-gray-400">&gt;</span>
-            <span className="text-gray-900 font-medium">{productName}</span>
-          </nav>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 export default function ProductDetails() {
   const { id } = useParams();
@@ -107,7 +89,6 @@ export default function ProductDetails() {
   return (
     <div>
       <Header />
-      <Breadcrumb productName={product.name} />
       <div className="max-w-7xl mx-auto px-4 py-8">
         <div className="grid md:grid-cols-2 gap-8">
           <div>

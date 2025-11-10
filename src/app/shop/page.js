@@ -1,22 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Header from '../../components/Header';
 import Footer from '../../components/Footer';
 import { apiRequest } from '../../lib/api';
-
-// Breadcrumb Component
-function Breadcrumb() {
-  return (
-    <div className="aesop-container">
-      <Link href="/" className="aesop-breadcrumb-link">Home</Link>
-      <span className="aesop-breadcrumb-separator">&gt;</span>
-      <span className="aesop-breadcrumb-current">Shop</span>
-    </div>
-  );
-}
 
 // Filter Sidebar Component
 function FilterSidebar({ filters, onFilterChange }) {
@@ -239,7 +228,7 @@ export function ProductCard({ product, onAddToCart, onToggleWishlist }) {
 }
 
 // Main Shop Component
-export default function Shop() {
+function Shop() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const searchQuery = searchParams.get('search') || '';
@@ -451,7 +440,6 @@ export default function Shop() {
   return (
     <div className="aesop-page">
       <Header />
-      <Breadcrumb />
       
       <div className="aesop-shop-hero">
         <div className="aesop-container">
@@ -472,7 +460,7 @@ export default function Shop() {
                 <span className="aesop-results-count">
                   Showing {sortedProducts.length} of {products.length} products
                   {filters.search && (
-                    <span className="aesop-search-query"> for "{filters.search}"</span>
+                    <span className="aesop-search-query"> for &quot;{filters.search}&quot;</span>
                   )}
                 </span>
               </div>
@@ -574,5 +562,23 @@ export default function Shop() {
       </div>
       <Footer />
     </div>
+  );
+}
+
+// Wrap with Suspense boundary for useSearchParams
+export default function ShopPage() {
+  return (
+    <Suspense fallback={
+      <div className="aesop-page">
+        <Header />
+        <div className="aesop-loading">
+          <div className="aesop-loading-spinner"></div>
+          <p>Loading shop...</p>
+        </div>
+        <Footer />
+      </div>
+    }>
+      <Shop />
+    </Suspense>
   );
 }
