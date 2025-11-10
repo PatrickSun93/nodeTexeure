@@ -62,13 +62,13 @@ import CartDrawer from './CartDrawer';
             <Link href="/new-arrive" className="aesop-nav-link">
               NEW ARRIVE
             </Link>
-            <Link href="/shop" className="aesop-nav-link">
+            <Link href="/shop?category=bedding" className="aesop-nav-link">
               BEDDING
             </Link>
-            <Link href="/shop" className="aesop-nav-link">
+            <Link href="/shop?category=bath" className="aesop-nav-link">
               BATH
             </Link>
-             <Link href="/shop" className="aesop-nav-link">
+             <Link href="/shop?category=living" className="aesop-nav-link">
               LIVING
             </Link>
             <Link href="/shop" className="aesop-nav-link">
