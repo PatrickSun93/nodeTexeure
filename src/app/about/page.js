@@ -9,7 +9,7 @@ const AboutContent = () => {
     <div className="aesop-container aesop-section">
       {/* Hero Section */}
       <div className="aesop-text-center aesop-mb-16">
-        <h2 className="aesop-heading-2 aesop-mb-6">Crafting Premium Bed Textures Since 2010</h2>
+        <h2 className="aesop-heading-2 aesop-mb-6">The Art of Comfort: Our Story</h2>
         <p className="aesop-text-lg aesop-text-muted aesop-max-width-3xl aesop-mx-auto">
           At Noiraé, we believe that quality sleep begins with exceptional bedding. Our passion for creating 
           the finest bed textures has driven us to source the world&apos;s most luxurious materials and craft them 
