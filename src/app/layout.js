@@ -1,6 +1,7 @@
 import Providers from '../components/Providers';
-import { Inter, Playfair_Display } from "next/font/google";
+import { Inter, Cormorant_Garamond } from "next/font/google";
 import "./globals.css";
+import "../styles/design-tokens.css";
 import "../styles/aesop-design-system.css";
 
 const inter = Inter({
@@ -9,9 +10,10 @@ const inter = Inter({
   display: 'swap',
 });
 
-const playfairDisplay = Playfair_Display({
-  variable: "--font-playfair",
+const cormorantGaramond = Cormorant_Garamond({
+  variable: "--font-serif",
   subsets: ["latin"],
+  weight: ['300', '400', '500', '600', '700'],
   display: 'swap',
 });
 
@@ -25,7 +27,7 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <body
-        className={`${inter.variable} ${playfairDisplay.variable} antialiased`}
+        className={`${inter.variable} ${cormorantGaramond.variable} antialiased`}
       >
         <Providers>
           {children}

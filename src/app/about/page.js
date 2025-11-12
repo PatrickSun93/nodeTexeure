@@ -1,156 +1,179 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
 import Header from '../../components/Header';
 import Footer from '../../components/Footer';
-
-const AboutContent = () => {
-  return (
-    <div className="aesop-container aesop-section">
-      {/* Hero Section */}
-      <div className="aesop-text-center aesop-mb-16">
-        <h2 className="aesop-heading-2 aesop-mb-6">The Art of Comfort: Our Story</h2>
-        <p className="aesop-text-lg aesop-text-muted aesop-max-width-3xl aesop-mx-auto">
-          At Noiraé, we believe that quality sleep begins with exceptional bedding. Our passion for creating 
-          the finest bed textures has driven us to source the world&apos;s most luxurious materials and craft them 
-          into products that transform your bedroom into a sanctuary of comfort.
-        </p>
-      </div>
-
-      {/* Story Section */}
-      <div className="aesop-grid aesop-grid-cols-2 aesop-gap-12 aesop-items-center aesop-mb-16">
-        <div>
-          <h3 className="aesop-heading-3 aesop-mb-6">Our Story</h3>
-          <p className="aesop-text-muted aesop-mb-4">
-            Founded in 2010 by textile enthusiasts Sarah and Michael Chen, Noiraé began as a small family 
-            business with a simple mission: to bring hotel-quality bedding to everyday homes. What started 
-            in a small workshop has grown into a trusted brand serving customers worldwide.
-          </p>
-          <p className="aesop-text-muted aesop-mb-4">
-            Our journey has been guided by an unwavering commitment to quality, sustainability, and customer 
-            satisfaction. Every product we create undergoes rigorous testing to ensure it meets our exacting 
-            standards for comfort, durability, and style.
-          </p>
-          <p className="aesop-text-muted">
-            Today, we&apos;re proud to offer an extensive collection of premium bed textures, from Egyptian cotton 
-            sheets to bamboo fiber pillowcases, each designed to enhance your sleep experience.
-          </p>
-        </div>
-        <div className="aesop-bg-muted aesop-h-96 aesop-rounded aesop-flex aesop-items-center aesop-justify-center">
-          <span className="aesop-text-muted">Our Workshop Image</span>
-        </div>
-      </div>
-
-      {/* Values Section */}
-      <div className="aesop-mb-16">
-        <h3 className="aesop-heading-3 aesop-text-center aesop-mb-12">Our Values</h3>
-        <div className="aesop-grid aesop-grid-cols-3 aesop-gap-8">
-          <div className="aesop-text-center">
-            <div className="aesop-icon-container aesop-bg-primary-light aesop-mx-auto aesop-mb-4">
-              <svg className="aesop-icon aesop-text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            </div>
-            <h4 className="aesop-heading-4 aesop-mb-3">Quality First</h4>
-            <p className="aesop-text-muted">
-              We source only the finest materials and employ skilled artisans to ensure every product 
-              meets our exceptional quality standards.
-            </p>
-          </div>
-          <div className="aesop-text-center">
-            <div className="aesop-icon-container aesop-bg-primary-light aesop-mx-auto aesop-mb-4">
-              <svg className="aesop-icon aesop-text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-              </svg>
-            </div>
-            <h4 className="aesop-heading-4 aesop-mb-3">Sustainability</h4>
-            <p className="aesop-text-muted">
-              We&apos;re committed to environmental responsibility, using eco-friendly materials and 
-              sustainable manufacturing processes wherever possible.
-            </p>
-          </div>
-          <div className="aesop-text-center">
-            <div className="aesop-icon-container aesop-bg-primary-light aesop-mx-auto aesop-mb-4">
-              <svg className="aesop-icon aesop-text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
-              </svg>
-            </div>
-            <h4 className="aesop-heading-4 aesop-mb-3">Customer Care</h4>
-            <p className="aesop-text-muted">
-              Your satisfaction is our priority. We provide exceptional customer service and stand 
-              behind every product with our satisfaction guarantee.
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* Team Section */}
-      <div className="aesop-mb-16">
-        <h3 className="aesop-heading-3 aesop-text-center aesop-mb-12">Meet Our Team</h3>
-        <div className="aesop-grid aesop-grid-cols-3 aesop-gap-8">
-          <div className="aesop-text-center">
-            <div className="aesop-avatar aesop-bg-muted aesop-mx-auto aesop-mb-4 aesop-flex aesop-items-center aesop-justify-center">
-              <span className="aesop-text-muted">Sarah Chen</span>
-            </div>
-            <h4 className="aesop-heading-4 aesop-mb-2">Sarah Chen</h4>
-            <p className="aesop-text-primary aesop-mb-3">Co-Founder & CEO</p>
-            <p className="aesop-text-muted aesop-text-sm">
-              With over 15 years in textile design, Sarah leads our product development and ensures 
-              every item meets our quality standards.
-            </p>
-          </div>
-          <div className="aesop-text-center">
-            <div className="aesop-avatar aesop-bg-muted aesop-mx-auto aesop-mb-4 aesop-flex aesop-items-center aesop-justify-center">
-              <span className="aesop-text-muted">Michael Chen</span>
-            </div>
-            <h4 className="aesop-heading-4 aesop-mb-2">Michael Chen</h4>
-            <p className="aesop-text-primary aesop-mb-3">Co-Founder & COO</p>
-            <p className="aesop-text-muted aesop-text-sm">
-              Michael oversees operations and supply chain, ensuring our products reach customers 
-              efficiently while maintaining our sustainability commitments.
-            </p>
-          </div>
-          <div className="aesop-text-center">
-            <div className="aesop-avatar aesop-bg-muted aesop-mx-auto aesop-mb-4 aesop-flex aesop-items-center aesop-justify-center">
-              <span className="aesop-text-muted">Emma Rodriguez</span>
-            </div>
-            <h4 className="aesop-heading-4 aesop-mb-2">Emma Rodriguez</h4>
-            <p className="aesop-text-primary aesop-mb-3">Head of Design</p>
-            <p className="aesop-text-muted aesop-text-sm">
-              Emma brings creativity and innovation to our collections, staying ahead of trends while 
-              maintaining timeless appeal in our designs.
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* CTA Section */}
-      <div className="aesop-bg-primary-light aesop-rounded aesop-p-8 aesop-text-center">
-        <h3 className="aesop-heading-3 aesop-mb-4">Experience the Noiraé Difference</h3>
-        <p className="aesop-text-muted aesop-mb-6 aesop-max-width-2xl aesop-mx-auto">
-          Join thousands of satisfied customers who have transformed their sleep experience with our 
-          premium bed textures. Discover the perfect bedding for your home today.
-        </p>
-        <Link 
-          href="/shop" 
-          className="aesop-btn aesop-btn-primary"
-        >
-          Shop Our Collection
-        </Link>
-      </div>
-    </div>
-  );
-};
-
-
+import Link from 'next/link';
 
 export default function AboutPage() {
   return (
     <div className="aesop-page">
       <Header />
+      
       <main>
-        <AboutContent />
+        {/* Hero Section */}
+        <section className="noirae-about-hero">
+          <div className="aesop-container">
+            <h1 className="noirae-heading-hero">Our Story</h1>
+            <p className="noirae-about-hero-subtitle">
+              The journey of creating the world&apos;s finest bedding
+            </p>
+          </div>
+        </section>
+
+        {/* Story Section */}
+        <section className="noirae-about-story">
+          <div className="aesop-container">
+            <div className="noirae-about-story-content">
+              <div className="noirae-about-story-text">
+                <h2 className="noirae-heading-2">The Art of Comfort</h2>
+                <p className="noirae-body-text">
+                  Founded in 2010, Noiraé was born from a simple belief: that quality sleep 
+                  begins with exceptional bedding. What started as a passion project in a small 
+                  atelier has grown into a global destination for those who appreciate the finer 
+                  things in life.
+                </p>
+                <p className="noirae-body-text">
+                  Our founder, inspired by travels through the silk roads of Asia and the 
+                  cashmere valleys of Mongolia, set out to create a collection that would bring 
+                  these luxurious materials to bedrooms around the world. Every piece in our 
+                  collection tells a story of craftsmanship, sustainability, and timeless elegance.
+                </p>
+              </div>
+              <div className="noirae-about-story-image">
+                <img src="/api/placeholder/600/800" alt="Noiraé atelier" />
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Values Section */}
+        <section className="noirae-about-values">
+          <div className="aesop-container">
+            <h2 className="noirae-heading-1 text-center">Our Values</h2>
+            
+            <div className="noirae-values-detailed-grid">
+              <div className="noirae-value-detailed">
+                <div className="noirae-value-image-wrapper">
+                  <img src="/api/placeholder/400/300" alt="Quality craftsmanship" />
+                </div>
+                <h3 className="noirae-heading-3">Exceptional Quality</h3>
+                <p>
+                  We source only the finest materials from trusted suppliers around the world. 
+                  Each piece undergoes rigorous quality control to ensure it meets our exacting 
+                  standards.
+                </p>
+              </div>
+
+              <div className="noirae-value-detailed">
+                <div className="noirae-value-image-wrapper">
+                  <img src="/api/placeholder/400/300" alt="Sustainable practices" />
+                </div>
+                <h3 className="noirae-heading-3">Sustainability</h3>
+                <p>
+                  From ethical sourcing to eco-friendly packaging, we&apos;re committed to 
+                  minimizing our environmental impact while supporting the communities we work with.
+                </p>
+              </div>
+
+              <div className="noirae-value-detailed">
+                <div className="noirae-value-image-wrapper">
+                  <img src="/api/placeholder/400/300" alt="Artisan craftsmanship" />
+                </div>
+                <h3 className="noirae-heading-3">Artisan Craftsmanship</h3>
+                <p>
+                  Every product is crafted by skilled artisans who have honed their craft over 
+                  decades. Their expertise ensures that every stitch, every weave is perfect.
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Timeline Section */}
+        <section className="noirae-about-timeline">
+          <div className="aesop-container">
+            <h2 className="noirae-heading-1 text-center">Our Journey</h2>
+            
+            <div className="noirae-timeline">
+              <div className="noirae-timeline-item">
+                <div className="noirae-timeline-year">2010</div>
+                <div className="noirae-timeline-content">
+                  <h3 className="noirae-heading-3">The Beginning</h3>
+                  <p>
+                    Noiraé was founded in a small atelier with a vision to create the 
+                    world&apos;s finest bedding from natural luxury materials.
+                  </p>
+                </div>
+              </div>
+
+              <div className="noirae-timeline-item">
+                <div className="noirae-timeline-year">2013</div>
+                <div className="noirae-timeline-content">
+                  <h3 className="noirae-heading-3">First Collection Launch</h3>
+                  <p>
+                    Launched our signature silk collection, featuring premium mulberry silk 
+                    sourced directly from sustainable farms in China.
+                  </p>
+                </div>
+              </div>
+
+              <div className="noirae-timeline-item">
+                <div className="noirae-timeline-year">2016</div>
+                <div className="noirae-timeline-content">
+                  <h3 className="noirae-heading-3">Cashmere Innovation</h3>
+                  <p>
+                    Introduced our revolutionary cashmere bedding line, bringing the softness 
+                    of Mongolian cashmere to the bedroom.
+                  </p>
+                </div>
+              </div>
+
+              <div className="noirae-timeline-item">
+                <div className="noirae-timeline-year">2020</div>
+                <div className="noirae-timeline-content">
+                  <h3 className="noirae-heading-3">Global Expansion</h3>
+                  <p>
+                    Expanded our reach to serve customers in over 50 countries, bringing 
+                    luxury bedding to homes worldwide.
+                  </p>
+                </div>
+              </div>
+
+              <div className="noirae-timeline-item">
+                <div className="noirae-timeline-year">2024</div>
+                <div className="noirae-timeline-content">
+                  <h3 className="noirae-heading-3">Sustainability Commitment</h3>
+                  <p>
+                    Achieved carbon-neutral operations and launched our circular economy 
+                    initiative for product recycling and reuse.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* CTA Section */}
+        <section className="noirae-about-cta">
+          <div className="aesop-container">
+            <div className="noirae-about-cta-content">
+              <h2 className="noirae-heading-2">Experience the Noiraé Difference</h2>
+              <p className="noirae-body-text">
+                Discover our collection of luxury bedding and transform your bedroom into a sanctuary of comfort.
+              </p>
+              <div className="noirae-about-cta-actions">
+                <Link href="/shop" className="noirae-btn-primary noirae-btn-large">
+                  Shop Our Collection
+                </Link>
+                <Link href="/contact" className="noirae-btn-secondary noirae-btn-large">
+                  Get in Touch
+                </Link>
+              </div>
+            </div>
+          </div>
+        </section>
       </main>
+      
       <Footer />
     </div>
   );

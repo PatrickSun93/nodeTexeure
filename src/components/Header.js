@@ -10,6 +10,7 @@ import CartDrawer from './CartDrawer';
   export default function Header({ siteName = 'Noiraé' }) {
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isShopMenuOpen, setIsShopMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [isCartOpen, setIsCartOpen] = useState(false);
   const { data: session, status } = useSession();
@@ -59,26 +60,48 @@ import CartDrawer from './CartDrawer';
           </div>
           
           <nav className="aesop-nav aesop-header-center">
-            <Link href="/new-arrive" className="aesop-nav-link">
-              NEW ARRIVE
-            </Link>
-            <Link href="/shop?category=bedding" className="aesop-nav-link">
-              BEDDING
-            </Link>
-            <Link href="/shop?category=bath" className="aesop-nav-link">
-              BATH
-            </Link>
-             <Link href="/shop?category=living" className="aesop-nav-link">
-              LIVING
-            </Link>
-            <Link href="/shop" className="aesop-nav-link">
-              SHOP
-            </Link>
+            {/* Shop dropdown */}
+            <div 
+              className="aesop-nav-dropdown"
+              onMouseEnter={() => setIsShopMenuOpen(true)}
+              onMouseLeave={() => setIsShopMenuOpen(false)}
+            >
+              <Link href="/shop" className="aesop-nav-link">
+                Shop
+              </Link>
+              {isShopMenuOpen && (
+                <div className="aesop-dropdown-menu">
+                  <Link 
+                    href="/collections/silk" 
+                    className="aesop-dropdown-link"
+                    onClick={() => setIsShopMenuOpen(false)}
+                  >
+                    Silk
+                  </Link>
+                  <Link 
+                    href="/collections/cashmere" 
+                    className="aesop-dropdown-link"
+                    onClick={() => setIsShopMenuOpen(false)}
+                  >
+                    Cashmere
+                  </Link>
+                  <Link 
+                    href="/shop" 
+                    className="aesop-dropdown-link"
+                    onClick={() => setIsShopMenuOpen(false)}
+                  >
+                    All Products
+                  </Link>
+                </div>
+              )}
+            </div>
+            
             <Link href="/about" className="aesop-nav-link">
-              ABOUT
+              Our Story
             </Link>
-            <Link href="/contact" className="aesop-nav-link">
-              CONTACT
+            
+            <Link href="/journal" className="aesop-nav-link">
+              Journal
             </Link>
           </nav>
           
@@ -159,17 +182,14 @@ import CartDrawer from './CartDrawer';
                 <div className="aesop-loading-avatar"></div>
               ) : session ? (
                 <div>
-                  <div className="aesop-user-split-container">
-                    <button
-                      onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-                      className="aesop-user-button"
-                    >
-                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                      </svg>
-                    </button>
-                    <span className="aesop-vip-label-separate">VIP</span>
-                  </div>
+                  <button
+                    onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+                    className="aesop-user-button-icon"
+                  >
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
+                  </button>
                   {isUserMenuOpen && (
                     <div className="aesop-dropdown">
                       <Link
@@ -189,12 +209,12 @@ import CartDrawer from './CartDrawer';
                   )}
                 </div>
               ) : (
-                <button
-                  onClick={handleSignIn}
-                  className="aesop-button-primary"
+                <Link
+                  href="/login"
+                  className="aesop-sign-in-link"
                 >
                   Sign In
-                </button>
+                </Link>
               )}
             </div>
           </div>
