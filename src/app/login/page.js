@@ -3,12 +3,13 @@
 import { useState, useEffect } from 'react';
 import { signIn, useSession, getSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import Header from '../../components/Header';
 import Footer from '../../components/Footer';
 
 export default function LoginPage() {
-  const [email, setEmail] = useState('alice.customer@example.com');
-  const [password, setPassword] = useState('Customer@123');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
@@ -16,7 +17,7 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (status === 'authenticated') {
-      // This will be handled in handleSubmit after we get session data
+      // Will be handled in handleSubmit after we get session data
     }
   }, [status, router]);
 
@@ -34,7 +35,7 @@ export default function LoginPage() {
     setIsLoading(false);
 
     if (result?.error) {
-      setError('Login failed. Please check credentials.');
+      setError('Login failed. Please check your credentials.');
     } else if (result?.ok) {
       // Get the updated session to check user role
       const session = await getSession();
@@ -49,58 +50,103 @@ export default function LoginPage() {
   };
 
   if (status === 'loading' || status === 'authenticated') {
-    return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
+    return (
+      <div className="noirae-page">
+        <Header />
+        <div className="noirae-loading">
+          <div className="aesop-loading-spinner"></div>
+          <p>Loading...</p>
+        </div>
+        <Footer />
+      </div>
+    );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="noirae-page">
       <Header />
-      <div className="flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-      <div className="w-full max-w-xs">
-        <form className="px-8 pt-6 pb-8 mb-4 bg-white rounded shadow-md" onSubmit={handleSubmit}>
-          {error && (
-            <div className="p-3 mb-4 text-sm text-red-700 bg-red-100 rounded" role="alert">
-              {error}
+      
+      <main className="noirae-login-main">
+        <div className="noirae-login-container">
+          {/* Welcome Section */}
+          <div className="noirae-login-header">
+            <h1 className="noirae-login-title">Welcome Back</h1>
+            <p className="noirae-login-subtitle">
+              Sign in to continue your journey of comfort.
+            </p>
+          </div>
+
+          {/* Login Form Card */}
+          <div className="noirae-login-card">
+            {error && (
+              <div className="noirae-login-error" role="alert">
+                {error}
+              </div>
+            )}
+
+            <form onSubmit={handleSubmit} className="noirae-login-form">
+              {/* Email Field */}
+              <div className="noirae-form-group">
+                <label htmlFor="email" className="noirae-form-label">
+                  Email
+                </label>
+                <input
+                  id="email"
+                  name="email"
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  disabled={isLoading}
+                  className="noirae-form-input"
+                  placeholder="you@example.com"
+                />
+              </div>
+
+              {/* Password Field */}
+              <div className="noirae-form-group">
+                <div className="noirae-form-label-row">
+                  <label htmlFor="password" className="noirae-form-label">
+                    Password
+                  </label>
+                  <Link href="/forgot-password" className="noirae-forgot-password">
+                    Forgot password?
+                  </Link>
+                </div>
+                <input
+                  id="password"
+                  name="password"
+                  type="password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  disabled={isLoading}
+                  className="noirae-form-input"
+                  placeholder="Enter your password"
+                />
+              </div>
+
+              {/* Sign In Button */}
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="noirae-login-button"
+              >
+                {isLoading ? 'Signing In...' : 'Sign In'}
+              </button>
+            </form>
+
+            {/* Registration Link */}
+            <div className="noirae-register-link">
+              <span className="noirae-register-text">New user?</span>
+              <Link href="/register" className="noirae-register-cta">
+                Register here
+              </Link>
             </div>
-          )}
-          <div className="mb-4">
-            <input
-              id="email"
-              name="email"
-              type="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              disabled={isLoading}
-              className="w-full px-3 py-2 leading-tight text-gray-700 border rounded shadow-sm appearance-none focus:outline-none focus:shadow-outline"
-              placeholder="Email"
-            />
           </div>
-          <div className="mb-6">
-            <input
-              id="password"
-              name="password"
-              type="password"
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              disabled={isLoading}
-              className="w-full px-3 py-2 leading-tight text-gray-700 border rounded shadow-sm appearance-none focus:outline-none focus:shadow-outline"
-              placeholder="Password"
-            />
-          </div>
-          <div className="flex items-center justify-between">
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="w-full px-4 py-2 font-bold text-white bg-blue-500 rounded hover:bg-blue-700 focus:outline-none focus:shadow-outline disabled:bg-blue-300"
-            >
-              {isLoading ? 'Signing In...' : 'Sign In'}
-            </button>
-          </div>
-        </form>
-      </div>
-      </div>
+        </div>
+      </main>
+      
       <Footer />
     </div>
   );

@@ -1445,72 +1445,118 @@ p {
 }
 
 /* Footer */
-.aesop-footer {
-  background-color: var(--color-secondary-bg);
+/* ===== FOOTER (Noiraé Design) ===== */
+
+.aesop-footer,
+.noirae-footer {
+  background-color: var(--noirae-color-background);
   border-top: 1px solid var(--color-gray-lighter);
-  padding: var(--space-16) 0 var(--space-8);
+  padding: var(--space-12) 0 var(--space-8);
   margin-top: var(--space-20);
 }
-/* Prevent flex centering from collapsing the grid width inside footer */
-.aesop-footer .aesop-container {
-  display: block;
+
+.noirae-footer .aesop-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-6);
   width: 100%;
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 0 var(--space-8);
-  box-sizing: border-box;
+  max-width: 100%;
+  padding: 0 var(--space-6);
 }
 
-.aesop-footer-content {
-  display: grid;
-  width: 100%;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: var(--space-8);
-  margin-bottom: var(--space-8);
+/* Footer Navigation Links */
+.noirae-footer-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-6);
+  align-items: center;
+  justify-content: center;
 }
 
-/* Responsive footer columns - adjust breakpoints if needed */
-@media (max-width: 1024px) {
-  .aesop-footer-content { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-}
-@media (max-width: 640px) {
-  .aesop-footer-content { grid-template-columns: 1fr; }
-}
-
-.aesop-footer-section h3 {
-  font-size: var(--font-size-base);
-  font-weight: var(--font-weight-semibold);
-  margin-bottom: var(--space-4);
-  color: var(--color-black);
-}
-
-.aesop-footer-section ul {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-
-.aesop-footer-section li {
-  margin-bottom: var(--space-2);
-}
-
-.aesop-footer-section a {
-  color: var(--color-gray-medium);
+.noirae-footer-link {
+  color: var(--color-gray-dark);
   text-decoration: none;
   font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-normal);
   transition: color var(--transition-fast);
 }
 
-.aesop-footer-section a:hover {
+.noirae-footer-link:hover {
   color: var(--color-black);
 }
 
-.aesop-footer-bottom {
-  border-top: 1px solid var(--color-gray-lighter);
-  padding-top: var(--space-4);
+/* Social Media Icons */
+.noirae-footer-social {
+  display: flex;
+  gap: var(--space-4);
+  align-items: center;
+  justify-content: center;
+}
+
+.noirae-social-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--noirae-color-secondary);
+  color: var(--color-white);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  transition: all var(--transition-fast);
+}
+
+.noirae-social-icon:hover {
+  background: var(--color-black);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.noirae-social-icon svg {
+  width: 20px;
+  height: 20px;
+}
+
+/* Copyright */
+.noirae-footer-copyright {
+  width: 100%;
   text-align: center;
+  padding-top: var(--space-6);
+  border-top: 1px solid var(--color-gray-lighter);
+  margin-top: var(--space-4);
+}
+
+.noirae-footer-copyright p {
   color: var(--color-gray-medium);
-  font-size: var(--font-size-xs);
+  font-size: var(--font-size-sm);
+  margin: 0;
+}
+
+/* Responsive Footer */
+@media (max-width: 768px) {
+  .noirae-footer .aesop-container {
+    padding: 0 var(--space-4);
+  }
+  
+  .noirae-footer-links {
+    gap: var(--space-4);
+    flex-wrap: wrap;
+  }
+  
+  .noirae-footer-link {
+    font-size: var(--font-size-xs);
+  }
+  
+  .noirae-social-icon {
+    width: 36px;
+    height: 36px;
+  }
+  
+  .noirae-social-icon svg {
+    width: 18px;
+    height: 18px;
+  }
 }
 
 /* ===== PRINT STYLES ===== */
@@ -1788,8 +1834,30 @@ p {
 }
 
 /* ===== HEADER LAYOUT (Sticky) ===== */
-.aesop-header { position: sticky; top: 0; background-color: var(--color-white); border-bottom: 1px solid var(--color-gray-lighter); z-index: 50; }
-.aesop-header-content { display: grid; grid-template-columns: auto 1fr auto; align-items: center; height: 64px; gap: var(--space-6); }
+.aesop-header { 
+  position: sticky; 
+  top: 0; 
+  background-color: var(--color-white); 
+  border-bottom: 1px solid var(--color-gray-lighter); 
+  z-index: 50; 
+  width: 100%;
+  max-width: 100%;
+}
+
+.aesop-header .aesop-container {
+  width: 100%;
+  max-width: 100%;
+  padding: 0 var(--space-6);
+}
+
+.aesop-header-content { 
+  display: grid; 
+  grid-template-columns: auto 1fr auto; 
+  align-items: center; 
+  height: 64px; 
+  gap: var(--space-6);
+  width: 100%;
+}
 .aesop-header-left, .aesop-header-right { display: inline-flex; align-items: center; gap: var(--space-3); }
 .aesop-header-center { justify-self: center; }
 .aesop-logo-link { color: var(--color-black); text-decoration: none; font-weight: var(--font-weight-semibold); letter-spacing: 0.06em; font-size: var(--font-size-lg); }
@@ -4168,5 +4236,192 @@ p {
   .noirae-shop-grid {
     grid-template-columns: 1fr;
     gap: var(--space-6);
+  }
+}
+
+/* ===== LOGIN PAGE ===== */
+
+.noirae-login-main {
+  min-height: calc(100vh - 200px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-16) var(--space-6);
+  background: var(--noirae-color-background);
+}
+
+.noirae-login-container {
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+.noirae-login-header {
+  text-align: center;
+  margin-bottom: var(--space-10);
+}
+
+.noirae-login-title {
+  font-family: var(--font-serif);
+  font-size: var(--noirae-text-5xl);
+  font-weight: var(--noirae-weight-normal);
+  color: var(--color-black);
+  margin: 0 0 var(--space-4) 0;
+  line-height: var(--noirae-leading-tight);
+}
+
+.noirae-login-subtitle {
+  font-size: var(--font-size-base);
+  color: var(--color-gray-dark);
+  margin: 0;
+  line-height: 1.6;
+}
+
+.noirae-login-card {
+  background: var(--color-white);
+  border-radius: var(--radius-lg);
+  padding: var(--space-10) var(--space-8);
+  box-shadow: var(--shadow-md);
+}
+
+.noirae-login-error {
+  padding: var(--space-4);
+  margin-bottom: var(--space-6);
+  background: #FEE2E2;
+  border: 1px solid #FCA5A5;
+  border-radius: var(--radius-base);
+  color: #DC2626;
+  font-size: var(--font-size-sm);
+  text-align: center;
+}
+
+.noirae-login-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.noirae-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.noirae-form-label-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.noirae-form-label {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-black);
+  margin-bottom: var(--space-2);
+}
+
+.noirae-form-input {
+  width: 100%;
+  padding: var(--space-4);
+  border: 1px solid var(--color-gray-lighter);
+  border-radius: var(--radius-base);
+  font-size: var(--font-size-base);
+  color: var(--color-black);
+  background: var(--color-white);
+  transition: all var(--transition-fast);
+}
+
+.noirae-form-input::placeholder {
+  color: var(--color-gray-medium);
+}
+
+.noirae-form-input:focus {
+  outline: none;
+  border-color: var(--color-black);
+  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.05);
+}
+
+.noirae-form-input:disabled {
+  background: var(--color-tertiary-bg);
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.noirae-forgot-password {
+  font-size: var(--font-size-sm);
+  color: var(--color-gray-medium);
+  text-decoration: none;
+  transition: color var(--transition-fast);
+}
+
+.noirae-forgot-password:hover {
+  color: var(--color-black);
+}
+
+.noirae-login-button {
+  width: 100%;
+  padding: var(--space-4) var(--space-6);
+  background: var(--noirae-color-secondary);
+  color: var(--color-white);
+  border: none;
+  border-radius: var(--radius-base);
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-semibold);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  margin-top: var(--space-2);
+}
+
+.noirae-login-button:hover:not(:disabled) {
+  background: var(--color-black);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+.noirae-login-button:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.noirae-login-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.noirae-register-link {
+  margin-top: var(--space-8);
+  text-align: center;
+  font-size: var(--font-size-sm);
+  color: var(--color-gray-dark);
+}
+
+.noirae-register-text {
+  margin-right: var(--space-2);
+}
+
+.noirae-register-cta {
+  color: var(--noirae-color-accent);
+  text-decoration: none;
+  font-weight: var(--font-weight-medium);
+  transition: color var(--transition-fast);
+}
+
+.noirae-register-cta:hover {
+  color: var(--color-black);
+  text-decoration: underline;
+}
+
+/* Responsive Login Page */
+@media (max-width: 640px) {
+  .noirae-login-main {
+    padding: var(--space-12) var(--space-4);
+  }
+  
+  .noirae-login-title {
+    font-size: var(--noirae-text-4xl);
+  }
+  
+  .noirae-login-card {
+    padding: var(--space-8) var(--space-6);
   }
 }
