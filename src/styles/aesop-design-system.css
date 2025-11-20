@@ -4879,3 +4879,195 @@ p {
     font-size: var(--font-size-sm);
   }
 }
+
+/* ============================================================================
+   SHIPPING & RETURNS PAGE STYLES
+   ========================================================================= */
+
+.noirae-shipping-main {
+  min-height: calc(100vh - 200px);
+  padding: var(--space-20) 0;
+  background: #F5F5F0;
+}
+
+.noirae-shipping-container {
+  max-width: 900px;
+}
+
+.noirae-shipping-header {
+  margin-bottom: var(--space-16);
+}
+
+.noirae-shipping-title {
+  font-family: var(--font-serif);
+  font-size: var(--font-size-5xl);
+  font-weight: 400;
+  color: var(--color-text-primary);
+  margin-bottom: var(--space-6);
+  letter-spacing: -0.01em;
+}
+
+.noirae-shipping-intro {
+  font-size: var(--font-size-base);
+  color: var(--color-text-secondary);
+  line-height: 1.7;
+}
+
+.noirae-shipping-section {
+  margin-bottom: var(--space-12);
+  width: 100%;
+}
+
+.noirae-shipping-section-title {
+  font-family: var(--font-serif);
+  font-size: var(--font-size-3xl);
+  font-weight: 400;
+  color: var(--color-text-primary);
+  margin-bottom: var(--space-6);
+  letter-spacing: -0.01em;
+}
+
+/* Accordion Styles */
+.noirae-shipping-accordion {
+  background: white;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  width: 100%;
+}
+
+.noirae-shipping-accordion-item {
+  border-bottom: 1px solid #F0F0F0;
+}
+
+.noirae-shipping-accordion-item:last-child {
+  border-bottom: none;
+}
+
+.noirae-shipping-accordion-button {
+  width: 100%;
+  padding: var(--space-6) var(--space-8);
+  background: white;
+  border: none;
+  text-align: left;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-4);
+  cursor: pointer;
+  transition: background-color var(--transition-fast);
+  font-size: var(--font-size-base);
+  color: var(--color-text-primary);
+  font-weight: 500;
+}
+
+.noirae-shipping-accordion-button:hover {
+  background: #FAFAFA;
+}
+
+.noirae-shipping-accordion-icon {
+  flex-shrink: 0;
+  color: var(--color-text-secondary);
+  transition: transform var(--transition-base);
+}
+
+.noirae-shipping-accordion-icon.expanded {
+  transform: rotate(180deg);
+}
+
+.noirae-shipping-accordion-content {
+  padding: 0 var(--space-8) var(--space-6) var(--space-8);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-base);
+  line-height: 1.7;
+  animation: fadeInDown 0.3s ease-in-out;
+}
+
+.noirae-shipping-accordion-content p {
+  margin: 0;
+}
+
+@keyframes fadeInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* CTA Section */
+.noirae-shipping-cta {
+  text-align: center;
+  padding: var(--space-16) 0;
+  margin-top: var(--space-16);
+}
+
+.noirae-shipping-cta-text {
+  font-size: var(--font-size-base);
+  color: var(--color-text-secondary);
+  margin-bottom: var(--space-6);
+}
+
+.noirae-shipping-cta-button {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-4) var(--space-8);
+  background: #2563EB;
+  color: white;
+  border: none;
+  border-radius: var(--radius-base);
+  font-size: var(--font-size-base);
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.noirae-shipping-cta-button:hover {
+  background: #1D4ED8;
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-lg);
+}
+
+.noirae-shipping-cta-button svg {
+  width: 20px;
+  height: 20px;
+}
+
+/* Responsive Shipping & Returns */
+@media (max-width: 768px) {
+  .noirae-shipping-main {
+    padding: var(--space-12) 0;
+  }
+
+  .noirae-shipping-title {
+    font-size: var(--font-size-4xl);
+  }
+
+  .noirae-shipping-section-title {
+    font-size: var(--font-size-2xl);
+  }
+
+  .noirae-shipping-accordion-button {
+    padding: var(--space-5) var(--space-5);
+    font-size: var(--font-size-sm);
+  }
+
+  .noirae-shipping-accordion-content {
+    padding: 0 var(--space-5) var(--space-5) var(--space-5);
+    font-size: var(--font-size-sm);
+  }
+
+  .noirae-shipping-cta {
+    padding: var(--space-12) 0;
+  }
+
+  .noirae-shipping-cta-button {
+    width: 100%;
+    justify-content: center;
+  }
+}
