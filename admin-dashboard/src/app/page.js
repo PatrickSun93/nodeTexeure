@@ -27,10 +27,10 @@ export default function Login() {
       
       const data = await res.json();
       
-      if (data.success && data.data.isAdmin) {
+      if (data.status === 'SUCCESS' && data.keyValueTable.isAdmin) {
         // Auth cookies are set; no localStorage anymore
         router.push('/dashboard');
-      } else if (data.success && !data.data.isAdmin) {
+      } else if (data.status === 'SUCCESS' && !data.keyValueTable.isAdmin) {
         setError('Access denied. Admin privileges required.');
       } else {
         setError(data.message || 'Invalid credentials');
