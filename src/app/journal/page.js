@@ -19,7 +19,7 @@ export default function JournalPage() {
     {
       id: 2,
       title: 'Caring for Your Silk Bedding: A Complete Guide',
-      excerpt: 'Learn the best practices for maintaining the lux',
+      excerpt: 'Learn the best practices for maintaining the luxury and quality of your silk bedding. Discover proper washing techniques, storage tips, and care instructions to ensure your investment lasts for years to come.',
       image: '/api/placeholder/800/500',
       date: 'October 28, 2024',
       category: 'Care Guide',

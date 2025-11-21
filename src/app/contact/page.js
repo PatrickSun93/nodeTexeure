@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import Header from '../../components/Header';
 import Footer from '../../components/Footer';
 
@@ -13,6 +13,20 @@ export default function ContactPage() {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState('');
+  const timeoutRef = useRef(null);
+  const clearStatusTimeoutRef = useRef(null);
+
+  // Cleanup timeouts on unmount
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+      if (clearStatusTimeoutRef.current) {
+        clearTimeout(clearStatusTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const handleChange = (e) => {
     setFormData({
@@ -26,14 +40,22 @@ export default function ContactPage() {
     setIsSubmitting(true);
     setSubmitStatus('');
     
+    // Clear any existing timeouts
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+    if (clearStatusTimeoutRef.current) {
+      clearTimeout(clearStatusTimeoutRef.current);
+    }
+    
     // Simulate form submission
-    setTimeout(() => {
+    timeoutRef.current = setTimeout(() => {
       setIsSubmitting(false);
       setSubmitStatus('success');
       setFormData({ fullName: '', email: '', subject: '', message: '' });
       
       // Clear success message after 5 seconds
-      setTimeout(() => {
+      clearStatusTimeoutRef.current = setTimeout(() => {
         setSubmitStatus('');
       }, 5000);
     }, 1000);

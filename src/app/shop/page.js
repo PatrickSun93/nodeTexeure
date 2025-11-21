@@ -244,7 +244,7 @@ function Shop() {
       case 'name':
         return a.name.localeCompare(b.name);
       case 'newest':
-        return b.isNew ? 1 : -1;
+        return (b.isNew ? 1 : 0) - (a.isNew ? 1 : 0);
       default:
         return 0;
     }

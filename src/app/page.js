@@ -5,7 +5,7 @@ import { useBackendHealth } from '../lib';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import { fetchSettings } from '../lib/fetchSettings';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 // Hero Section Component - Full screen with serif typography
 function HeroSection() {
@@ -250,13 +250,27 @@ function ValuesSection() {
 function NewsletterSection() {
   const [email, setEmail] = useState('');
   const [status, setStatus] = useState(''); // 'success', 'error', or ''
+  const statusTimeoutRef = useRef(null);
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (statusTimeoutRef.current) {
+        clearTimeout(statusTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    // Clear any existing timeout
+    if (statusTimeoutRef.current) {
+      clearTimeout(statusTimeoutRef.current);
+    }
     // Placeholder for newsletter signup
     setStatus('success');
     setEmail('');
-    setTimeout(() => setStatus(''), 3000);
+    statusTimeoutRef.current = setTimeout(() => setStatus(''), 3000);
   };
 
   return (
