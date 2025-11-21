@@ -107,6 +107,12 @@ const handler = NextAuth({
             // Extract user data from successful response
             const { userId, email, accessToken, refreshToken, role, isAdmin } = data.keyValueTable;
             
+            // Double check: only allow admin/staff to proceed
+            if (role !== 'admin' && role !== 'staff') {
+              console.log('[NextAuth] Customer account attempted login - denied');
+              throw new Error('Customer accounts are not allowed to login. This site is for admin and staff only.');
+            }
+            
             console.log('[NextAuth] Login successful, returning user object');
             return {
               id: userId.toString(),
@@ -117,9 +123,10 @@ const handler = NextAuth({
               isAdmin: isAdmin
             };
           } else {
-            // Login failed
-            console.log('[NextAuth] Login failed:', data.message || 'Unknown error');
-            return null;
+            // Login failed - extract error message from response
+            const errorMessage = data.message || data.keyValueTable?.error || 'Invalid credentials';
+            console.log('[NextAuth] Login failed:', errorMessage);
+            throw new Error(errorMessage);
           }
         } catch (error) {
           console.error('[NextAuth] Error during authentication:', error);

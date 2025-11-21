@@ -17,7 +17,15 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (status === 'authenticated') {
-      // Will be handled in handleSubmit after we get session data
+      // Redirect to dashboard for admin/staff only
+      getSession().then((session) => {
+        if (session?.user?.isAdmin || session?.user?.role === 'admin' || session?.user?.role === 'staff') {
+          router.push('/dashboard');
+        } else {
+          // If somehow a customer is authenticated, sign them out
+          setError('Access denied. Only admin and staff can login.');
+        }
+      });
     }
   }, [status, router]);
 
@@ -35,21 +43,29 @@ export default function LoginPage() {
     setIsLoading(false);
 
     if (result?.error) {
-      setError('Login failed. Please check your credentials.');
+      // Check if it's an access denied error
+      if (result.error.includes('Access denied') || result.error.includes('not allowed to login')) {
+        setError('Customer accounts are not allowed to login. This site is for admin and staff only.');
+      } else {
+        setError('Login failed. Please check your credentials.');
+      }
     } else if (result?.ok) {
+      // Refresh router to ensure session is updated, then redirect
+      router.refresh();
       // Get the updated session to check user role
       const session = await getSession();
       if (session?.user?.isAdmin || session?.user?.role === 'admin' || session?.user?.role === 'staff') {
         router.push('/dashboard');
       } else {
-        router.push('/profile');
+        // This shouldn't happen since customers can't login, but just in case
+        setError('Access denied. Only admin and staff can login.');
       }
     } else {
       setError('An unexpected error occurred.');
     }
   };
 
-  if (status === 'loading' || status === 'authenticated') {
+  if (status === 'loading') {
     return (
       <div className="noirae-page">
         <Header />
@@ -70,9 +86,9 @@ export default function LoginPage() {
         <div className="noirae-login-container">
           {/* Welcome Section */}
           <div className="noirae-login-header">
-            <h1 className="noirae-login-title">Welcome Back</h1>
+            <h1 className="noirae-login-title">Admin Login</h1>
             <p className="noirae-login-subtitle">
-              Sign in to continue your journey of comfort.
+              Sign in to access the admin dashboard.
             </p>
           </div>
 
@@ -136,13 +152,6 @@ export default function LoginPage() {
               </button>
             </form>
 
-            {/* Registration Link */}
-            <div className="noirae-register-link">
-              <span className="noirae-register-text">New user?</span>
-              <Link href="/register" className="noirae-register-cta">
-                Register here
-              </Link>
-            </div>
           </div>
         </div>
       </main>
