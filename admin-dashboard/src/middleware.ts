@@ -25,7 +25,7 @@ export async function middleware(req: NextRequest) {
     // Build cookie header: admin_auth alone is sufficient for GET to admin endpoints
     const cookieHeader = `admin_auth=${adminAuth}`;
 
-    const res = await fetch('http://localhost:6666/api/admin/users', {
+    const res = await fetch('http://127.0.0.1:6666/api/admin/users', {
       method: 'GET',
       headers: {
         Cookie: cookieHeader,
@@ -39,9 +39,11 @@ export async function middleware(req: NextRequest) {
       return NextResponse.next();
     }
 
+    console.error(`Middleware auth failed: Status ${res.status}`);
     // Any non-200 status is treated as unauthorized
     return new Response('Unauthorized', { status: 401 });
-  } catch {
+  } catch (err) {
+    console.error('Middleware fetch error:', err);
     // On fetch errors or unexpected failures, fail closed
     return new Response('Unauthorized', { status: 401 });
   }
