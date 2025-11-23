@@ -1,6 +1,6 @@
 // Simple API utilities for cookie-based auth and CSRF protection
 
-const API_BASE = 'http://localhost:6666';
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE || '';
 
 function readCookie(name) {
   if (typeof document === 'undefined') return undefined;

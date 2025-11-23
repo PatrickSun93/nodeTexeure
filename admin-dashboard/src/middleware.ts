@@ -25,7 +25,8 @@ export async function middleware(req: NextRequest) {
     // Build cookie header: admin_auth alone is sufficient for GET to admin endpoints
     const cookieHeader = `admin_auth=${adminAuth}`;
 
-    const res = await fetch('http://127.0.0.1:6666/api/admin/users', {
+    const backendUrl = process.env.BACKEND_URL || 'http://localhost:6666';
+    const res = await fetch(`${backendUrl}/api/admin/users`, {
       method: 'GET',
       headers: {
         Cookie: cookieHeader,

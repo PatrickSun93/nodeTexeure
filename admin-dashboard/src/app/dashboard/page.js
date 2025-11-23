@@ -22,7 +22,7 @@ export default function Dashboard() {
 
   const handleLogout = async () => {
     try {
-      await apiFetch('http://localhost:6666/api/admin/logout', { method: 'POST' });
+      await apiFetch('/api/admin/logout', { method: 'POST' });
       router.push('/');
     } catch (e) {
       // If unauthorized or other issue, still return to login
@@ -66,14 +66,14 @@ function ProductManagement() {
   }, []);
 
   const fetchData = async () => {
-    const data = await apiFetch('http://localhost:6666/api/admin/products');
+    const data = await apiFetch('/api/admin/products');
     if (data.success) setProducts(data.data.products);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     const method = editingId ? 'PUT' : 'POST';
-    const url = editingId ? `http://localhost:6666/api/admin/products/${editingId}` : 'http://localhost:6666/api/admin/products';
+    const url = editingId ? `/api/admin/products/${editingId}` : '/api/admin/products';
     await apiFetch(url, { method, body: JSON.stringify(formData) });
     await fetchData();
     setFormData({});
@@ -81,7 +81,7 @@ function ProductManagement() {
   };
 
   const handleDelete = async (id) => {
-    await apiFetch(`http://localhost:6666/api/admin/products/${id}`, { method: 'DELETE' });
+    await apiFetch(`/api/admin/products/${id}`, { method: 'DELETE' });
     await fetchData();
   };
 
@@ -90,7 +90,7 @@ function ProductManagement() {
       <h2 className="text-xl font-bold mb-4">Product Management</h2>
       <form onSubmit={handleSubmit} className="mb-6">
         {/* Add input fields for product data */}
-        <input className="input mb-2" placeholder="Name" value={formData.name || ''} onChange={(e) => setFormData({...formData, name: e.target.value})} />
+        <input className="input mb-2" placeholder="Name" value={formData.name || ''} onChange={(e) => setFormData({ ...formData, name: e.target.value })} />
         {/* Add more fields similarly */}
         <button type="submit" className="button">{editingId ? 'Update' : 'Add'} Product</button>
       </form>
@@ -98,7 +98,7 @@ function ProductManagement() {
         <thead><tr><th>Name</th><th>Price</th><th>Actions</th></tr></thead>
         <tbody>{products.map(p => (
           <tr key={p.id}><td>{p.name}</td><td>{p.base_price}</td><td>
-            <button onClick={() => {setFormData(p); setEditingId(p.id);}} className="text-blue-500 mr-2">Edit</button>
+            <button onClick={() => { setFormData(p); setEditingId(p.id); }} className="text-blue-500 mr-2">Edit</button>
             <button onClick={() => handleDelete(p.id)} className="text-red-500">Delete</button>
           </td></tr>
         ))}</tbody>
@@ -117,14 +117,14 @@ function CouponManagement() {
   }, []);
 
   const fetchData = async () => {
-    const data = await apiFetch('http://localhost:6666/api/admin/coupons');
+    const data = await apiFetch('/api/admin/coupons');
     if (data.success) setCoupons(data.data.coupons);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     const method = editingId ? 'PUT' : 'POST';
-    const url = editingId ? `http://localhost:6666/api/admin/coupons/${editingId}` : 'http://localhost:6666/api/admin/coupons';
+    const url = editingId ? `/api/admin/coupons/${editingId}` : '/api/admin/coupons';
     await apiFetch(url, { method, body: JSON.stringify(formData) });
     await fetchData();
     setFormData({});
@@ -132,7 +132,7 @@ function CouponManagement() {
   };
 
   const handleDelete = async (id) => {
-    await apiFetch(`http://localhost:6666/api/admin/coupons/${id}`, { method: 'DELETE' });
+    await apiFetch(`/api/admin/coupons/${id}`, { method: 'DELETE' });
     await fetchData();
   };
 
@@ -140,8 +140,8 @@ function CouponManagement() {
     <div>
       <h2 className="text-xl font-bold mb-4">Coupon Management</h2>
       <form onSubmit={handleSubmit} className="mb-6">
-        <input className="input mb-2" placeholder="Code" value={formData.code || ''} onChange={(e) => setFormData({...formData, code: e.target.value})} />
-        <input className="input mb-2" placeholder="Value" value={formData.value || ''} onChange={(e) => setFormData({...formData, value: e.target.value})} />
+        <input className="input mb-2" placeholder="Code" value={formData.code || ''} onChange={(e) => setFormData({ ...formData, code: e.target.value })} />
+        <input className="input mb-2" placeholder="Value" value={formData.value || ''} onChange={(e) => setFormData({ ...formData, value: e.target.value })} />
         {/* Add more fields */}
         <button type="submit" className="button">{editingId ? 'Update' : 'Add'} Coupon</button>
       </form>
@@ -149,7 +149,7 @@ function CouponManagement() {
         <thead><tr><th>Code</th><th>Value</th><th>Actions</th></tr></thead>
         <tbody>{coupons.map(c => (
           <tr key={c.id}><td>{c.code}</td><td>{c.value}</td><td>
-            <button onClick={() => {setFormData(c); setEditingId(c.id);}} className="text-blue-500 mr-2">Edit</button>
+            <button onClick={() => { setFormData(c); setEditingId(c.id); }} className="text-blue-500 mr-2">Edit</button>
             <button onClick={() => handleDelete(c.id)} className="text-red-500">Delete</button>
           </td></tr>
         ))}</tbody>
@@ -168,14 +168,14 @@ function InventoryManagement() {
   }, []);
 
   const fetchData = async () => {
-    const data = await apiFetch('http://localhost:6666/api/admin/inventory');
+    const data = await apiFetch('/api/admin/inventory');
     if (data.success) setInventory(data.data.inventory);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     const method = 'PUT';
-    const url = `http://localhost:6666/api/admin/inventory/${editingId}`;
+    const url = `/api/admin/inventory/${editingId}`;
     await apiFetch(url, { method, body: JSON.stringify(formData) });
     await fetchData();
     setFormData({});
@@ -189,13 +189,13 @@ function InventoryManagement() {
         <thead><tr><th>Product ID</th><th>Quantity Available</th><th>Actions</th></tr></thead>
         <tbody>{inventory.map(i => (
           <tr key={i.id}><td>{i.product_id}</td><td>{i.quantity_available}</td><td>
-            <button onClick={() => {setFormData(i); setEditingId(i.id);}} className="text-blue-500">Edit</button>
+            <button onClick={() => { setFormData(i); setEditingId(i.id); }} className="text-blue-500">Edit</button>
           </td></tr>
         ))}</tbody>
       </table>
       {editingId && (
         <form onSubmit={handleSubmit} className="mt-6">
-          <input className="input mb-2" placeholder="Quantity Available" value={formData.quantity_available || ''} onChange={(e) => setFormData({...formData, quantity_available: e.target.value})} />
+          <input className="input mb-2" placeholder="Quantity Available" value={formData.quantity_available || ''} onChange={(e) => setFormData({ ...formData, quantity_available: e.target.value })} />
           {/* Add more fields */}
           <button type="submit" className="button">Update Inventory</button>
         </form>
@@ -214,14 +214,14 @@ function UserManagement() {
   }, []);
 
   const fetchData = async () => {
-    const data = await apiFetch('http://localhost:6666/api/admin/users');
+    const data = await apiFetch('/api/admin/users');
     if (data.success) setUsers(data.data.users);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     const method = editingId ? 'PUT' : 'POST';
-    const url = editingId ? `http://localhost:6666/api/admin/users/${editingId}` : 'http://localhost:6666/api/admin/users';
+    const url = editingId ? `/api/admin/users/${editingId}` : '/api/admin/users';
     await apiFetch(url, { method, body: JSON.stringify(formData) });
     await fetchData();
     setFormData({});
@@ -229,7 +229,7 @@ function UserManagement() {
   };
 
   const handleDelete = async (id) => {
-    await apiFetch(`http://localhost:6666/api/admin/users/${id}`, { method: 'DELETE' });
+    await apiFetch(`/api/admin/users/${id}`, { method: 'DELETE' });
     await fetchData();
   };
 
@@ -237,7 +237,7 @@ function UserManagement() {
     <div>
       <h2 className="text-xl font-bold mb-4">User Management</h2>
       <form onSubmit={handleSubmit} className="mb-6">
-        <input className="input mb-2" placeholder="Email" value={formData.email || ''} onChange={(e) => setFormData({...formData, email: e.target.value})} />
+        <input className="input mb-2" placeholder="Email" value={formData.email || ''} onChange={(e) => setFormData({ ...formData, email: e.target.value })} />
         {/* Add more fields */}
         <button type="submit" className="button">{editingId ? 'Update' : 'Add'} User</button>
       </form>
@@ -245,7 +245,7 @@ function UserManagement() {
         <thead><tr><th>Email</th><th>Role</th><th>Actions</th></tr></thead>
         <tbody>{users.map(u => (
           <tr key={u.id}><td>{u.email}</td><td>{u.role}</td><td>
-            <button onClick={() => {setFormData(u); setEditingId(u.id);}} className="text-blue-500 mr-2">Edit</button>
+            <button onClick={() => { setFormData(u); setEditingId(u.id); }} className="text-blue-500 mr-2">Edit</button>
             <button onClick={() => handleDelete(u.id)} className="text-red-500">Delete</button>
           </td></tr>
         ))}</tbody>
@@ -256,6 +256,6 @@ function UserManagement() {
 
 const handleDelete = async (id) => {
   const token = localStorage.getItem('token');
-  await fetch(`http://localhost:6666/api/admin/products/${id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } });
+  await fetch(`/api/admin/products/${id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } });
   fetchData();
 };
