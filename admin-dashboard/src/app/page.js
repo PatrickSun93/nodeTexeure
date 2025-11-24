@@ -14,7 +14,7 @@ export default function Login() {
     e.preventDefault();
     setIsLoading(true);
     setError('');
-    
+
     try {
       const res = await fetch('/api/users/login', {
         method: 'POST',
@@ -24,9 +24,9 @@ export default function Login() {
         credentials: 'include',
         body: JSON.stringify({ email, password })
       });
-      
+
       const data = await res.json();
-      
+      console.log(data);
       if (data.status === 'SUCCESS' && data.keyValueTable.isAdmin) {
         // Auth cookies are set; no localStorage anymore
         router.push('/dashboard');
@@ -67,8 +67,8 @@ export default function Login() {
             disabled={isLoading}
           />
           {error && <p className="text-red-500 mb-4">{error}</p>}
-          <button 
-            type="submit" 
+          <button
+            type="submit"
             className="button w-full"
             disabled={isLoading}
           >

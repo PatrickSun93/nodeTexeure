@@ -34,8 +34,10 @@ export async function middleware(req: NextRequest) {
       },
       cache: 'no-store',
     });
-
-    if (res.status === 200) {
+    console.log('====================')
+    console.log(res);
+    console.log('====================')
+    if (res.ok) {
       // Authorized, proceed
       return NextResponse.next();
     }
