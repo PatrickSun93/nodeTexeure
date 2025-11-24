@@ -66,27 +66,21 @@ class DatabaseUtil {
     let connection;
     try {
       connection = await this.getConnection();
-      
+
       // Start transaction if commit is false
       if (!commit) {
         await connection.beginTransaction();
       }
-      
+
       // Execute the query
-      console.log('sql', sql);
-      console.log('bindParams', bindParams);
       const [rows, fields] = await connection.execute(sql, bindParams);
-      console.log('rows', rows);
-      console.log('fields', fields);
       // Commit transaction if required
       if (!commit) {
         await connection.commit();
       }
-      
       return {
         success: true,
         data: rows,
-        // fields: fields,
         affectedRows: rows.affectedRows || 0,
         insertId: rows.insertId || null
       };
@@ -99,7 +93,7 @@ class DatabaseUtil {
           console.error('Rollback error:', rollbackError);
         }
       }
-      
+
       return {
         success: false,
         error: error.message,
@@ -123,9 +117,9 @@ class DatabaseUtil {
     try {
       connection = await this.getConnection();
       await connection.beginTransaction();
-      
+
       const results = [];
-      
+
       for (const query of queries) {
         const [rows, fields] = await connection.execute(query.sql, query.bindParams || []);
         results.push({
@@ -135,9 +129,9 @@ class DatabaseUtil {
           insertId: rows.insertId || null
         });
       }
-      
+
       await connection.commit();
-      
+
       return {
         success: true,
         results: results
@@ -150,7 +144,7 @@ class DatabaseUtil {
           console.error('Rollback error:', rollbackError);
         }
       }
-      
+
       return {
         success: false,
         error: error.message,
@@ -170,7 +164,7 @@ class DatabaseUtil {
    */
   static async testConnection() {
     const testResult = await this.executeQuery('SELECT 1 as test, VERSION() as version');
-    
+
     if (testResult.success) {
       return {
         connected: true,
