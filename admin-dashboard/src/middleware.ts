@@ -2,9 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 
 /**
  * Middleware guard for /dashboard routes.
- * - Blocks unauthorized users BEFORE any dashboard UI renders.
- * - Validates presence of admin_auth cookie by confirming with backend.
- * - Returns 401 "Unauthorized" plain text on failure.
+ * - Redirects unauthorized users to login page.
+ * - Checks for presence of admin_auth cookie.
+ * - Token validation happens in API routes (Node.js runtime).
  */
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
@@ -17,34 +17,14 @@ export async function middleware(req: NextRequest) {
   // Check auth cookie
   const adminAuth = req.cookies.get('admin_auth')?.value;
   if (!adminAuth) {
-    return new Response('Unauthorized', { status: 401 });
+    // No cookie present, redirect to login
+    return NextResponse.redirect(new URL('/', req.url));
   }
 
-  // Validate cookie against backend (no CSRF required for GET)
-  try {
-    // Build cookie header: admin_auth alone is sufficient for GET to admin endpoints
-    const cookieHeader = `admin_auth=${adminAuth}`;
-
-    const res = await fetch('http://localhost:6666/api/admin/users', {
-      method: 'GET',
-      headers: {
-        Cookie: cookieHeader,
-        Accept: 'application/json',
-      },
-      cache: 'no-store',
-    });
-
-    if (res.status === 200) {
-      // Authorized, proceed
-      return NextResponse.next();
-    }
-
-    // Any non-200 status is treated as unauthorized
-    return new Response('Unauthorized', { status: 401 });
-  } catch {
-    // On fetch errors or unexpected failures, fail closed
-    return new Response('Unauthorized', { status: 401 });
-  }
+  // Cookie exists - proceed to dashboard
+  // Note: Token validation happens in API routes (Node.js runtime)
+  // If token is invalid, API calls will return 401
+  return NextResponse.next();
 }
 
 // Apply only to /dashboard routes

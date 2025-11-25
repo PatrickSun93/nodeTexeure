@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import Header from '../../../components/Header';
 import Footer from '../../../components/Footer';
+import ImageZoom from '../../../components/common/ImageZoom';
 import { apiRequest } from '../../../lib/api';
 
 
@@ -86,65 +87,138 @@ export default function ProductDetails() {
     </div>
   );
 
+  // Prepare images for ImageZoom component
+  const productImages = product.images?.map(img => img.original_url || img.thumbnail_small_url) || ['/api/placeholder/600/600'];
+
   return (
-    <div>
+    <div className="aesop-page">
       <Header />
-      <div className="max-w-7xl mx-auto px-4 py-8">
-        <div className="grid md:grid-cols-2 gap-8">
-          <div>
-            {/* Main image */}
-            <div className="bg-gray-200 h-96 flex items-center justify-center mb-4">
-              {product.images?.[0]?.original_url || 'Main Image'}
-            </div>
-            {/* Thumbnails */}
-            <div className="grid grid-cols-4 gap-4">
-              {product.images?.slice(1).map((img) => (
-                <div key={img.id} className="bg-gray-200 h-24 flex items-center justify-center">
-                  {img.thumbnail_small_url}
-                </div>
-              ))}
-            </div>
+      
+      <main className="aesop-container">
+        <div className="noirae-product-detail">
+          {/* Product Images Section */}
+          <div className="noirae-product-detail-images">
+            <ImageZoom images={productImages} alt={product.name} />
           </div>
-          <div>
-            <h1 className="text-3xl font-bold mb-4">{product.name}</h1>
-            <p className="text-2xl text-amber-600 font-bold mb-4">${product.base_price}</p>
-            <p className="text-gray-600 mb-6">{product.description}</p>
-            {/* Variants */}
+
+          {/* Product Info Section */}
+          <div className="noirae-product-detail-info">
+            <div className="noirae-product-detail-header">
+              <h1 className="noirae-heading-1">{product.name}</h1>
+              <div className="noirae-product-detail-price">
+                <span className="noirae-price-main">${product.base_price}</span>
+                {product.originalPrice && (
+                  <span className="noirae-price-original">${product.originalPrice}</span>
+                )}
+              </div>
+            </div>
+
+            <div className="noirae-product-detail-description">
+              <p>{product.description}</p>
+            </div>
+
+            {/* Product Details Grid */}
+            <div className="noirae-product-details-grid">
+              {product.material && (
+                <div className="noirae-detail-item">
+                  <span className="noirae-detail-label">Material</span>
+                  <span className="noirae-detail-value">{product.material}</span>
+                </div>
+              )}
+              {product.threadCount && (
+                <div className="noirae-detail-item">
+                  <span className="noirae-detail-label">Thread Count</span>
+                  <span className="noirae-detail-value">{product.threadCount}</span>
+                </div>
+              )}
+              {product.brand && (
+                <div className="noirae-detail-item">
+                  <span className="noirae-detail-label">Brand</span>
+                  <span className="noirae-detail-value">{product.brand}</span>
+                </div>
+              )}
+            </div>
+
+            {/* Variants Selector */}
             {product.variants?.length > 0 && (
-              <div className="mb-6">
-                <h3 className="font-medium mb-2">Variants</h3>
-                <select
-                  className="w-full p-2 border rounded"
-                  value={selectedVariantId ?? ''}
-                  onChange={(e) => setSelectedVariantId(Number(e.target.value))}
-                >
+              <div className="noirae-variant-selector">
+                <h3 className="noirae-variant-label">Select Options</h3>
+                <div className="noirae-variant-options">
                   {product.variants.map((v) => (
-                    <option key={v.id} value={v.id}>
-                      {v.size} - {v.color} (${v.price_adjustment})
-                    </option>
+                    <button
+                      key={v.id}
+                      onClick={() => setSelectedVariantId(v.id)}
+                      className={`noirae-variant-option ${selectedVariantId === v.id ? 'active' : ''}`}
+                    >
+                      <div className="noirae-variant-name">{v.size} - {v.color}</div>
+                      <div className="noirae-variant-price">+${v.price_adjustment}</div>
+                    </button>
                   ))}
-                </select>
+                </div>
               </div>
             )}
-            <button
-              onClick={handleAddToCart}
-              disabled={adding}
-              className="bg-amber-600 text-white py-3 px-6 rounded-lg hover:bg-amber-700 disabled:opacity-60"
-            >
-              {adding ? 'Adding...' : 'Add to Cart'}
-            </button>
-            {/* Reviews */}
-            <div className="mt-8">
-              <h3 className="font-medium mb-4">Reviews</h3>
-              {product.reviews?.map((r) => (
-                <div key={r.id} className="border-b py-4">
-                  <p>{r.rating} stars - {r.comment}</p>
-                </div>
-              ))}
+
+            {/* Add to Cart Button */}
+            <div className="noirae-product-actions">
+              <button
+                onClick={handleAddToCart}
+                disabled={adding}
+                className="noirae-btn-primary noirae-btn-large"
+              >
+                {adding ? 'Adding to Cart...' : 'Add to Cart'}
+              </button>
+              <button className="noirae-btn-secondary noirae-btn-icon">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Product Features */}
+            <div className="noirae-product-features">
+              <div className="noirae-feature-item">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+                <span>Free shipping on orders over $100</span>
+              </div>
+              <div className="noirae-feature-item">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+                <span>30-day return policy</span>
+              </div>
+              <div className="noirae-feature-item">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                </svg>
+                <span>1-year warranty</span>
+              </div>
             </div>
           </div>
         </div>
-      </div>
+
+        {/* Reviews Section */}
+        {product.reviews?.length > 0 && (
+          <div className="noirae-reviews-section">
+            <h2 className="noirae-heading-2">Customer Reviews</h2>
+            <div className="noirae-reviews-grid">
+              {product.reviews.map((r) => (
+                <div key={r.id} className="noirae-review-card">
+                  <div className="noirae-review-rating">
+                    {'★'.repeat(r.rating)}{'☆'.repeat(5 - r.rating)}
+                  </div>
+                  <p className="noirae-review-comment">{r.comment}</p>
+                  {r.reviewer_name && (
+                    <p className="noirae-review-author">— {r.reviewer_name}</p>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </main>
+
       <Footer />
     </div>
   );

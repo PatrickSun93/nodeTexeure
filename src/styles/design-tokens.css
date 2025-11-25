@@ -1,0 +1,192 @@
+/**
+ * Noiraé Design Tokens
+ * Based on the luxury bedding UI design system
+ */
+
+:root {
+  /* ===== COLORS ===== */
+  
+  /* Primary Colors */
+  --noirae-primary-beige: #F5E6D3;
+  --noirae-primary-champagne: #E8D5C4;
+  --noirae-primary-gold: #C9A572;
+  --noirae-charcoal: #4A4A4A;
+  --noirae-dark-charcoal: #2C2C2C;
+  
+  /* Background Colors */
+  --noirae-bg-cream: #FAFAFA;
+  --noirae-bg-white: #FFFFFF;
+  --noirae-bg-light-gray: #F5F5F5;
+  --noirae-bg-overlay: rgba(0, 0, 0, 0.4);
+  
+  /* Text Colors */
+  --noirae-text-primary: #2C2C2C;
+  --noirae-text-secondary: #4A4A4A;
+  --noirae-text-muted: #6B6B6B;
+  --noirae-text-light: #9B9B9B;
+  
+  /* Accent Colors */
+  --noirae-accent-gold: #D4AF37;
+  --noirae-accent-bronze: #CD7F32;
+  --noirae-accent-rose-gold: #B76E79;
+  
+  /* State Colors */
+  --noirae-success: #4CAF50;
+  --noirae-error: #F44336;
+  --noirae-warning: #FF9800;
+  --noirae-info: #2196F3;
+  
+  /* Border Colors */
+  --noirae-border-light: #E0E0E0;
+  --noirae-border-medium: #CCCCCC;
+  --noirae-border-dark: #999999;
+  
+  /* ===== TYPOGRAPHY ===== */
+  
+  /* Font Families */
+  --noirae-font-serif: 'Cormorant Garamond', 'EB Garamond', 'Playfair Display', Georgia, serif;
+  --noirae-font-sans: var(--font-inter, 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif);
+  
+  /* Font Sizes */
+  --noirae-text-xs: 0.75rem;      /* 12px */
+  --noirae-text-sm: 0.875rem;     /* 14px */
+  --noirae-text-base: 1rem;       /* 16px */
+  --noirae-text-lg: 1.125rem;     /* 18px */
+  --noirae-text-xl: 1.25rem;      /* 20px */
+  --noirae-text-2xl: 1.5rem;      /* 24px */
+  --noirae-text-3xl: 1.875rem;    /* 30px */
+  --noirae-text-4xl: 2.25rem;     /* 36px */
+  --noirae-text-5xl: 3rem;        /* 48px */
+  --noirae-text-6xl: 3.75rem;     /* 60px */
+  --noirae-text-7xl: 4.5rem;      /* 72px */
+  
+  /* Font Weights */
+  --noirae-weight-light: 300;
+  --noirae-weight-normal: 400;
+  --noirae-weight-medium: 500;
+  --noirae-weight-semibold: 600;
+  --noirae-weight-bold: 700;
+  
+  /* Line Heights */
+  --noirae-leading-none: 1;
+  --noirae-leading-tight: 1.25;
+  --noirae-leading-snug: 1.375;
+  --noirae-leading-normal: 1.5;
+  --noirae-leading-relaxed: 1.625;
+  --noirae-leading-loose: 2;
+  
+  /* Letter Spacing */
+  --noirae-tracking-tighter: -0.05em;
+  --noirae-tracking-tight: -0.025em;
+  --noirae-tracking-normal: 0;
+  --noirae-tracking-wide: 0.025em;
+  --noirae-tracking-wider: 0.05em;
+  --noirae-tracking-widest: 0.1em;
+  
+  /* ===== SPACING ===== */
+  --noirae-space-1: 0.25rem;   /* 4px */
+  --noirae-space-2: 0.5rem;    /* 8px */
+  --noirae-space-3: 0.75rem;   /* 12px */
+  --noirae-space-4: 1rem;      /* 16px */
+  --noirae-space-5: 1.25rem;   /* 20px */
+  --noirae-space-6: 1.5rem;    /* 24px */
+  --noirae-space-8: 2rem;      /* 32px */
+  --noirae-space-10: 2.5rem;   /* 40px */
+  --noirae-space-12: 3rem;     /* 48px */
+  --noirae-space-16: 4rem;     /* 64px */
+  --noirae-space-20: 5rem;     /* 80px */
+  --noirae-space-24: 6rem;     /* 96px */
+  --noirae-space-32: 8rem;     /* 128px */
+  
+  /* ===== BORDERS ===== */
+  --noirae-radius-none: 0;
+  --noirae-radius-sm: 0.25rem;   /* 4px */
+  --noirae-radius-base: 0.375rem; /* 6px */
+  --noirae-radius-md: 0.5rem;    /* 8px */
+  --noirae-radius-lg: 0.75rem;   /* 12px */
+  --noirae-radius-xl: 1rem;      /* 16px */
+  --noirae-radius-full: 9999px;
+  
+  /* Border Widths */
+  --noirae-border-width-thin: 1px;
+  --noirae-border-width-medium: 2px;
+  --noirae-border-width-thick: 3px;
+  
+  /* ===== SHADOWS ===== */
+  --noirae-shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --noirae-shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+  --noirae-shadow-base: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --noirae-shadow-md: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --noirae-shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  --noirae-shadow-xl: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  --noirae-shadow-inner: inset 0 2px 4px 0 rgba(0, 0, 0, 0.06);
+  
+  /* ===== TRANSITIONS ===== */
+  --noirae-transition-fast: 150ms ease-in-out;
+  --noirae-transition-base: 250ms ease-in-out;
+  --noirae-transition-slow: 350ms ease-in-out;
+  --noirae-transition-slower: 500ms ease-in-out;
+  
+  /* ===== Z-INDEX ===== */
+  --noirae-z-dropdown: 1000;
+  --noirae-z-sticky: 1020;
+  --noirae-z-fixed: 1030;
+  --noirae-z-modal-backdrop: 1040;
+  --noirae-z-modal: 1050;
+  --noirae-z-popover: 1060;
+  --noirae-z-tooltip: 1070;
+  
+  /* ===== BREAKPOINTS (for reference in JS) ===== */
+  --noirae-breakpoint-sm: 640px;
+  --noirae-breakpoint-md: 768px;
+  --noirae-breakpoint-lg: 1024px;
+  --noirae-breakpoint-xl: 1280px;
+  --noirae-breakpoint-2xl: 1536px;
+  
+  /* ===== COMPONENT SPECIFIC ===== */
+  
+  /* Header */
+  --noirae-header-height: 80px;
+  --noirae-header-mobile-height: 64px;
+  
+  /* Container */
+  --noirae-container-max-width: 1280px;
+  --noirae-container-padding: var(--noirae-space-6);
+  
+  /* Grid */
+  --noirae-grid-gap: var(--noirae-space-8);
+  --noirae-grid-gap-mobile: var(--noirae-space-4);
+  
+  /* Buttons */
+  --noirae-button-height: 48px;
+  --noirae-button-height-sm: 36px;
+  --noirae-button-height-lg: 56px;
+  --noirae-button-padding-x: var(--noirae-space-6);
+  --noirae-button-padding-x-sm: var(--noirae-space-4);
+  --noirae-button-padding-x-lg: var(--noirae-space-8);
+  
+  /* Input Fields */
+  --noirae-input-height: 48px;
+  --noirae-input-padding-x: var(--noirae-space-4);
+  --noirae-input-border-color: var(--noirae-border-medium);
+  --noirae-input-focus-border-color: var(--noirae-primary-gold);
+  
+  /* Cards */
+  --noirae-card-padding: var(--noirae-space-6);
+  --noirae-card-border-radius: var(--noirae-radius-md);
+  --noirae-card-shadow: var(--noirae-shadow-sm);
+  --noirae-card-shadow-hover: var(--noirae-shadow-md);
+}
+
+/* ===== DARK MODE (Optional) ===== */
+@media (prefers-color-scheme: dark) {
+  :root {
+    /* Uncomment and adjust if dark mode is needed
+    --noirae-bg-cream: #1a1a1a;
+    --noirae-bg-white: #2d2d2d;
+    --noirae-text-primary: #ffffff;
+    --noirae-text-secondary: #e0e0e0;
+    */
+  }
+}
+

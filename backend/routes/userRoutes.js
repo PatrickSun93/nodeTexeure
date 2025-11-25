@@ -12,6 +12,7 @@ const crypto = require('crypto');
 const router = express.Router();
 
 // Rate limiter for login and forgot password
+const ADMIN_ROLES = ['admin', 'staff', 'superadmin', 'owner'];
 
 /**
  * POST /api/users/register
@@ -136,7 +137,7 @@ router.post('/login', loginLimiter, async (req, res) => {
     console.log(email);
     console.log(password);
     const result = await DatabaseUtil.executeQuery('SELECT * FROM users WHERE email = ?', [email]);
-    console.log(result )
+    console.log(result)
     if (!result.success || result.data.length === 0) {
       const keyValueTable = { error: 'Invalid email or password' };
       return res.status(401).json(ResponseFormatter.failure('Invalid credentials', keyValueTable));
@@ -144,19 +145,26 @@ router.post('/login', loginLimiter, async (req, res) => {
 
     const user = result.data[0];
 
+    // Only allow admin and staff to login - reject customers
+    const userRole = user.role.toLowerCase();
+    if (!ADMIN_ROLES.includes(userRole)) {
+      const keyValueTable = { error: 'Customer accounts are not allowed to login. This site is for admin and staff only.' };
+      return res.status(403).json(ResponseFormatter.failure('Access denied', keyValueTable));
+    }
+
     if (await bcrypt.compare(password, user.password_hash)) {
       // Compute isAdmin from role field
-      const isAdmin = user.role === 'admin' || user.role === 'staff';
+      const isAdmin = ADMIN_ROLES.includes(userRole);
       const accessToken = jwt.sign({ id: user.id, email: user.email, isAdmin }, process.env.JWT_SECRET, { expiresIn: '24h' });
       const refreshToken = crypto.randomBytes(64).toString('hex');
       const refreshExpiry = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
-      
+
       // Get next ID for refresh token
       const refreshIdResult = await DatabaseUtil.executeQuery('SELECT get_next_id(?) as id', ['REFRESH']);
       const refreshId = refreshIdResult.data[0].id;
-      
+
       await DatabaseUtil.executeQuery('INSERT INTO refresh_tokens (id, user_id, token, expiry) VALUES (?, ?, ?, ?)', [refreshId, user.id, refreshToken, refreshExpiry]);
-      
+
       // Issue HttpOnly authentication cookie for admin logins
       // Secure in production, SameSite=Strict, Path=/, configurable TTL via ADMIN_AUTH_COOKIE_TTL_MS (default: 24h)
       if (isAdmin) {
@@ -172,7 +180,7 @@ router.post('/login', loginLimiter, async (req, res) => {
       }
 
       // Handle cart merge - skip for admin/staff users
-      if (req.cookies.sessionId && user.role !== 'admin' && user.role !== 'staff') {
+      if (req.cookies.sessionId && !ADMIN_ROLES.includes(userRole)) {
         const sessionId = req.cookies.sessionId;
         const guestCartResult = await DatabaseUtil.executeQuery('SELECT id FROM shopping_carts WHERE session_id = ?', [sessionId]);
         if (guestCartResult.success && guestCartResult.data.length > 0) {
@@ -213,7 +221,7 @@ router.post('/login', loginLimiter, async (req, res) => {
         }
         // Clear session cookie for regular users
         res.clearCookie('sessionId');
-      } else if (req.cookies.sessionId && (user.role === 'admin' || user.role === 'staff')) {
+      } else if (req.cookies.sessionId && ADMIN_ROLES.includes(userRole)) {
         // For admin/staff users, just clear the session cookie without cart operations
         res.clearCookie('sessionId');
       }
@@ -247,7 +255,8 @@ router.post('/refresh', async (req, res) => {
     }
     const user = userResult.data[0];
     // Compute isAdmin from role field
-    const isAdmin = user.role === 'admin' || user.role === 'staff';
+    const userRole = user.role.toLowerCase();
+    const isAdmin = ADMIN_ROLES.includes(userRole);
     const newAccessToken = jwt.sign({ id: user.id, email: user.email, isAdmin }, process.env.JWT_SECRET, { expiresIn: '24h' });
     res.json(ResponseFormatter.success('Token refreshed', { accessToken: newAccessToken }));
   } catch (error) {
@@ -381,6 +390,44 @@ router.get('/', protect, admin, async (req, res) => {
     console.error('Get all users error:', error);
     const keyValueTable = { error: error.message };
     res.status(500).json(ResponseFormatter.failure('Failed to get users', keyValueTable));
+  }
+});
+
+/**
+ * GET /api/users/csrf-token
+ * Generate and return a CSRF token for admin authentication
+ * Requires user to be authenticated and an admin
+ */
+router.get('/csrf-token', protect, admin, async (req, res) => {
+  try {
+    // Generate CSRF token bound to the current user session
+    const csrfToken = generateCSRFToken(req.user);
+
+    // Set CSRF token in a non-HttpOnly cookie that JavaScript can read
+    // This follows the double-submit cookie pattern for CSRF protection
+    const ttlMs = Number.parseInt(process.env.CSRF_TOKEN_TTL_MS || '86400000', 10); // 24 hours default
+    const isProd = process.env.NODE_ENV === 'production';
+
+    res.cookie('csrf_token', csrfToken, {
+      httpOnly: false, // JavaScript needs to read this for the X-CSRF-Token header
+      secure: isProd,
+      sameSite: 'strict',
+      path: '/',
+      maxAge: ttlMs
+    });
+
+    // Also return token in response body for immediate use
+    const keyValueTable = {
+      csrfToken,
+      expires: new Date(Date.now() + ttlMs).toISOString(),
+      usage: 'Include this token in X-CSRF-Token header for admin API requests'
+    };
+
+    res.json(ResponseFormatter.success('CSRF token generated successfully', keyValueTable));
+  } catch (error) {
+    console.error('CSRF token generation error:', error);
+    const keyValueTable = { error: error.message };
+    res.status(500).json(ResponseFormatter.failure('Failed to generate CSRF token', keyValueTable));
   }
 });
 
@@ -564,42 +611,6 @@ router.post('/reset-password', async (req, res) => {
   }
 });
 
-/**
- * GET /api/users/csrf-token
- * Generate and return a CSRF token for admin authentication
- * Requires user to be authenticated and an admin
- */
-router.get('/csrf-token', protect, admin, async (req, res) => {
-  try {
-    // Generate CSRF token bound to the current user session
-    const csrfToken = generateCSRFToken(req.user);
-    
-    // Set CSRF token in a non-HttpOnly cookie that JavaScript can read
-    // This follows the double-submit cookie pattern for CSRF protection
-    const ttlMs = Number.parseInt(process.env.CSRF_TOKEN_TTL_MS || '86400000', 10); // 24 hours default
-    const isProd = process.env.NODE_ENV === 'production';
-    
-    res.cookie('csrf_token', csrfToken, {
-      httpOnly: false, // JavaScript needs to read this for the X-CSRF-Token header
-      secure: isProd,
-      sameSite: 'strict',
-      path: '/',
-      maxAge: ttlMs
-    });
-    
-    // Also return token in response body for immediate use
-    const keyValueTable = { 
-      csrfToken,
-      expires: new Date(Date.now() + ttlMs).toISOString(),
-      usage: 'Include this token in X-CSRF-Token header for admin API requests'
-    };
-    
-    res.json(ResponseFormatter.success('CSRF token generated successfully', keyValueTable));
-  } catch (error) {
-    console.error('CSRF token generation error:', error);
-    const keyValueTable = { error: error.message };
-    res.status(500).json(ResponseFormatter.failure('Failed to generate CSRF token', keyValueTable));
-  }
-});
+
 
 module.exports = router;

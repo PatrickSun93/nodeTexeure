@@ -39,6 +39,7 @@ exports.protect = (req, res, next) => {
     req.user = decoded;
     next();
   } catch (error) {
+    console.error('Auth Middleware Error:', error.message);
     const keyValueTable = { error: 'Token is invalid' };
     return res.status(401).json(
       ResponseFormatter.failure('Not authorized, token failed', keyValueTable)
@@ -51,6 +52,7 @@ exports.admin = (req, res, next) => {
   if (req.user && req.user.isAdmin) {
     return next();
   }
+  console.error('Admin Middleware Denied:', req.user ? `User ${req.user.id} is not admin` : 'No user');
   const keyValueTable = { error: 'Admin access required' };
   return res
     .status(401)
