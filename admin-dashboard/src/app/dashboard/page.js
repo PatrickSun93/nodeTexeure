@@ -168,9 +168,12 @@ function DashboardView({ timePeriod, setTimePeriod }) {
 }
 
 // Keep existing management views
+import OrderDetailView from '../../components/OrderDetailView';
+
 function OrdersView() {
   const [selectedStatus, setSelectedStatus] = useState('Pending');
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedOrder, setSelectedOrder] = useState(null);
 
   // Mock data based on image
   const orders = [
@@ -187,6 +190,10 @@ function OrdersView() {
   );
 
   const statuses = ['Pending', 'Processing', 'Shipped', 'Delivered', 'Cancelled'];
+
+  if (selectedOrder) {
+    return <OrderDetailView order={selectedOrder} onBack={() => setSelectedOrder(null)} />;
+  }
 
   return (
     <div className="p-8 bg-gray-50 min-h-full">
@@ -232,8 +239,8 @@ function OrdersView() {
             key={status}
             onClick={() => setSelectedStatus(status)}
             className={`px-6 py-2 rounded-full text-sm font-medium transition-colors ${selectedStatus === status
-                ? 'bg-[#F3EAD8] text-[#8C6B3D]' // Beige/Gold-ish for active
-                : 'bg-white text-gray-500 hover:bg-gray-50 border border-gray-100'
+              ? 'bg-[#F3EAD8] text-[#8C6B3D]' // Beige/Gold-ish for active
+              : 'bg-white text-gray-500 hover:bg-gray-50 border border-gray-100'
               }`}
           >
             {status}
@@ -272,16 +279,21 @@ function OrdersView() {
                   <td className="px-6 py-4 text-sm text-gray-500">{order.destination}</td>
                   <td className="px-6 py-4">
                     <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-md ${order.status === 'Pending' ? 'bg-yellow-100 text-yellow-800' :
-                        order.status === 'Processing' ? 'bg-blue-100 text-blue-800' :
-                          order.status === 'Shipped' ? 'bg-purple-100 text-purple-800' :
-                            order.status === 'Delivered' ? 'bg-green-100 text-green-800' :
-                              'bg-red-100 text-red-800'
+                      order.status === 'Processing' ? 'bg-blue-100 text-blue-800' :
+                        order.status === 'Shipped' ? 'bg-purple-100 text-purple-800' :
+                          order.status === 'Delivered' ? 'bg-green-100 text-green-800' :
+                            'bg-red-100 text-red-800'
                       }`}>
                       {order.status}
                     </span>
                   </td>
                   <td className="px-6 py-4 text-sm">
-                    <button className="text-[#C5A572] hover:text-[#a08050] font-medium">Edit Details</button>
+                    <button
+                      onClick={() => setSelectedOrder(order)}
+                      className="text-[#C5A572] hover:text-[#a08050] font-medium"
+                    >
+                      Edit Details
+                    </button>
                   </td>
                 </tr>
               ))}
