@@ -452,8 +452,8 @@ function ProductsView() {
                   <td className="px-6 py-4 text-sm text-gray-600">{product.stock}</td>
                   <td className="px-6 py-4">
                     <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${product.status === 'Active' ? 'bg-green-100 text-green-800' :
-                        product.status === 'Draft' ? 'bg-yellow-100 text-yellow-800' :
-                          'bg-red-100 text-red-800'
+                      product.status === 'Draft' ? 'bg-yellow-100 text-yellow-800' :
+                        'bg-red-100 text-red-800'
                       }`}>
                       {product.status === 'Active' ? '● Active' : product.status === 'Draft' ? '● Draft' : 'Out of Stock'}
                     </span>
