@@ -7,15 +7,14 @@ export default function USMapChart({ data = [] }) {
     const [mapReady, setMapReady] = useState(false);
 
     useEffect(() => {
-        // Load USA GeoJSON map data from CDN
+        // Load USA GeoJSON map data from local file
         const loadUSAMap = async () => {
             try {
                 const echarts = (await import('echarts')).default;
-                const response = await fetch('https://echarts.apache.org/examples/data/asset/geo/USA.json');
-                const usaGeoJson = await response.json();
+                const usaGeoJson = await import('../statics/usamap.json');
 
                 // Register the map with echarts
-                echarts.registerMap('USA', usaGeoJson);
+                echarts.registerMap('USA', usaGeoJson.default || usaGeoJson);
                 setMapReady(true);
             } catch (error) {
                 console.warn('Failed to load USA map, using fallback:', error);
