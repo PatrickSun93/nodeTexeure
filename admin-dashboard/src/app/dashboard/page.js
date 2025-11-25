@@ -4,10 +4,10 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { ensureCsrfToken } from '../../utils/api';
 import MetricsCard from '../../components/MetricsCard';
-import RevenueChart from '../../components/RevenueChart';
-import SalesDistributionChart from '../../components/SalesDistributionChart';
-import SalesByRegionChart from '../../components/SalesByRegionChart';
-import USMapChart from '../../components/USMapChart';
+// import RevenueChart from '../../components/RevenueChart';
+// import SalesDistributionChart from '../../components/SalesDistributionChart';
+// import SalesByRegionChart from '../../components/SalesByRegionChart';
+// import USMapChart from '../../components/USMapChart';
 import RecentOrdersTable from '../../components/RecentOrdersTable';
 
 export default function Dashboard() {
@@ -150,8 +150,8 @@ function DashboardView({ timePeriod, setTimePeriod }) {
         <MetricsCard title="Conversion Rate" value="3.2%" change="↓ 0.3%" trend="down" />
       </div>
 
-      {/* Charts Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+      {/* Charts Grid - Temporarily disabled */}
+      {/* <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
         <RevenueChart />
         <SalesDistributionChart />
       </div>
@@ -159,7 +159,7 @@ function DashboardView({ timePeriod, setTimePeriod }) {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
         <SalesByRegionChart />
         <USMapChart />
-      </div>
+      </div> */}
 
       {/* Recent Orders */}
       <RecentOrdersTable />
