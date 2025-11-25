@@ -9,12 +9,27 @@ export default function StaffDetailView({ staff, onBack }) {
         password: '',
         confirmPassword: '',
         role: 'Admin',
-        status: 'Active'
+        status: 'Active',
+        permissions: {
+            manageOrders: true,
+            editProducts: true,
+            manageCustomers: true,
+            viewAnalytics: true,
+            editSiteSettings: false,
+            manageStaff: false
+        }
     });
 
     const handleChange = (e) => {
-        const { name, value } = e.target;
-        setFormData(prev => ({ ...prev, [name]: value }));
+        const { name, value, type, checked } = e.target;
+        if (type === 'checkbox') {
+            setFormData(prev => ({
+                ...prev,
+                permissions: { ...prev.permissions, [name]: checked }
+            }));
+        } else {
+            setFormData(prev => ({ ...prev, [name]: value }));
+        }
     };
 
     return (
@@ -22,7 +37,7 @@ export default function StaffDetailView({ staff, onBack }) {
             {/* Header */}
             <div className="mb-8">
                 <h2 className="text-3xl font-bold text-gray-900 mb-2">{isEditing ? 'Edit Staff Account' : 'Add New Staff Account'}</h2>
-                <p className="text-gray-500">Create and configure a new staff member's account and role.</p>
+                <p className="text-gray-500">Create and configure a new staff member's account and permissions.</p>
             </div>
 
             <div className="space-y-6 max-w-4xl">
@@ -98,11 +113,11 @@ export default function StaffDetailView({ staff, onBack }) {
                     </div>
                 </div>
 
-                {/* Role & Status */}
+                {/* Roles & Permissions */}
                 <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-8">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-6">Role & Status</h3>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-6">Roles & Permissions</h3>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-2">Role</label>
                             <select
@@ -127,6 +142,36 @@ export default function StaffDetailView({ staff, onBack }) {
                                 </button>
                                 <span className="text-sm text-gray-700">{formData.status}</span>
                             </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-4">Permissions</label>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-y-4 gap-x-8">
+                            <label className="flex items-center gap-2 cursor-pointer">
+                                <input type="checkbox" name="manageOrders" checked={formData.permissions?.manageOrders} onChange={handleChange} className="rounded border-gray-300 text-[#C5A572] focus:ring-[#C5A572]" />
+                                <span className="text-sm text-gray-600">Manage Orders</span>
+                            </label>
+                            <label className="flex items-center gap-2 cursor-pointer">
+                                <input type="checkbox" name="editProducts" checked={formData.permissions?.editProducts} onChange={handleChange} className="rounded border-gray-300 text-[#C5A572] focus:ring-[#C5A572]" />
+                                <span className="text-sm text-gray-600">Edit Products</span>
+                            </label>
+                            <label className="flex items-center gap-2 cursor-pointer">
+                                <input type="checkbox" name="manageCustomers" checked={formData.permissions?.manageCustomers} onChange={handleChange} className="rounded border-gray-300 text-[#C5A572] focus:ring-[#C5A572]" />
+                                <span className="text-sm text-gray-600">Manage Customers</span>
+                            </label>
+                            <label className="flex items-center gap-2 cursor-pointer">
+                                <input type="checkbox" name="viewAnalytics" checked={formData.permissions?.viewAnalytics} onChange={handleChange} className="rounded border-gray-300 text-[#C5A572] focus:ring-[#C5A572]" />
+                                <span className="text-sm text-gray-600">View Analytics</span>
+                            </label>
+                            <label className="flex items-center gap-2 cursor-pointer">
+                                <input type="checkbox" name="editSiteSettings" checked={formData.permissions?.editSiteSettings} onChange={handleChange} className="rounded border-gray-300 text-[#C5A572] focus:ring-[#C5A572]" />
+                                <span className="text-sm text-gray-600">Edit Site Settings</span>
+                            </label>
+                            <label className="flex items-center gap-2 cursor-pointer">
+                                <input type="checkbox" name="manageStaff" checked={formData.permissions?.manageStaff} onChange={handleChange} className="rounded border-gray-300 text-[#C5A572] focus:ring-[#C5A572]" />
+                                <span className="text-sm text-gray-600">Manage Staff</span>
+                            </label>
                         </div>
                     </div>
                 </div>
