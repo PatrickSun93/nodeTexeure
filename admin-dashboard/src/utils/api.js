@@ -1,6 +1,6 @@
 // Simple API utilities for cookie-based auth and CSRF protection
+// Note: /api/* paths are automatically proxied to backend via next.config.mjs rewrites
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE || '';
 
 function readCookie(name) {
   if (typeof document === 'undefined') return undefined;
@@ -17,7 +17,7 @@ async function ensureCsrfToken() {
   let token = readCookie('csrf_token');
   if (token) return token;
 
-  const res = await fetch(`${API_BASE}/api/users/csrf-token`, {
+  const res = await fetch('/api/users/csrf-token', {
     method: 'GET',
     credentials: 'include',
   });
@@ -41,7 +41,7 @@ async function ensureCsrfToken() {
  * - Returns parsed JSON from ResponseFormatter
  */
 async function apiFetch(pathOrUrl, options = {}) {
-  const url = pathOrUrl.startsWith('http') ? pathOrUrl : `${API_BASE}${pathOrUrl}`;
+  const url = pathOrUrl; // Use path as-is, rewrites handle backend proxying
   const method = (options.method || 'GET').toUpperCase();
 
   const headers = new Headers(options.headers || {});
@@ -77,4 +77,4 @@ async function apiFetch(pathOrUrl, options = {}) {
   return data;
 }
 
-export { API_BASE, apiFetch, ensureCsrfToken, readCookie };
+export { apiFetch, ensureCsrfToken, readCookie };
