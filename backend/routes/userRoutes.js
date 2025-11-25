@@ -394,6 +394,44 @@ router.get('/', protect, admin, async (req, res) => {
 });
 
 /**
+ * GET /api/users/csrf-token
+ * Generate and return a CSRF token for admin authentication
+ * Requires user to be authenticated and an admin
+ */
+router.get('/csrf-token', protect, admin, async (req, res) => {
+  try {
+    // Generate CSRF token bound to the current user session
+    const csrfToken = generateCSRFToken(req.user);
+
+    // Set CSRF token in a non-HttpOnly cookie that JavaScript can read
+    // This follows the double-submit cookie pattern for CSRF protection
+    const ttlMs = Number.parseInt(process.env.CSRF_TOKEN_TTL_MS || '86400000', 10); // 24 hours default
+    const isProd = process.env.NODE_ENV === 'production';
+
+    res.cookie('csrf_token', csrfToken, {
+      httpOnly: false, // JavaScript needs to read this for the X-CSRF-Token header
+      secure: isProd,
+      sameSite: 'strict',
+      path: '/',
+      maxAge: ttlMs
+    });
+
+    // Also return token in response body for immediate use
+    const keyValueTable = {
+      csrfToken,
+      expires: new Date(Date.now() + ttlMs).toISOString(),
+      usage: 'Include this token in X-CSRF-Token header for admin API requests'
+    };
+
+    res.json(ResponseFormatter.success('CSRF token generated successfully', keyValueTable));
+  } catch (error) {
+    console.error('CSRF token generation error:', error);
+    const keyValueTable = { error: error.message };
+    res.status(500).json(ResponseFormatter.failure('Failed to generate CSRF token', keyValueTable));
+  }
+});
+
+/**
  * GET /api/users/:id
  * Get user by ID (admin)
  */
@@ -573,42 +611,6 @@ router.post('/reset-password', async (req, res) => {
   }
 });
 
-/**
- * GET /api/users/csrf-token
- * Generate and return a CSRF token for admin authentication
- * Requires user to be authenticated and an admin
- */
-router.get('/csrf-token', protect, admin, async (req, res) => {
-  try {
-    // Generate CSRF token bound to the current user session
-    const csrfToken = generateCSRFToken(req.user);
 
-    // Set CSRF token in a non-HttpOnly cookie that JavaScript can read
-    // This follows the double-submit cookie pattern for CSRF protection
-    const ttlMs = Number.parseInt(process.env.CSRF_TOKEN_TTL_MS || '86400000', 10); // 24 hours default
-    const isProd = process.env.NODE_ENV === 'production';
-
-    res.cookie('csrf_token', csrfToken, {
-      httpOnly: false, // JavaScript needs to read this for the X-CSRF-Token header
-      secure: isProd,
-      sameSite: 'strict',
-      path: '/',
-      maxAge: ttlMs
-    });
-
-    // Also return token in response body for immediate use
-    const keyValueTable = {
-      csrfToken,
-      expires: new Date(Date.now() + ttlMs).toISOString(),
-      usage: 'Include this token in X-CSRF-Token header for admin API requests'
-    };
-
-    res.json(ResponseFormatter.success('CSRF token generated successfully', keyValueTable));
-  } catch (error) {
-    console.error('CSRF token generation error:', error);
-    const keyValueTable = { error: error.message };
-    res.status(500).json(ResponseFormatter.failure('Failed to generate CSRF token', keyValueTable));
-  }
-});
 
 module.exports = router;
