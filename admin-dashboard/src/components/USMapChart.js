@@ -7,14 +7,23 @@ export default function USMapChart({ data = [] }) {
     const [mapReady, setMapReady] = useState(false);
 
     useEffect(() => {
-        // Dynamically import USA map
-        import('echarts/map/js/usa').then(() => {
-            setMapReady(true);
-        }).catch(() => {
-            // Fallback: map won't display but won't crash
-            console.warn('USA map not available, using mock visualization');
-            setMapReady(true);
-        });
+        // Load USA GeoJSON map data from CDN
+        const loadUSAMap = async () => {
+            try {
+                const echarts = (await import('echarts')).default;
+                const response = await fetch('https://echarts.apache.org/examples/data/asset/geo/USA.json');
+                const usaGeoJson = await response.json();
+
+                // Register the map with echarts
+                echarts.registerMap('USA', usaGeoJson);
+                setMapReady(true);
+            } catch (error) {
+                console.warn('Failed to load USA map, using fallback:', error);
+                setMapReady(true);
+            }
+        };
+
+        loadUSAMap();
     }, []);
 
     const option = {
