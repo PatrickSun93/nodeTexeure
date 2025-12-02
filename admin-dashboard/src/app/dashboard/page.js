@@ -9,6 +9,10 @@ import MetricsCard from '../../components/MetricsCard';
 // import SalesByRegionChart from '../../components/SalesByRegionChart';
 // import USMapChart from '../../components/USMapChart';
 import RecentOrdersTable from '../../components/RecentOrdersTable';
+import ProductDetailView from '../../components/ProductDetailView';
+import CustomerDetailView from '../../components/CustomerDetailView';
+import PromotionDetailView from '../../components/PromotionDetailView';
+import StaffDetailView from '../../components/StaffDetailView';
 
 export default function Dashboard() {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -324,7 +328,7 @@ function OrdersView() {
   );
 }
 
-import ProductDetailView from '../../components/ProductDetailView';
+
 
 function ProductsView() {
   const [viewMode, setViewMode] = useState('list'); // 'list', 'add', 'edit'
@@ -489,16 +493,335 @@ function ProductsView() {
   );
 }
 
+
 function CustomersView() {
-  return <UserManagement />;
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCustomer, setSelectedCustomer] = useState(null);
+
+  // Mock data based on image
+  const customers = [
+    { id: 'CUS-00124', name: 'Eleanor Vance', email: 'eleanor.v@email.com', orders: 12, spent: '€4,500', lastOrder: '2023-10-15' },
+    { id: 'CUS-00125', name: 'James Fitzgerald', email: 'james.f@email.com', orders: 8, spent: '€2,150', lastOrder: '2023-10-12' },
+    { id: 'CUS-00126', name: 'Clara Dubois', email: 'clara.d@email.com', orders: 21, spent: '€8,900', lastOrder: '2023-10-20' },
+    { id: 'CUS-00127', name: 'Liam O\'Connell', email: 'liam.o@email.com', orders: 5, spent: '€950', lastOrder: '2023-09-28' },
+    { id: 'CUS-00128', name: 'Sofia Rossi', email: 'sofia.r@email.com', orders: 15, spent: '€5,200', lastOrder: '2023-10-18' },
+  ];
+
+  if (selectedCustomer) {
+    return <CustomerDetailView customer={selectedCustomer} onBack={() => setSelectedCustomer(null)} />;
+  }
+
+  return (
+    <div className="p-8 bg-gray-50 min-h-full">
+      {/* Header */}
+      <div className="flex justify-between items-center mb-8">
+        <div className="flex items-center gap-4">
+          <h2 className="text-3xl font-bold text-gray-900">Customers</h2>
+        </div>
+        <button className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition shadow-sm font-medium flex items-center gap-2">
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+          Add New Customer
+        </button>
+      </div>
+
+      {/* Filters */}
+      <div className="flex flex-col md:flex-row gap-4 mb-6">
+        <div className="relative flex-1">
+          <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400">
+            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+          </span>
+          <input
+            type="text"
+            placeholder="Search by name, email, or ID..."
+            className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+        </div>
+        <div className="flex gap-3">
+          <select className="px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-600">
+            <option>Customer Segments</option>
+            <option>VIP</option>
+            <option>New</option>
+          </select>
+          <select className="px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-600">
+            <option>Order History</option>
+            <option>High to Low</option>
+            <option>Low to High</option>
+          </select>
+          <select className="px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-600">
+            <option>Last Order Date</option>
+            <option>Newest First</option>
+            <option>Oldest First</option>
+          </select>
+        </div>
+      </div>
+
+      {/* Table */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b border-gray-100 bg-gray-50/50">
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Customer ID</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Name</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Email</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Orders</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Total Spent</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Last Order Date</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-50">
+              {customers.map((customer) => (
+                <tr key={customer.id} className="hover:bg-gray-50 transition-colors">
+                  <td className="px-6 py-4 text-sm text-gray-500">{customer.id}</td>
+                  <td className="px-6 py-4 text-sm font-medium text-gray-900">{customer.name}</td>
+                  <td className="px-6 py-4 text-sm text-gray-500">{customer.email}</td>
+                  <td className="px-6 py-4 text-sm text-gray-500">{customer.orders}</td>
+                  <td className="px-6 py-4 text-sm text-gray-900 font-medium">{customer.spent}</td>
+                  <td className="px-6 py-4 text-sm text-gray-500">{customer.lastOrder}</td>
+                  <td className="px-6 py-4 text-sm">
+                    <button onClick={() => setSelectedCustomer(customer)} className="text-gray-400 hover:text-gray-600">
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        {/* Pagination */}
+        <div className="px-6 py-4 border-t border-gray-100 flex items-center justify-between bg-white">
+          <span className="text-sm text-gray-500">Showing 1 to 5 of 2,345 results</span>
+          <div className="flex gap-1">
+            <button className="px-2 py-1 rounded border border-gray-200 text-gray-500 hover:bg-gray-50">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+            </button>
+            <button className="px-3 py-1 rounded border border-blue-600 bg-blue-50 text-blue-600 font-medium text-sm">1</button>
+            <button className="px-3 py-1 rounded border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 text-sm">2</button>
+            <button className="px-3 py-1 rounded border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 text-sm">3</button>
+            <span className="px-2 py-1 text-gray-400">...</span>
+            <button className="px-3 py-1 rounded border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 text-sm">469</button>
+            <button className="px-2 py-1 rounded border border-gray-200 text-gray-500 hover:bg-gray-50">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function PromotionsView() {
+  const [viewMode, setViewMode] = useState('list'); // 'list', 'create', 'edit'
+  const [selectedPromotion, setSelectedPromotion] = useState(null);
+
+  // Mock data based on image
+  const promotions = [
+    { id: 1, name: 'Autumn Sale', code: 'AUTUMN20', type: 'Percentage', value: '20', startDate: '2023-09-01T00:00', endDate: '2023-09-30T23:59', status: 'Active', description: 'Get 20% off all silk pillowcases and cashmere throws this autumn.' },
+    { id: 2, name: 'Welcome Discount', code: 'WELCOME10', type: 'Fixed Amount', value: '10', startDate: '2023-01-01T00:00', endDate: '2023-12-31T23:59', status: 'Active', description: 'Welcome discount for new customers.' },
+    { id: 3, name: 'Summer Clearance', code: 'SUMMER50', type: 'Percentage', value: '50', startDate: '2023-08-15T00:00', endDate: '2023-08-31T23:59', status: 'Expired', description: 'End of summer clearance sale.' },
+    { id: 4, name: 'Free Shipping Weekend', code: 'FREESHIP', type: 'Free Shipping', value: '', startDate: '2023-11-04T00:00', endDate: '2023-11-05T23:59', status: 'Active', description: 'Free shipping on all orders this weekend.' },
+    { id: 5, name: 'Winter Collection Preview', code: 'WINTERVIP', type: 'Percentage', value: '15', startDate: '2023-11-15T00:00', endDate: '2023-11-30T23:59', status: 'Draft', description: 'Early access to winter collection.' },
+  ];
+
+  const handleEdit = (promo) => {
+    setSelectedPromotion(promo);
+    setViewMode('edit');
+  };
+
+  const handleCreate = () => {
+    setSelectedPromotion(null);
+    setViewMode('create');
+  };
+
+  const handleBack = () => {
+    setViewMode('list');
+    setSelectedPromotion(null);
+  };
+
+  if (viewMode === 'create' || viewMode === 'edit') {
+    return <PromotionDetailView promotion={selectedPromotion} onBack={handleBack} />;
+  }
+
+  return (
+    <div className="p-8 bg-gray-50 min-h-full">
+      {/* Header */}
+      <div className="flex justify-between items-center mb-8">
+        <h2 className="text-3xl font-bold text-gray-900">Promotions & Discounts</h2>
+        <button
+          onClick={handleCreate}
+          className="px-4 py-2 bg-[#C5A572] text-white rounded-md hover:bg-[#b09060] transition shadow-sm font-medium flex items-center gap-2"
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+          Create New Promotion
+        </button>
+      </div>
+
+      {/* Filters */}
+      <div className="flex gap-4 mb-6">
+        <div className="relative flex-1">
+          <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400">
+            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+          </span>
+          <input
+            type="text"
+            placeholder="Search promotions by name or code..."
+            className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C5A572] focus:border-transparent bg-white"
+          />
+        </div>
+        <select className="px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C5A572] bg-white text-gray-600 w-40">
+          <option>All Types</option>
+          <option>Percentage</option>
+          <option>Fixed Amount</option>
+          <option>Free Shipping</option>
+        </select>
+        <select className="px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C5A572] bg-white text-gray-600 w-40">
+          <option>All Statuses</option>
+          <option>Active</option>
+          <option>Draft</option>
+          <option>Expired</option>
+        </select>
+      </div>
+
+      {/* Table */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b border-gray-100 bg-gray-50/50">
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Name</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Code</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Type</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Discount Value</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Start Date</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">End Date</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-50">
+              {promotions.map((promo) => (
+                <tr key={promo.id} className="hover:bg-gray-50 transition-colors">
+                  <td className="px-6 py-4 text-sm font-medium text-gray-900">{promo.name}</td>
+                  <td className="px-6 py-4 text-sm text-gray-500 font-mono">{promo.code}</td>
+                  <td className="px-6 py-4 text-sm text-gray-600">{promo.type}</td>
+                  <td className="px-6 py-4 text-sm font-bold text-gray-900">{promo.type === 'Percentage' ? `${promo.value}%` : promo.type === 'Fixed Amount' ? `$${promo.value}` : '-'}</td>
+                  <td className="px-6 py-4 text-sm text-gray-500">{promo.startDate.split('T')[0]}</td>
+                  <td className="px-6 py-4 text-sm text-gray-500">{promo.endDate.split('T')[0]}</td>
+                  <td className="px-6 py-4">
+                    <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${promo.status === 'Active' ? 'bg-green-100 text-green-800' :
+                      promo.status === 'Draft' ? 'bg-yellow-100 text-yellow-800' :
+                        'bg-gray-100 text-gray-800'
+                      }`}>
+                      {promo.status}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 text-sm">
+                    <div className="flex gap-3">
+                      <button onClick={() => handleEdit(promo)} className="text-gray-400 hover:text-blue-600">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+                      </button>
+                      <button className="text-gray-400 hover:text-red-600">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 function CouponsView() {
-  return <CouponManagement />;
+  return (
+    <div className="p-8">
+      <h2 className="text-2xl font-bold mb-6">Coupons</h2>
+      <p className="text-gray-500">Coupon management is now integrated into Promotions.</p>
+    </div>
+  );
 }
 
 function InventoryView() {
-  return <InventoryManagement />;
+  return (
+    <div className="p-8">
+      <h2 className="text-2xl font-bold mb-6">Inventory</h2>
+      <p className="text-gray-500">Inventory management coming soon...</p>
+    </div>
+  );
+}
+
+function StaffView() {
+  const [selectedStaff, setSelectedStaff] = useState(null);
+
+  // Mock data
+  const staff = [
+    { id: 1, name: 'Admin User', email: 'admin@noirae.com', role: 'Administrator', status: 'Active', lastActive: 'Now' },
+    { id: 2, name: 'Sarah Jones', email: 'sarah@noirae.com', role: 'Editor', status: 'Active', lastActive: '2 hours ago' },
+  ];
+
+  if (selectedStaff) {
+    return <StaffDetailView staff={selectedStaff} onBack={() => setSelectedStaff(null)} />;
+  }
+
+  return (
+    <div className="p-8 bg-gray-50 min-h-full">
+      <div className="flex justify-between items-center mb-8">
+        <h2 className="text-3xl font-bold text-gray-900">Staff Members</h2>
+        <button
+          onClick={() => setSelectedStaff({})}
+          className="px-4 py-2 bg-[#C5A572] text-white rounded-md hover:bg-[#b09060] transition shadow-sm font-medium flex items-center gap-2"
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+          Add New Staff
+        </button>
+      </div>
+
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+        <table className="w-full">
+          <thead>
+            <tr className="border-b border-gray-100 bg-gray-50/50">
+              <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Name</th>
+              <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Email</th>
+              <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Role</th>
+              <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
+              <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Last Active</th>
+              <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-50">
+            {staff.map((member) => (
+              <tr key={member.id} className="hover:bg-gray-50 transition-colors">
+                <td className="px-6 py-4 text-sm font-medium text-gray-900">{member.name}</td>
+                <td className="px-6 py-4 text-sm text-gray-500">{member.email}</td>
+                <td className="px-6 py-4 text-sm text-gray-600">{member.role}</td>
+                <td className="px-6 py-4">
+                  <span className="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                    {member.status}
+                  </span>
+                </td>
+                <td className="px-6 py-4 text-sm text-gray-500">{member.lastActive}</td>
+                <td className="px-6 py-4 text-sm">
+                  <button onClick={() => setSelectedStaff(member)} className="text-gray-400 hover:text-blue-600">
+                    Edit
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
 }
 
 function AnalyticsView() {
@@ -506,320 +829,6 @@ function AnalyticsView() {
     <div className="p-8">
       <h2 className="text-2xl font-bold mb-6">Analytics</h2>
       <p className="text-gray-500">Advanced analytics coming soon...</p>
-    </div>
-  );
-}
-
-// Existing CRUD components
-function ProductManagement() {
-  const [products, setProducts] = useState([]);
-  const [formData, setFormData] = useState({});
-  const [editingId, setEditingId] = useState(null);
-
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  const fetchData = async () => {
-    const { apiFetch } = await import('../../utils/api');
-    const data = await apiFetch('/api/admin/products');
-    if (data.success) setProducts(data.data.products);
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    const { apiFetch } = await import('../../utils/api');
-    const method = editingId ? 'PUT' : 'POST';
-    const url = editingId ? `/api/admin/products/${editingId}` : '/api/admin/products';
-    await apiFetch(url, { method, body: JSON.stringify(formData) });
-    await fetchData();
-    setFormData({});
-    setEditingId(null);
-  };
-
-  const handleDelete = async (id) => {
-    const { apiFetch } = await import('../../utils/api');
-    await apiFetch(`/api/admin/products/${id}`, { method: 'DELETE' });
-    await fetchData();
-  };
-
-  return (
-    <div className="p-8">
-      <h2 className="text-2xl font-bold mb-6">Product Management</h2>
-      <div className="bg-white rounded-lg shadow p-6 mb-6">
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <input
-            className="w-full px-4 py-2 border rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            placeholder="Product Name"
-            value={formData.name || ''}
-            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-          />
-          <input
-            className="w-full px-4 py-2 border rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            placeholder="Price"
-            type="number"
-            step="0.01"
-            value={formData.base_price || ''}
-            onChange={(e) => setFormData({ ...formData, base_price: e.target.value })}
-          />
-          <button type="submit" className="px-6 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition">
-            {editingId ? 'Update' : 'Add'} Product
-          </button>
-        </form>
-      </div>
-      <div className="bg-white rounded-lg shadow overflow-hidden">
-        <table className="w-full">
-          <thead className="bg-gray-50 border-b">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Price</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-200">
-            {products.map(p => (
-              <tr key={p.id} className="hover:bg-gray-50">
-                <td className="px-6 py-4">{p.name}</td>
-                <td className="px-6 py-4">${p.base_price}</td>
-                <td className="px-6 py-4">
-                  <button onClick={() => { setFormData(p); setEditingId(p.id); }} className="text-blue-500 hover:text-blue-700 mr-4">Edit</button>
-                  <button onClick={() => handleDelete(p.id)} className="text-red-500 hover:text-red-700">Delete</button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
-}
-
-function CouponManagement() {
-  const [coupons, setCoupons] = useState([]);
-  const [formData, setFormData] = useState({});
-  const [editingId, setEditingId] = useState(null);
-
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  const fetchData = async () => {
-    const { apiFetch } = await import('../../utils/api');
-    const data = await apiFetch('/api/admin/coupons');
-    if (data.success) setCoupons(data.data.coupons);
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    const { apiFetch } = await import('../../utils/api');
-    const method = editingId ? 'PUT' : 'POST';
-    const url = editingId ? `/api/admin/coupons/${editingId}` : '/api/admin/coupons';
-    await apiFetch(url, { method, body: JSON.stringify(formData) });
-    await fetchData();
-    setFormData({});
-    setEditingId(null);
-  };
-
-  const handleDelete = async (id) => {
-    const { apiFetch } = await import('../../utils/api');
-    await apiFetch(`/api/admin/coupons/${id}`, { method: 'DELETE' });
-    await fetchData();
-  };
-
-  return (
-    <div className="p-8">
-      <h2 className="text-2xl font-bold mb-6">Coupon Management</h2>
-      <div className="bg-white rounded-lg shadow p-6 mb-6">
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <input
-            className="w-full px-4 py-2 border rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            placeholder="Coupon Code"
-            value={formData.code || ''}
-            onChange={(e) => setFormData({ ...formData, code: e.target.value })}
-          />
-          <input
-            className="w-full px-4 py-2 border rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            placeholder="Value"
-            type="number"
-            step="0.01"
-            value={formData.value || ''}
-            onChange={(e) => setFormData({ ...formData, value: e.target.value })}
-          />
-          <button type="submit" className="px-6 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition">
-            {editingId ? 'Update' : 'Add'} Coupon
-          </button>
-        </form>
-      </div>
-      <div className="bg-white rounded-lg shadow overflow-hidden">
-        <table className="w-full">
-          <thead className="bg-gray-50 border-b">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Code</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Value</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-200">
-            {coupons.map(c => (
-              <tr key={c.id} className="hover:bg-gray-50">
-                <td className="px-6 py-4">{c.code}</td>
-                <td className="px-6 py-4">${c.value}</td>
-                <td className="px-6 py-4">
-                  <button onClick={() => { setFormData(c); setEditingId(c.id); }} className="text-blue-500 hover:text-blue-700 mr-4">Edit</button>
-                  <button onClick={() => handleDelete(c.id)} className="text-red-500 hover:text-red-700">Delete</button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
-}
-
-function InventoryManagement() {
-  const [inventory, setInventory] = useState([]);
-  const [formData, setFormData] = useState({});
-  const [editingId, setEditingId] = useState(null);
-
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  const fetchData = async () => {
-    const { apiFetch } = await import('../../utils/api');
-    const data = await apiFetch('/api/admin/inventory');
-    if (data.success) setInventory(data.data.inventory);
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    const { apiFetch } = await import('../../utils/api');
-    const method = 'PUT';
-    const url = `/api/admin/inventory/${editingId}`;
-    await apiFetch(url, { method, body: JSON.stringify(formData) });
-    await fetchData();
-    setFormData({});
-    setEditingId(null);
-  };
-
-  return (
-    <div className="p-8">
-      <h2 className="text-2xl font-bold mb-6">Inventory Management</h2>
-      <div className="bg-white rounded-lg shadow overflow-hidden">
-        <table className="w-full">
-          <thead className="bg-gray-50 border-b">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Product ID</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Quantity Available</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-200">
-            {inventory.map(i => (
-              <tr key={i.id} className="hover:bg-gray-50">
-                <td className="px-6 py-4">{i.product_id}</td>
-                <td className="px-6 py-4">{i.quantity_available}</td>
-                <td className="px-6 py-4">
-                  <button onClick={() => { setFormData(i); setEditingId(i.id); }} className="text-blue-500 hover:text-blue-700">Edit</button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-      {editingId && (
-        <div className="bg-white rounded-lg shadow p-6 mt-6">
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <input
-              className="w-full px-4 py-2 border rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="Quantity Available"
-              type="number"
-              value={formData.quantity_available || ''}
-              onChange={(e) => setFormData({ ...formData, quantity_available: e.target.value })}
-            />
-            <button type="submit" className="px-6 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition">
-              Update Inventory
-            </button>
-          </form>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function UserManagement() {
-  const [users, setUsers] = useState([]);
-  const [formData, setFormData] = useState({});
-  const [editingId, setEditingId] = useState(null);
-
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  const fetchData = async () => {
-    const { apiFetch } = await import('../../utils/api');
-    const data = await apiFetch('/api/admin/users');
-    if (data.success) setUsers(data.data.users);
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    const { apiFetch } = await import('../../utils/api');
-    const method = editingId ? 'PUT' : 'POST';
-    const url = editingId ? `/api/admin/users/${editingId}` : '/api/admin/users';
-    await apiFetch(url, { method, body: JSON.stringify(formData) });
-    await fetchData();
-    setFormData({});
-    setEditingId(null);
-  };
-
-  const handleDelete = async (id) => {
-    const { apiFetch } = await import('../../utils/api');
-    await apiFetch(`/api/admin/users/${id}`, { method: 'DELETE' });
-    await fetchData();
-  };
-
-  return (
-    <div className="p-8">
-      <h2 className="text-2xl font-bold mb-6">User Management</h2>
-      <div className="bg-white rounded-lg shadow p-6 mb-6">
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <input
-            className="w-full px-4 py-2 border rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            placeholder="Email"
-            type="email"
-            value={formData.email || ''}
-            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-          />
-          <button type="submit" className="px-6 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition">
-            {editingId ? 'Update' : 'Add'} User
-          </button>
-        </form>
-      </div>
-      <div className="bg-white rounded-lg shadow overflow-hidden">
-        <table className="w-full">
-          <thead className="bg-gray-50 border-b">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Role</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-200">
-            {users.map(u => (
-              <tr key={u.id} className="hover:bg-gray-50">
-                <td className="px-6 py-4">{u.email}</td>
-                <td className="px-6 py-4">{u.role}</td>
-                <td className="px-6 py-4">
-                  <button onClick={() => { setFormData(u); setEditingId(u.id); }} className="text-blue-500 hover:text-blue-700 mr-4">Edit</button>
-                  <button onClick={() => handleDelete(u.id)} className="text-red-500 hover:text-red-700">Delete</button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
     </div>
   );
 }
