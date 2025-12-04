@@ -402,7 +402,8 @@ router.get('/csrf-token', protect, admin, async (req, res) => {
   try {
     // Generate CSRF token bound to the current user session
     const csrfToken = generateCSRFToken(req.user);
-
+    console.log('--------------------')
+    console.log(csrfToken);
     // Set CSRF token in a non-HttpOnly cookie that JavaScript can read
     // This follows the double-submit cookie pattern for CSRF protection
     const ttlMs = Number.parseInt(process.env.CSRF_TOKEN_TTL_MS || '86400000', 10); // 24 hours default

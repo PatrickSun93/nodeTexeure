@@ -87,7 +87,7 @@ app.post('/api/hello', (req, res) => {
 
 // 404 handler
 app.use('*', (req, res) => {
-  const keyValueTable = { 
+  const keyValueTable = {
     path: req.originalUrl,
     timestamp: new Date().toISOString()
   };
@@ -100,7 +100,7 @@ app.use(LoggingMiddleware.errorMiddleware());
 // Error handler
 app.use((err, req, res, next) => {
   console.error('Error:', err);
-  const keyValueTable = { 
+  const keyValueTable = {
     timestamp: new Date().toISOString(),
     error: err.message || 'Internal server error'
   };

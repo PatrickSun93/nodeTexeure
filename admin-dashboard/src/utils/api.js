@@ -1,7 +1,9 @@
 // Simple API utilities for cookie-based auth and CSRF protection
 // Note: /api/* paths are automatically proxied to backend via next.config.mjs rewrites
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:6666';
+const BACKEND_URL = typeof window === 'undefined'
+  ? (process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:6666')
+  : '';
 
 function readCookie(name) {
   if (typeof document === 'undefined') return undefined;
@@ -23,14 +25,14 @@ async function ensureCsrfToken() {
     credentials: 'include',
   });
 
-  if (!res.ok) {
+  if (!res.status) {
     // Likely not authenticated or not admin
     throw new Error(`Failed to obtain CSRF token: ${res.status}`);
   }
 
   const data = await res.json();
-  if (data && data.success && data.data && data.data.csrfToken) {
-    return data.data.csrfToken;
+  if (data.status == 'SUCCESS') {
+    return data.keyValueTable.csrfToken;
   }
   throw new Error('CSRF token missing in response');
 }
