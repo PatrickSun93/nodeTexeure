@@ -150,19 +150,6 @@ export default function PromotionDetailView({ promotion, onBack }) {
                     <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
                         <h3 className="text-lg font-semibold text-gray-900 mb-6">Status & Schedule</h3>
 
-                        <div className="flex items-center justify-between mb-6 p-4 bg-gray-50 rounded-lg">
-                            <div className="flex items-center gap-3">
-                                <div className="w-8 h-8 rounded-full bg-[#C5A572] text-white flex items-center justify-center text-xs font-bold">A</div>
-                                <div>
-                                    <p className="text-sm font-medium text-gray-900">Admin</p>
-                                    <p className="text-xs text-gray-500">admin@noirae.com</p>
-                                </div>
-                            </div>
-                            <div className="w-8 h-8 rounded-full bg-[#D2B48C] flex items-center justify-center text-white">
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h.01M12 12h.01M19 12h.01M6 12a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0z" /></svg>
-                            </div>
-                        </div>
-
                         <div className="space-y-4">
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-2">Start Date & Time</label>
