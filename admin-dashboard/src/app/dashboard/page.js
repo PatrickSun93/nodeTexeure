@@ -12,6 +12,7 @@ import RecentOrdersTable from '../../components/RecentOrdersTable';
 import ProductDetailView from '../../components/ProductDetailView';
 import CustomerDetailView from '../../components/CustomerDetailView';
 import PromotionDetailView from '../../components/PromotionDetailView';
+import PromotionModal from '../../components/PromotionModal';
 import StaffDetailView from '../../components/StaffDetailView';
 
 export default function Dashboard() {
@@ -76,17 +77,12 @@ export default function Dashboard() {
             👥 Customers
           </button>
           <button
-            onClick={() => setActiveTab('coupons')}
-            className={`block w-full text-left px-6 py-3 hover:bg-blue-50 transition ${activeTab === 'coupons' ? 'bg-blue-50 text-blue-600 border-r-2 border-blue-600' : ''}`}
+            onClick={() => setActiveTab('promotions')}
+            className={`block w-full text-left px-6 py-3 hover:bg-blue-50 transition ${activeTab === 'promotions' ? 'bg-blue-50 text-blue-600 border-r-2 border-blue-600' : ''}`}
           >
-            🎟️ Coupons
+            🎟️ Promotions
           </button>
-          <button
-            onClick={() => setActiveTab('inventory')}
-            className={`block w-full text-left px-6 py-3 hover:bg-blue-50 transition ${activeTab === 'inventory' ? 'bg-blue-50 text-blue-600 border-r-2 border-blue-600' : ''}`}
-          >
-            📦 Inventory
-          </button>
+
           <button
             onClick={() => setActiveTab('analytics')}
             className={`block w-full text-left px-6 py-3 hover:bg-blue-50 transition ${activeTab === 'analytics' ? 'bg-blue-50 text-blue-600 border-r-2 border-blue-600' : ''}`}
@@ -107,8 +103,8 @@ export default function Dashboard() {
         {activeTab === 'orders' && <OrdersView />}
         {activeTab === 'products' && <ProductsView />}
         {activeTab === 'customers' && <CustomersView />}
-        {activeTab === 'coupons' && <CouponsView />}
-        {activeTab === 'inventory' && <InventoryView />}
+        {activeTab === 'promotions' && <PromotionsView />}
+
         {activeTab === 'analytics' && <AnalyticsView />}
       </div>
     </div>
@@ -616,7 +612,8 @@ function CustomersView() {
 }
 
 function PromotionsView() {
-  const [viewMode, setViewMode] = useState('list'); // 'list', 'create', 'edit'
+  const [viewMode, setViewMode] = useState('list'); // 'list', 'edit'
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedPromotion, setSelectedPromotion] = useState(null);
 
   // Mock data based on image
@@ -635,7 +632,7 @@ function PromotionsView() {
 
   const handleCreate = () => {
     setSelectedPromotion(null);
-    setViewMode('create');
+    setIsModalOpen(true);
   };
 
   const handleBack = () => {
@@ -643,7 +640,7 @@ function PromotionsView() {
     setSelectedPromotion(null);
   };
 
-  if (viewMode === 'create' || viewMode === 'edit') {
+  if (viewMode === 'edit') {
     return <PromotionDetailView promotion={selectedPromotion} onBack={handleBack} />;
   }
 
@@ -719,8 +716,8 @@ function PromotionsView() {
                   <td className="px-6 py-6 text-sm text-gray-500">{promo.endDate.split('T')[0]}</td>
                   <td className="px-6 py-6">
                     <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${promo.status === 'Active' ? 'bg-green-100 text-green-700' :
-                        promo.status === 'Draft' ? 'bg-yellow-100 text-yellow-700' :
-                          'bg-gray-100 text-gray-600'
+                      promo.status === 'Draft' ? 'bg-yellow-100 text-yellow-700' :
+                        'bg-gray-100 text-gray-600'
                       }`}>
                       {promo.status}
                     </span>
@@ -741,27 +738,19 @@ function PromotionsView() {
           </table>
         </div>
       </div>
+
+      <PromotionModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        promotion={null}
+      />
     </div>
   );
 }
 
-function CouponsView() {
-  return (
-    <div className="p-8">
-      <h2 className="text-2xl font-bold mb-6">Coupons</h2>
-      <p className="text-gray-500">Coupon management is now integrated into Promotions.</p>
-    </div>
-  );
-}
 
-function InventoryView() {
-  return (
-    <div className="p-8">
-      <h2 className="text-2xl font-bold mb-6">Inventory</h2>
-      <p className="text-gray-500">Inventory management coming soon...</p>
-    </div>
-  );
-}
+
+
 
 function StaffView() {
   const [selectedStaff, setSelectedStaff] = useState(null);
