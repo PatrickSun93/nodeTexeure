@@ -136,7 +136,21 @@ router.post('/coupons', adminWriteLimiter, csrfProtection, async (req, res) => {
     const created_by = req.user.id;
     const insertResult = await DatabaseUtil.executeQuery(
       'INSERT INTO discount_codes (id, code, name, discount_details, type, value, minimum_order_amount, maximum_discount_amount, usage_limit, usage_limit_per_customer, starts_at, expires_at, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-      [id, code, name, JSON.stringify(discount_details), type, value, minimum_order_amount, maximum_discount_amount, usage_limit, usage_limit_per_customer, starts_at, expires_at, created_by]
+      [
+        id,
+        code || null,
+        name || null,
+        JSON.stringify(discount_details || {}),
+        type || 'percentage',
+        value || 0,
+        minimum_order_amount || null,
+        maximum_discount_amount || null,
+        usage_limit || null,
+        usage_limit_per_customer || null,
+        starts_at || null,  // Handles '' and undefined
+        expires_at || null, // Handles '' and undefined
+        created_by
+      ]
     );
     if (!insertResult.success) throw new Error(insertResult.error);
     res.status(201).json(ResponseFormatter.success('Coupon added successfully', [{ id }]));
@@ -156,10 +170,15 @@ router.put('/coupons/:id', adminWriteLimiter, csrfProtection, async (req, res) =
     for (const [key, value] of Object.entries(updates)) {
       if (key === 'discount_details') {
         updateFields.push(`${key} = ?`);
-        updateValues.push(JSON.stringify(value));
+        updateValues.push(JSON.stringify(value || {}));
       } else {
         updateFields.push(`${key} = ?`);
-        updateValues.push(value);
+        // Sanitize empty strings and undefined to NULL for date fields or optional params
+        if (value === '' || value === undefined) {
+          updateValues.push(null);
+        } else {
+          updateValues.push(value);
+        }
       }
     }
     updateValues.push(id);
@@ -214,6 +233,7 @@ router.get('/users', adminReadLimiter, async (req, res) => {
              MAX(o.created_at) as last_order_date
       FROM users u
       LEFT JOIN orders o ON u.id = o.user_id
+      WHERE u.role NOT IN ('admin', 'staff')
       GROUP BY u.id
     `;
     const listResult = await DatabaseUtil.executeQuery(query);
@@ -309,11 +329,33 @@ router.delete('/users/:id', adminWriteLimiter, csrfProtection, async (req, res) 
 });
 
 // List products (read-only; CSRF not required)
+// List products (public/admin shared logic, but this is admin route)
 router.get('/products', adminReadLimiter, async (req, res) => {
   try {
-    const listResult = await DatabaseUtil.executeQuery('SELECT * FROM products');
+    const query = `
+      SELECT 
+        p.*, 
+        c.name as category_name,
+        i.quantity_available as stock_quantity
+      FROM products p
+      LEFT JOIN categories c ON p.category_id = c.id
+      LEFT JOIN inventory i ON p.id = i.product_id
+      ORDER BY p.created_at DESC
+    `;
+    const listResult = await DatabaseUtil.executeQuery(query);
     if (!listResult.success) throw new Error(listResult.error);
-    res.json(ResponseFormatter.success('Products fetched successfully', [{ products: listResult.data }]));
+
+    // Process to match frontend expectation if needed
+    // Frontend expects: { id, name, sku, category, price, stock, status, image }
+    const products = listResult.data.map(p => ({
+      ...p,
+      category: p.category_name || 'Uncategorized',
+      price: p.base_price,
+      stock: p.stock_quantity || 0,
+      status: p.status === 'approved' ? 'Active' : (p.status === 'draft' ? 'Draft' : 'Out of Stock')
+    }));
+
+    res.json(ResponseFormatter.success('Products fetched successfully', [{ products }]));
   } catch (error) {
     console.error(error);
     res.status(500).json(ResponseFormatter.failure('Server error', { error: error.message }));

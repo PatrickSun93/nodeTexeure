@@ -8,6 +8,15 @@ export default function PromotionDetailView({ promotion, onBack }) {
     // Ensure properly parsed if string (though likely object)
     const details = typeof initialDetails === 'string' ? JSON.parse(initialDetails) : initialDetails;
 
+    const getTodayAtMidnight = () => {
+        const now = new Date();
+        now.setHours(0, 0, 0, 0);
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const day = String(now.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}T00:00`;
+    };
+
     const [formData, setFormData] = useState({
         name: promotion?.name || '',
         description: details.description || '',
@@ -17,9 +26,33 @@ export default function PromotionDetailView({ promotion, onBack }) {
         minRequirements: details.min_requirements || details.minRequirements || 'None',
         appliesTo: details.applies_to || details.appliesTo || 'Specific collections',
         status: promotion?.status || 'Draft',
-        startDate: promotion?.startDate || '',
+        startDate: promotion?.startDate || getTodayAtMidnight(),
         endDate: promotion?.endDate || ''
     });
+
+    const handleQuickDuration = (days) => {
+        const start = formData.startDate ? new Date(formData.startDate) : new Date();
+        const end = new Date(start);
+
+        if (days === 'EOM') {
+            // End of Month
+            end.setMonth(end.getMonth() + 1);
+            end.setDate(0); // Last day of previous month (which is current month relative to +1)
+        } else {
+            end.setDate(end.getDate() + days);
+        }
+
+        end.setHours(0, 0, 0, 0);
+
+        // Format to YYYY-MM-DDTHH:mm
+        const year = end.getFullYear();
+        const month = String(end.getMonth() + 1).padStart(2, '0');
+        const day = String(end.getDate()).padStart(2, '0');
+        const isoEnd = `${year}-${month}-${day}T00:00`;
+
+        setFormData(prev => ({ ...prev, endDate: isoEnd }));
+    };
+
     const [isSaving, setIsSaving] = useState(false);
 
     const handleChange = (e) => {
@@ -216,6 +249,29 @@ export default function PromotionDetailView({ promotion, onBack }) {
                                     onChange={handleChange}
                                     className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C5A572] bg-gray-50 text-sm"
                                 />
+                                <div className="mt-2 flex gap-2">
+                                    <button
+                                        type="button"
+                                        onClick={() => handleQuickDuration(7)}
+                                        className="px-2 py-1 text-xs border border-gray-200 rounded hover:bg-gray-50 text-gray-600 bg-white"
+                                    >
+                                        +7 Days
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => handleQuickDuration(30)}
+                                        className="px-2 py-1 text-xs border border-gray-200 rounded hover:bg-gray-50 text-gray-600 bg-white"
+                                    >
+                                        +30 Days
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => handleQuickDuration('EOM')}
+                                        className="px-2 py-1 text-xs border border-gray-200 rounded hover:bg-gray-50 text-gray-600 bg-white"
+                                    >
+                                        End of Month
+                                    </button>
+                                </div>
                             </div>
 
                             {/* Toggle Status */}

@@ -413,6 +413,8 @@ function ProductsView() {
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('All');
   const [statusFilter, setStatusFilter] = useState('All');
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   // Mock data based on image
   const [products, setProducts] = useState([]);
@@ -468,6 +470,18 @@ function ProductsView() {
 
     return matchesCategory && matchesStatus && matchesSearch;
   });
+
+  // Calculate pagination
+  const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
+  const paginatedProducts = filteredProducts.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [categoryFilter, statusFilter, searchQuery]);
 
   const handleAddProduct = () => {
     setSelectedProduct(null);
@@ -570,7 +584,7 @@ function ProductsView() {
               ) : filteredProducts.length === 0 ? (
                 <tr><td colSpan="8" className="px-6 py-10 text-center text-gray-500">No products found.</td></tr>
               ) : (
-                filteredProducts.map((product) => (
+                paginatedProducts.map((product) => (
                   <tr key={product.id} className="hover:bg-gray-50 transition-colors">
                     <td className="px-6 py-4">
                       <input type="checkbox" className="rounded border-gray-300 text-[#C5A572] focus:ring-[#C5A572]" />
@@ -609,16 +623,43 @@ function ProductsView() {
           </table>
         </div>
         {/* Pagination */}
-        <div className="px-6 py-4 border-t border-gray-100 flex items-center justify-between bg-white">
-          <span className="text-sm text-gray-500">Showing {filteredProducts.length} results</span>
-          <div className="flex gap-1">
-            <button className="px-3 py-1 rounded border border-gray-200 text-gray-500 hover:bg-gray-50 text-sm">Previous</button>
-            <button className="px-3 py-1 rounded border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 text-sm">1</button>
-            <button className="px-3 py-1 rounded border border-[#C5A572] bg-[#F3EAD8] text-[#8C6B3D] text-sm font-medium">2</button>
-            <button className="px-3 py-1 rounded border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 text-sm">3</button>
-            <button className="px-3 py-1 rounded border border-gray-200 text-gray-500 hover:bg-gray-50 text-sm">Next</button>
+        {filteredProducts.length > 0 && (
+          <div className="px-6 py-4 border-t border-gray-100 flex items-center justify-between bg-white">
+            <span className="text-sm text-gray-500">
+              Showing {Math.min((currentPage - 1) * itemsPerPage + 1, filteredProducts.length)} to {Math.min(currentPage * itemsPerPage, filteredProducts.length)} of {filteredProducts.length} results
+            </span>
+            <div className="flex gap-1">
+              <button
+                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+                className="px-3 py-1 rounded border border-gray-200 text-gray-500 hover:bg-gray-50 text-sm disabled:opacity-50"
+              >
+                Previous
+              </button>
+
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                <button
+                  key={page}
+                  onClick={() => setCurrentPage(page)}
+                  className={`px-3 py-1 rounded border text-sm ${currentPage === page
+                    ? 'border-[#C5A572] bg-[#F3EAD8] text-[#8C6B3D] font-medium'
+                    : 'border-gray-200 bg-white text-gray-700 hover:bg-gray-50'
+                    }`}
+                >
+                  {page}
+                </button>
+              ))}
+
+              <button
+                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages}
+                className="px-3 py-1 rounded border border-gray-200 text-gray-500 hover:bg-gray-50 text-sm disabled:opacity-50"
+              >
+                Next
+              </button>
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );
@@ -629,6 +670,8 @@ function CustomersView() {
   const [customers, setCustomers] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCustomer, setSelectedCustomer] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -663,6 +706,18 @@ function CustomersView() {
     c.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
     (c.id && String(c.id).includes(searchQuery))
   );
+
+  // Calculate pagination
+  const totalPages = Math.ceil(filteredCustomers.length / itemsPerPage);
+  const paginatedCustomers = filteredCustomers.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
+  // Reset to page 1 when search changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery]);
 
   return (
     <div className="p-8 bg-gray-50 min-h-full">
@@ -735,7 +790,7 @@ function CustomersView() {
               ) : filteredCustomers.length === 0 ? (
                 <tr><td colSpan="7" className="px-6 py-10 text-center text-gray-500">No customers found.</td></tr>
               ) : (
-                filteredCustomers.map((customer) => (
+                paginatedCustomers.map((customer) => (
                   <tr key={customer.id} className="hover:bg-gray-50 transition-colors">
                     <td className="px-6 py-4 text-sm text-gray-500">{customer.id}</td>
                     <td className="px-6 py-4 text-sm font-medium text-gray-900">{customer.name}</td>
@@ -754,22 +809,43 @@ function CustomersView() {
           </table>
         </div>
         {/* Pagination */}
-        <div className="px-6 py-4 border-t border-gray-100 flex items-center justify-between bg-white">
-          <span className="text-sm text-gray-500">Showing 1 to 5 of 2,345 results</span>
-          <div className="flex gap-1">
-            <button className="px-2 py-1 rounded border border-gray-200 text-gray-500 hover:bg-gray-50">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
-            </button>
-            <button className="px-3 py-1 rounded border border-blue-600 bg-blue-50 text-blue-600 font-medium text-sm">1</button>
-            <button className="px-3 py-1 rounded border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 text-sm">2</button>
-            <button className="px-3 py-1 rounded border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 text-sm">3</button>
-            <span className="px-2 py-1 text-gray-400">...</span>
-            <button className="px-3 py-1 rounded border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 text-sm">469</button>
-            <button className="px-2 py-1 rounded border border-gray-200 text-gray-500 hover:bg-gray-50">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
-            </button>
+        {filteredCustomers.length > 0 && (
+          <div className="px-6 py-4 border-t border-gray-100 flex items-center justify-between bg-white">
+            <span className="text-sm text-gray-500">
+              Showing {Math.min((currentPage - 1) * itemsPerPage + 1, filteredCustomers.length)} to {Math.min(currentPage * itemsPerPage, filteredCustomers.length)} of {filteredCustomers.length} results
+            </span>
+            <div className="flex gap-1">
+              <button
+                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+                className="px-3 py-1 rounded border border-gray-200 text-gray-500 hover:bg-gray-50 text-sm disabled:opacity-50"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+              </button>
+
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                <button
+                  key={page}
+                  onClick={() => setCurrentPage(page)}
+                  className={`px-3 py-1 rounded border text-sm ${currentPage === page
+                    ? 'border-blue-600 bg-blue-50 text-blue-600 font-medium'
+                    : 'border-gray-200 bg-white text-gray-700 hover:bg-gray-50'
+                    }`}
+                >
+                  {page}
+                </button>
+              ))}
+
+              <button
+                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages}
+                className="px-3 py-1 rounded border border-gray-200 text-gray-500 hover:bg-gray-50 text-sm disabled:opacity-50"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+              </button>
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );
