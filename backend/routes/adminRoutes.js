@@ -5,13 +5,14 @@ const DatabaseUtil = require('../utils/database');
 const ResponseFormatter = require('../utils/responseFormatter');
 const path = require('path');
 const fs = require('fs');
+const bcrypt = require('bcryptjs');
 
 // Multer setup (installed separately). Using disk storage inside backend/uploads
 let multer;
 try {
   multer = require('multer');
 } catch (e) {
- // If multer is not installed, surface a clear error when endpoint is hit
+  // If multer is not installed, surface a clear error when endpoint is hit
 }
 
 const router = express.Router();
@@ -65,7 +66,7 @@ router.post('/products', adminWriteLimiter, csrfProtection, async (req, res) => 
       [id, sku, name, slug, description, short_description, category_id, base_price, JSON.stringify(product_details), created_by, meta_title, meta_description, meta_keywords]
     );
     if (!insertResult.success) throw new Error(insertResult.error);
-    res.status(201).json(ResponseFormatter.success('Product added successfully', { id }));
+    res.status(201).json(ResponseFormatter.success('Product added successfully', [{ id }]));
   } catch (error) {
     console.error(error);
     res.status(500).json(ResponseFormatter.failure('Server error', { error: error.message }));
@@ -111,6 +112,19 @@ router.delete('/products/:id', adminWriteLimiter, csrfProtection, async (req, re
   }
 });
 
+// Category Management
+// List categories
+router.get('/categories', adminReadLimiter, async (req, res) => {
+  try {
+    const listResult = await DatabaseUtil.executeQuery('SELECT * FROM categories ORDER BY sort_order ASC, name ASC');
+    if (!listResult.success) throw new Error(listResult.error);
+    res.json(ResponseFormatter.success('Categories fetched successfully', [{ categories: listResult.data }]));
+  } catch (error) {
+    console.error(error);
+    res.status(500).json(ResponseFormatter.failure('Server error', { error: error.message }));
+  }
+});
+
 // Coupon Management
 // Add new coupon
 router.post('/coupons', adminWriteLimiter, csrfProtection, async (req, res) => {
@@ -125,7 +139,7 @@ router.post('/coupons', adminWriteLimiter, csrfProtection, async (req, res) => {
       [id, code, name, JSON.stringify(discount_details), type, value, minimum_order_amount, maximum_discount_amount, usage_limit, usage_limit_per_customer, starts_at, expires_at, created_by]
     );
     if (!insertResult.success) throw new Error(insertResult.error);
-    res.status(201).json(ResponseFormatter.success('Coupon added successfully', { id }));
+    res.status(201).json(ResponseFormatter.success('Coupon added successfully', [{ id }]));
   } catch (error) {
     console.error(error);
     res.status(500).json(ResponseFormatter.failure('Server error', { error: error.message }));
@@ -193,9 +207,67 @@ router.put('/inventory/:id', adminWriteLimiter, csrfProtection, async (req, res)
 // List users (read-only; CSRF not required)
 router.get('/users', adminReadLimiter, async (req, res) => {
   try {
-    const listResult = await DatabaseUtil.executeQuery('SELECT id, email, first_name, last_name, role, status FROM users');
+    const query = `
+      SELECT u.id, u.email, u.first_name, u.last_name, u.role, u.status,
+             COUNT(o.id) as orders_count,
+             COALESCE(SUM(o.total_amount), 0) as total_spent,
+             MAX(o.created_at) as last_order_date
+      FROM users u
+      LEFT JOIN orders o ON u.id = o.user_id
+      GROUP BY u.id
+    `;
+    const listResult = await DatabaseUtil.executeQuery(query);
     if (!listResult.success) throw new Error(listResult.error);
-    res.json(ResponseFormatter.success('Users fetched successfully', { users: listResult.data }));
+
+    // Map to friendly format
+    const users = listResult.data.map(u => ({
+      id: u.id,
+      name: u.first_name ? `${u.first_name} ${u.last_name || ''}` : 'Guest/Unknown',
+      email: u.email,
+      role: u.role,
+      status: u.status,
+      orders: u.orders_count,
+      spent: u.total_spent,
+      lastOrder: u.last_order_date
+    }));
+
+    res.json(ResponseFormatter.success('Users fetched successfully', [{ users }]));
+  } catch (error) {
+    console.error(error);
+    res.status(500).json(ResponseFormatter.failure('Server error', { error: error.message }));
+  }
+});
+
+
+// Create user
+router.post('/users', adminWriteLimiter, csrfProtection, async (req, res) => {
+  try {
+    const { email, password, first_name, last_name, role, status, phone } = req.body;
+
+    // Basic validation
+    if (!email || !password || !first_name || !last_name) {
+      return res.status(400).json(ResponseFormatter.failure('Missing required fields'));
+    }
+
+    // Check if user exists
+    const checkResult = await DatabaseUtil.executeQuery('SELECT id FROM users WHERE email = ?', [email]);
+    if (checkResult.data.length > 0) {
+      return res.status(409).json(ResponseFormatter.failure('User with this email already exists'));
+    }
+
+    const idResult = await DatabaseUtil.executeQuery('SELECT UUID() as id'); // Or get_next_id if preferred
+    const id = idResult.data[0].id;
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Default values
+    const insertResult = await DatabaseUtil.executeQuery(
+      'INSERT INTO users (id, email, password_hash, first_name, last_name, role, status, phone) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+      [id, email, hashedPassword, first_name, last_name, role || 'customer', status || 'active', phone]
+    );
+
+    if (!insertResult.success) throw new Error(insertResult.error);
+    res.status(201).json(ResponseFormatter.success('User created successfully', [{ id }]));
   } catch (error) {
     console.error(error);
     res.status(500).json(ResponseFormatter.failure('Server error', { error: error.message }));
@@ -241,7 +313,7 @@ router.get('/products', adminReadLimiter, async (req, res) => {
   try {
     const listResult = await DatabaseUtil.executeQuery('SELECT * FROM products');
     if (!listResult.success) throw new Error(listResult.error);
-    res.json(ResponseFormatter.success('Products fetched successfully', { products: listResult.data }));
+    res.json(ResponseFormatter.success('Products fetched successfully', [{ products: listResult.data }]));
   } catch (error) {
     console.error(error);
     res.status(500).json(ResponseFormatter.failure('Server error', { error: error.message }));
@@ -253,7 +325,60 @@ router.get('/coupons', adminReadLimiter, async (req, res) => {
   try {
     const listResult = await DatabaseUtil.executeQuery('SELECT * FROM discount_codes');
     if (!listResult.success) throw new Error(listResult.error);
-    res.json(ResponseFormatter.success('Coupons fetched successfully', { coupons: listResult.data }));
+
+    const coupons = listResult.data.map(c => {
+      let status = 'Draft';
+      if (c.is_active) {
+        const now = new Date();
+        const start = c.starts_at ? new Date(c.starts_at) : null;
+        const end = c.expires_at ? new Date(c.expires_at) : null;
+
+        if (end && now > end) {
+          status = 'Expired';
+        } else if (start && now < start) {
+          status = 'Scheduled';
+        } else {
+          status = 'Active';
+        }
+      }
+
+      return {
+        ...c,
+        startDate: c.starts_at,
+        endDate: c.expires_at,
+        status: status
+      };
+    });
+
+    res.json(ResponseFormatter.success('Coupons fetched successfully', [{ coupons }]));
+  } catch (error) {
+    console.error(error);
+    res.status(500).json(ResponseFormatter.failure('Server error', { error: error.message }));
+  }
+});
+
+// Staff Management
+// List staff
+router.get('/staff', adminReadLimiter, async (req, res) => {
+  try {
+    const query = `
+            SELECT id, email, first_name, last_name, role, status, last_login 
+            FROM users 
+            WHERE role IN ('admin', 'staff')
+        `;
+    const listResult = await DatabaseUtil.executeQuery(query);
+    if (!listResult.success) throw new Error(listResult.error);
+
+    const staff = listResult.data.map(u => ({
+      id: u.id,
+      name: u.first_name ? `${u.first_name} ${u.last_name || ''}` : 'Unknown',
+      email: u.email,
+      role: u.role.charAt(0).toUpperCase() + u.role.slice(1),
+      status: u.status.charAt(0).toUpperCase() + u.status.slice(1),
+      lastActive: u.last_login || 'Never'
+    }));
+
+    res.json(ResponseFormatter.success('Staff fetched successfully', [{ staff }]));
   } catch (error) {
     console.error(error);
     res.status(500).json(ResponseFormatter.failure('Server error', { error: error.message }));
@@ -265,10 +390,102 @@ router.get('/inventory', adminReadLimiter, async (req, res) => {
   try {
     const listResult = await DatabaseUtil.executeQuery('SELECT * FROM inventory');
     if (!listResult.success) throw new Error(listResult.error);
-    res.json(ResponseFormatter.success('Inventory fetched successfully', { inventory: listResult.data }));
+    res.json(ResponseFormatter.success('Inventory fetched successfully', [{ inventory: listResult.data }]));
   } catch (error) {
     console.error(error);
     res.status(500).json(ResponseFormatter.failure('Server error', { error: error.message }));
+  }
+});
+
+// Order Management
+// List orders
+router.get('/orders', adminReadLimiter, async (req, res) => {
+  try {
+    // Basic listing. In real app, add pagination/filters.
+    const query = `
+      SELECT o.id, o.order_number, o.created_at, o.status, o.total_amount,
+             COALESCE(u.first_name, o.guest_email) as customer_name,
+             o.shipping_address_json
+      FROM orders o
+      LEFT JOIN users u ON o.user_id = u.id
+      ORDER BY o.created_at DESC
+    `;
+    const listResult = await DatabaseUtil.executeQuery(query);
+    if (!listResult.success) throw new Error(listResult.error);
+
+    // Process rows to match frontend expectation if needed
+    const orders = listResult.data.map(r => {
+      let destination = '';
+      try {
+        const addr = JSON.parse(r.shipping_address_json || '{}');
+        destination = `${addr.city || ''}, ${addr.country || ''}`;
+      } catch (e) { }
+
+      return {
+        id: r.order_number || r.id, // Display order number if available
+        _id: r.id, // Keep real UUID for actions
+        date: r.created_at,
+        customer: r.customer_name || 'Guest',
+        amount: r.total_amount,
+        destination: destination || 'N/A',
+        status: r.status ? r.status.charAt(0).toUpperCase() + r.status.slice(1) : 'Pending'
+      };
+    });
+
+    res.json(ResponseFormatter.success('Orders fetched successfully', [{ orders }]));
+  } catch (error) {
+    console.error(error);
+    res.status(500).json(ResponseFormatter.failure('Server error', { error: error.message }));
+  }
+});
+
+// Get Order Details
+router.get('/orders/:id', adminReadLimiter, async (req, res) => {
+  try {
+    const { id } = req.params;
+    // Fetch order, items, user
+    const orderResult = await DatabaseUtil.executeQuery(`
+       SELECT o.*, u.first_name, u.last_name, u.email as user_email 
+       FROM orders o
+       LEFT JOIN users u ON o.user_id = u.id
+       WHERE o.id = ? OR o.order_number = ?
+    `, [id, id]);
+
+    if (!orderResult.success) throw new Error(orderResult.error);
+    if (orderResult.data.length === 0) return res.status(404).json(ResponseFormatter.failure('Order not found'));
+
+    const order = orderResult.data[0];
+    const itemsResult = await DatabaseUtil.executeQuery('SELECT * FROM order_items WHERE order_id = ?', [order.id]);
+
+    const orderDetails = {
+      ...order,
+      items: itemsResult.success ? itemsResult.data : []
+    };
+
+    res.json(ResponseFormatter.success('Order details fetched', [{ order: orderDetails }]));
+  } catch (error) {
+    console.error(error);
+    res.status(500).json(ResponseFormatter.failure('Server error'));
+  }
+});
+
+// Update Order Status
+router.put('/orders/:id/status', adminWriteLimiter, csrfProtection, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body; // e.g. 'shipped', 'delivered', 'cancelled'
+
+    // ID might be order_number in frontend, but URL should use UUID.
+    // If frontend uses order_number, we need to lookup UUID first or assume UUID.
+    // Let's assume frontend passes UUID for update actions (we returned _id as well).
+
+    const updateResult = await DatabaseUtil.executeQuery('UPDATE orders SET status = ? WHERE id = ?', [status.toLowerCase(), id]);
+    if (!updateResult.success) throw new Error(updateResult.error);
+
+    res.json(ResponseFormatter.success('Order status updated'));
+  } catch (error) {
+    console.error(error);
+    res.status(500).json(ResponseFormatter.failure('Server error'));
   }
 });
 
@@ -360,7 +577,7 @@ router.post('/products/:id/image', adminWriteLimiter, csrfProtection, async (req
         return res.status(500).json(ResponseFormatter.failure('Failed to update product image', { error: updateResult.error }));
       }
 
-      const keyValueTable = { url: publicUrl, field: 'thumbnail_small_url' };
+      const keyValueTable = [{ url: publicUrl }, { field: 'thumbnail_small_url' }];
       return res.json(ResponseFormatter.success('Image uploaded and product updated', keyValueTable));
     });
   } catch (error) {
@@ -369,4 +586,180 @@ router.post('/products/:id/image', adminWriteLimiter, csrfProtection, async (req
   }
 });
 
+// Analytics & Dashboard
+router.get('/analytics/summary', adminReadLimiter, async (req, res) => {
+  try {
+    // Parallel queries for performance
+    const [revenueResult, ordersResult, customersResult] = await Promise.all([
+      DatabaseUtil.executeQuery("SELECT SUM(total_amount) as total FROM orders WHERE status != 'cancelled'"),
+      DatabaseUtil.executeQuery("SELECT COUNT(*) as count FROM orders WHERE status != 'cancelled'"),
+      DatabaseUtil.executeQuery("SELECT COUNT(*) as count FROM users WHERE role = 'customer' AND status = 'active'")
+    ]);
+
+    const totalRevenue = revenueResult.data[0].total || 0;
+    const totalOrders = ordersResult.data[0].count || 0;
+    const avgOrderValue = totalOrders > 0 ? (totalRevenue / totalOrders) : 0;
+    const activeCustomers = customersResult.data[0].count || 0;
+
+    res.json(ResponseFormatter.success('Summary metrics fetched', [{
+      metrics: {
+        totalRevenue,
+        activeOrders: totalOrders, // Naming: using total for now
+        avgOrderValue,
+        conversionRate: 2.4, // detailed analytics implementation required for real conversion
+        visitors: 1250, // mock
+        activeCustomers
+      }
+    }]));
+  } catch (error) {
+    console.error(error);
+    res.status(500).json(ResponseFormatter.failure('Server error', { error: error.message }));
+  }
+});
+
+router.get('/analytics/revenue', adminReadLimiter, async (req, res) => {
+  try {
+    // Last 7 days
+    const query = `
+            SELECT DATE(created_at) as date, SUM(total_amount) as value 
+            FROM orders 
+            WHERE created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY) AND status != 'cancelled'
+            GROUP BY DATE(created_at)
+            ORDER BY date ASC
+        `;
+    const result = await DatabaseUtil.executeQuery(query);
+    if (!result.success) throw new Error(result.error);
+
+    // Format for chart: "Mon", "Tue"...
+    const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const data = result.data.map(row => ({
+      label: days[new Date(row.date).getDay()],
+      value: row.value
+    }));
+
+    res.json(ResponseFormatter.success('Revenue details fetched', [{ revenue: data }]));
+  } catch (error) {
+    console.error(error);
+    res.status(500).json(ResponseFormatter.failure('Server error', { error: error.message }));
+  }
+});
+
+router.get('/analytics/sales-by-region', adminReadLimiter, async (req, res) => {
+  try {
+    // Simplified: using shipping_address_json text search or just mock for now as schema parsing varies
+    // Assuming US states for now
+    const result = await DatabaseUtil.executeQuery("SELECT shipping_address_json FROM orders WHERE status != 'cancelled'");
+
+    const regionMap = {};
+    result.data.forEach(order => {
+      try {
+        const addr = typeof order.shipping_address_json === 'string' ? JSON.parse(order.shipping_address_json) : order.shipping_address_json;
+        const state = addr?.state || 'Unknown';
+        if (state !== 'Unknown') {
+          regionMap[state] = (regionMap[state] || 0) + 1;
+        }
+      } catch (e) { }
+    });
+
+    const salesByRegion = Object.keys(regionMap).map(key => ({ name: key, value: regionMap[key] }));
+
+    res.json(ResponseFormatter.success('Regional sales fetched', [{ salesByRegion }]));
+  } catch (error) {
+    console.error(error);
+    res.status(500).json(ResponseFormatter.failure('Server error', { error: error.message }));
+  }
+});
+
+
+// Settings
+router.get('/settings/general', adminReadLimiter, async (req, res) => {
+  try {
+    const result = await DatabaseUtil.executeQuery("SELECT * FROM system_settings");
+    const settings = {};
+    result.data.forEach(s => settings[s.setting_key] = s.setting_value);
+
+    // Defaults if missing
+    const general = {
+      storeName: settings.store_name || 'NodeTexture',
+      supportEmail: settings.support_email || 'support@nodetexture.com',
+      currency: settings.currency || 'USD',
+      timezone: settings.timezone || 'UTC'
+    };
+    res.json(ResponseFormatter.success('General settings fetched', [{ general }]));
+  } catch (error) {
+    console.error(error);
+    res.status(500).json(ResponseFormatter.failure('Server error', { error: error.message }));
+  }
+});
+
+router.put('/settings/general', adminWriteLimiter, csrfProtection, async (req, res) => {
+  try {
+    const { storeName, supportEmail, currency, timezone } = req.body;
+    // Upsert logic
+    const queries = [
+      DatabaseUtil.executeQuery("INSERT INTO system_settings (id, setting_key, setting_value, setting_type) VALUES (UUID(), 'store_name', ?, 'string') ON DUPLICATE KEY UPDATE setting_value = ?", [storeName, storeName]),
+      DatabaseUtil.executeQuery("INSERT INTO system_settings (id, setting_key, setting_value, setting_type) VALUES (UUID(), 'support_email', ?, 'string') ON DUPLICATE KEY UPDATE setting_value = ?", [supportEmail, supportEmail]),
+      DatabaseUtil.executeQuery("INSERT INTO system_settings (id, setting_key, setting_value, setting_type) VALUES (UUID(), 'currency', ?, 'string') ON DUPLICATE KEY UPDATE setting_value = ?", [currency, currency]),
+      DatabaseUtil.executeQuery("INSERT INTO system_settings (id, setting_key, setting_value, setting_type) VALUES (UUID(), 'timezone', ?, 'string') ON DUPLICATE KEY UPDATE setting_value = ?", [timezone, timezone])
+    ];
+    await Promise.all(queries);
+    res.json(ResponseFormatter.success('Settings updated'));
+  } catch (error) {
+    console.error(error);
+    res.status(500).json(ResponseFormatter.failure('Server error', { error: error.message }));
+  }
+});
+
+
+// Email Templates
+router.get('/email-templates', adminReadLimiter, async (req, res) => {
+  try {
+    const result = await DatabaseUtil.executeQuery("SELECT * FROM email_templates ORDER BY created_at DESC");
+    // Map to frontend format if needed, but schema seems aligned (id, name, subject...)
+    res.json(ResponseFormatter.success('Email templates fetched', [{ templates: result.data }]));
+  } catch (error) {
+    console.error(error);
+    res.status(500).json(ResponseFormatter.failure('Server error', { error: error.message }));
+  }
+});
+
+router.post('/email-templates', adminWriteLimiter, csrfProtection, async (req, res) => {
+  try {
+    const { name, subject, type, content, status } = req.body;
+    const idResult = await DatabaseUtil.executeQuery('SELECT UUID() as id');
+    const id = idResult.data[0].id;
+
+    const insertResult = await DatabaseUtil.executeQuery(
+      'INSERT INTO email_templates (id, name, subject, type, content, status) VALUES (?, ?, ?, ?, ?, ?)',
+      [id, name, subject, type, content, status || 'Active']
+    );
+
+    if (!insertResult.success) throw new Error(insertResult.error);
+    res.status(201).json(ResponseFormatter.success('Template created', [{ id }]));
+  } catch (error) {
+    console.error(error);
+    res.status(500).json(ResponseFormatter.failure('Server error', { error: error.message }));
+  }
+});
+
+router.put('/email-templates/:id', adminWriteLimiter, csrfProtection, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, subject, type, content, status } = req.body;
+
+    const updateResult = await DatabaseUtil.executeQuery(
+      'UPDATE email_templates SET name=?, subject=?, type=?, content=?, status=?, updated_at=NOW() WHERE id=?',
+      [name, subject, type, content, status, id]
+    );
+
+    if (!updateResult.success) throw new Error(updateResult.error);
+    res.json(ResponseFormatter.success('Template updated'));
+  } catch (error) {
+    console.error(error);
+    res.status(500).json(ResponseFormatter.failure('Server error', { error: error.message }));
+  }
+});
+
+
+// Export router
 module.exports = router;

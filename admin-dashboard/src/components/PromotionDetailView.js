@@ -2,22 +2,68 @@ import React, { useState } from 'react';
 
 export default function PromotionDetailView({ promotion, onBack }) {
     const isEditing = !!promotion;
-    const [formData, setFormData] = useState(promotion || {
-        name: '',
-        description: '',
-        code: '',
-        type: 'Percentage',
-        value: '',
-        minRequirements: 'None',
-        appliesTo: 'Specific collections',
-        status: 'Active',
-        startDate: '',
-        endDate: ''
+
+    // Parse initial details
+    const initialDetails = promotion?.discount_details || {};
+    // Ensure properly parsed if string (though likely object)
+    const details = typeof initialDetails === 'string' ? JSON.parse(initialDetails) : initialDetails;
+
+    const [formData, setFormData] = useState({
+        name: promotion?.name || '',
+        description: details.description || '',
+        code: promotion?.code || '',
+        type: promotion?.type ? (promotion.type.charAt(0).toUpperCase() + promotion.type.slice(1).replace('_', ' ')) : 'Percentage',
+        value: promotion?.value || '',
+        minRequirements: details.min_requirements || details.minRequirements || 'None',
+        appliesTo: details.applies_to || details.appliesTo || 'Specific collections',
+        status: promotion?.status || 'Draft',
+        startDate: promotion?.startDate || '',
+        endDate: promotion?.endDate || ''
     });
+    const [isSaving, setIsSaving] = useState(false);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
+    };
+
+    const handleSave = async () => {
+        if (!promotion?.id) return; // Should be editing here
+
+        setIsSaving(true);
+        try {
+            const { apiFetch } = await import('../utils/api');
+            const payload = {
+                name: formData.name,
+                code: formData.code,
+                type: formData.type.toLowerCase().replace(' ', '_'),
+                value: formData.value,
+                starts_at: formData.startDate,
+                expires_at: formData.endDate,
+                is_active: formData.status === 'Active', // We might need to expose Status toggle in this view too
+                discount_details: {
+                    description: formData.description,
+                    min_requirements: formData.minRequirements,
+                    applies_to: formData.appliesTo
+                }
+            };
+
+            const response = await apiFetch(`/api/admin/coupons/${promotion.id}`, {
+                method: 'PUT',
+                body: JSON.stringify(payload)
+            });
+
+            if (response.status === 'SUCCESS') {
+                alert('Promotion updated successfully');
+            } else {
+                alert('Failed to update promotion');
+            }
+        } catch (e) {
+            console.error('Update promo failed', e);
+            alert('Error updating promotion');
+        } finally {
+            setIsSaving(false);
+        }
     };
 
     return (
@@ -171,6 +217,18 @@ export default function PromotionDetailView({ promotion, onBack }) {
                                     className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C5A572] bg-gray-50 text-sm"
                                 />
                             </div>
+
+                            {/* Toggle Status */}
+                            <div className="pt-4 border-t border-gray-100">
+                                <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
+                                <button
+                                    onClick={() => setFormData(prev => ({ ...prev, status: prev.status === 'Active' ? 'Draft' : 'Active' }))}
+                                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${formData.status === 'Active' ? 'bg-[#C5A572]' : 'bg-gray-200'}`}
+                                >
+                                    <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${formData.status === 'Active' ? 'translate-x-6' : 'translate-x-1'}`} />
+                                </button>
+                                <span className="ml-3 text-sm text-gray-700">{formData.status}</span>
+                            </div>
                         </div>
                     </div>
 
@@ -180,8 +238,12 @@ export default function PromotionDetailView({ promotion, onBack }) {
                             <button onClick={onBack} className="flex-1 px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 font-medium transition-colors">
                                 Cancel
                             </button>
-                            <button className="flex-1 px-4 py-2 bg-[#C5A572] text-white rounded-lg hover:bg-[#b09060] font-medium transition-colors shadow-sm">
-                                Save Changes
+                            <button
+                                onClick={handleSave}
+                                disabled={isSaving}
+                                className="flex-1 px-4 py-2 bg-[#C5A572] text-white rounded-lg hover:bg-[#b09060] font-medium transition-colors shadow-sm disabled:opacity-50"
+                            >
+                                {isSaving ? 'Saving...' : 'Save Changes'}
                             </button>
                         </div>
                     </div>

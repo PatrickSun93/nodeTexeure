@@ -8,6 +8,56 @@ export default function SettingsView() {
     const [stripeEnabled, setStripeEnabled] = useState(true);
     const [paypalEnabled, setPaypalEnabled] = useState(false);
 
+    // API state
+    const [isLoading, setIsLoading] = useState(true);
+    const [isSaving, setIsSaving] = useState(false);
+
+    React.useEffect(() => {
+        const fetchSettings = async () => {
+            try {
+                const { apiFetch } = await import('../utils/api');
+                const response = await apiFetch('/api/admin/settings/general');
+                if (response.status === 'SUCCESS' && response.keyValueTable?.[0]?.general) {
+                    const gen = response.keyValueTable[0].general;
+                    setStoreName(gen.storeName || '');
+                    setSupportEmail(gen.supportEmail || '');
+                    setCurrency(gen.currency || 'USD');
+                    setTimezone(gen.timezone || 'UTC');
+                }
+            } catch (e) {
+                console.error("Failed to load settings", e);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        fetchSettings();
+    }, []);
+
+    const handleSave = async () => {
+        setIsSaving(true);
+        try {
+            const { apiFetch } = await import('../utils/api');
+            const response = await apiFetch('/api/admin/settings/general', {
+                method: 'PUT',
+                body: JSON.stringify({
+                    storeName, supportEmail, currency, timezone
+                })
+            });
+            if (response.status === 'SUCCESS') {
+                alert('Settings saved successfully');
+            } else {
+                alert('Failed to save settings');
+            }
+        } catch (e) {
+            console.error(e);
+            alert('Error saving settings');
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    if (isLoading) return <div className="p-8">Loading settings...</div>;
+
     return (
         <div className="p-8 bg-gray-50 min-h-full">
             {/* Header */}
@@ -20,8 +70,12 @@ export default function SettingsView() {
                     <button className="px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 font-medium transition-colors shadow-sm">
                         Discard
                     </button>
-                    <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium transition-colors shadow-sm">
-                        Save Changes
+                    <button
+                        onClick={handleSave}
+                        disabled={isSaving}
+                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium transition-colors shadow-sm disabled:opacity-50"
+                    >
+                        {isSaving ? 'Saving...' : 'Save Changes'}
                     </button>
                 </div>
             </div>

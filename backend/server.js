@@ -66,6 +66,9 @@ app.use('/api/cart', require('./routes/cartRoutes'));
 // Order routes
 app.use('/api/orders', require('./routes/orderRoutes'));
 
+// Email Template routes (protected admin)
+app.use('/api/admin/email-templates', protect, admin, require('./routes/emailTemplateRoutes'));
+
 // Admin routes (protected)
 const adminRoutes = require('./routes/adminRoutes');
 app.use('/api/admin', protect, admin, adminRoutes);

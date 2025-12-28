@@ -1,15 +1,7 @@
 'use client';
 
 export default function RecentOrdersTable({ orders = [] }) {
-    const mockOrders = [
-        { id: '#3032', customer: 'Olivia Martin', date: '2023-10-28', amount: '$245.95', status: 'Shipped' },
-        { id: '#3031', customer: 'Liam Anderson', date: '2023-10-27', amount: '$189.50', status: 'Shipped' },
-        { id: '#3030', customer: 'Sophia Garcia', date: '2023-10-27', amount: '$320.00', status: 'Pending' },
-        { id: '#3029', customer: 'Noah Rodriguez', date: '2023-10-26', amount: '$99.90', status: 'Cancelled' },
-        { id: '#3028', customer: 'Ava Martinez', date: '2023-10-25', amount: '$540.75', status: 'Shipped' }
-    ];
-
-    const displayOrders = orders.length > 0 ? orders : mockOrders;
+    const displayOrders = orders;
 
     const getStatusBadge = (status) => {
         const colors = {
@@ -38,19 +30,27 @@ export default function RecentOrdersTable({ orders = [] }) {
                         </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                        {displayOrders.map((order, index) => (
-                            <tr key={index} className="hover:bg-gray-50">
-                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{order.id}</td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{order.customer}</td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{order.date}</td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{order.amount}</td>
-                                <td className="px-6 py-4 whitespace-nowrap">
-                                    <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusBadge(order.status)}`}>
-                                        {order.status}
-                                    </span>
+                        {displayOrders.length === 0 ? (
+                            <tr>
+                                <td colSpan="5" className="px-6 py-10 text-center text-gray-500">
+                                    No recent orders found.
                                 </td>
                             </tr>
-                        ))}
+                        ) : (
+                            displayOrders.map((order, index) => (
+                                <tr key={index} className="hover:bg-gray-50">
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{order.id}</td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{order.customer}</td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{new Date(order.date).toLocaleDateString()}</td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(Number(order.amount) || 0)}</td>
+                                    <td className="px-6 py-4 whitespace-nowrap">
+                                        <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusBadge(order.status)}`}>
+                                            {order.status}
+                                        </span>
+                                    </td>
+                                </tr>
+                            ))
+                        )}
                     </tbody>
                 </table>
             </div>

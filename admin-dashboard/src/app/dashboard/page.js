@@ -22,6 +22,46 @@ export default function Dashboard() {
   const [timePeriod, setTimePeriod] = useState('last-30-days');
   const router = useRouter();
 
+  // Analytics state
+  const [metrics, setMetrics] = useState({
+    totalRevenue: 0,
+    activeOrders: 0,
+    avgOrderValue: 0,
+    conversionRate: 0
+  });
+  const [recentOrders, setRecentOrders] = useState([]);
+
+  useEffect(() => {
+    if (activeTab === 'dashboard') {
+      const fetchAnalytics = async () => {
+        try {
+          const { apiFetch } = await import('../../utils/api');
+          const response = await apiFetch('/api/admin/analytics/summary');
+          if (response.status === 'SUCCESS' && response.keyValueTable?.[0]?.metrics) {
+            setMetrics(response.keyValueTable[0].metrics);
+          }
+        } catch (e) {
+          console.error("Failed to load analytics", e);
+        }
+
+        // Also fetch recent orders
+        try {
+          const { apiFetch } = await import('../../utils/api');
+          const response = await apiFetch('/api/admin/orders');
+          if (response.status === 'SUCCESS') {
+            const allOrders = response.keyValueTable.find(item => item.orders)?.orders || [];
+            if (allOrders.length > 0) {
+              setRecentOrders(allOrders.slice(0, 5));
+            }
+          }
+        } catch (e) {
+          console.error("Failed to load recent orders", e);
+        }
+      };
+      fetchAnalytics();
+    }
+  }, [activeTab]);
+
   useEffect(() => {
     // Guard: verify auth and ensure CSRF token is present
     (async () => {
@@ -85,6 +125,12 @@ export default function Dashboard() {
             👥 Customers
           </button>
           <button
+            onClick={() => setActiveTab('staff')}
+            className={`block w-full text-left px-6 py-3 hover:bg-blue-50 transition ${activeTab === 'staff' ? 'bg-blue-50 text-blue-600 border-r-2 border-blue-600' : ''}`}
+          >
+            🛡️ Staff
+          </button>
+          <button
             onClick={() => setActiveTab('settings')}
             className={`block w-full text-left px-6 py-3 hover:bg-blue-50 transition ${activeTab === 'settings' ? 'bg-blue-50 text-blue-600 border-r-2 border-blue-600' : ''}`}
           >
@@ -113,11 +159,12 @@ export default function Dashboard() {
 
       {/* Main content */}
       <div className="flex-1 overflow-auto">
-        {activeTab === 'dashboard' && <DashboardView timePeriod={timePeriod} setTimePeriod={setTimePeriod} />}
+        {activeTab === 'dashboard' && <DashboardView timePeriod={timePeriod} setTimePeriod={setTimePeriod} metrics={metrics} recentOrders={recentOrders} />}
         {activeTab === 'orders' && <OrdersView />}
         {activeTab === 'products' && <ProductsView />}
         {activeTab === 'email-templates' && <EmailTemplatesView />}
         {activeTab === 'customers' && <CustomersView />}
+        {activeTab === 'staff' && <StaffView />}
         {activeTab === 'settings' && <SettingsView />}
         {activeTab === 'promotions' && <PromotionsView />}
 
@@ -127,7 +174,7 @@ export default function Dashboard() {
   );
 }
 
-function DashboardView({ timePeriod, setTimePeriod }) {
+function DashboardView({ timePeriod, setTimePeriod, metrics, recentOrders }) {
   return (
     <div className="p-8">
       {/* Header */}
@@ -160,11 +207,12 @@ function DashboardView({ timePeriod, setTimePeriod }) {
 
       {/* Metrics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <MetricsCard title="Total Revenue" value="$125,670" change="↑ 34.5%" trend="up" />
-        <MetricsCard title="Total Orders" value="1,450" change="↑ 12.3%" trend="up" />
-        <MetricsCard title="Average Order Value" value="$86.67" change="↑ 4.1%" trend="up" />
-        <MetricsCard title="Conversion Rate" value="3.2%" change="↓ 0.3%" trend="down" />
+        <MetricsCard title="Total Revenue" value={new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(metrics.totalRevenue)} change="--%" trend="up" />
+        <MetricsCard title="Total Orders" value={metrics.activeOrders} change="--%" trend="up" />
+        <MetricsCard title="Average Order Value" value={new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(metrics.avgOrderValue)} change="--%" trend="up" />
+        <MetricsCard title="Conversion Rate" value={`${metrics.conversionRate}%`} change="--%" trend="down" />
       </div>
+
 
       {/* Charts Grid - Temporarily disabled */}
       {/* <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
@@ -178,7 +226,7 @@ function DashboardView({ timePeriod, setTimePeriod }) {
       </div> */}
 
       {/* Recent Orders */}
-      <RecentOrdersTable />
+      <RecentOrdersTable orders={recentOrders} />
     </div>
   );
 }
@@ -187,25 +235,42 @@ function DashboardView({ timePeriod, setTimePeriod }) {
 import OrderDetailView from '../../components/OrderDetailView';
 
 function OrdersView() {
-  const [selectedStatus, setSelectedStatus] = useState('Pending');
+  const [orders, setOrders] = useState([]);
+  const [selectedStatus, setSelectedStatus] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedOrder, setSelectedOrder] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  // Mock data based on image
-  const orders = [
-    { id: '#N-12345', date: '2024-05-21', customer: 'Liam Gallagher', amount: '$450.00', destination: 'Manchester, UK', status: 'Pending' },
-    { id: '#N-12346', date: '2024-05-21', customer: 'Noel Gallagher', amount: '$720.50', destination: 'London, UK', status: 'Processing' },
-    { id: '#N-12347', date: '2024-05-20', customer: 'Damon Albarn', amount: '$315.00', destination: 'Essex, UK', status: 'Shipped' },
-    { id: '#N-12348', date: '2024-05-19', customer: 'Graham Coxon', amount: '$990.00', destination: 'Colchester, UK', status: 'Delivered' },
-    { id: '#N-12349', date: '2024-05-18', customer: 'Alex James', amount: '$155.25', destination: 'Oxfordshire, UK', status: 'Cancelled' },
-  ];
+  useEffect(() => {
+    const fetchOrders = async () => {
+      try {
+        const { apiFetch } = await import('../../utils/api');
+        const response = await apiFetch('/api/admin/orders');
+
+        if (response.status === 'SUCCESS') {
+          const data = response.keyValueTable.find(item => item.orders)?.orders || [];
+          setOrders(data);
+        } else {
+          setError('Failed to load orders');
+        }
+      } catch (err) {
+        console.error('Error loading orders:', err);
+        setError('Error loading orders.');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchOrders();
+  }, [selectedOrder]); // Re-fetch when returning from detail view (in case status changed)
 
   const filteredOrders = orders.filter(order =>
     (selectedStatus === 'All' || order.status === selectedStatus) &&
-    (order.id.toLowerCase().includes(searchQuery.toLowerCase()) || order.customer.toLowerCase().includes(searchQuery.toLowerCase()))
+    ((order.id && String(order.id).toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (order.customer && order.customer.toLowerCase().includes(searchQuery.toLowerCase())))
   );
 
-  const statuses = ['Pending', 'Processing', 'Shipped', 'Delivered', 'Cancelled'];
+  const statuses = ['All', 'Pending', 'Processing', 'Shipped', 'Delivered', 'Cancelled'];
 
   if (selectedOrder) {
     return <OrderDetailView order={selectedOrder} onBack={() => setSelectedOrder(null)} />;
@@ -283,43 +348,43 @@ function OrdersView() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
-              {filteredOrders.map((order) => (
-                <tr key={order.id} className="hover:bg-gray-50 transition-colors">
-                  <td className="px-6 py-4">
-                    <input type="checkbox" className="rounded border-gray-300 text-[#C5A572] focus:ring-[#C5A572]" />
-                  </td>
-                  <td className="px-6 py-4 text-sm font-medium text-gray-600">{order.id}</td>
-                  <td className="px-6 py-4 text-sm text-gray-500">{order.date}</td>
-                  <td className="px-6 py-4 text-sm text-gray-900 font-medium">{order.customer}</td>
-                  <td className="px-6 py-4 text-sm text-gray-600">{order.amount}</td>
-                  <td className="px-6 py-4 text-sm text-gray-500">{order.destination}</td>
-                  <td className="px-6 py-4">
-                    <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-md ${order.status === 'Pending' ? 'bg-yellow-100 text-yellow-800' :
-                      order.status === 'Processing' ? 'bg-blue-100 text-blue-800' :
-                        order.status === 'Shipped' ? 'bg-purple-100 text-purple-800' :
-                          order.status === 'Delivered' ? 'bg-green-100 text-green-800' :
-                            'bg-red-100 text-red-800'
-                      }`}>
-                      {order.status}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-sm">
-                    <button
-                      onClick={() => setSelectedOrder(order)}
-                      className="text-[#C5A572] hover:text-[#a08050] font-medium"
-                    >
-                      Edit Details
-                    </button>
-                  </td>
-                </tr>
-              ))}
-              {filteredOrders.length === 0 && (
-                <tr>
-                  <td colSpan="8" className="px-6 py-10 text-center text-gray-500">
-                    No orders found matching your criteria.
-                  </td>
-                </tr>
-              )}
+              {isLoading ? (
+                <tr><td colSpan="8" className="px-6 py-10 text-center text-gray-500">Loading orders...</td></tr>
+              ) : error ? (
+                <tr><td colSpan="8" className="px-6 py-10 text-center text-red-500">{error}</td></tr>
+              ) : filteredOrders.length === 0 ? (
+                <tr><td colSpan="8" className="px-6 py-10 text-center text-gray-500">No orders found.</td></tr>
+              ) : (
+                filteredOrders.map((order) => (
+                  <tr key={order.id} className="hover:bg-gray-50 transition-colors">
+                    <td className="px-6 py-4">
+                      <input type="checkbox" className="rounded border-gray-300 text-[#C5A572] focus:ring-[#C5A572]" />
+                    </td>
+                    <td className="px-6 py-4 text-sm font-medium text-gray-600">{order.id}</td>
+                    <td className="px-6 py-4 text-sm text-gray-500">{new Date(order.date).toLocaleDateString()}</td>
+                    <td className="px-6 py-4 text-sm text-gray-900 font-medium">{order.customer}</td>
+                    <td className="px-6 py-4 text-sm text-gray-600">${Number(order.amount).toFixed(2)}</td>
+                    <td className="px-6 py-4 text-sm text-gray-500">{order.destination}</td>
+                    <td className="px-6 py-4">
+                      <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-md ${order.status === 'Pending' ? 'bg-yellow-100 text-yellow-800' :
+                        order.status === 'Processing' ? 'bg-blue-100 text-blue-800' :
+                          order.status === 'Shipped' ? 'bg-purple-100 text-purple-800' :
+                            order.status === 'Delivered' ? 'bg-green-100 text-green-800' :
+                              'bg-red-100 text-red-800'
+                        }`}>
+                        {order.status}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-sm">
+                      <button
+                        onClick={() => setSelectedOrder(order)}
+                        className="text-[#C5A572] hover:text-[#a08050] font-medium"
+                      >
+                        Edit Details
+                      </button>
+                    </td>
+                  </tr>
+                )))}
             </tbody>
           </table>
         </div>
@@ -350,12 +415,59 @@ function ProductsView() {
   const [statusFilter, setStatusFilter] = useState('All');
 
   // Mock data based on image
-  const products = [
-    { id: 1, name: 'Pure Silk Pillowcase', sku: 'SKU-PSPC-001', category: 'Silk Bedding', price: '89.00', stock: 120, status: 'Active', image: 'https://placehold.co/40x40/f3ead8/8c6b3d?text=SP' },
-    { id: 2, name: 'Luxe Cashmere Throw', sku: 'SKU-LCT-002', category: 'Cashmere Throws', price: '250.00', stock: 45, status: 'Active', image: 'https://placehold.co/40x40/e5e7eb/374151?text=LC' },
-    { id: 3, name: 'Charmeuse Silk Duvet Cover', sku: 'SKU-CSDC-003', category: 'Silk Bedding', price: '499.00', stock: 15, status: 'Draft', image: 'https://placehold.co/40x40/d1d5db/1f2937?text=CS' },
-    { id: 4, name: 'Cozy Cashmere Bed Socks', sku: 'SKU-CCBS-004', category: 'Cashmere Accessories', price: '65.00', stock: 0, status: 'Out of Stock', image: 'https://placehold.co/40x40/1f2937/d1d5db?text=CC' },
-  ];
+  const [products, setProducts] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        const { apiFetch } = await import('../../utils/api');
+        const response = await apiFetch('/api/admin/products');
+
+        if (response.status === 'SUCCESS') {
+          // Parse array of objects [{products: [...] }]
+          // Find the object that has 'products' key
+          const data = response.keyValueTable.find(item => item.products)?.products || [];
+          setProducts(data);
+        } else {
+          setError('Failed to load products');
+        }
+      } catch (err) {
+        console.error('Error loading products:', err);
+        setError('Error loading products.');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchProducts();
+  }, [viewMode]); // Re-fetch when switching from add/edit back to list
+
+  // Map image for display if API returns thumbnail_small_url
+  const displayProducts = products.map(p => ({
+    ...p,
+    image: p.thumbnail_small_url || p.image || 'https://placehold.co/40x40/e5e7eb/374151?text=IMG'
+  }));
+
+  // Filtering Logic
+  const filteredProducts = displayProducts.filter(product => {
+    const matchesCategory = categoryFilter === 'All' || product.category === categoryFilter; // Note: API might not return category name but ID?
+    // For now assuming existing schema has category name or we need to join. 
+    // The GET /products is SELECT * FROM products. Category is usually category_id or name.
+    // In adminRoutes we did SELECT *. Schema has category_id.
+    // We might need to map category_id to name or just display ID for now.
+    // For migration, we display what we have.
+
+    const matchesStatus = statusFilter === 'All' ||
+      (statusFilter === 'Active' && product.status === 'Active') ||
+      (statusFilter === 'Draft' && product.status === 'Draft') ||
+      (statusFilter === 'Out of Stock' && product.stock === 0);
+
+    const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (product.sku && product.sku.toLowerCase().includes(searchQuery.toLowerCase()));
+
+    return matchesCategory && matchesStatus && matchesSearch;
+  });
 
   const handleAddProduct = () => {
     setSelectedProduct(null);
@@ -451,47 +563,54 @@ function ProductsView() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
-              {products.map((product) => (
-                <tr key={product.id} className="hover:bg-gray-50 transition-colors">
-                  <td className="px-6 py-4">
-                    <input type="checkbox" className="rounded border-gray-300 text-[#C5A572] focus:ring-[#C5A572]" />
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-3">
-                      <img src={product.image} alt={product.name} className="w-10 h-10 rounded object-cover bg-gray-100" />
-                      <span className="text-sm font-medium text-gray-900">{product.name}</span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-500 font-mono">{product.sku}</td>
-                  <td className="px-6 py-4 text-sm text-gray-600">{product.category}</td>
-                  <td className="px-6 py-4 text-sm text-gray-900 font-medium">${product.price}</td>
-                  <td className="px-6 py-4 text-sm text-gray-600">{product.stock}</td>
-                  <td className="px-6 py-4">
-                    <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${product.status === 'Active' ? 'bg-green-100 text-green-800' :
-                      product.status === 'Draft' ? 'bg-yellow-100 text-yellow-800' :
-                        'bg-red-100 text-red-800'
-                      }`}>
-                      {product.status === 'Active' ? '● Active' : product.status === 'Draft' ? '● Draft' : 'Out of Stock'}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-sm">
-                    <div className="flex gap-3">
-                      <button onClick={() => handleEditProduct(product)} className="text-gray-400 hover:text-blue-600">
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
-                      </button>
-                      <button className="text-gray-400 hover:text-red-600">
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+              {isLoading ? (
+                <tr><td colSpan="8" className="px-6 py-10 text-center text-gray-500">Loading products...</td></tr>
+              ) : error ? (
+                <tr><td colSpan="8" className="px-6 py-10 text-center text-red-500">{error}</td></tr>
+              ) : filteredProducts.length === 0 ? (
+                <tr><td colSpan="8" className="px-6 py-10 text-center text-gray-500">No products found.</td></tr>
+              ) : (
+                filteredProducts.map((product) => (
+                  <tr key={product.id} className="hover:bg-gray-50 transition-colors">
+                    <td className="px-6 py-4">
+                      <input type="checkbox" className="rounded border-gray-300 text-[#C5A572] focus:ring-[#C5A572]" />
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-3">
+                        <img src={product.image} alt={product.name} className="w-10 h-10 rounded object-cover bg-gray-100" />
+                        <span className="text-sm font-medium text-gray-900">{product.name}</span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-500 font-mono">{product.sku}</td>
+                    <td className="px-6 py-4 text-sm text-gray-600">{product.category}</td>
+                    <td className="px-6 py-4 text-sm text-gray-900 font-medium">${product.price}</td>
+                    <td className="px-6 py-4 text-sm text-gray-600">{product.stock}</td>
+                    <td className="px-6 py-4">
+                      <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${product.status === 'Active' ? 'bg-green-100 text-green-800' :
+                        product.status === 'Draft' ? 'bg-yellow-100 text-yellow-800' :
+                          'bg-red-100 text-red-800'
+                        }`}>
+                        {product.status === 'Active' ? '● Active' : product.status === 'Draft' ? '● Draft' : 'Out of Stock'}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-sm">
+                      <div className="flex gap-3">
+                        <button onClick={() => handleEditProduct(product)} className="text-gray-400 hover:text-blue-600">
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+                        </button>
+                        <button className="text-gray-400 hover:text-red-600">
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                )))}
             </tbody>
           </table>
         </div>
         {/* Pagination */}
         <div className="px-6 py-4 border-t border-gray-100 flex items-center justify-between bg-white">
-          <span className="text-sm text-gray-500">Showing 1-4 of 100</span>
+          <span className="text-sm text-gray-500">Showing {filteredProducts.length} results</span>
           <div className="flex gap-1">
             <button className="px-3 py-1 rounded border border-gray-200 text-gray-500 hover:bg-gray-50 text-sm">Previous</button>
             <button className="px-3 py-1 rounded border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 text-sm">1</button>
@@ -507,21 +626,43 @@ function ProductsView() {
 
 
 function CustomersView() {
+  const [customers, setCustomers] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCustomer, setSelectedCustomer] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  // Mock data based on image
-  const customers = [
-    { id: 'CUS-00124', name: 'Eleanor Vance', email: 'eleanor.v@email.com', orders: 12, spent: '€4,500', lastOrder: '2023-10-15' },
-    { id: 'CUS-00125', name: 'James Fitzgerald', email: 'james.f@email.com', orders: 8, spent: '€2,150', lastOrder: '2023-10-12' },
-    { id: 'CUS-00126', name: 'Clara Dubois', email: 'clara.d@email.com', orders: 21, spent: '€8,900', lastOrder: '2023-10-20' },
-    { id: 'CUS-00127', name: 'Liam O\'Connell', email: 'liam.o@email.com', orders: 5, spent: '€950', lastOrder: '2023-09-28' },
-    { id: 'CUS-00128', name: 'Sofia Rossi', email: 'sofia.r@email.com', orders: 15, spent: '€5,200', lastOrder: '2023-10-18' },
-  ];
+  useEffect(() => {
+    const fetchCustomers = async () => {
+      try {
+        const { apiFetch } = await import('../../utils/api');
+        const response = await apiFetch('/api/admin/users');
+
+        if (response.status === 'SUCCESS') {
+          const data = response.keyValueTable.find(item => item.users)?.users || [];
+          setCustomers(data);
+        } else {
+          setError('Failed to load customers');
+        }
+      } catch (err) {
+        console.error('Error loading customers:', err);
+        setError('Error loading customers.');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchCustomers();
+  }, []); // Re-fetch?
 
   if (selectedCustomer) {
     return <CustomerDetailView customer={selectedCustomer} onBack={() => setSelectedCustomer(null)} />;
   }
+
+  const filteredCustomers = customers.filter(c =>
+    c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    c.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (c.id && String(c.id).includes(searchQuery))
+  );
 
   return (
     <div className="p-8 bg-gray-50 min-h-full">
@@ -587,21 +728,28 @@ function CustomersView() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
-              {customers.map((customer) => (
-                <tr key={customer.id} className="hover:bg-gray-50 transition-colors">
-                  <td className="px-6 py-4 text-sm text-gray-500">{customer.id}</td>
-                  <td className="px-6 py-4 text-sm font-medium text-gray-900">{customer.name}</td>
-                  <td className="px-6 py-4 text-sm text-gray-500">{customer.email}</td>
-                  <td className="px-6 py-4 text-sm text-gray-500">{customer.orders}</td>
-                  <td className="px-6 py-4 text-sm text-gray-900 font-medium">{customer.spent}</td>
-                  <td className="px-6 py-4 text-sm text-gray-500">{customer.lastOrder}</td>
-                  <td className="px-6 py-4 text-sm">
-                    <button onClick={() => setSelectedCustomer(customer)} className="text-gray-400 hover:text-gray-600">
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
-                    </button>
-                  </td>
-                </tr>
-              ))}
+              {isLoading ? (
+                <tr><td colSpan="7" className="px-6 py-10 text-center text-gray-500">Loading customers...</td></tr>
+              ) : error ? (
+                <tr><td colSpan="7" className="px-6 py-10 text-center text-red-500">{error}</td></tr>
+              ) : filteredCustomers.length === 0 ? (
+                <tr><td colSpan="7" className="px-6 py-10 text-center text-gray-500">No customers found.</td></tr>
+              ) : (
+                filteredCustomers.map((customer) => (
+                  <tr key={customer.id} className="hover:bg-gray-50 transition-colors">
+                    <td className="px-6 py-4 text-sm text-gray-500">{customer.id}</td>
+                    <td className="px-6 py-4 text-sm font-medium text-gray-900">{customer.name}</td>
+                    <td className="px-6 py-4 text-sm text-gray-500">{customer.email}</td>
+                    <td className="px-6 py-4 text-sm text-gray-500">{customer.orders}</td>
+                    <td className="px-6 py-4 text-sm text-gray-900 font-medium">${Number(customer.spent || 0).toFixed(2)}</td>
+                    <td className="px-6 py-4 text-sm text-gray-500">{customer.lastOrder ? new Date(customer.lastOrder).toLocaleDateString() : 'Never'}</td>
+                    <td className="px-6 py-4 text-sm">
+                      <button onClick={() => setSelectedCustomer(customer)} className="text-gray-400 hover:text-gray-600">
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+                      </button>
+                    </td>
+                  </tr>
+                )))}
             </tbody>
           </table>
         </div>
@@ -631,15 +779,30 @@ function PromotionsView() {
   const [viewMode, setViewMode] = useState('list'); // 'list', 'edit'
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedPromotion, setSelectedPromotion] = useState(null);
+  const [promotions, setPromotions] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  // Mock data based on image
-  const promotions = [
-    { id: 1, name: 'Autumn Sale', code: 'AUTUMN20', type: 'Percentage', value: '20', startDate: '2023-09-01T00:00', endDate: '2023-09-30T23:59', status: 'Active', description: 'Get 20% off all silk pillowcases and cashmere throws this autumn.' },
-    { id: 2, name: 'Welcome Discount', code: 'WELCOME10', type: 'Fixed Amount', value: '10', startDate: '2023-01-01T00:00', endDate: '2023-12-31T23:59', status: 'Active', description: 'Welcome discount for new customers.' },
-    { id: 3, name: 'Summer Clearance', code: 'SUMMER50', type: 'Percentage', value: '50', startDate: '2023-08-15T00:00', endDate: '2023-08-31T23:59', status: 'Expired', description: 'End of summer clearance sale.' },
-    { id: 4, name: 'Free Shipping Weekend', code: 'FREESHIP', type: 'Free Shipping', value: '', startDate: '2023-11-04T00:00', endDate: '2023-11-05T23:59', status: 'Active', description: 'Free shipping on all orders this weekend.' },
-    { id: 5, name: 'Winter Collection Preview', code: 'WINTERVIP', type: 'Percentage', value: '15', startDate: '2023-11-15T00:00', endDate: '2023-11-30T23:59', status: 'Draft', description: 'Early access to winter collection.' },
-  ];
+  useEffect(() => {
+    const fetchPromotions = async () => {
+      try {
+        const { apiFetch } = await import('../../utils/api');
+        const response = await apiFetch('/api/admin/coupons');
+        if (response.status === 'SUCCESS') {
+          const data = response.keyValueTable.find(item => item.coupons)?.coupons || [];
+          setPromotions(data);
+        } else {
+          setError('Failed to load promotions');
+        }
+      } catch (err) {
+        console.error('Error loading promotions:', err);
+        setError('Error loading promotions.');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchPromotions();
+  }, [viewMode, isModalOpen]); // Re-fetch on view change or modal close
 
   const handleEdit = (promo) => {
     setSelectedPromotion(promo);
@@ -722,34 +885,42 @@ function PromotionsView() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
-              {promotions.map((promo) => (
-                <tr key={promo.id} className="hover:bg-gray-50 transition-colors group">
-                  <td className="px-6 py-6 text-sm font-medium text-gray-900">{promo.name}</td>
-                  <td className="px-6 py-6 text-sm text-gray-500 font-mono">{promo.code}</td>
-                  <td className="px-6 py-6 text-sm text-gray-600">{promo.type}</td>
-                  <td className="px-6 py-6 text-sm font-bold text-gray-900">{promo.type === 'Percentage' ? `${promo.value}%` : promo.type === 'Fixed Amount' ? `$${promo.value}` : '-'}</td>
-                  <td className="px-6 py-6 text-sm text-gray-500">{promo.startDate.split('T')[0]}</td>
-                  <td className="px-6 py-6 text-sm text-gray-500">{promo.endDate.split('T')[0]}</td>
-                  <td className="px-6 py-6">
-                    <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${promo.status === 'Active' ? 'bg-green-100 text-green-700' :
-                      promo.status === 'Draft' ? 'bg-yellow-100 text-yellow-700' :
-                        'bg-gray-100 text-gray-600'
-                      }`}>
-                      {promo.status}
-                    </span>
-                  </td>
-                  <td className="px-6 py-6 text-sm">
-                    <div className="flex gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button onClick={() => handleEdit(promo)} className="text-gray-400 hover:text-gray-600">
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
-                      </button>
-                      <button className="text-gray-400 hover:text-red-600">
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+              {isLoading ? (
+                <tr><td colSpan="8" className="px-6 py-10 text-center text-gray-500">Loading promotions...</td></tr>
+              ) : error ? (
+                <tr><td colSpan="8" className="px-6 py-10 text-center text-red-500">{error}</td></tr>
+              ) : promotions.length === 0 ? (
+                <tr><td colSpan="8" className="px-6 py-10 text-center text-gray-500">No promotions found.</td></tr>
+              ) : (
+                promotions.map((promo) => (
+                  <tr key={promo.id} className="hover:bg-gray-50 transition-colors group">
+                    <td className="px-6 py-6 text-sm font-medium text-gray-900">{promo.name}</td>
+                    <td className="px-6 py-6 text-sm text-gray-500 font-mono">{promo.code}</td>
+                    <td className="px-6 py-6 text-sm text-gray-600 capitalize">{promo.type.replace('_', ' ')}</td>
+                    <td className="px-6 py-6 text-sm font-bold text-gray-900">{promo.type === 'percentage' ? `${Number(promo.value)}%` : promo.type === 'fixed_amount' ? `$${Number(promo.value)}` : '-'}</td>
+                    <td className="px-6 py-6 text-sm text-gray-500">{promo.startDate ? new Date(promo.startDate).toLocaleDateString() : '-'}</td>
+                    <td className="px-6 py-6 text-sm text-gray-500">{promo.endDate ? new Date(promo.endDate).toLocaleDateString() : 'No Expiry'}</td>
+                    <td className="px-6 py-6">
+                      <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${promo.status === 'Active' ? 'bg-green-100 text-green-700' :
+                        promo.status === 'Draft' ? 'bg-yellow-100 text-yellow-700' :
+                          promo.status === 'Scheduled' ? 'bg-blue-100 text-blue-700' :
+                            'bg-gray-100 text-gray-600'
+                        }`}>
+                        {promo.status}
+                      </span>
+                    </td>
+                    <td className="px-6 py-6 text-sm">
+                      <div className="flex gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button onClick={() => handleEdit(promo)} className="text-gray-400 hover:text-gray-600">
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+                        </button>
+                        <button className="text-gray-400 hover:text-red-600">
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                )))}
             </tbody>
           </table>
         </div>
@@ -770,12 +941,30 @@ function PromotionsView() {
 
 function StaffView() {
   const [selectedStaff, setSelectedStaff] = useState(null);
+  const [staff, setStaff] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  // Mock data
-  const staff = [
-    { id: 1, name: 'Admin User', email: 'admin@noirae.com', role: 'Administrator', status: 'Active', lastActive: 'Now' },
-    { id: 2, name: 'Sarah Jones', email: 'sarah@noirae.com', role: 'Editor', status: 'Active', lastActive: '2 hours ago' },
-  ];
+  useEffect(() => {
+    const fetchStaff = async () => {
+      try {
+        const { apiFetch } = await import('../../utils/api');
+        const response = await apiFetch('/api/admin/staff');
+        if (response.status === 'SUCCESS') {
+          const data = response.keyValueTable.find(item => item.staff)?.staff || [];
+          setStaff(data);
+        } else {
+          setError('Failed to load staff');
+        }
+      } catch (err) {
+        console.error('Error loading staff:', err);
+        setError('Error loading staff.');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchStaff();
+  }, []); // Re-fetch?
 
   if (selectedStaff) {
     return <StaffDetailView staff={selectedStaff} onBack={() => setSelectedStaff(null)} />;
@@ -807,24 +996,31 @@ function StaffView() {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-50">
-            {staff.map((member) => (
-              <tr key={member.id} className="hover:bg-gray-50 transition-colors">
-                <td className="px-6 py-4 text-sm font-medium text-gray-900">{member.name}</td>
-                <td className="px-6 py-4 text-sm text-gray-500">{member.email}</td>
-                <td className="px-6 py-4 text-sm text-gray-600">{member.role}</td>
-                <td className="px-6 py-4">
-                  <span className="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                    {member.status}
-                  </span>
-                </td>
-                <td className="px-6 py-4 text-sm text-gray-500">{member.lastActive}</td>
-                <td className="px-6 py-4 text-sm">
-                  <button onClick={() => setSelectedStaff(member)} className="text-gray-400 hover:text-blue-600">
-                    Edit
-                  </button>
-                </td>
-              </tr>
-            ))}
+            {isLoading ? (
+              <tr><td colSpan="6" className="px-6 py-10 text-center text-gray-500">Loading staff...</td></tr>
+            ) : error ? (
+              <tr><td colSpan="6" className="px-6 py-10 text-center text-red-500">{error}</td></tr>
+            ) : staff.length === 0 ? (
+              <tr><td colSpan="6" className="px-6 py-10 text-center text-gray-500">No staff found (except you?).</td></tr>
+            ) : (
+              staff.map((member) => (
+                <tr key={member.id} className="hover:bg-gray-50 transition-colors">
+                  <td className="px-6 py-4 text-sm font-medium text-gray-900">{member.name}</td>
+                  <td className="px-6 py-4 text-sm text-gray-500">{member.email}</td>
+                  <td className="px-6 py-4 text-sm text-gray-600">{member.role}</td>
+                  <td className="px-6 py-4">
+                    <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${member.status?.toLowerCase() === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
+                      {member.status}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 text-sm text-gray-500">{member.lastActive !== 'Never' ? new Date(member.lastActive).toLocaleString() : 'Never'}</td>
+                  <td className="px-6 py-4 text-sm">
+                    <button onClick={() => setSelectedStaff(member)} className="text-gray-400 hover:text-blue-600">
+                      Edit
+                    </button>
+                  </td>
+                </tr>
+              )))}
           </tbody>
         </table>
       </div>

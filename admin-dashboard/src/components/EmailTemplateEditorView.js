@@ -1,11 +1,109 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 export default function EmailTemplateEditorView({ onBack, initialData = null }) {
-    const [internalName, setInternalName] = useState(initialData?.name || 'New Template');
+    // If an ID exists in initialData, we are in Edit mode. Otherwise, Create mode.
+    // However, initialData passed from list view might only have list fields.
+    // We should fetch full details if ID is present.
+
+    // State
+    const [isLoading, setIsLoading] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
+
+    // Form Fields
+    const [internalName, setInternalName] = useState(initialData?.name || '');
     const [category, setCategory] = useState(initialData?.category || 'Onboarding');
     const [subject, setSubject] = useState(initialData?.subject || '');
     const [preheader, setPreheader] = useState(initialData?.preheader || '');
     const [status, setStatus] = useState(initialData?.status === 'Active');
+    const [type, setType] = useState(initialData?.type || 'Marketing'); // Added type state
+
+    // Content - for now simple string/html
+    const [content, setContent] = useState(initialData?.content || '');
+
+    // Fetch full data on mount if ID exists
+    useEffect(() => {
+        if (initialData?.id) {
+            const fetchDetails = async () => {
+                setIsLoading(true);
+                try {
+                    const { apiFetch } = await import('../utils/api');
+                    const response = await apiFetch(`/api/admin/email-templates/${initialData.id}`);
+                    if (response.status === 'SUCCESS' && response.keyValueTable.length > 0) {
+                        const data = response.keyValueTable[0];
+                        setInternalName(data.name);
+                        setCategory(data.category);
+                        setSubject(data.subject);
+                        setPreheader(data.preheader);
+                        setStatus(data.status === 'Active');
+                        setType(data.type);
+
+                        // Parse content if it's JSON from DB, or raw HTML string
+                        let loadedContent = data.template_content;
+                        if (typeof loadedContent === 'string' && loadedContent.startsWith('{')) {
+                            // If it's a JSON stringified object (unlikely if strictly following route, but safe)
+                            try { loadedContent = JSON.parse(loadedContent); } catch (e) { }
+                        }
+                        // Assume content is stored as { html: "..." } or just raw html?
+                        // Our route saves JSON.stringify(content). Let's assume we use a simple HTML string for now.
+                        // If it's an object, extract html property?
+                        if (typeof loadedContent === 'object' && loadedContent?.html) {
+                            setContent(loadedContent.html);
+                        } else if (typeof loadedContent === 'string') {
+                            setContent(loadedContent);
+                        }
+                    }
+                } catch (e) {
+                    console.error('Failed to load template details', e);
+                } finally {
+                    setIsLoading(false);
+                }
+            };
+            fetchDetails();
+        }
+    }, [initialData?.id]);
+
+    const handleSave = async () => {
+        setIsSaving(true);
+        try {
+            const { apiFetch } = await import('../utils/api');
+
+            const payload = {
+                name: internalName,
+                category,
+                subject,
+                preheader,
+                status: status ? 'Active' : 'Draft',
+                type,
+                content: { html: content } // wrapping content in object structure
+            };
+
+            let response;
+            if (initialData?.id) {
+                // Update
+                response = await apiFetch(`/api/admin/email-templates/${initialData.id}`, {
+                    method: 'PUT',
+                    body: JSON.stringify(payload)
+                });
+            } else {
+                // Create
+                response = await apiFetch('/api/admin/email-templates', {
+                    method: 'POST',
+                    body: JSON.stringify(payload)
+                });
+            }
+
+            if (response.status === 'SUCCESS') {
+                onBack(); // Return to list view on success
+            } else {
+                alert('Failed to save: ' + (response.message || 'Unknown error'));
+            }
+        } catch (e) {
+            console.error('Save failed', e);
+            alert('Error saving template: ' + e.message);
+        } finally {
+            setIsSaving(false);
+        }
+    };
 
     // Dynamic Variables grouped as per design
     const variableGroups = [
@@ -30,7 +128,7 @@ export default function EmailTemplateEditorView({ onBack, initialData = null }) 
             <div className="bg-gray-50 border-b border-gray-200 px-8 py-4 flex justify-between items-center bg-white sticky top-0 z-10">
                 <div>
                     <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-                        Edit Template: {internalName}
+                        {initialData?.id ? `Edit Template: ${internalName}` : 'Create New Template'}
                     </h2>
                     <p className="text-sm text-gray-500 mt-1">Manage the content and settings for your automated welcome email.</p>
                 </div>
@@ -45,9 +143,13 @@ export default function EmailTemplateEditorView({ onBack, initialData = null }) 
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
                         Preview
                     </button>
-                    <button className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 font-medium text-sm transition-colors flex items-center gap-2 shadow-sm">
+                    <button
+                        onClick={handleSave}
+                        disabled={isSaving}
+                        className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 font-medium text-sm transition-colors flex items-center gap-2 shadow-sm disabled:opacity-50"
+                    >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" /></svg>
-                        Save Changes
+                        {isSaving ? 'Saving...' : 'Save Changes'}
                     </button>
                 </div>
             </div>
@@ -192,8 +294,8 @@ export default function EmailTemplateEditorView({ onBack, initialData = null }) 
                                 </div>
 
                                 {/* Rich Text Content */}
-                                {initialData?.content ? (
-                                    <div dangerouslySetInnerHTML={{ __html: initialData.content }} />
+                                {content ? (
+                                    <div dangerouslySetInnerHTML={{ __html: content }} />
                                 ) : (
                                     <div className="text-gray-400 italic text-center p-8">Start typing or drag elements here...</div>
                                 )}

@@ -12,10 +12,75 @@ export default function ProductDetailView({ product, onBack }) {
         category: '',
         tags: []
     });
+    const [isSaving, setIsSaving] = useState(false);
+    const [categories, setCategories] = useState([]);
+
+    React.useEffect(() => {
+        const fetchCategories = async () => {
+            try {
+                const { apiFetch } = await import('../utils/api');
+                const response = await apiFetch('/api/admin/categories');
+                if (response.status === 'SUCCESS') {
+                    const cats = response.keyValueTable.find(item => item.categories)?.categories || [];
+                    setCategories(cats);
+                }
+            } catch (e) {
+                console.error("Failed to load categories", e);
+            }
+        };
+        fetchCategories();
+    }, []);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
+    };
+
+    const handleSave = async () => {
+        setIsSaving(true);
+        try {
+            const { apiFetch } = await import('../utils/api');
+
+            // Map frontend fields to backend schema
+            const payload = {
+                name: formData.name,
+                sku: formData.sku,
+                description: formData.description,
+                base_price: formData.price,
+                category_id: formData.category, // Assuming ID or simple string for now
+                slug: formData.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, ''), // Simple slug gen
+                short_description: formData.description?.substring(0, 150),
+                product_details: {
+                    stock: formData.stock, // Storing stock in details for now as per schema limitations
+                    tags: formData.tags
+                }
+            };
+
+            let response;
+            if (isEditing && product.id) {
+                response = await apiFetch(`/api/admin/products/${product.id}`, {
+                    method: 'PUT',
+                    body: JSON.stringify(payload)
+                });
+            } else {
+                response = await apiFetch('/api/admin/products', {
+                    method: 'POST',
+                    body: JSON.stringify(payload)
+                });
+            }
+
+            if (response.status === 'SUCCESS') {
+                onBack();
+            } else {
+                alert('Failed to save product: ' + (response.message || 'Unknown error'));
+            }
+
+        } catch (e) {
+            console.error('Save failed', e);
+            alert('Error saving product');
+        } finally {
+            setIsSaving(false);
+        }
     };
 
     return (
@@ -32,8 +97,12 @@ export default function ProductDetailView({ product, onBack }) {
                     <button onClick={onBack} className="px-4 py-2 bg-white border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-50 font-medium">
                         Cancel
                     </button>
-                    <button className="px-4 py-2 bg-[#C5A572] text-white rounded-lg hover:bg-[#b09060] font-medium shadow-sm">
-                        {isEditing ? 'Save Changes' : 'Save Product'}
+                    <button
+                        onClick={handleSave}
+                        disabled={isSaving}
+                        className="px-4 py-2 bg-[#C5A572] text-white rounded-lg hover:bg-[#b09060] font-medium shadow-sm disabled:opacity-50"
+                    >
+                        {isSaving ? 'Saving...' : (isEditing ? 'Save Changes' : 'Save Product')}
                     </button>
                 </div>
             </div>
@@ -159,9 +228,9 @@ export default function ProductDetailView({ product, onBack }) {
                                     className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C5A572] bg-white"
                                 >
                                     <option value="">Select Category</option>
-                                    <option value="Silk Bedding">Silk Bedding</option>
-                                    <option value="Cashmere Throws">Cashmere Throws</option>
-                                    <option value="Accessories">Accessories</option>
+                                    {categories.map(cat => (
+                                        <option key={cat.id} value={cat.id}>{cat.name}</option>
+                                    ))}
                                 </select>
                             </div>
 

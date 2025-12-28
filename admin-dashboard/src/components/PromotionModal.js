@@ -15,6 +15,7 @@ export default function PromotionModal({ isOpen, onClose, promotion }) {
         startDate: '',
         endDate: ''
     });
+    const [isSaving, setIsSaving] = useState(false);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -24,6 +25,43 @@ export default function PromotionModal({ isOpen, onClose, promotion }) {
     const handleGenerateCode = () => {
         const randomCode = 'SUMMER' + Math.floor(Math.random() * 100);
         setFormData(prev => ({ ...prev, code: randomCode }));
+    };
+
+    const handleSave = async () => {
+        setIsSaving(true);
+        try {
+            const { apiFetch } = await import('../utils/api');
+            const payload = {
+                name: formData.name,
+                code: formData.code,
+                type: formData.type.toLowerCase().replace(' ', '_'),
+                value: formData.value,
+                starts_at: formData.startDate,
+                expires_at: formData.endDate,
+                is_active: formData.status === 'Active',
+                discount_details: {
+                    description: formData.description,
+                    min_requirements: formData.minRequirements,
+                    applies_to: formData.appliesTo
+                }
+            };
+
+            const response = await apiFetch('/api/admin/coupons', {
+                method: 'POST',
+                body: JSON.stringify(payload)
+            });
+
+            if (response.status === 'SUCCESS') {
+                onClose();
+            } else {
+                alert('Failed to create promotion');
+            }
+        } catch (e) {
+            console.error('Create promo failed', e);
+            alert('Error creating promotion');
+        } finally {
+            setIsSaving(false);
+        }
     };
 
     return (
@@ -212,8 +250,12 @@ export default function PromotionModal({ isOpen, onClose, promotion }) {
                     <button onClick={onClose} className="px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 font-medium text-sm transition-colors">
                         Cancel
                     </button>
-                    <button className="px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 font-medium text-sm transition-colors shadow-sm">
-                        Save Promotion
+                    <button
+                        onClick={handleSave}
+                        disabled={isSaving}
+                        className="px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 font-medium text-sm transition-colors shadow-sm disabled:opacity-50"
+                    >
+                        {isSaving ? 'Saving...' : 'Save Promotion'}
                     </button>
                 </div>
             </div>
