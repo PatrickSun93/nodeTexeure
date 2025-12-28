@@ -14,6 +14,7 @@ import CustomerDetailView from '../../components/CustomerDetailView';
 import PromotionDetailView from '../../components/PromotionDetailView';
 import PromotionModal from '../../components/PromotionModal';
 import StaffDetailView from '../../components/StaffDetailView';
+import SettingsView from '../../components/SettingsView';
 
 export default function Dashboard() {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -77,6 +78,12 @@ export default function Dashboard() {
             👥 Customers
           </button>
           <button
+            onClick={() => setActiveTab('settings')}
+            className={`block w-full text-left px-6 py-3 hover:bg-blue-50 transition ${activeTab === 'settings' ? 'bg-blue-50 text-blue-600 border-r-2 border-blue-600' : ''}`}
+          >
+            ⚙️ Settings
+          </button>
+          <button
             onClick={() => setActiveTab('promotions')}
             className={`block w-full text-left px-6 py-3 hover:bg-blue-50 transition ${activeTab === 'promotions' ? 'bg-blue-50 text-blue-600 border-r-2 border-blue-600' : ''}`}
           >
@@ -103,6 +110,7 @@ export default function Dashboard() {
         {activeTab === 'orders' && <OrdersView />}
         {activeTab === 'products' && <ProductsView />}
         {activeTab === 'customers' && <CustomersView />}
+        {activeTab === 'settings' && <SettingsView />}
         {activeTab === 'promotions' && <PromotionsView />}
 
         {activeTab === 'analytics' && <AnalyticsView />}
