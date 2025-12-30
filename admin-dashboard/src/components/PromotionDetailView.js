@@ -8,13 +8,19 @@ export default function PromotionDetailView({ promotion, onBack }) {
     // Ensure properly parsed if string (though likely object)
     const details = typeof initialDetails === 'string' ? JSON.parse(initialDetails) : initialDetails;
 
-    const getTodayAtMidnight = () => {
+    const getTodayDate = () => {
         const now = new Date();
-        now.setHours(0, 0, 0, 0);
         const year = now.getFullYear();
         const month = String(now.getMonth() + 1).padStart(2, '0');
         const day = String(now.getDate()).padStart(2, '0');
-        return `${year}-${month}-${day}T00:00`;
+        return `${year}-${month}-${day}`;
+    };
+
+    // Parse dates from DB (format: YYYY-MM-DD HH:MM:SS or ISO string)
+    const parseDbDate = (dateStr) => {
+        if (!dateStr) return '';
+        // Extract just the date part
+        return dateStr.split('T')[0].split(' ')[0];
     };
 
     const [formData, setFormData] = useState({
@@ -26,8 +32,14 @@ export default function PromotionDetailView({ promotion, onBack }) {
         minRequirements: details.min_requirements || details.minRequirements || 'None',
         appliesTo: details.applies_to || details.appliesTo || 'Specific collections',
         status: promotion?.status || 'Draft',
-        startDate: promotion?.startDate || getTodayAtMidnight(),
-        endDate: promotion?.endDate || ''
+        startDate: parseDbDate(promotion?.starts_at) || getTodayDate(),
+        endDate: parseDbDate(promotion?.expires_at) || '',
+        // New fields from database schema
+        minimum_order_amount: promotion?.minimum_order_amount || '',
+        maximum_discount_amount: promotion?.maximum_discount_amount || '',
+        usage_limit: promotion?.usage_limit || '',
+        usage_limit_per_customer: promotion?.usage_limit_per_customer || '',
+        usage_count: promotion?.usage_count || 0 // Read-only
     });
 
     const handleQuickDuration = (days) => {
@@ -44,13 +56,13 @@ export default function PromotionDetailView({ promotion, onBack }) {
 
         end.setHours(0, 0, 0, 0);
 
-        // Format to YYYY-MM-DDTHH:mm
+        // Format to YYYY-MM-DD (date only)
         const year = end.getFullYear();
         const month = String(end.getMonth() + 1).padStart(2, '0');
         const day = String(end.getDate()).padStart(2, '0');
-        const isoEnd = `${year}-${month}-${day}T00:00`;
+        const dateOnly = `${year}-${month}-${day}`;
 
-        setFormData(prev => ({ ...prev, endDate: isoEnd }));
+        setFormData(prev => ({ ...prev, endDate: dateOnly }));
     };
 
     const [isSaving, setIsSaving] = useState(false);
@@ -71,9 +83,13 @@ export default function PromotionDetailView({ promotion, onBack }) {
                 code: formData.code,
                 type: formData.type.toLowerCase().replace(' ', '_'),
                 value: formData.value,
-                starts_at: formData.startDate,
-                expires_at: formData.endDate,
-                is_active: formData.status === 'Active', // We might need to expose Status toggle in this view too
+                starts_at: formData.startDate ? `${formData.startDate} 00:00:00` : null,
+                expires_at: formData.endDate ? `${formData.endDate} 00:00:00` : null,
+                is_active: formData.status === 'Active',
+                minimum_order_amount: formData.minimum_order_amount || null,
+                maximum_discount_amount: formData.maximum_discount_amount || null,
+                usage_limit: formData.usage_limit || null,
+                usage_limit_per_customer: formData.usage_limit_per_customer || null,
                 discount_details: {
                     description: formData.description,
                     min_requirements: formData.minRequirements,
@@ -217,6 +233,77 @@ export default function PromotionDetailView({ promotion, onBack }) {
                                     <option value="Specific products">Specific products</option>
                                 </select>
                             </div>
+
+                            {/* Limits & Thresholds */}
+                            <div className="pt-6 border-t border-gray-100">
+                                <h4 className="text-sm font-semibold text-gray-900 mb-4">Limits & Thresholds</h4>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">Minimum Order Amount</label>
+                                        <div className="relative">
+                                            <span className="absolute inset-y-0 left-0 pl-4 flex items-center text-gray-500">$</span>
+                                            <input
+                                                type="number"
+                                                name="minimum_order_amount"
+                                                value={formData.minimum_order_amount}
+                                                onChange={handleChange}
+                                                placeholder="0.00"
+                                                className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C5A572] focus:border-transparent bg-gray-50"
+                                            />
+                                        </div>
+                                        <p className="text-xs text-gray-400 mt-1">Leave empty for no minimum</p>
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">Maximum Discount Amount</label>
+                                        <div className="relative">
+                                            <span className="absolute inset-y-0 left-0 pl-4 flex items-center text-gray-500">$</span>
+                                            <input
+                                                type="number"
+                                                name="maximum_discount_amount"
+                                                value={formData.maximum_discount_amount}
+                                                onChange={handleChange}
+                                                placeholder="0.00"
+                                                className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C5A572] focus:border-transparent bg-gray-50"
+                                            />
+                                        </div>
+                                        <p className="text-xs text-gray-400 mt-1">Cap for percentage discounts</p>
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">Total Usage Limit</label>
+                                        <input
+                                            type="number"
+                                            name="usage_limit"
+                                            value={formData.usage_limit}
+                                            onChange={handleChange}
+                                            placeholder="Unlimited"
+                                            className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C5A572] focus:border-transparent bg-gray-50"
+                                        />
+                                        <p className="text-xs text-gray-400 mt-1">Max times this code can be used globally</p>
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">Usage Limit Per Customer</label>
+                                        <input
+                                            type="number"
+                                            name="usage_limit_per_customer"
+                                            value={formData.usage_limit_per_customer}
+                                            onChange={handleChange}
+                                            placeholder="Unlimited"
+                                            className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C5A572] focus:border-transparent bg-gray-50"
+                                        />
+                                        <p className="text-xs text-gray-400 mt-1">Max times per single customer</p>
+                                    </div>
+                                </div>
+                                {/* Usage Count (Read-only) */}
+                                {isEditing && (
+                                    <div className="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-100">
+                                        <div className="flex justify-between items-center">
+                                            <span className="text-sm font-medium text-gray-700">Current Usage Count</span>
+                                            <span className="text-lg font-bold text-[#C5A572]">{formData.usage_count}</span>
+                                        </div>
+                                        <p className="text-xs text-gray-400 mt-1">Number of times this code has been used</p>
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     </div>
 
@@ -231,9 +318,9 @@ export default function PromotionDetailView({ promotion, onBack }) {
 
                         <div className="space-y-4">
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">Start Date & Time</label>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">Start Date</label>
                                 <input
-                                    type="datetime-local"
+                                    type="date"
                                     name="startDate"
                                     value={formData.startDate}
                                     onChange={handleChange}
@@ -241,9 +328,9 @@ export default function PromotionDetailView({ promotion, onBack }) {
                                 />
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">End Date & Time</label>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">End Date</label>
                                 <input
-                                    type="datetime-local"
+                                    type="date"
                                     name="endDate"
                                     value={formData.endDate}
                                     onChange={handleChange}

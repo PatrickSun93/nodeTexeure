@@ -3,13 +3,12 @@ import React, { useState } from 'react';
 export default function PromotionModal({ isOpen, onClose, promotion }) {
     if (!isOpen) return null;
 
-    const getTodayAtMidnight = () => {
+    const getTodayDate = () => {
         const now = new Date();
-        now.setHours(0, 0, 0, 0);
         const year = now.getFullYear();
         const month = String(now.getMonth() + 1).padStart(2, '0');
         const day = String(now.getDate()).padStart(2, '0');
-        return `${year}-${month}-${day}T00:00`;
+        return `${year}-${month}-${day}`;
     };
 
     const [formData, setFormData] = useState(promotion || {
@@ -21,8 +20,13 @@ export default function PromotionModal({ isOpen, onClose, promotion }) {
         value: '',
         minRequirements: 'None',
         appliesTo: 'All products',
-        startDate: getTodayAtMidnight(),
-        endDate: ''
+        startDate: getTodayDate(),
+        endDate: '',
+        // New fields from database schema
+        minimum_order_amount: '',
+        maximum_discount_amount: '',
+        usage_limit: '',
+        usage_limit_per_customer: ''
     });
     const [isSaving, setIsSaving] = useState(false);
 
@@ -45,9 +49,13 @@ export default function PromotionModal({ isOpen, onClose, promotion }) {
                 code: formData.code,
                 type: formData.type.toLowerCase().replace(' ', '_'),
                 value: formData.value,
-                starts_at: formData.startDate,
-                expires_at: formData.endDate,
+                starts_at: formData.startDate ? `${formData.startDate} 00:00:00` : null,
+                expires_at: formData.endDate ? `${formData.endDate} 00:00:00` : null,
                 is_active: formData.status === 'Active',
+                minimum_order_amount: formData.minimum_order_amount || null,
+                maximum_discount_amount: formData.maximum_discount_amount || null,
+                usage_limit: formData.usage_limit || null,
+                usage_limit_per_customer: formData.usage_limit_per_customer || null,
                 discount_details: {
                     description: formData.description,
                     min_requirements: formData.minRequirements,
@@ -225,14 +233,71 @@ export default function PromotionModal({ isOpen, onClose, promotion }) {
                         </div>
                     </div>
 
+                    {/* Limits & Thresholds */}
+                    <div>
+                        <h3 className="text-sm font-bold text-gray-900 mb-4">Limits & Thresholds</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label className="block text-xs font-medium text-gray-700 mb-1">Minimum Order Amount</label>
+                                <div className="relative">
+                                    <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-500 text-sm">$</span>
+                                    <input
+                                        type="number"
+                                        name="minimum_order_amount"
+                                        value={formData.minimum_order_amount}
+                                        onChange={handleChange}
+                                        placeholder="0.00"
+                                        className="w-full pl-8 pr-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#C5A572]"
+                                    />
+                                </div>
+                            </div>
+                            <div>
+                                <label className="block text-xs font-medium text-gray-700 mb-1">Maximum Discount Cap</label>
+                                <div className="relative">
+                                    <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-500 text-sm">$</span>
+                                    <input
+                                        type="number"
+                                        name="maximum_discount_amount"
+                                        value={formData.maximum_discount_amount}
+                                        onChange={handleChange}
+                                        placeholder="0.00"
+                                        className="w-full pl-8 pr-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#C5A572]"
+                                    />
+                                </div>
+                            </div>
+                            <div>
+                                <label className="block text-xs font-medium text-gray-700 mb-1">Total Usage Limit</label>
+                                <input
+                                    type="number"
+                                    name="usage_limit"
+                                    value={formData.usage_limit}
+                                    onChange={handleChange}
+                                    placeholder="Unlimited"
+                                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#C5A572]"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-medium text-gray-700 mb-1">Limit Per Customer</label>
+                                <input
+                                    type="number"
+                                    name="usage_limit_per_customer"
+                                    value={formData.usage_limit_per_customer}
+                                    onChange={handleChange}
+                                    placeholder="Unlimited"
+                                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#C5A572]"
+                                />
+                            </div>
+                        </div>
+                    </div>
+
                     {/* Active Dates */}
                     <div>
                         <h3 className="text-sm font-bold text-gray-900 mb-4">Active Dates</h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
-                                <label className="block text-xs font-medium text-gray-700 mb-1">Start Date & Time</label>
+                                <label className="block text-xs font-medium text-gray-700 mb-1">Start Date</label>
                                 <input
-                                    type="datetime-local"
+                                    type="date"
                                     name="startDate"
                                     value={formData.startDate}
                                     onChange={handleChange}
@@ -240,9 +305,9 @@ export default function PromotionModal({ isOpen, onClose, promotion }) {
                                 />
                             </div>
                             <div>
-                                <label className="block text-xs font-medium text-gray-700 mb-1">End Date & Time (Optional)</label>
+                                <label className="block text-xs font-medium text-gray-700 mb-1">End Date (Optional)</label>
                                 <input
-                                    type="datetime-local"
+                                    type="date"
                                     name="endDate"
                                     value={formData.endDate}
                                     onChange={handleChange}

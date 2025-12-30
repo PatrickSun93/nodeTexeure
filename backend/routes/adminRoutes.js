@@ -56,16 +56,46 @@ router.post('/logout', async (req, res) => {
 // Add new product
 router.post('/products', adminWriteLimiter, csrfProtection, async (req, res) => {
   try {
-    const { sku, name, slug, description, short_description, category_id, base_price, product_details, meta_title, meta_description, meta_keywords } = req.body;
+    const { variants, stock, ...productData } = req.body; // Extract non-DB columns
+    const { sku, name, slug, description, short_description, category_id, base_price, product_details, meta_title, meta_description, meta_keywords } = productData;
+
     const idResult = await DatabaseUtil.executeQuery('SELECT get_next_id("PROD") as id');
     if (!idResult.success) throw new Error(idResult.error);
     const id = idResult.data[0].id;
     const created_by = req.user.id; // From auth middleware
+
     const insertResult = await DatabaseUtil.executeQuery(
       'INSERT INTO products (id, sku, name, slug, description, short_description, category_id, base_price, product_details, created_by, meta_title, meta_description, meta_keywords) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
       [id, sku, name, slug, description, short_description, category_id, base_price, JSON.stringify(product_details), created_by, meta_title, meta_description, meta_keywords]
     );
     if (!insertResult.success) throw new Error(insertResult.error);
+
+    // 2. Base Inventory (Product Level)
+    if (stock) {
+      const invId = `INV-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+      await DatabaseUtil.executeQuery(
+        'INSERT INTO inventory (id, product_id, quantity_available) VALUES (?, ?, ?)',
+        [invId, id, stock]
+      );
+    }
+
+    // 3. Handle Variants
+    if (variants && Array.isArray(variants)) {
+      for (const v of variants) {
+        const vid = `VAR-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+        await DatabaseUtil.executeQuery(
+          'INSERT INTO product_variants (id, product_id, sku, size, color, price_adjustment) VALUES (?, ?, ?, ?, ?, ?)',
+          [vid, id, v.sku, v.size, v.color, v.price_adjustment || 0]
+        );
+        // Variant Inventory
+        const vInvId = `INV-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+        await DatabaseUtil.executeQuery(
+          'INSERT INTO inventory (id, product_id, variant_id, quantity_available) VALUES (?, ?, ?, ?)',
+          [vInvId, id, vid, v.stock || 0]
+        );
+      }
+    }
+
     res.status(201).json(ResponseFormatter.success('Product added successfully', [{ id }]));
   } catch (error) {
     console.error(error);
@@ -77,21 +107,72 @@ router.post('/products', adminWriteLimiter, csrfProtection, async (req, res) => 
 router.put('/products/:id', adminWriteLimiter, csrfProtection, async (req, res) => {
   try {
     const { id } = req.params;
-    const updates = req.body;
+    const { variants, ...updates } = req.body; // Extract variants to prevent column error
+
+    // 1. Update Product Fields
     const updateFields = [];
     const updateValues = [];
     for (const [key, value] of Object.entries(updates)) {
       if (key === 'product_details') {
         updateFields.push(`${key} = ?`);
         updateValues.push(JSON.stringify(value));
-      } else {
+      } else if (key !== 'stock' && key !== 'category') { // Filter out non-DB columns if present
         updateFields.push(`${key} = ?`);
         updateValues.push(value);
       }
     }
-    updateValues.push(id);
-    const updateResult = await DatabaseUtil.executeQuery(`UPDATE products SET ${updateFields.join(', ')} WHERE id = ?`, updateValues);
-    if (!updateResult.success) throw new Error(updateResult.error);
+
+    if (updateFields.length > 0) {
+      updateValues.push(id);
+      const updateResult = await DatabaseUtil.executeQuery(`UPDATE products SET ${updateFields.join(', ')} WHERE id = ?`, updateValues);
+      if (!updateResult.success) throw new Error(updateResult.error);
+    }
+
+    // 2. Handle Variants (Upsert)
+    if (variants && Array.isArray(variants)) {
+      for (const v of variants) {
+        if (v.id) {
+          // Update Existing Variant
+          // We typically update price_adj, sku, stock (via inventory)
+          // Assuming v has: id, sku, size, color, price_adjustment, stock
+          await DatabaseUtil.executeQuery(
+            'UPDATE product_variants SET sku = ?, size = ?, color = ?, price_adjustment = ? WHERE id = ?',
+            [v.sku, v.size, v.color, v.price_adjustment || 0, v.id]
+          );
+          // Update Inventory
+          if (v.stock !== undefined) {
+            await DatabaseUtil.executeQuery(
+              'UPDATE inventory SET quantity_available = ? WHERE variant_id = ?',
+              [v.stock, v.id]
+            );
+          }
+        } else {
+          // Insert New Variant
+          const vidRes = await DatabaseUtil.executeQuery('SELECT UUID() as id');
+          const vid = vidRes.data[0].id; // Simplified UUID gen or use similar logic
+          // Actually we use 'UUID()' function in SQL or generate it. 
+          // DatabaseUtil.executeQuery('SELECT UUID()') might work, or we rely on DB default? 
+          // Schema uses VARCHAR(50). We need to generate ID.
+          // Re-using get_next_id logic or UUID? Schema summary says 'uuid' or varchar.
+          // I will use simple pseudo-random for now or check if there's a helper.
+          // Assuming DatabaseUtil doesn't have uuid helper.
+          // Let's use `UUID()` if safe, or generate in JS.
+          const newVariantId = `VAR-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+
+          await DatabaseUtil.executeQuery(
+            'INSERT INTO product_variants (id, product_id, sku, size, color, price_adjustment) VALUES (?, ?, ?, ?, ?, ?)',
+            [newVariantId, id, v.sku, v.size, v.color, v.price_adjustment || 0]
+          );
+          // Insert Inventory
+          const invId = `INV-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+          await DatabaseUtil.executeQuery(
+            'INSERT INTO inventory (id, product_id, variant_id, quantity_available) VALUES (?, ?, ?, ?)',
+            [invId, id, newVariantId, v.stock || 0]
+          );
+        }
+      }
+    }
+
     res.json(ResponseFormatter.success('Product updated successfully'));
   } catch (error) {
     console.error(error);
@@ -334,28 +415,86 @@ router.get('/products', adminReadLimiter, async (req, res) => {
   try {
     const query = `
       SELECT 
-        p.*, 
+        p.id as product_id, p.name, p.status, p.base_price, p.sku as product_sku, img.thumbnail_small_url as image_url, p.created_at,
         c.name as category_name,
+        v.id as variant_id, v.sku as variant_sku, v.size, v.color, v.price_adjustment,
         i.quantity_available as stock_quantity
       FROM products p
       LEFT JOIN categories c ON p.category_id = c.id
-      LEFT JOIN inventory i ON p.id = i.product_id
-      ORDER BY p.created_at DESC
+      LEFT JOIN product_images img ON p.id = img.product_id AND img.is_primary = 1
+      LEFT JOIN product_variants v ON p.id = v.product_id
+      LEFT JOIN inventory i ON (p.id = i.product_id AND (i.variant_id = v.id OR (v.id IS NULL AND i.variant_id IS NULL)))
+      ORDER BY p.created_at DESC, v.id ASC
     `;
     const listResult = await DatabaseUtil.executeQuery(query);
     if (!listResult.success) throw new Error(listResult.error);
 
-    // Process to match frontend expectation if needed
-    // Frontend expects: { id, name, sku, category, price, stock, status, image }
-    const products = listResult.data.map(p => ({
-      ...p,
-      category: p.category_name || 'Uncategorized',
-      price: p.base_price,
-      stock: p.stock_quantity || 0,
-      status: p.status === 'approved' ? 'Active' : (p.status === 'draft' ? 'Draft' : 'Out of Stock')
-    }));
+    // Process to match frontend expectation
+    // We flatten variants into separate rows for the list view
+    const products = listResult.data.map(row => {
+      let displayName = row.name;
+      const attributes = [row.size, row.color].filter(Boolean);
+      if (attributes.length > 0) {
+        displayName += ` (${attributes.join(' / ')})`;
+      }
+
+      return {
+        id: row.variant_id || row.product_id, // Use variant ID if exists, acting as unique row key
+        product_id: row.product_id,           // Keep ref to parent
+        name: displayName,
+        sku: row.variant_sku || row.product_sku,
+        category: row.category_name || 'Uncategorized',
+        price: (Number(row.base_price) + Number(row.price_adjustment || 0)).toFixed(2),
+        stock: row.stock_quantity || 0,
+        status: row.status === 'approved' ? 'Active' : (row.status === 'draft' ? 'Draft' : 'Out of Stock'),
+        image: row.image_url
+      };
+    });
 
     res.json(ResponseFormatter.success('Products fetched successfully', [{ products }]));
+  } catch (error) {
+    console.error(error);
+    res.status(500).json(ResponseFormatter.failure('Server error', { error: error.message }));
+  }
+});
+
+// Get single product with variants
+router.get('/products/:id', adminReadLimiter, async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Get Product
+    const productRes = await DatabaseUtil.executeQuery('SELECT * FROM products WHERE id = ?', [id]);
+    if (!productRes.success || productRes.data.length === 0) {
+      return res.status(404).json(ResponseFormatter.failure('Product not found'));
+    }
+    const product = productRes.data[0];
+
+    // Get Variants with Inventory
+    const variantQuery = `
+      SELECT v.*, i.quantity_available as stock 
+      FROM product_variants v 
+      LEFT JOIN inventory i ON (v.id = i.variant_id)
+      WHERE v.product_id = ?
+    `;
+    const variantsRes = await DatabaseUtil.executeQuery(variantQuery, [id]);
+    const variants = variantsRes.success ? variantsRes.data : [];
+
+    // Get Product Level Inventory (if no variants or generic stock)
+    const prodInvRes = await DatabaseUtil.executeQuery('SELECT quantity_available FROM inventory WHERE product_id = ? AND variant_id IS NULL', [id]);
+    const baseStock = prodInvRes.success && prodInvRes.data.length > 0 ? prodInvRes.data[0].quantity_available : 0;
+
+    res.json(ResponseFormatter.success('Product details fetched', [{
+      product: {
+        ...product,
+        stock: baseStock, // Base stock if no variants
+        variants: variants.map(v => ({
+          ...v,
+          price: (Number(product.base_price) + Number(v.price_adjustment)).toFixed(2),
+          stock: v.stock || 0
+        }))
+      }
+    }]));
   } catch (error) {
     console.error(error);
     res.status(500).json(ResponseFormatter.failure('Server error', { error: error.message }));
