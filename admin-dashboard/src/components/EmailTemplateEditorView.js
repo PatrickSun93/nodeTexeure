@@ -1,13 +1,20 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 
 export default function EmailTemplateEditorView({ onBack, initialData = null }) {
     // If an ID exists in initialData, we are in Edit mode. Otherwise, Create mode.
     // However, initialData passed from list view might only have list fields.
     // We should fetch full details if ID is present.
 
+    // Refs
+    const editorRef = useRef(null);
+    const editorInitialized = useRef(false); // Track if editor content was set
+    const selectionRange = useRef(null); // Track selection for restoring focus
+
     // State
     const [isLoading, setIsLoading] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
+    const [htmlMode, setHtmlMode] = useState(false);
+    const [showPreview, setShowPreview] = useState(false); // [NEW] Preview modal state
 
     // Form Fields
     const [internalName, setInternalName] = useState(initialData?.name || '');
@@ -20,6 +27,95 @@ export default function EmailTemplateEditorView({ onBack, initialData = null }) 
     // Content - for now simple string/html
     const [content, setContent] = useState(initialData?.content || '');
 
+    // Formatting functions using document.execCommand
+    const formatText = (command, value = null) => {
+        document.execCommand(command, false, value);
+        editorRef.current?.focus();
+    };
+
+    const copyToClipboard = (text) => {
+        navigator.clipboard.writeText(text).then(() => {
+            // Insert at cursor position if editor is focused
+            if (editorRef.current) {
+                document.execCommand('insertText', false, text);
+            }
+        }).catch(err => {
+            console.error('Failed to copy:', err);
+        });
+    };
+
+    const handleContentChange = () => {
+        if (editorRef.current) {
+            setContent(editorRef.current.innerHTML);
+        }
+    };
+
+    const saveSelection = () => {
+        const selection = window.getSelection();
+        if (selection.rangeCount > 0) {
+            const range = selection.getRangeAt(0);
+            if (editorRef.current && editorRef.current.contains(range.commonAncestorContainer)) {
+                selectionRange.current = range;
+            }
+        }
+    };
+
+    const restoreSelection = () => {
+        if (selectionRange.current) {
+            const selection = window.getSelection();
+            selection.removeAllRanges();
+            selection.addRange(selectionRange.current);
+        }
+    };
+
+    const insertLink = (e) => {
+        e?.preventDefault();
+        e?.stopPropagation();
+        saveSelection();
+        setTimeout(() => {
+            const url = prompt('Enter URL:');
+            if (url) {
+                restoreSelection();
+                editorRef.current?.focus();
+                formatText('createLink', url);
+            }
+        }, 100);
+    };
+
+    const insertImage = (e) => {
+        e?.preventDefault();
+        e?.stopPropagation();
+        saveSelection();
+        setTimeout(() => {
+            const url = prompt('Enter image URL:');
+            if (url) {
+                restoreSelection();
+                editorRef.current?.focus();
+                formatText('insertImage', url);
+            }
+        }, 100);
+    };
+
+    // Set initial editor content once when data is loaded
+    useEffect(() => {
+        if (editorRef.current && content && !editorInitialized.current && !htmlMode) {
+            editorRef.current.innerHTML = content;
+            editorInitialized.current = true;
+        }
+    }, [content, htmlMode]);
+
+    // Handle switching between visual and HTML modes
+    const handleModeToggle = () => {
+        if (!htmlMode && editorRef.current) {
+            // Switching from visual to HTML - sync content first
+            setContent(editorRef.current.innerHTML);
+        } else {
+            // Switching from HTML to visual - reset initialized flag so content gets set
+            editorInitialized.current = false;
+        }
+        setHtmlMode(!htmlMode);
+    };
+
     // Fetch full data on mount if ID exists
     useEffect(() => {
         if (initialData?.id) {
@@ -30,12 +126,12 @@ export default function EmailTemplateEditorView({ onBack, initialData = null }) 
                     const response = await apiFetch(`/api/admin/email-templates/${initialData.id}`);
                     if (response.status === 'SUCCESS' && response.keyValueTable.length > 0) {
                         const data = response.keyValueTable[0];
-                        setInternalName(data.name);
-                        setCategory(data.category);
-                        setSubject(data.subject);
-                        setPreheader(data.preheader);
+                        setInternalName(data.name || '');
+                        setCategory(data.category || 'Onboarding');
+                        setSubject(data.subject || '');
+                        setPreheader(data.preheader || '');
                         setStatus(data.status === 'Active');
-                        setType(data.type);
+                        setType(data.type || 'Marketing');
 
                         // Parse content if it's JSON from DB, or raw HTML string
                         let loadedContent = data.template_content;
@@ -139,7 +235,10 @@ export default function EmailTemplateEditorView({ onBack, initialData = null }) 
                     >
                         Cancel
                     </button>
-                    <button className="px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-md hover:bg-gray-50 font-medium text-sm transition-colors flex items-center gap-2">
+                    <button
+                        onClick={() => setShowPreview(true)} // [NEW] Open preview
+                        className="px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-md hover:bg-gray-50 font-medium text-sm transition-colors flex items-center gap-2"
+                    >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
                         Preview
                     </button>
@@ -234,6 +333,7 @@ export default function EmailTemplateEditorView({ onBack, initialData = null }) 
                                 {variableGroups.flatMap(g => g.tags).map(tag => (
                                     <button
                                         key={tag}
+                                        onClick={() => copyToClipboard(tag)}
                                         className="px-2 py-1 bg-blue-50 border border-blue-100 text-blue-600 rounded text-[11px] font-mono hover:bg-blue-100 transition-colors"
                                     >
                                         {tag}
@@ -267,37 +367,51 @@ export default function EmailTemplateEditorView({ onBack, initialData = null }) 
                         {/* Toolbar */}
                         <div className="px-4 py-2 border-b border-gray-100 bg-gray-50/50 flex items-center justify-between sticky top-0">
                             <div className="flex items-center gap-1">
-                                <button className="p-1.5 text-gray-400 hover:text-gray-900 rounded"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" /></svg></button>
-                                <button className="p-1.5 text-gray-400 hover:text-gray-900 rounded"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 10h-10a8 8 0 00-8 8v2M21 10l-6 6m6-6l-6-6" /></svg></button>
+                                <button onClick={() => formatText('undo')} className="p-1.5 text-gray-400 hover:text-gray-900 rounded" title="Undo"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" /></svg></button>
+                                <button onClick={() => formatText('redo')} className="p-1.5 text-gray-400 hover:text-gray-900 rounded" title="Redo"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 10h-10a8 8 0 00-8 8v2M21 10l-6 6m6-6l-6-6" /></svg></button>
                                 <div className="w-px h-4 bg-gray-300 mx-2"></div>
-                                <button className="p-1.5 text-gray-600 hover:text-gray-900 hover:bg-gray-200 rounded font-bold font-serif">B</button>
-                                <button className="p-1.5 text-gray-600 hover:text-gray-900 hover:bg-gray-200 rounded italic font-serif">I</button>
-                                <button className="p-1.5 text-gray-600 hover:text-gray-900 hover:bg-gray-200 rounded underline font-serif">U</button>
+                                <button onClick={() => formatText('bold')} className="p-1.5 text-gray-600 hover:text-gray-900 hover:bg-gray-200 rounded font-bold font-serif" title="Bold">B</button>
+                                <button onClick={() => formatText('italic')} className="p-1.5 text-gray-600 hover:text-gray-900 hover:bg-gray-200 rounded italic font-serif" title="Italic">I</button>
+                                <button onClick={() => formatText('underline')} className="p-1.5 text-gray-600 hover:text-gray-900 hover:bg-gray-200 rounded underline font-serif" title="Underline">U</button>
                                 <div className="w-px h-4 bg-gray-300 mx-2"></div>
-                                <button className="p-1.5 text-gray-500 hover:text-gray-900 hover:bg-gray-200 rounded"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" /></svg></button>
-                                <button className="p-1.5 text-gray-500 hover:text-gray-900 hover:bg-gray-200 rounded"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h8m-8 6h16" /></svg></button>
-                                <button className="p-1.5 text-gray-500 hover:text-gray-900 hover:bg-gray-200 rounded"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h7" /></svg></button>
+                                <button onClick={() => formatText('justifyLeft')} className="p-1.5 text-gray-500 hover:text-gray-900 hover:bg-gray-200 rounded" title="Align Left"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" /></svg></button>
+                                <button onClick={() => formatText('justifyCenter')} className="p-1.5 text-gray-500 hover:text-gray-900 hover:bg-gray-200 rounded" title="Align Center"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h8m-8 6h16" /></svg></button>
+                                <button onClick={() => formatText('justifyRight')} className="p-1.5 text-gray-500 hover:text-gray-900 hover:bg-gray-200 rounded" title="Align Right"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h7" /></svg></button>
                                 <div className="w-px h-4 bg-gray-300 mx-2"></div>
-                                <button className="p-1.5 text-gray-500 hover:text-gray-900 hover:bg-gray-200 rounded"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101" /></svg></button>
-                                <button className="p-1.5 text-gray-500 hover:text-gray-900 hover:bg-gray-200 rounded"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg></button>
-                                <button className="p-1.5 text-gray-500 hover:text-gray-900 hover:bg-gray-200 rounded"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" /></svg></button>
+                                <button onClick={insertLink} className="p-1.5 text-gray-500 hover:text-gray-900 hover:bg-gray-200 rounded" title="Insert Link"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101" /></svg></button>
+                                <button onClick={insertImage} className="p-1.5 text-gray-500 hover:text-gray-900 hover:bg-gray-200 rounded" title="Insert Image"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg></button>
+                                <button onClick={() => formatText('formatBlock', 'pre')} className="p-1.5 text-gray-500 hover:text-gray-900 hover:bg-gray-200 rounded" title="Code Block"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" /></svg></button>
                             </div>
-                            <button className="text-xs font-medium text-blue-600 hover:text-blue-700">Switch to HTML</button>
+                            <button
+                                onClick={handleModeToggle}
+                                className="text-xs font-medium text-blue-600 hover:text-blue-700"
+                            >
+                                {htmlMode ? 'Switch to Visual' : 'Switch to HTML'}
+                            </button>
                         </div>
 
                         {/* Content Area - Scrollable */}
                         <div className="flex-1 overflow-y-auto p-12 bg-white">
                             <div className="max-w-[600px] mx-auto">
-                                {/* Header Image */}
-                                <div className="w-full h-48 bg-gray-100 rounded-lg overflow-hidden mb-8">
-                                    <img src="https://images.unsplash.com/photo-1544256277-28564a275294?q=80&w=2787&auto=format&fit=crop" alt="Silk Textures" className="w-full h-full object-cover" />
-                                </div>
-
-                                {/* Rich Text Content */}
-                                {content ? (
-                                    <div dangerouslySetInnerHTML={{ __html: content }} />
+                                {/* Rich Text Content - Visual Mode */}
+                                {!htmlMode ? (
+                                    <div
+                                        ref={editorRef}
+                                        contentEditable
+                                        suppressContentEditableWarning
+                                        onBlur={handleContentChange}
+                                        className="min-h-[300px] prose prose-sm max-w-none focus:outline-none p-4 border border-gray-200 rounded-lg"
+                                    >
+                                        {!content && <p className="text-gray-400">Start typing your email content here...</p>}
+                                    </div>
                                 ) : (
-                                    <div className="text-gray-400 italic text-center p-8">Start typing or drag elements here...</div>
+                                    /* HTML Mode */
+                                    <textarea
+                                        value={content}
+                                        onChange={(e) => setContent(e.target.value)}
+                                        className="w-full min-h-[300px] p-4 font-mono text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        placeholder="<p>Enter HTML content here...</p>"
+                                    />
                                 )}
                             </div>
                         </div>
@@ -312,6 +426,69 @@ export default function EmailTemplateEditorView({ onBack, initialData = null }) 
                 </div>
 
             </div>
+
+            {/* Preview Modal */}
+            {showPreview && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                    <div className="bg-white rounded-xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-hidden flex flex-col">
+                        {/* Modal Header */}
+                        <div className="flex justify-between items-center p-6 border-b border-gray-100 bg-gray-50">
+                            <div>
+                                <h2 className="text-xl font-bold text-gray-900">Email Preview</h2>
+                                <p className="text-sm text-gray-500 mt-1">{internalName || 'Untitled Template'}</p>
+                            </div>
+                            <button
+                                onClick={() => setShowPreview(false)}
+                                className="text-gray-400 hover:text-gray-600 p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                            >
+                                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                            </button>
+                        </div>
+
+                        {/* Email Preview Content */}
+                        <div className="flex-1 overflow-y-auto p-6">
+                            {/* Subject Line */}
+                            <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-100">
+                                <span className="text-xs text-gray-500 uppercase font-semibold tracking-wide">Subject</span>
+                                <p className="text-gray-900 font-medium mt-1">{subject || '(No subject)'}</p>
+                            </div>
+
+                            {/* Email Body */}
+                            <div className="border border-gray-200 rounded-lg bg-white">
+                                <div className="p-4 border-b border-gray-100 bg-gray-50 rounded-t-lg">
+                                    <span className="text-xs text-gray-500 uppercase font-semibold tracking-wide">Email Body</span>
+                                </div>
+                                <div
+                                    className="p-6 prose prose-sm max-w-none"
+                                    dangerouslySetInnerHTML={{ __html: content || '<p class="text-gray-400 italic">No HTML content available</p>' }}
+                                />
+                            </div>
+
+                            {/* Metadata */}
+                            <div className="mt-6 grid grid-cols-2 gap-4 text-sm">
+                                <div className="p-3 bg-gray-50 rounded-lg">
+                                    <span className="text-gray-500">Type:</span>
+                                    <span className="ml-2 font-medium text-gray-900">{type}</span>
+                                </div>
+                                <div className="p-3 bg-gray-50 rounded-lg">
+                                    <span className="text-gray-500">Status:</span>
+                                    <span className={`ml-2 font-medium ${status ? 'text-green-600' : 'text-gray-600'}`}>{status ? 'Active' : 'Draft'}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Modal Footer */}
+                        <div className="p-4 border-t border-gray-100 flex justify-end gap-3 bg-gray-50">
+                            <button
+                                onClick={() => setShowPreview(false)}
+                                className="px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 font-medium text-sm transition-colors"
+                            >
+                                Close
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

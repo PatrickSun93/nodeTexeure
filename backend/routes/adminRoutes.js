@@ -589,6 +589,7 @@ router.get('/orders', adminReadLimiter, async (req, res) => {
              o.shipping_address_json
       FROM orders o
       LEFT JOIN users u ON o.user_id = u.id
+      ${req.query.user_id ? `WHERE o.user_id = '${req.query.user_id}'` : ''}
       ORDER BY o.created_at DESC
     `;
     const listResult = await DatabaseUtil.executeQuery(query);

@@ -697,6 +697,11 @@ function CustomersView() {
     fetchCustomers();
   }, []); // Re-fetch?
 
+  // Reset to page 1 when search changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery]);
+
   if (selectedCustomer) {
     return <CustomerDetailView customer={selectedCustomer} onBack={() => setSelectedCustomer(null)} />;
   }
@@ -713,11 +718,6 @@ function CustomersView() {
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
-
-  // Reset to page 1 when search changes
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [searchQuery]);
 
   return (
     <div className="p-8 bg-gray-50 min-h-full">

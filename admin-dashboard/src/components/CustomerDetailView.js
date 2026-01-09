@@ -1,14 +1,29 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 export default function CustomerDetailView({ customer, onBack }) {
     const [activeTab, setActiveTab] = useState('overview'); // For future tabs if needed
+    const [orders, setOrders] = useState([]);
+    const [isLoadingOrders, setIsLoadingOrders] = useState(false);
 
-    // Mock order history
-    const orders = [
-        { id: '#98765', date: 'Mar 8, 2024', total: '$120.00', status: 'Delivered' },
-        { id: '#98642', date: 'Jan 21, 2024', total: '$85.50', status: 'Processing' },
-        { id: '#98511', date: 'Dec 15, 2023', total: '$240.00', status: 'Delivered' },
-    ];
+    useEffect(() => {
+        const fetchOrders = async () => {
+            if (!customer?.id) return;
+            setIsLoadingOrders(true);
+            try {
+                const { apiFetch } = await import('../utils/api');
+                const response = await apiFetch(`/api/admin/orders?user_id=${customer.id}`);
+                if (response.status === 'SUCCESS' && response.keyValueTable && response.keyValueTable[0]) {
+                    setOrders(response.keyValueTable[0].orders || []);
+                }
+            } catch (error) {
+                console.error('Failed to fetch customer orders:', error);
+            } finally {
+                setIsLoadingOrders(false);
+            }
+        };
+
+        fetchOrders();
+    }, [customer?.id]);
 
     return (
         <div className="p-8 bg-gray-50 min-h-full">
@@ -197,21 +212,31 @@ export default function CustomerDetailView({ customer, onBack }) {
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-gray-50">
-                                    {orders.map((order) => (
-                                        <tr key={order.id} className="hover:bg-gray-50 transition-colors cursor-pointer">
-                                            <td className="py-3 text-sm font-medium text-gray-900">{order.id}</td>
-                                            <td className="py-3 text-sm text-gray-500">{order.date}</td>
-                                            <td className="py-3 text-sm text-gray-900 font-medium text-right">{order.total}</td>
-                                            <td className="py-3 text-right">
-                                                <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${order.status === 'Delivered' ? 'bg-green-100 text-green-800' :
+                                    {isLoadingOrders ? (
+                                        <tr>
+                                            <td colSpan="4" className="py-8 text-center text-gray-500">Loading orders...</td>
+                                        </tr>
+                                    ) : orders.length === 0 ? (
+                                        <tr>
+                                            <td colSpan="4" className="py-8 text-center text-gray-500">No orders found for this customer.</td>
+                                        </tr>
+                                    ) : (
+                                        orders.map((order) => (
+                                            <tr key={order._id || order.id} className="hover:bg-gray-50 transition-colors cursor-pointer">
+                                                <td className="py-3 text-sm font-medium text-gray-900">{order.id}</td>
+                                                <td className="py-3 text-sm text-gray-500">{new Date(order.date).toLocaleDateString()}</td>
+                                                <td className="py-3 text-sm text-gray-900 font-medium text-right">${Number(order.amount).toFixed(2)}</td>
+                                                <td className="py-3 text-right">
+                                                    <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${order.status === 'Delivered' ? 'bg-green-100 text-green-800' :
                                                         order.status === 'Processing' ? 'bg-blue-100 text-blue-800' :
                                                             'bg-gray-100 text-gray-800'
-                                                    }`}>
-                                                    {order.status}
-                                                </span>
-                                            </td>
-                                        </tr>
-                                    ))}
+                                                        }`}>
+                                                        {order.status}
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                        ))
+                                    )}
                                 </tbody>
                             </table>
                         </div>
