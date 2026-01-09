@@ -1,20 +1,17 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import EmailBlockEditor from './email-editor/EmailBlockEditor';
+import PreviewPanel from './email-editor/PreviewPanel';
+import VariablesPalette from './email-editor/VariablesPalette';
+import { blocksToHtml } from './email-editor/utils/blockToHtml';
+import { htmlToBlocks } from './email-editor/utils/htmlToBlocks';
 
 export default function EmailTemplateEditorView({ onBack, initialData = null }) {
-    // If an ID exists in initialData, we are in Edit mode. Otherwise, Create mode.
-    // However, initialData passed from list view might only have list fields.
-    // We should fetch full details if ID is present.
-
-    // Refs
-    const editorRef = useRef(null);
-    const editorInitialized = useRef(false); // Track if editor content was set
-    const selectionRange = useRef(null); // Track selection for restoring focus
-
     // State
     const [isLoading, setIsLoading] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
-    const [htmlMode, setHtmlMode] = useState(false);
-    const [showPreview, setShowPreview] = useState(false); // [NEW] Preview modal state
+    const [showPreview, setShowPreview] = useState(false);
+    const [lastSaved, setLastSaved] = useState(null);
+    const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
     // Form Fields
     const [internalName, setInternalName] = useState(initialData?.name || '');
@@ -22,99 +19,44 @@ export default function EmailTemplateEditorView({ onBack, initialData = null }) 
     const [subject, setSubject] = useState(initialData?.subject || '');
     const [preheader, setPreheader] = useState(initialData?.preheader || '');
     const [status, setStatus] = useState(initialData?.status === 'Active');
-    const [type, setType] = useState(initialData?.type || 'Marketing'); // Added type state
+    const [type, setType] = useState(initialData?.type || 'Marketing');
 
-    // Content - for now simple string/html
-    const [content, setContent] = useState(initialData?.content || '');
+    // Block-based content
+    const [blocks, setBlocks] = useState([]);
 
-    // Formatting functions using document.execCommand
-    const formatText = (command, value = null) => {
-        document.execCommand(command, false, value);
-        editorRef.current?.focus();
-    };
+    // Refs for auto-save
+    const autoSaveTimerRef = useRef(null);
+    const blocksRef = useRef(blocks);
 
-    const copyToClipboard = (text) => {
-        navigator.clipboard.writeText(text).then(() => {
-            // Insert at cursor position if editor is focused
-            if (editorRef.current) {
-                document.execCommand('insertText', false, text);
-            }
-        }).catch(err => {
-            console.error('Failed to copy:', err);
-        });
-    };
-
-    const handleContentChange = () => {
-        if (editorRef.current) {
-            setContent(editorRef.current.innerHTML);
-        }
-    };
-
-    const saveSelection = () => {
-        const selection = window.getSelection();
-        if (selection.rangeCount > 0) {
-            const range = selection.getRangeAt(0);
-            if (editorRef.current && editorRef.current.contains(range.commonAncestorContainer)) {
-                selectionRange.current = range;
-            }
-        }
-    };
-
-    const restoreSelection = () => {
-        if (selectionRange.current) {
-            const selection = window.getSelection();
-            selection.removeAllRanges();
-            selection.addRange(selectionRange.current);
-        }
-    };
-
-    const insertLink = (e) => {
-        e?.preventDefault();
-        e?.stopPropagation();
-        saveSelection();
-        setTimeout(() => {
-            const url = prompt('Enter URL:');
-            if (url) {
-                restoreSelection();
-                editorRef.current?.focus();
-                formatText('createLink', url);
-            }
-        }, 100);
-    };
-
-    const insertImage = (e) => {
-        e?.preventDefault();
-        e?.stopPropagation();
-        saveSelection();
-        setTimeout(() => {
-            const url = prompt('Enter image URL:');
-            if (url) {
-                restoreSelection();
-                editorRef.current?.focus();
-                formatText('insertImage', url);
-            }
-        }, 100);
-    };
-
-    // Set initial editor content once when data is loaded
+    // Keep blocksRef updated
     useEffect(() => {
-        if (editorRef.current && content && !editorInitialized.current && !htmlMode) {
-            editorRef.current.innerHTML = content;
-            editorInitialized.current = true;
-        }
-    }, [content, htmlMode]);
+        blocksRef.current = blocks;
+    }, [blocks]);
 
-    // Handle switching between visual and HTML modes
-    const handleModeToggle = () => {
-        if (!htmlMode && editorRef.current) {
-            // Switching from visual to HTML - sync content first
-            setContent(editorRef.current.innerHTML);
-        } else {
-            // Switching from HTML to visual - reset initialized flag so content gets set
-            editorInitialized.current = false;
-        }
-        setHtmlMode(!htmlMode);
-    };
+    // Handle blocks change
+    const handleBlocksChange = useCallback((newBlocks) => {
+        setBlocks(newBlocks);
+        setHasUnsavedChanges(true);
+    }, []);
+
+    // Auto-save every 20 seconds
+    useEffect(() => {
+        if (!initialData?.id) return; // Only auto-save existing templates
+
+        const autoSave = () => {
+            if (hasUnsavedChanges && !isSaving) {
+                handleSave(true); // silent save
+            }
+        };
+
+        autoSaveTimerRef.current = setInterval(autoSave, 20000);
+
+        return () => {
+            if (autoSaveTimerRef.current) {
+                clearInterval(autoSaveTimerRef.current);
+            }
+        };
+    }, [hasUnsavedChanges, isSaving, initialData?.id]);
 
     // Fetch full data on mount if ID exists
     useEffect(() => {
@@ -133,19 +75,33 @@ export default function EmailTemplateEditorView({ onBack, initialData = null }) 
                         setStatus(data.status === 'Active');
                         setType(data.type || 'Marketing');
 
-                        // Parse content if it's JSON from DB, or raw HTML string
+                        // Parse content
                         let loadedContent = data.template_content;
-                        if (typeof loadedContent === 'string' && loadedContent.startsWith('{')) {
-                            // If it's a JSON stringified object (unlikely if strictly following route, but safe)
-                            try { loadedContent = JSON.parse(loadedContent); } catch (e) { }
-                        }
-                        // Assume content is stored as { html: "..." } or just raw html?
-                        // Our route saves JSON.stringify(content). Let's assume we use a simple HTML string for now.
-                        // If it's an object, extract html property?
-                        if (typeof loadedContent === 'object' && loadedContent?.html) {
-                            setContent(loadedContent.html);
-                        } else if (typeof loadedContent === 'string') {
-                            setContent(loadedContent);
+
+                        // Handle JSON stringified content
+                        if (typeof loadedContent === 'string') {
+                            try {
+                                const parsed = JSON.parse(loadedContent);
+                                if (parsed.blocks && Array.isArray(parsed.blocks)) {
+                                    // New format with blocks
+                                    setBlocks(parsed.blocks);
+                                } else if (parsed.html) {
+                                    // Old format with just HTML
+                                    setBlocks(htmlToBlocks(parsed.html));
+                                } else {
+                                    // Unknown format, try to parse as HTML
+                                    setBlocks(htmlToBlocks(loadedContent));
+                                }
+                            } catch (e) {
+                                // Not JSON, treat as raw HTML
+                                setBlocks(htmlToBlocks(loadedContent));
+                            }
+                        } else if (typeof loadedContent === 'object') {
+                            if (loadedContent?.blocks) {
+                                setBlocks(loadedContent.blocks);
+                            } else if (loadedContent?.html) {
+                                setBlocks(htmlToBlocks(loadedContent.html));
+                            }
                         }
                     }
                 } catch (e) {
@@ -158,10 +114,14 @@ export default function EmailTemplateEditorView({ onBack, initialData = null }) 
         }
     }, [initialData?.id]);
 
-    const handleSave = async () => {
+    // Save handler
+    const handleSave = async (silent = false) => {
         setIsSaving(true);
         try {
             const { apiFetch } = await import('../utils/api');
+
+            // Generate HTML from blocks
+            const html = blocksToHtml(blocks);
 
             const payload = {
                 name: internalName,
@@ -170,108 +130,146 @@ export default function EmailTemplateEditorView({ onBack, initialData = null }) 
                 preheader,
                 status: status ? 'Active' : 'Draft',
                 type,
-                content: { html: content } // wrapping content in object structure
+                content: {
+                    blocks: blocks,
+                    html: html,
+                },
             };
 
             let response;
             if (initialData?.id) {
-                // Update
                 response = await apiFetch(`/api/admin/email-templates/${initialData.id}`, {
                     method: 'PUT',
-                    body: JSON.stringify(payload)
+                    body: JSON.stringify(payload),
                 });
             } else {
-                // Create
                 response = await apiFetch('/api/admin/email-templates', {
                     method: 'POST',
-                    body: JSON.stringify(payload)
+                    body: JSON.stringify(payload),
                 });
             }
 
             if (response.status === 'SUCCESS') {
-                onBack(); // Return to list view on success
-            } else {
+                setLastSaved(new Date());
+                setHasUnsavedChanges(false);
+                if (!silent) {
+                    onBack();
+                }
+            } else if (!silent) {
                 alert('Failed to save: ' + (response.message || 'Unknown error'));
             }
         } catch (e) {
             console.error('Save failed', e);
-            alert('Error saving template: ' + e.message);
+            if (!silent) {
+                alert('Error saving template: ' + e.message);
+            }
         } finally {
             setIsSaving(false);
         }
     };
 
-    // Dynamic Variables grouped as per design
-    const variableGroups = [
-        {
-            id: 'customer',
-            tags: ['{{first_name}}', '{{last_name}}', '{{email}}', '{{phone}}']
-        },
-        {
-            id: 'order',
-            tags: ['{{order_id}}', '{{order_date}}', '{{total}}', '{{shipping_addr}}', '{{unsubscribe_url}}']
-        },
-        {
-            id: 'company',
-            tags: ['{{company_name}}', '{{support_email}}', '{{website_url}}']
-        }
-    ];
+    // Format last saved time
+    const getLastSavedText = () => {
+        if (!lastSaved) return 'Not saved yet';
+        const seconds = Math.floor((new Date() - lastSaved) / 1000);
+        if (seconds < 60) return 'Saved just now';
+        const minutes = Math.floor(seconds / 60);
+        return `Auto-saved ${minutes} minute${minutes > 1 ? 's' : ''} ago`;
+    };
+
+    // Word count
+    const getWordCount = () => {
+        const text = blocks
+            .map(b => {
+                if (b.type === 'text' || b.type === 'heading') {
+                    return b.data.content?.replace(/<[^>]*>/g, '') || '';
+                }
+                if (b.type === 'button') {
+                    return b.data.text || '';
+                }
+                return '';
+            })
+            .join(' ');
+        return text.split(/\s+/).filter(w => w.length > 0).length;
+    };
+
+    if (isLoading) {
+        return (
+            <div className="flex items-center justify-center h-full">
+                <div className="text-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                    <p className="text-gray-500">Loading template...</p>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="flex flex-col h-full bg-gray-50">
-
             {/* Top Header */}
-            <div className="bg-gray-50 border-b border-gray-200 px-8 py-4 flex justify-between items-center bg-white sticky top-0 z-10">
+            <div className="bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center sticky top-0 z-10">
                 <div>
                     <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-                        {initialData?.id ? `Edit Template: ${internalName}` : 'Create New Template'}
+                        {initialData?.id ? `Edit Template: ${internalName || 'Untitled'}` : 'Create New Template'}
+                        {hasUnsavedChanges && (
+                            <span className="w-2 h-2 rounded-full bg-orange-400" title="Unsaved changes"></span>
+                        )}
                     </h2>
-                    <p className="text-sm text-gray-500 mt-1">Manage the content and settings for your automated welcome email.</p>
+                    <p className="text-sm text-gray-500 mt-0.5">
+                        Build your email using drag-and-drop blocks
+                    </p>
                 </div>
                 <div className="flex items-center gap-3">
                     <button
                         onClick={onBack}
-                        className="px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-md hover:bg-gray-50 font-medium text-sm transition-colors"
+                        className="px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 font-medium text-sm transition-colors"
                     >
                         Cancel
                     </button>
                     <button
-                        onClick={() => setShowPreview(true)} // [NEW] Open preview
-                        className="px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-md hover:bg-gray-50 font-medium text-sm transition-colors flex items-center gap-2"
+                        onClick={() => setShowPreview(true)}
+                        className="px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 font-medium text-sm transition-colors flex items-center gap-2"
                     >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                        </svg>
                         Preview
                     </button>
                     <button
-                        onClick={handleSave}
+                        onClick={() => handleSave(false)}
                         disabled={isSaving}
-                        className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 font-medium text-sm transition-colors flex items-center gap-2 shadow-sm disabled:opacity-50"
+                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium text-sm transition-colors flex items-center gap-2 shadow-sm disabled:opacity-50"
                     >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" /></svg>
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
+                        </svg>
                         {isSaving ? 'Saving...' : 'Save Changes'}
                     </button>
                 </div>
             </div>
 
             <div className="flex flex-1 overflow-hidden">
-
                 {/* Left Sidebar - Settings */}
-                <div className="w-80 bg-white border-r border-gray-200 overflow-y-auto p-6 flex-shrink-0">
-
-                    <div className="mb-8">
-                        <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2 mb-6">
-                            <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" /></svg>
+                <div className="w-72 bg-white border-r border-gray-200 overflow-y-auto p-5 flex-shrink-0">
+                    <div className="mb-6">
+                        <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2 mb-4">
+                            <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            </svg>
                             Template Settings
                         </h3>
 
-                        <div className="space-y-5">
+                        <div className="space-y-4">
                             <div>
                                 <label className="block text-xs font-semibold text-gray-700 mb-1.5">Internal Name</label>
                                 <input
                                     type="text"
                                     value={internalName}
-                                    onChange={(e) => setInternalName(e.target.value)}
-                                    className="w-full px-3 py-2 border border-gray-200 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 text-sm text-gray-800"
+                                    onChange={(e) => { setInternalName(e.target.value); setHasUnsavedChanges(true); }}
+                                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm text-gray-800"
+                                    placeholder="e.g. Welcome Email v2"
                                 />
                             </div>
 
@@ -280,215 +278,127 @@ export default function EmailTemplateEditorView({ onBack, initialData = null }) 
                                 <div className="relative">
                                     <select
                                         value={category}
-                                        onChange={(e) => setCategory(e.target.value)}
-                                        className="w-full px-3 py-2 border border-gray-200 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 text-sm text-gray-800 appearance-none bg-white"
+                                        onChange={(e) => { setCategory(e.target.value); setHasUnsavedChanges(true); }}
+                                        className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm text-gray-800 appearance-none bg-white"
                                     >
                                         <option>Onboarding</option>
                                         <option>Transactional</option>
                                         <option>Marketing</option>
                                     </select>
                                     <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500">
-                                        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+                                        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                        </svg>
                                     </div>
                                 </div>
                             </div>
 
-                            <div className="bg-gray-50 rounded-md p-3 border border-gray-100 flex items-center justify-between">
+                            <div>
+                                <label className="block text-xs font-semibold text-gray-700 mb-1.5">Type</label>
+                                <div className="relative">
+                                    <select
+                                        value={type}
+                                        onChange={(e) => { setType(e.target.value); setHasUnsavedChanges(true); }}
+                                        className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm text-gray-800 appearance-none bg-white"
+                                    >
+                                        <option>Marketing</option>
+                                        <option>Transactional</option>
+                                        <option>Notification</option>
+                                    </select>
+                                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500">
+                                        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                        </svg>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="bg-gray-50 rounded-lg p-3 border border-gray-100 flex items-center justify-between">
                                 <div>
                                     <span className="block text-xs font-bold text-gray-900">Status</span>
                                     <span className="text-[10px] text-gray-500">Enable sending</span>
                                 </div>
                                 <button
-                                    onClick={() => setStatus(!status)}
-                                    className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${status ? 'bg-blue-600' : 'bg-gray-300'}`}
+                                    onClick={() => { setStatus(!status); setHasUnsavedChanges(true); }}
+                                    className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${status ? 'bg-blue-600' : 'bg-gray-300'
+                                        }`}
                                 >
-                                    <span className={`${status ? 'translate-x-4' : 'translate-x-0.5'} inline-block h-4 w-4 transform rounded-full bg-white transition-transform`} />
+                                    <span
+                                        className={`${status ? 'translate-x-4' : 'translate-x-0.5'
+                                            } inline-block h-4 w-4 transform rounded-full bg-white transition-transform`}
+                                    />
                                 </button>
                             </div>
 
                             <div>
                                 <div className="flex justify-between items-center mb-1.5">
                                     <label className="block text-xs font-semibold text-gray-700">Preheader Text</label>
-                                    <span className="text-[10px] text-blue-500 cursor-pointer hover:underline">Shown in inbox preview</span>
+                                    <span className="text-[10px] text-blue-500">Shown in inbox preview</span>
                                 </div>
                                 <textarea
                                     value={preheader}
-                                    onChange={(e) => setPreheader(e.target.value)}
-                                    rows={3}
-                                    className="w-full px-3 py-2 border border-gray-200 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 text-sm text-gray-800 resize-none"
+                                    onChange={(e) => { setPreheader(e.target.value); setHasUnsavedChanges(true); }}
+                                    rows={2}
+                                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm text-gray-800 resize-none"
+                                    placeholder="Preview text shown after subject..."
                                 />
                             </div>
                         </div>
                     </div>
 
-                    <div className="pt-6 border-t border-gray-100">
-                        <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2 mb-4">
-                            <span className="font-mono text-blue-600">{`{ }`}</span>
-                            Dynamic Variables
-                        </h3>
-                        <p className="text-xs text-gray-500 mb-4">Click to copy variable to clipboard.</p>
-
-                        <div className="space-y-3">
-                            <div className="flex flex-wrap gap-2">
-                                {variableGroups.flatMap(g => g.tags).map(tag => (
-                                    <button
-                                        key={tag}
-                                        onClick={() => copyToClipboard(tag)}
-                                        className="px-2 py-1 bg-blue-50 border border-blue-100 text-blue-600 rounded text-[11px] font-mono hover:bg-blue-100 transition-colors"
-                                    >
-                                        {tag}
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
+                    <div className="pt-4 border-t border-gray-100">
+                        <VariablesPalette onInsertVariable={(variable) => {
+                            // Could implement direct insertion here
+                            console.log('Insert variable:', variable);
+                        }} />
                     </div>
-
                 </div>
 
-                {/* Main Content - Editor */}
-                <div className="flex-1 overflow-y-auto bg-gray-50 p-8 flex flex-col items-center">
-
-                    <div className="w-full max-w-3xl bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden flex flex-col h-[800px]">
-                        {/* Subject Line Bar */}
-                        <div className="px-6 py-4 border-b border-gray-100">
-                            <div className="flex justify-between items-center mb-1">
+                {/* Main Content - Block Editor */}
+                <div className="flex-1 overflow-y-auto bg-gray-100 p-6">
+                    <div className="max-w-2xl mx-auto">
+                        {/* Subject Line */}
+                        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-4">
+                            <div className="flex justify-between items-center mb-2">
                                 <label className="text-xs font-bold text-gray-600">Subject Line</label>
                                 <span className="text-[10px] text-gray-400">{subject.length}/60 chars</span>
                             </div>
                             <input
                                 type="text"
                                 value={subject}
-                                onChange={(e) => setSubject(e.target.value)}
-                                className="w-full text-lg text-gray-900 placeholder-gray-300 focus:outline-none"
+                                onChange={(e) => { setSubject(e.target.value); setHasUnsavedChanges(true); }}
+                                className="w-full text-lg text-gray-900 placeholder-gray-300 focus:outline-none border-b border-transparent focus:border-blue-500 pb-1"
                                 placeholder="Enter subject line..."
                             />
                         </div>
 
-                        {/* Toolbar */}
-                        <div className="px-4 py-2 border-b border-gray-100 bg-gray-50/50 flex items-center justify-between sticky top-0">
-                            <div className="flex items-center gap-1">
-                                <button onClick={() => formatText('undo')} className="p-1.5 text-gray-400 hover:text-gray-900 rounded" title="Undo"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" /></svg></button>
-                                <button onClick={() => formatText('redo')} className="p-1.5 text-gray-400 hover:text-gray-900 rounded" title="Redo"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 10h-10a8 8 0 00-8 8v2M21 10l-6 6m6-6l-6-6" /></svg></button>
-                                <div className="w-px h-4 bg-gray-300 mx-2"></div>
-                                <button onClick={() => formatText('bold')} className="p-1.5 text-gray-600 hover:text-gray-900 hover:bg-gray-200 rounded font-bold font-serif" title="Bold">B</button>
-                                <button onClick={() => formatText('italic')} className="p-1.5 text-gray-600 hover:text-gray-900 hover:bg-gray-200 rounded italic font-serif" title="Italic">I</button>
-                                <button onClick={() => formatText('underline')} className="p-1.5 text-gray-600 hover:text-gray-900 hover:bg-gray-200 rounded underline font-serif" title="Underline">U</button>
-                                <div className="w-px h-4 bg-gray-300 mx-2"></div>
-                                <button onClick={() => formatText('justifyLeft')} className="p-1.5 text-gray-500 hover:text-gray-900 hover:bg-gray-200 rounded" title="Align Left"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" /></svg></button>
-                                <button onClick={() => formatText('justifyCenter')} className="p-1.5 text-gray-500 hover:text-gray-900 hover:bg-gray-200 rounded" title="Align Center"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h8m-8 6h16" /></svg></button>
-                                <button onClick={() => formatText('justifyRight')} className="p-1.5 text-gray-500 hover:text-gray-900 hover:bg-gray-200 rounded" title="Align Right"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h7" /></svg></button>
-                                <div className="w-px h-4 bg-gray-300 mx-2"></div>
-                                <button onClick={insertLink} className="p-1.5 text-gray-500 hover:text-gray-900 hover:bg-gray-200 rounded" title="Insert Link"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101" /></svg></button>
-                                <button onClick={insertImage} className="p-1.5 text-gray-500 hover:text-gray-900 hover:bg-gray-200 rounded" title="Insert Image"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg></button>
-                                <button onClick={() => formatText('formatBlock', 'pre')} className="p-1.5 text-gray-500 hover:text-gray-900 hover:bg-gray-200 rounded" title="Code Block"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" /></svg></button>
-                            </div>
-                            <button
-                                onClick={handleModeToggle}
-                                className="text-xs font-medium text-blue-600 hover:text-blue-700"
-                            >
-                                {htmlMode ? 'Switch to Visual' : 'Switch to HTML'}
-                            </button>
-                        </div>
-
-                        {/* Content Area - Scrollable */}
-                        <div className="flex-1 overflow-y-auto p-12 bg-white">
-                            <div className="max-w-[600px] mx-auto">
-                                {/* Rich Text Content - Visual Mode */}
-                                {!htmlMode ? (
-                                    <div
-                                        ref={editorRef}
-                                        contentEditable
-                                        suppressContentEditableWarning
-                                        onBlur={handleContentChange}
-                                        className="min-h-[300px] prose prose-sm max-w-none focus:outline-none p-4 border border-gray-200 rounded-lg"
-                                    >
-                                        {!content && <p className="text-gray-400">Start typing your email content here...</p>}
-                                    </div>
-                                ) : (
-                                    /* HTML Mode */
-                                    <textarea
-                                        value={content}
-                                        onChange={(e) => setContent(e.target.value)}
-                                        className="w-full min-h-[300px] p-4 font-mono text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                        placeholder="<p>Enter HTML content here...</p>"
-                                    />
-                                )}
-                            </div>
+                        {/* Block Editor */}
+                        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 min-h-[500px]">
+                            <EmailBlockEditor
+                                blocks={blocks}
+                                onChange={handleBlocksChange}
+                            />
                         </div>
 
                         {/* Footer Status Bar */}
-                        <div className="bg-gray-50 border-t border-gray-100 px-4 py-2 flex justify-between items-center text-[10px] text-gray-400">
-                            <span>Last auto-saved 2 minutes ago</span>
-                            <span>Word count: 142</span>
+                        <div className="mt-4 flex justify-between items-center text-xs text-gray-400">
+                            <span>{getLastSavedText()}</span>
+                            <span>Word count: {getWordCount()}</span>
                         </div>
-
                     </div>
                 </div>
-
             </div>
 
             {/* Preview Modal */}
-            {showPreview && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-                    <div className="bg-white rounded-xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-hidden flex flex-col">
-                        {/* Modal Header */}
-                        <div className="flex justify-between items-center p-6 border-b border-gray-100 bg-gray-50">
-                            <div>
-                                <h2 className="text-xl font-bold text-gray-900">Email Preview</h2>
-                                <p className="text-sm text-gray-500 mt-1">{internalName || 'Untitled Template'}</p>
-                            </div>
-                            <button
-                                onClick={() => setShowPreview(false)}
-                                className="text-gray-400 hover:text-gray-600 p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                            >
-                                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-                            </button>
-                        </div>
-
-                        {/* Email Preview Content */}
-                        <div className="flex-1 overflow-y-auto p-6">
-                            {/* Subject Line */}
-                            <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-100">
-                                <span className="text-xs text-gray-500 uppercase font-semibold tracking-wide">Subject</span>
-                                <p className="text-gray-900 font-medium mt-1">{subject || '(No subject)'}</p>
-                            </div>
-
-                            {/* Email Body */}
-                            <div className="border border-gray-200 rounded-lg bg-white">
-                                <div className="p-4 border-b border-gray-100 bg-gray-50 rounded-t-lg">
-                                    <span className="text-xs text-gray-500 uppercase font-semibold tracking-wide">Email Body</span>
-                                </div>
-                                <div
-                                    className="p-6 prose prose-sm max-w-none"
-                                    dangerouslySetInnerHTML={{ __html: content || '<p class="text-gray-400 italic">No HTML content available</p>' }}
-                                />
-                            </div>
-
-                            {/* Metadata */}
-                            <div className="mt-6 grid grid-cols-2 gap-4 text-sm">
-                                <div className="p-3 bg-gray-50 rounded-lg">
-                                    <span className="text-gray-500">Type:</span>
-                                    <span className="ml-2 font-medium text-gray-900">{type}</span>
-                                </div>
-                                <div className="p-3 bg-gray-50 rounded-lg">
-                                    <span className="text-gray-500">Status:</span>
-                                    <span className={`ml-2 font-medium ${status ? 'text-green-600' : 'text-gray-600'}`}>{status ? 'Active' : 'Draft'}</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Modal Footer */}
-                        <div className="p-4 border-t border-gray-100 flex justify-end gap-3 bg-gray-50">
-                            <button
-                                onClick={() => setShowPreview(false)}
-                                className="px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 font-medium text-sm transition-colors"
-                            >
-                                Close
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
+            <PreviewPanel
+                isOpen={showPreview}
+                onClose={() => setShowPreview(false)}
+                blocks={blocks}
+                subject={subject}
+                templateName={internalName}
+                status={status}
+                type={type}
+            />
         </div>
     );
 }
