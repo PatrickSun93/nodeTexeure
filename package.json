@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "npm run pm2:stop && npm run clean && npm run dev:full",
     "dev:full": "./start-dev.sh",
     "dev:frontend": "next dev",
     "dev:backend": "cd backend && npm run dev",
