@@ -3,6 +3,8 @@ import { Inter, Cormorant_Garamond } from "next/font/google";
 import "./globals.css";
 import "../styles/design-tokens.css";
 import "../styles/aesop-design-system.css";
+import "../styles/searchbar.css";
+import "../styles/header-search.css";
 
 const inter = Inter({
   variable: "--font-inter",

@@ -66,6 +66,9 @@ app.use('/api/cart', require('./routes/cartRoutes'));
 // Order routes
 app.use('/api/orders', require('./routes/orderRoutes'));
 
+// Search routes (public - autocomplete, suggestions)
+app.use('/api/search', require('./routes/searchRoutes'));
+
 // Email Template routes (protected admin)
 app.use('/api/admin/email-templates', protect, admin, require('./routes/emailTemplateRoutes'));
 

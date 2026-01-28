@@ -6,12 +6,12 @@ import { useSession, signIn, signOut } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useCartCount } from '../lib';
 import CartDrawer from './CartDrawer';
+import SearchBar from './SearchBar';
 
   export default function Header({ siteName = 'Noiraé' }) {
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isShopMenuOpen, setIsShopMenuOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
   const [isCartOpen, setIsCartOpen] = useState(false);
   const { data: session, status } = useSession();
   const { count } = useCartCount();
@@ -106,47 +106,20 @@ import CartDrawer from './CartDrawer';
           </nav>
           
           <div className="aesop-header-actions aesop-header-right">
-            {/* Search */}
+            {/* Enhanced Search with Autocomplete */}
             <div className="aesop-search-container">
               {isSearchOpen ? (
-                <form onSubmit={handleSearch} className="aesop-search-form">
-                  <input
-                    id="search-input"
-                    type="text"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Search products..."
-                    className="aesop-search-input"
-                    onBlur={() => {
-                      // Close search if clicking outside and no query
-                      setTimeout(() => {
-                        if (!searchQuery.trim()) {
-                          setIsSearchOpen(false);
-                        }
-                      }, 200);
-                    }}
-                  />
-                  <button
-                    type="submit"
-                    className="aesop-search-submit"
-                  >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                    </svg>
-                  </button>
+                <div className="aesop-search-expanded">
+                  <SearchBar autoFocus={true} />
                   <button
                     type="button"
-                    onClick={() => {
-                      setSearchQuery('');
-                      setIsSearchOpen(false);
-                    }}
-                    className="aesop-search-close"
+                    onClick={() => setIsSearchOpen(false)}
+                    className="aesop-search-close-btn"
+                    title="Close search"
                   >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
+                    ✕
                   </button>
-                </form>
+                </div>
               ) : (
                 <button
                   onClick={toggleSearch}
