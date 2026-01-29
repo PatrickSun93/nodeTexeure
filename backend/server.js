@@ -69,6 +69,15 @@ app.use('/api/orders', require('./routes/orderRoutes'));
 // Search routes (public - autocomplete, suggestions)
 app.use('/api/search', require('./routes/searchRoutes'));
 
+// Review routes
+app.use('/api/reviews', require('./routes/reviewRoutes'));
+
+// Analytics routes (admin only - protected in routes file)
+app.use('/api/admin/analytics', require('./routes/analyticsRoutes'));
+
+// Bulk operations routes (admin only)
+app.use('/api/admin/bulk', protect, admin, require('./routes/bulkOperationsRoutes'));
+
 // Email Template routes (protected admin)
 app.use('/api/admin/email-templates', protect, admin, require('./routes/emailTemplateRoutes'));
 
