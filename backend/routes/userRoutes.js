@@ -8,6 +8,7 @@ const ResponseFormatter = require('../utils/responseFormatter');
 const { protect, admin } = require('../middleware/authMiddleware');
 const { generateCSRFToken } = require('../middleware/csrfMiddleware');
 const crypto = require('crypto');
+const emailQueueProducer = require('../services/emailQueueProducer');
 
 const router = express.Router();
 
@@ -72,6 +73,13 @@ router.post('/register', async (req, res) => {
     );
 
     if (insertResult.success) {
+      // Enqueue welcome email (non-blocking)
+      emailQueueProducer.enqueue(email, firstName, 'welcome_user', {
+        first_name: firstName,
+        last_name: lastName,
+        customer_name: `${firstName} ${lastName}`,
+      }).catch(err => console.error('Non-fatal: welcome email enqueue failed:', err.message));
+
       const keyValueTable = {
         userId: userId,
         email: email,
@@ -549,14 +557,11 @@ router.post('/forgot-password', forgotLimiter, async (req, res) => {
 
     await DatabaseUtil.executeQuery('UPDATE users SET resetToken = ?, resetTokenExpiry = DATE_ADD(NOW(), INTERVAL 1 HOUR) WHERE id = ?', [token, userId]);
 
-    const mailOptions = {
-      from: process.env.EMAIL_USER,
-      to: email,
-      subject: 'Password Reset',
-      text: `You requested a password reset. Click this link to reset: http://yourdomain.com/reset-password?token=${token}`
-    };
-
-    await transporter.sendMail(mailOptions);
+    // Enqueue password reset email via the queue (daemon will send it)
+    const resetLink = `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/reset-password?token=${token}`;
+    await emailQueueProducer.enqueue(email, '', 'password_reset', {
+      reset_link: resetLink,
+    });
 
     const keyValueTable = { message: 'Password reset email sent' };
     res.json(ResponseFormatter.success('Email sent', keyValueTable));

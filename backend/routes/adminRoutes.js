@@ -6,6 +6,8 @@ const ResponseFormatter = require('../utils/responseFormatter');
 const path = require('path');
 const fs = require('fs');
 const bcrypt = require('bcryptjs');
+const { v4: uuidv4 } = require('uuid');
+const emailQueueProducer = require('../services/emailQueueProducer');
 
 // Multer setup (installed separately). Using disk storage inside backend/uploads
 let multer;
@@ -655,14 +657,53 @@ router.get('/orders/:id', adminReadLimiter, async (req, res) => {
 router.put('/orders/:id/status', adminWriteLimiter, csrfProtection, async (req, res) => {
   try {
     const { id } = req.params;
-    const { status } = req.body; // e.g. 'shipped', 'delivered', 'cancelled'
+    const { status, notes } = req.body;
+    const normalizedStatus = status.toLowerCase();
 
-    // ID might be order_number in frontend, but URL should use UUID.
-    // If frontend uses order_number, we need to lookup UUID first or assume UUID.
-    // Let's assume frontend passes UUID for update actions (we returned _id as well).
-
-    const updateResult = await DatabaseUtil.executeQuery('UPDATE orders SET status = ? WHERE id = ?', [status.toLowerCase(), id]);
+    // Update order status
+    const updateResult = await DatabaseUtil.executeQuery('UPDATE orders SET status = ? WHERE id = ?', [normalizedStatus, id]);
     if (!updateResult.success) throw new Error(updateResult.error);
+
+    // Insert into order_status_history
+    const historyId = uuidv4();
+    const statusDetails = notes ? JSON.stringify({ notes }) : null;
+    await DatabaseUtil.executeQuery(
+      'INSERT INTO order_status_history (id, order_id, status, status_details, changed_by) VALUES (?, ?, ?, ?, ?)',
+      [historyId, id, normalizedStatus, statusDetails, req.user.id]
+    );
+
+    // Look up customer email and enqueue status notification
+    const [order] = await DatabaseUtil.executeQuery(
+      `SELECT o.order_number, o.guest_email, u.email as user_email,
+              COALESCE(u.first_name, 'Valued Customer') as customer_name,
+              o.tracking_number
+       FROM orders o LEFT JOIN users u ON o.user_id = u.id
+       WHERE o.id = ?`,
+      [id]
+    );
+
+    if (order) {
+      const customerEmail = order.user_email || order.guest_email;
+      if (customerEmail) {
+        // Map status to template name
+        const templateMap = {
+          confirmed: 'order_confirmed',
+          processing: 'order_processing',
+          shipped: 'order_shipped',
+          delivered: 'order_delivered',
+          cancelled: 'order_cancelled',
+        };
+
+        const templateName = templateMap[normalizedStatus];
+        if (templateName) {
+          emailQueueProducer.enqueue(customerEmail, order.customer_name, templateName, {
+            order_number: order.order_number,
+            customer_name: order.customer_name,
+            tracking_number: order.tracking_number || '',
+          }).catch(err => console.error('Non-fatal: status email enqueue failed:', err.message));
+        }
+      }
+    }
 
     res.json(ResponseFormatter.success('Order status updated'));
   } catch (error) {

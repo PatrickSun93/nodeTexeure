@@ -7,7 +7,8 @@
     "dev": "nodemon server.js",
     "test": "echo \"No tests specified\" && exit 0",
     "seed:rnd": "node scripts/seed-rnd.js",
-    "reset-passwords": "node scripts/reset-all-passwords.js"
+    "reset-passwords": "node scripts/reset-all-passwords.js",
+    "email-daemon": "node services/emailDaemon.js"
   },
   "keywords": [
     "express",
