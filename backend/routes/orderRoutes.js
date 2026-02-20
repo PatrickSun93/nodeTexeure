@@ -4,7 +4,12 @@ const { v4: uuidv4 } = require('uuid');
 const DatabaseUtil = require('../utils/database');
 const ResponseFormatter = require('../utils/responseFormatter');
 const { protect, protectOptional } = require('../middleware/authMiddleware');
+const emailService = require('../services/emailService');
+const shippingService = require('../services/shippingService');
 const db = new DatabaseUtil();
+
+// Tax rate (configurable - default NY rate)
+const TAX_RATE = parseFloat(process.env.TAX_RATE) || 0.08875;
 
 // Helper function to get cart details
 async function getCartDetails(cartId) {
@@ -33,7 +38,6 @@ async function validateCoupon(code, subtotal) {
     return { valid: false, message: `Minimum order amount of ${coupon.minimum_order_amount} required` };
   }
 
-  // Check usage limit, etc. (simplified)
   return { valid: true, coupon };
 }
 
@@ -81,7 +85,7 @@ router.post('/apply-coupon', async (req, res) => {
 
 // POST /api/orders/create
 router.post('/create', protectOptional, async (req, res) => {
-  const { cartId, shippingAddress, billingAddress, couponCode } = req.body;
+  const { cartId, shippingAddress, billingAddress, couponCode, shippingMethod } = req.body;
   const userId = req.user ? req.user.id : null;
   const guestEmail = req.body.guestEmail || null;
 
@@ -115,9 +119,24 @@ router.post('/create', protectOptional, async (req, res) => {
       }
     }
 
-    // TODO: Calculate tax, shipping
-    const taxAmount = 0; // Placeholder
-    const shippingAmount = 0; // Placeholder
+    // Calculate tax (8.875% NY rate by default)
+    const taxableAmount = subtotal - discountAmount;
+    const taxAmount = Math.round(taxableAmount * TAX_RATE * 100) / 100;
+
+    // Calculate shipping (use selected method or default standard)
+    let shippingAmount = 9.99;
+    if (shippingMethod) {
+      const rates = shippingService.DEFAULT_RATES;
+      const selected = rates.find(r => r.serviceType === shippingMethod);
+      if (selected) {
+        shippingAmount = selected.rate;
+      }
+    }
+    // Free shipping over $100
+    if (subtotal >= 100) {
+      shippingAmount = 0;
+    }
+
     const totalAmount = subtotal + taxAmount + shippingAmount - discountAmount;
 
     // Generate order number
@@ -144,6 +163,21 @@ router.post('/create', protectOptional, async (req, res) => {
     // Clear cart
     await db.executeQuery('DELETE FROM cart_items WHERE cart_id = ?', [cartId]);
     await db.executeQuery('DELETE FROM shopping_carts WHERE id = ?', [cartId]);
+
+    // Send order confirmation email (non-blocking)
+    const customerEmail = guestEmail || (req.user ? req.user.email : null);
+    if (customerEmail) {
+      emailService.sendOrderConfirmation({
+        order_number: orderNumber,
+        customer_name: shippingAddress?.first_name || 'Valued Customer',
+        user_email: customerEmail,
+        guest_email: guestEmail,
+        created_at: new Date(),
+        subtotal, tax_amount: taxAmount, shipping_amount: shippingAmount,
+        discount_amount: discountAmount, total_amount: totalAmount,
+        items: cartItems.map(i => ({ product_name: i.name, quantity: i.quantity, unit_price: i.price })),
+      }).catch(err => console.error('Non-fatal: order confirmation email failed:', err.message));
+    }
 
     res.json(ResponseFormatter.success('Order created successfully', { orderId, orderNumber }));
   } catch (error) {

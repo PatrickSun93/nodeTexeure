@@ -85,6 +85,15 @@ app.use('/api/admin/email-templates', protect, admin, require('./routes/emailTem
 const adminRoutes = require('./routes/adminRoutes');
 app.use('/api/admin', protect, admin, adminRoutes);
 
+// Payment routes (Stripe)
+app.use('/api/payments', require('./routes/paymentRoutes'));
+
+// Image upload routes (S3)
+app.use('/api/images', require('./routes/imageRoutes'));
+
+// Shipping routes (FedEx)
+app.use('/api/shipping', require('./routes/shippingRoutes'));
+
 // Backward compatibility - redirect old endpoints to new structure
 app.get('/api/health', (req, res) => {
   res.redirect(301, '/api/status/health');
