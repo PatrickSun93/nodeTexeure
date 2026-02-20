@@ -6,6 +6,8 @@ import Link from 'next/link';
 import Header from '../../../components/Header';
 import Footer from '../../../components/Footer';
 import ImageZoom from '../../../components/common/ImageZoom';
+import ReviewList from '../../../components/reviews/ReviewList';
+import ReviewForm from '../../../components/reviews/ReviewForm';
 import { apiRequest } from '../../../lib/api';
 
 
@@ -16,6 +18,8 @@ export default function ProductDetails() {
   const [loading, setLoading] = useState(true);
   const [adding, setAdding] = useState(false);
   const [error, setError] = useState("");
+  const [showReviewForm, setShowReviewForm] = useState(false);
+  const [reviewKey, setReviewKey] = useState(0);
 
   // Fetch product details
   useEffect(() => {
@@ -199,24 +203,33 @@ export default function ProductDetails() {
         </div>
 
         {/* Reviews Section */}
-        {product.reviews?.length > 0 && (
-          <div className="noirae-reviews-section">
+        <div className="noirae-reviews-section" style={{ marginTop: '3rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
             <h2 className="noirae-heading-2">Customer Reviews</h2>
-            <div className="noirae-reviews-grid">
-              {product.reviews.map((r) => (
-                <div key={r.id} className="noirae-review-card">
-                  <div className="noirae-review-rating">
-                    {'★'.repeat(r.rating)}{'☆'.repeat(5 - r.rating)}
-                  </div>
-                  <p className="noirae-review-comment">{r.comment}</p>
-                  {r.reviewer_name && (
-                    <p className="noirae-review-author">— {r.reviewer_name}</p>
-                  )}
-                </div>
-              ))}
-            </div>
+            <button
+              onClick={() => setShowReviewForm(!showReviewForm)}
+              className="noirae-btn-secondary"
+              style={{ padding: '0.5rem 1.5rem' }}
+            >
+              {showReviewForm ? 'Cancel' : 'Write a Review'}
+            </button>
           </div>
-        )}
+
+          {showReviewForm && (
+            <div style={{ marginBottom: '2rem' }}>
+              <ReviewForm
+                productId={product.id}
+                onSuccess={() => {
+                  setShowReviewForm(false);
+                  setReviewKey(prev => prev + 1);
+                }}
+                onCancel={() => setShowReviewForm(false)}
+              />
+            </div>
+          )}
+
+          <ReviewList key={reviewKey} productId={product.id} />
+        </div>
       </main>
 
       <Footer />

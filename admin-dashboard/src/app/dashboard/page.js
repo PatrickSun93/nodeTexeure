@@ -16,6 +16,8 @@ import PromotionModal from '../../components/PromotionModal';
 import StaffDetailView from '../../components/StaffDetailView';
 import SettingsView from '../../components/SettingsView';
 import EmailTemplatesView from '../../components/EmailTemplatesView';
+import AnalyticsDashboard from '../../components/AnalyticsDashboard';
+import BulkUploadView from '../../components/BulkUploadView';
 
 export default function Dashboard() {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -149,6 +151,12 @@ export default function Dashboard() {
           >
             📈 Analytics
           </button>
+          <button
+            onClick={() => setActiveTab('bulk-upload')}
+            className={`block w-full text-left px-6 py-3 hover:bg-blue-50 transition ${activeTab === 'bulk-upload' ? 'bg-blue-50 text-blue-600 border-r-2 border-blue-600' : ''}`}
+          >
+            📤 Bulk Upload
+          </button>
         </nav>
         <div className="p-6 border-t">
           <button onClick={handleLogout} className="w-full px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition">
@@ -168,7 +176,8 @@ export default function Dashboard() {
         {activeTab === 'settings' && <SettingsView />}
         {activeTab === 'promotions' && <PromotionsView />}
 
-        {activeTab === 'analytics' && <AnalyticsView />}
+        {activeTab === 'analytics' && <AnalyticsDashboard />}
+        {activeTab === 'bulk-upload' && <BulkUploadView />}
       </div>
     </div>
   );
@@ -1100,15 +1109,6 @@ function StaffView() {
           </tbody>
         </table>
       </div>
-    </div>
-  );
-}
-
-function AnalyticsView() {
-  return (
-    <div className="p-8">
-      <h2 className="text-2xl font-bold mb-6">Analytics</h2>
-      <p className="text-gray-500">Advanced analytics coming soon...</p>
     </div>
   );
 }

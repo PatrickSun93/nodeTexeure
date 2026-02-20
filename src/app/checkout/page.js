@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { apiRequest } from '../../lib/api';
 
 function CheckoutPage() {
   const [cartItems, setCartItems] = useState([]);
@@ -16,10 +17,22 @@ function CheckoutPage() {
   const [billingAddress, setBillingAddress] = useState({ first_name: '', last_name: '', address_line_1: '', city: '', state: '', postal_code: '', country: '', phone: '' });
   const [guestEmail, setGuestEmail] = useState('');
   const [error, setError] = useState('');
-  const [isLoggedIn, setIsLoggedIn] = useState(false); // TODO: Check auth
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
+    // Check if user is authenticated
+    const checkAuth = async () => {
+      try {
+        const data = await apiRequest('/users/profile');
+        if (data?.status === 'SUCCESS') {
+          setIsLoggedIn(true);
+        }
+      } catch {
+        setIsLoggedIn(false);
+      }
+    };
+    checkAuth();
     fetchCart();
   }, []);
 
