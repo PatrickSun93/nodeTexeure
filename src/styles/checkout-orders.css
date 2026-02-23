@@ -1,0 +1,893 @@
+/* ==========================================
+   Checkout, Orders, Order Confirmation Styles
+   ========================================== */
+
+/* --- Shared Utilities --- */
+.nt-breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 1.5rem 0 0.5rem;
+    font-size: 0.85rem;
+    color: #666;
+}
+.nt-breadcrumb a {
+    color: #888;
+    text-decoration: none;
+    transition: color 0.2s;
+}
+.nt-breadcrumb a:hover {
+    color: #000;
+}
+.nt-breadcrumb-sep {
+    color: #ccc;
+}
+.nt-page-title {
+    font-family: var(--font-playfair, "Playfair Display", serif);
+    font-size: 2rem;
+    font-weight: 600;
+    margin-bottom: 2rem;
+    letter-spacing: -0.02em;
+}
+
+.nt-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.75rem 1.75rem;
+    border: none;
+    border-radius: 2px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.25s ease;
+    letter-spacing: 0.03em;
+}
+.nt-btn-primary {
+    background: #000;
+    color: #fff;
+}
+.nt-btn-primary:hover {
+    background: #333;
+}
+.nt-btn-primary:disabled {
+    background: #999;
+    cursor: not-allowed;
+}
+.nt-btn-secondary {
+    background: transparent;
+    color: #000;
+    border: 1px solid #ccc;
+}
+.nt-btn-secondary:hover {
+    border-color: #000;
+}
+.nt-btn-secondary:disabled {
+    color: #999;
+    border-color: #ddd;
+    cursor: not-allowed;
+}
+.nt-btn-full {
+    width: 100%;
+}
+.nt-btn-lg {
+    padding: 1rem 2rem;
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.nt-loading-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 300px;
+    gap: 1rem;
+    color: #666;
+}
+.nt-error-state,
+.nt-empty-state {
+    text-align: center;
+    padding: 4rem 2rem;
+}
+.nt-empty-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+}
+.nt-empty-state h2 {
+    font-family: var(--font-playfair, "Playfair Display", serif);
+    margin-bottom: 0.5rem;
+}
+.nt-empty-state p {
+    color: #666;
+    margin-bottom: 1.5rem;
+}
+
+.nt-error-banner {
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    color: #b91c1c;
+    padding: 1rem;
+    border-radius: 4px;
+    margin-bottom: 1.5rem;
+    font-size: 0.9rem;
+}
+
+/* --- Checkout Page --- */
+.nt-checkout-page {
+    padding: 2rem 0 4rem;
+    min-height: 70vh;
+}
+
+.nt-checkout-steps {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    margin-bottom: 2.5rem;
+    padding: 1rem 0;
+    border-bottom: 1px solid #eee;
+}
+.nt-checkout-step {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #aaa;
+    font-size: 0.85rem;
+    padding-right: 2rem;
+    position: relative;
+}
+.nt-checkout-step:not(:last-child)::after {
+    content: "→";
+    position: absolute;
+    right: 0.5rem;
+    color: #ddd;
+}
+.nt-checkout-step.nt-step-active {
+    color: #000;
+    font-weight: 600;
+}
+.nt-checkout-step.nt-step-done {
+    color: #10b981;
+}
+.nt-step-number {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    font-weight: 600;
+    border: 2px solid #ddd;
+    color: #aaa;
+}
+.nt-step-active .nt-step-number {
+    border-color: #000;
+    color: #000;
+    background: #000;
+    color: #fff;
+}
+.nt-step-done .nt-step-number {
+    border-color: #10b981;
+    background: #10b981;
+    color: #fff;
+}
+
+.nt-checkout-grid {
+    display: grid;
+    grid-template-columns: 1fr 380px;
+    gap: 3rem;
+    align-items: start;
+}
+@media (max-width: 900px) {
+    .nt-checkout-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Form */
+.nt-checkout-form {
+    min-width: 0;
+}
+.nt-form-section {
+    margin-bottom: 2rem;
+}
+.nt-form-section h2 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    letter-spacing: 0.02em;
+}
+.nt-form-section h3 {
+    font-size: 0.95rem;
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+}
+.nt-form-hint {
+    font-size: 0.85rem;
+    color: #666;
+    margin-bottom: 1rem;
+}
+.nt-form-hint a {
+    color: #000;
+    text-decoration: underline;
+}
+
+.nt-form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    margin-bottom: 1rem;
+}
+.nt-form-group label {
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: #333;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+.nt-form-group input,
+.nt-form-group select {
+    padding: 0.7rem 0.85rem;
+    border: 1px solid #ddd;
+    border-radius: 2px;
+    font-size: 0.9rem;
+    background: #fff;
+    transition: border-color 0.2s;
+}
+.nt-form-group input:focus,
+.nt-form-group select:focus {
+    border-color: #000;
+    outline: none;
+}
+.nt-input-error {
+    border-color: #ef4444 !important;
+}
+.nt-field-error {
+    font-size: 0.78rem;
+    color: #ef4444;
+}
+
+.nt-form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+.nt-form-row-3 {
+    grid-template-columns: 1fr 1fr 1fr;
+}
+@media (max-width: 600px) {
+    .nt-form-row,
+    .nt-form-row-3 {
+        grid-template-columns: 1fr;
+    }
+}
+
+.nt-checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    font-size: 0.9rem;
+}
+.nt-checkbox-label input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    accent-color: #000;
+}
+
+/* Shipping Options */
+.nt-shipping-options {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+.nt-shipping-option {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    border: 1px solid #ddd;
+    border-radius: 2px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.nt-shipping-option:hover {
+    border-color: #999;
+}
+.nt-shipping-option.nt-option-selected {
+    border-color: #000;
+    background: #fafafa;
+}
+.nt-shipping-option input[type="radio"] {
+    accent-color: #000;
+}
+.nt-option-details {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+.nt-option-name {
+    font-weight: 500;
+    font-size: 0.9rem;
+}
+.nt-option-est {
+    font-size: 0.8rem;
+    color: #666;
+}
+.nt-option-price {
+    font-weight: 600;
+    font-size: 0.95rem;
+}
+
+.nt-free-shipping-banner {
+    background: #ecfdf5;
+    border: 1px solid #a7f3d0;
+    color: #065f46;
+    padding: 0.75rem 1rem;
+    border-radius: 2px;
+    margin-bottom: 1rem;
+    font-size: 0.9rem;
+}
+
+.nt-step-nav {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-top: 2rem;
+}
+
+/* Review Summary */
+.nt-review-summary {
+    border: 1px solid #eee;
+    border-radius: 2px;
+    margin-bottom: 1.5rem;
+}
+.nt-review-row {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.85rem 1rem;
+    border-bottom: 1px solid #eee;
+    font-size: 0.9rem;
+}
+.nt-review-row:last-child {
+    border-bottom: none;
+}
+.nt-review-label {
+    font-weight: 600;
+    min-width: 70px;
+    color: #666;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+.nt-change-btn {
+    margin-left: auto;
+    background: none;
+    border: none;
+    color: #666;
+    cursor: pointer;
+    font-size: 0.8rem;
+    text-decoration: underline;
+}
+.nt-change-btn:hover {
+    color: #000;
+}
+
+.nt-coupon-row {
+    display: flex;
+    gap: 0.75rem;
+}
+.nt-coupon-row input {
+    flex: 1;
+    padding: 0.7rem 0.85rem;
+    border: 1px solid #ddd;
+    border-radius: 2px;
+    font-size: 0.9rem;
+}
+
+.nt-payment-note {
+    background: #f9fafb;
+    border: 1px solid #eee;
+    padding: 1rem;
+    border-radius: 2px;
+    font-size: 0.85rem;
+    color: #666;
+    line-height: 1.5;
+}
+
+/* Order Summary Sidebar */
+.nt-checkout-summary {
+    background: #fafafa;
+    border: 1px solid #eee;
+    border-radius: 2px;
+    padding: 1.5rem;
+    position: sticky;
+    top: 2rem;
+}
+.nt-checkout-summary h2 {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.nt-summary-items {
+    border-bottom: 1px solid #eee;
+    padding-bottom: 1rem;
+    margin-bottom: 1rem;
+}
+.nt-summary-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.5rem 0;
+}
+.nt-summary-item-image {
+    position: relative;
+    width: 56px;
+    height: 56px;
+    border-radius: 2px;
+    overflow: hidden;
+    border: 1px solid #eee;
+    flex-shrink: 0;
+}
+.nt-summary-item-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+.nt-summary-item-qty {
+    position: absolute;
+    top: -6px;
+    right: -6px;
+    background: #000;
+    color: #fff;
+    font-size: 0.65rem;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+}
+.nt-summary-item-info {
+    flex: 1;
+    min-width: 0;
+}
+.nt-summary-item-name {
+    font-size: 0.85rem;
+    font-weight: 500;
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.nt-summary-item-variant {
+    font-size: 0.75rem;
+    color: #888;
+}
+.nt-summary-item-price {
+    font-size: 0.9rem;
+    font-weight: 500;
+    flex-shrink: 0;
+}
+
+.nt-summary-totals {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+.nt-summary-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.9rem;
+    color: #555;
+}
+.nt-summary-row.nt-discount span:last-child {
+    color: #10b981;
+}
+.nt-summary-row.nt-summary-total {
+    padding-top: 0.75rem;
+    border-top: 1px solid #ddd;
+    font-weight: 600;
+    font-size: 1.1rem;
+    color: #000;
+}
+
+.nt-free-shipping-hint {
+    margin-top: 1rem;
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    color: #92400e;
+    padding: 0.6rem 0.75rem;
+    border-radius: 2px;
+    font-size: 0.8rem;
+    text-align: center;
+}
+
+/* --- Order Confirmation Page --- */
+.nt-confirmation-page {
+    padding: 2rem 0 4rem;
+    min-height: 70vh;
+}
+
+.nt-confirmation-banner {
+    text-align: center;
+    padding: 2.5rem 1rem;
+    margin-bottom: 2.5rem;
+}
+.nt-confirmation-icon {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: #10b981;
+    color: #fff;
+    font-size: 1.8rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1.25rem;
+}
+.nt-confirmation-banner h1 {
+    font-family: var(--font-playfair, "Playfair Display", serif);
+    font-size: 1.8rem;
+    margin-bottom: 0.5rem;
+}
+.nt-order-number {
+    font-size: 1.1rem;
+    font-weight: 500;
+    color: #333;
+    margin-bottom: 0.25rem;
+}
+.nt-confirmation-sub {
+    font-size: 0.9rem;
+    color: #666;
+}
+
+/* Status Timeline */
+.nt-status-timeline {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0;
+    margin-bottom: 3rem;
+    padding: 0 2rem;
+}
+.nt-timeline-step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    position: relative;
+    flex: 1;
+    max-width: 120px;
+}
+.nt-timeline-step:not(:last-child)::after {
+    content: "";
+    position: absolute;
+    top: 14px;
+    left: 50%;
+    width: 100%;
+    height: 2px;
+    background: #ddd;
+    z-index: 0;
+}
+.nt-timeline-step.nt-step-active:not(:last-child)::after {
+    background: #10b981;
+}
+.nt-timeline-dot {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: #eee;
+    color: #aaa;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    font-weight: 600;
+    z-index: 1;
+    border: 2px solid #ddd;
+}
+.nt-step-active .nt-timeline-dot {
+    background: #10b981;
+    color: #fff;
+    border-color: #10b981;
+}
+.nt-step-current .nt-timeline-dot {
+    background: #000;
+    color: #fff;
+    border-color: #000;
+    box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.15);
+}
+.nt-timeline-label {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #aaa;
+    text-align: center;
+}
+.nt-step-active .nt-timeline-label {
+    color: #333;
+    font-weight: 500;
+}
+
+.nt-confirmation-grid {
+    display: grid;
+    grid-template-columns: 1fr 320px;
+    gap: 2.5rem;
+    align-items: start;
+}
+@media (max-width: 800px) {
+    .nt-confirmation-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.nt-confirmation-items h2,
+.nt-confirmation-sidebar h3 {
+    font-size: 0.95rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 1rem;
+}
+
+.nt-items-list {
+    border: 1px solid #eee;
+    border-radius: 2px;
+    margin-bottom: 1.5rem;
+}
+.nt-order-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.85rem 1rem;
+    border-bottom: 1px solid #eee;
+}
+.nt-order-item:last-child {
+    border-bottom: none;
+}
+.nt-item-image {
+    width: 60px;
+    height: 60px;
+    border-radius: 2px;
+    overflow: hidden;
+    border: 1px solid #eee;
+    flex-shrink: 0;
+}
+.nt-item-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+.nt-item-details {
+    flex: 1;
+}
+.nt-item-details h4 {
+    font-size: 0.9rem;
+    font-weight: 500;
+    margin-bottom: 0.2rem;
+}
+.nt-item-details p {
+    font-size: 0.8rem;
+    color: #666;
+}
+.nt-item-price {
+    font-weight: 600;
+    font-size: 0.95rem;
+}
+
+.nt-price-summary {
+    border: 1px solid #eee;
+    border-radius: 2px;
+    padding: 1rem;
+}
+.nt-price-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.35rem 0;
+    font-size: 0.9rem;
+    color: #555;
+}
+.nt-price-row.nt-discount span:last-child {
+    color: #10b981;
+}
+.nt-price-row.nt-price-total {
+    border-top: 1px solid #ddd;
+    padding-top: 0.75rem;
+    margin-top: 0.5rem;
+    font-weight: 600;
+    font-size: 1.05rem;
+    color: #000;
+}
+
+.nt-info-card {
+    background: #fafafa;
+    border: 1px solid #eee;
+    border-radius: 2px;
+    padding: 1rem 1.25rem;
+    margin-bottom: 1rem;
+}
+.nt-info-card h3 {
+    margin-bottom: 0.5rem;
+}
+.nt-info-card p {
+    font-size: 0.85rem;
+    color: #555;
+    line-height: 1.5;
+    margin: 0;
+}
+.nt-tracking-number {
+    font-family: monospace;
+    font-size: 0.95rem;
+    color: #000;
+    font-weight: 600;
+}
+
+.nt-confirmation-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    margin-top: 3rem;
+    padding-top: 2rem;
+    border-top: 1px solid #eee;
+}
+
+/* --- Orders List Page --- */
+.nt-orders-page {
+    padding: 2rem 0 4rem;
+    min-height: 70vh;
+}
+
+.nt-orders-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+.nt-order-card {
+    display: block;
+    border: 1px solid #eee;
+    border-radius: 2px;
+    padding: 1.25rem 1.5rem;
+    text-decoration: none;
+    color: inherit;
+    transition: all 0.2s;
+}
+.nt-order-card:hover {
+    border-color: #999;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.nt-order-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.75rem;
+}
+.nt-order-card-number {
+    font-weight: 600;
+    font-size: 1rem;
+    margin-right: 0.75rem;
+}
+.nt-order-card-date {
+    font-size: 0.8rem;
+    color: #888;
+}
+
+.nt-status-badge {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 12px;
+    color: #fff;
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.nt-order-card-body {
+    display: flex;
+    gap: 2rem;
+    margin-bottom: 0.5rem;
+}
+.nt-order-card-total,
+.nt-order-card-tracking {
+    display: flex;
+    flex-direction: column;
+}
+.nt-order-card-label {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #888;
+    margin-bottom: 0.15rem;
+}
+.nt-order-card-amount {
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.nt-order-card-footer {
+    display: flex;
+    justify-content: flex-end;
+}
+.nt-view-details {
+    font-size: 0.8rem;
+    color: #888;
+    transition: color 0.2s;
+}
+.nt-order-card:hover .nt-view-details {
+    color: #000;
+}
+
+/* --- Out-of-Stock Badge --- */
+.nt-stock-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.3rem 0.7rem;
+    border-radius: 2px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+.nt-stock-badge-in {
+    background: #ecfdf5;
+    color: #065f46;
+}
+.nt-stock-badge-low {
+    background: #fffbeb;
+    color: #92400e;
+}
+.nt-stock-badge-out {
+    background: #fef2f2;
+    color: #991b1b;
+}
+
+.nt-product-card-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(255, 255, 255, 0.65);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2;
+}
+.nt-product-card-overlay span {
+    background: #000;
+    color: #fff;
+    padding: 0.4rem 1rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+/* --- Order Tracking Page --- */
+.nt-tracking-page {
+    padding: 2rem 0 4rem;
+    min-height: 70vh;
+}
+.nt-tracking-form {
+    max-width: 500px;
+    margin: 0 auto;
+    text-align: center;
+}
+.nt-tracking-form input {
+    width: 100%;
+    padding: 0.85rem 1rem;
+    border: 1px solid #ddd;
+    border-radius: 2px;
+    font-size: 1rem;
+    margin-bottom: 1rem;
+    text-align: center;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}

@@ -17,6 +17,12 @@ export default function Footer() {
           <Link href="/shipping-returns" className="noirae-footer-link">
             Shipping & Returns
           </Link>
+          <Link href="/orders" className="noirae-footer-link">
+            My Orders
+          </Link>
+          <Link href="/track-order" className="noirae-footer-link">
+            Track Order
+          </Link>
           <Link href="/about" className="noirae-footer-link">
             Our Story
           </Link>

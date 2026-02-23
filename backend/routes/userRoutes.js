@@ -153,12 +153,8 @@ router.post('/login', loginLimiter, async (req, res) => {
 
     const user = result.data[0];
 
-    // Only allow admin and staff to login - reject customers
+    // Determine user role
     const userRole = user.role.toLowerCase();
-    if (!ADMIN_ROLES.includes(userRole)) {
-      const keyValueTable = { error: 'Customer accounts are not allowed to login. This site is for admin and staff only.' };
-      return res.status(403).json(ResponseFormatter.failure('Access denied', keyValueTable));
-    }
 
     if (await bcrypt.compare(password, user.password_hash)) {
       // Compute isAdmin from role field

@@ -94,11 +94,24 @@ export default function ProductDetails() {
   // Prepare images for ImageZoom component
   const productImages = product.images?.map(img => img.original_url || img.thumbnail_small_url) || ['/api/placeholder/600/600'];
 
+  const stockQty = product.stock_quantity ?? product.quantity ?? null;
+  const isOutOfStock = stockQty !== null && stockQty <= 0;
+  const isLowStock = stockQty !== null && stockQty > 0 && stockQty <= 5;
+
   return (
     <div className="aesop-page">
       <Header />
       
       <main className="aesop-container">
+        {/* Breadcrumb */}
+        <nav className="nt-breadcrumb" style={{ marginBottom: '1rem' }}>
+          <Link href="/">Home</Link>
+          <span className="nt-breadcrumb-sep">/</span>
+          <Link href="/shop">Shop</Link>
+          <span className="nt-breadcrumb-sep">/</span>
+          <span>{product.name}</span>
+        </nav>
+
         <div className="noirae-product-detail">
           {/* Product Images Section */}
           <div className="noirae-product-detail-images">
@@ -115,6 +128,14 @@ export default function ProductDetails() {
                   <span className="noirae-price-original">${product.originalPrice}</span>
                 )}
               </div>
+              {/* Stock Badge */}
+              {isOutOfStock ? (
+                <span className="nt-stock-badge nt-stock-badge-out">Out of Stock</span>
+              ) : isLowStock ? (
+                <span className="nt-stock-badge nt-stock-badge-low">Only {stockQty} left</span>
+              ) : stockQty !== null ? (
+                <span className="nt-stock-badge nt-stock-badge-in">In Stock</span>
+              ) : null}
             </div>
 
             <div className="noirae-product-detail-description">
@@ -166,10 +187,10 @@ export default function ProductDetails() {
             <div className="noirae-product-actions">
               <button
                 onClick={handleAddToCart}
-                disabled={adding}
+                disabled={adding || isOutOfStock}
                 className="noirae-btn-primary noirae-btn-large"
               >
-                {adding ? 'Adding to Cart...' : 'Add to Cart'}
+                {isOutOfStock ? 'Out of Stock' : adding ? 'Adding to Cart...' : 'Add to Cart'}
               </button>
               <button className="noirae-btn-secondary noirae-btn-icon">
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">

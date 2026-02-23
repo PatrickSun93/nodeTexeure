@@ -96,6 +96,22 @@ router.post('/create', protectOptional, async (req, res) => {
       return res.status(400).json(ResponseFormatter.failure('Cart is empty'));
     }
 
+    // Stock check — verify all items are in stock
+    for (const item of cartItems) {
+      const stockResult = await DatabaseUtil.executeQuery(
+        'SELECT stock_quantity, name FROM products WHERE id = ?',
+        [item.product_id]
+      );
+      if (stockResult.success && stockResult.data.length > 0) {
+        const p = stockResult.data[0];
+        if (p.stock_quantity !== null && p.stock_quantity < item.quantity) {
+          return res.status(400).json(ResponseFormatter.failure(
+            `Insufficient stock for "${p.name}". Available: ${p.stock_quantity}, Requested: ${item.quantity}`
+          ));
+        }
+      }
+    }
+
     // Calculate subtotal
     let subtotal = 0;
     cartItems.forEach(item => {
@@ -183,6 +199,109 @@ router.post('/create', protectOptional, async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json(ResponseFormatter.failure('Failed to create order'));
+  }
+});
+
+// GET /api/orders/my-orders — Customer's order list
+router.get('/my-orders', protect, async (req, res) => {
+  try {
+    const result = await DatabaseUtil.executeQuery(
+      `SELECT id, order_number, status, subtotal, tax_amount, shipping_amount,
+              discount_amount, total_amount, shipping_method, tracking_number,
+              created_at, shipped_at, delivered_at
+       FROM orders WHERE user_id = ? ORDER BY created_at DESC`,
+      [req.user.id]
+    );
+    if (!result.success) throw new Error(result.error);
+    res.json(ResponseFormatter.success('Orders fetched', { orders: result.data }));
+  } catch (error) {
+    console.error(error);
+    res.status(500).json(ResponseFormatter.failure('Failed to fetch orders'));
+  }
+});
+
+// GET /api/orders/:id — Order detail (owner or admin)
+router.get('/:id', protectOptional, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const orderResult = await DatabaseUtil.executeQuery(
+      `SELECT o.*, u.email as user_email, u.first_name, u.last_name
+       FROM orders o LEFT JOIN users u ON o.user_id = u.id
+       WHERE o.id = ? OR o.order_number = ?`,
+      [id, id]
+    );
+    if (!orderResult.success || orderResult.data.length === 0) {
+      return res.status(404).json(ResponseFormatter.failure('Order not found'));
+    }
+    const order = orderResult.data[0];
+
+    // Check ownership (if logged in, must own order or be admin)
+    if (req.user && order.user_id && req.user.id !== order.user_id && !req.user.isAdmin) {
+      return res.status(403).json(ResponseFormatter.failure('Access denied'));
+    }
+
+    // Fetch order items
+    const itemsResult = await DatabaseUtil.executeQuery(
+      `SELECT oi.*, pi.thumbnail_small_url as image_url
+       FROM order_items oi
+       LEFT JOIN product_images pi ON oi.product_id = pi.product_id AND pi.is_primary = 1
+       WHERE oi.order_id = ?`,
+      [order.id]
+    );
+
+    // Fetch status history
+    const historyResult = await DatabaseUtil.executeQuery(
+      `SELECT osh.status, osh.status_details, osh.created_at,
+              u.first_name as changed_by_name
+       FROM order_status_history osh
+       LEFT JOIN users u ON osh.changed_by = u.id
+       WHERE osh.order_id = ? ORDER BY osh.created_at ASC`,
+      [order.id]
+    );
+
+    res.json(ResponseFormatter.success('Order details fetched', {
+      order: {
+        ...order,
+        items: itemsResult.success ? itemsResult.data : [],
+        status_history: historyResult.success ? historyResult.data : [],
+      },
+    }));
+  } catch (error) {
+    console.error(error);
+    res.status(500).json(ResponseFormatter.failure('Failed to fetch order'));
+  }
+});
+
+// GET /api/orders/track/:orderNumber — Public tracking lookup
+router.get('/track/:orderNumber', async (req, res) => {
+  try {
+    const { orderNumber } = req.params;
+    const result = await DatabaseUtil.executeQuery(
+      `SELECT order_number, status, shipping_method, tracking_number,
+              created_at, shipped_at, delivered_at
+       FROM orders WHERE order_number = ?`,
+      [orderNumber]
+    );
+    if (!result.success || result.data.length === 0) {
+      return res.status(404).json(ResponseFormatter.failure('Order not found'));
+    }
+
+    const historyResult = await DatabaseUtil.executeQuery(
+      `SELECT status, created_at FROM order_status_history
+       WHERE order_id = (SELECT id FROM orders WHERE order_number = ?)
+       ORDER BY created_at ASC`,
+      [orderNumber]
+    );
+
+    res.json(ResponseFormatter.success('Order tracking', {
+      tracking: {
+        ...result.data[0],
+        history: historyResult.success ? historyResult.data : [],
+      },
+    }));
+  } catch (error) {
+    console.error(error);
+    res.status(500).json(ResponseFormatter.failure('Failed to fetch tracking'));
   }
 });
 
