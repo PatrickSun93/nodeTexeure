@@ -158,11 +158,21 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
         const session = event.data.object;
         const orderId = session.metadata.orderId;
         if (orderId) {
+          // Verify payment amount matches order total
+          const [order] = await db.executeQuery('SELECT total_amount FROM orders WHERE id = ?', [orderId]);
+          if (order) {
+            const paidCents = session.amount_total; // Stripe amount in cents
+            const expectedCents = Math.round(parseFloat(order.total_amount) * 100);
+            if (paidCents < expectedCents) {
+              console.error(`Payment amount mismatch for order ${orderId}: paid ${paidCents}, expected ${expectedCents}`);
+              break; // Do not mark as paid
+            }
+          }
           await db.executeQuery(
             "UPDATE orders SET status = 'paid', payment_status = 'paid', paid_at = NOW(), stripe_payment_intent_id = ? WHERE id = ?",
             [session.payment_intent, orderId]
           );
-          console.log(`✅ Order ${orderId} marked as paid via checkout session`);
+          console.log(`Order ${orderId} marked as paid via checkout session`);
         }
         break;
       }
@@ -171,11 +181,21 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
         const paymentIntent = event.data.object;
         const orderId = paymentIntent.metadata.orderId;
         if (orderId) {
+          // Verify payment amount matches order total
+          const [order] = await db.executeQuery('SELECT total_amount FROM orders WHERE id = ?', [orderId]);
+          if (order) {
+            const paidCents = paymentIntent.amount_received; // Stripe amount in cents
+            const expectedCents = Math.round(parseFloat(order.total_amount) * 100);
+            if (paidCents < expectedCents) {
+              console.error(`Payment amount mismatch for order ${orderId}: paid ${paidCents}, expected ${expectedCents}`);
+              break;
+            }
+          }
           await db.executeQuery(
             "UPDATE orders SET status = 'paid', payment_status = 'paid', paid_at = NOW() WHERE id = ?",
             [orderId]
           );
-          console.log(`✅ Order ${orderId} payment succeeded`);
+          console.log(`Order ${orderId} payment succeeded`);
         }
         break;
       }

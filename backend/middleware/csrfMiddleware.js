@@ -31,7 +31,7 @@ const generateCSRFToken = (user) => {
   };
   
   // Sign the token data with a secret to prevent tampering
-  const secretKey = process.env.CSRF_SECRET || process.env.JWT_SECRET || 'fallback-csrf-secret';
+  const secretKey = process.env.CSRF_SECRET || process.env.JWT_SECRET;
   const tokenString = JSON.stringify(tokenData);
   const signature = crypto.createHmac('sha256', secretKey).update(tokenString).digest('hex');
   
@@ -58,7 +58,7 @@ const validateCSRFToken = (token, user) => {
     const { data, signature } = decoded;
     
     // Verify signature
-    const secretKey = process.env.CSRF_SECRET || process.env.JWT_SECRET || 'fallback-csrf-secret';
+    const secretKey = process.env.CSRF_SECRET || process.env.JWT_SECRET;
     const expectedSignature = crypto.createHmac('sha256', secretKey).update(JSON.stringify(data)).digest('hex');
     
     if (signature !== expectedSignature) {

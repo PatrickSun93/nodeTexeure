@@ -8,8 +8,40 @@ const emailService = require('../services/emailService');
 const shippingService = require('../services/shippingService');
 const db = new DatabaseUtil();
 
-// Tax rate (configurable - default NY rate)
-const TAX_RATE = parseFloat(process.env.TAX_RATE) || 0.08875;
+// Default tax rate fallback (NY rate)
+const DEFAULT_TAX_RATE = parseFloat(process.env.TAX_RATE) || 0.08875;
+
+// Look up tax rate from tax_rates table by state/country, falling back to default
+async function getTaxRate(stateCode, countryCode) {
+  try {
+    const result = await db.executeQuery(
+      `SELECT tax_rate FROM tax_rates
+       WHERE is_active = 1
+         AND JSON_UNQUOTE(JSON_EXTRACT(location_json, '$.country')) = ?
+         AND JSON_UNQUOTE(JSON_EXTRACT(location_json, '$.state')) = ?
+       LIMIT 1`,
+      [countryCode || 'US', stateCode || '']
+    );
+    if (result && result.length > 0) {
+      return parseFloat(result[0].tax_rate);
+    }
+    // Try country-level rate
+    const countryResult = await db.executeQuery(
+      `SELECT tax_rate FROM tax_rates
+       WHERE is_active = 1
+         AND JSON_UNQUOTE(JSON_EXTRACT(location_json, '$.country')) = ?
+         AND (JSON_UNQUOTE(JSON_EXTRACT(location_json, '$.state')) = '' OR JSON_EXTRACT(location_json, '$.state') IS NULL)
+       LIMIT 1`,
+      [countryCode || 'US']
+    );
+    if (countryResult && countryResult.length > 0) {
+      return parseFloat(countryResult[0].tax_rate);
+    }
+  } catch (err) {
+    console.error('Tax rate lookup failed, using default:', err.message);
+  }
+  return DEFAULT_TAX_RATE;
+}
 
 // Helper function to get cart details
 async function getCartDetails(cartId) {
@@ -135,9 +167,10 @@ router.post('/create', protectOptional, async (req, res) => {
       }
     }
 
-    // Calculate tax (8.875% NY rate by default)
+    // Calculate tax from tax_rates table (falls back to default)
+    const taxRate = await getTaxRate(shippingAddress?.state, shippingAddress?.country);
     const taxableAmount = subtotal - discountAmount;
-    const taxAmount = Math.round(taxableAmount * TAX_RATE * 100) / 100;
+    const taxAmount = Math.round(taxableAmount * taxRate * 100) / 100;
 
     // Calculate shipping (use selected method or default standard)
     let shippingAmount = 9.99;
@@ -302,6 +335,22 @@ router.get('/track/:orderNumber', async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json(ResponseFormatter.failure('Failed to fetch tracking'));
+  }
+});
+
+// POST /api/orders/calculate-tax
+router.post('/calculate-tax', async (req, res) => {
+  try {
+    const { stateCode, countryCode, subtotal } = req.body;
+    if (subtotal == null || subtotal < 0) {
+      return res.status(400).json(ResponseFormatter.failure('subtotal is required'));
+    }
+    const taxRate = await getTaxRate(stateCode, countryCode);
+    const taxAmount = Math.round(subtotal * taxRate * 100) / 100;
+    res.json(ResponseFormatter.success('Tax calculated', { taxRate, taxAmount }));
+  } catch (error) {
+    console.error('Tax calculation error:', error);
+    res.status(500).json(ResponseFormatter.failure('Failed to calculate tax'));
   }
 });
 

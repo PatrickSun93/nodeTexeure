@@ -1,11 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import Header from '../../../components/Header';
-import Footer from '../../../components/Footer';
-import { apiRequest } from '../../../lib/api';
+import Header from '../../../../components/Header';
+import Footer from '../../../../components/Footer';
+import { apiRequest } from '../../../../lib/api';
 
 const STATUS_STEPS = ['pending', 'confirmed', 'processing', 'shipped', 'delivered'];
 
@@ -16,14 +16,29 @@ function getStatusIndex(status) {
 
 export default function OrderConfirmationPage() {
   const params = useParams();
+  const searchParams = useSearchParams();
   const orderId = params.id;
+  const sessionId = searchParams.get('session_id');
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [paymentVerified, setPaymentVerified] = useState(false);
 
   useEffect(() => {
     const fetchOrder = async () => {
       try {
+        // If returning from Stripe, verify the payment session
+        if (sessionId) {
+          try {
+            const paymentData = await apiRequest(`/payments/session/${sessionId}`);
+            if (paymentData?.status === 'SUCCESS') {
+              setPaymentVerified(true);
+            }
+          } catch (e) {
+            console.warn('Payment verification check failed:', e.message);
+          }
+        }
+
         const data = await apiRequest(`/orders/${orderId}`);
         if (data?.status === 'SUCCESS') {
           const extracted = data.keyValueTable?.order || data.keyValueTable;

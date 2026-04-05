@@ -111,14 +111,20 @@ router.put('/products/:id', adminWriteLimiter, csrfProtection, async (req, res) 
     const { id } = req.params;
     const { variants, ...updates } = req.body; // Extract variants to prevent column error
 
-    // 1. Update Product Fields
+    // 1. Update Product Fields (whitelist columns to prevent SQL injection)
+    const ALLOWED_PRODUCT_COLUMNS = [
+      'name', 'slug', 'sku', 'description', 'short_description', 'base_price',
+      'sale_price', 'cost_price', 'category_id', 'product_details', 'status',
+      'is_featured', 'meta_title', 'meta_description', 'meta_keywords',
+    ];
     const updateFields = [];
     const updateValues = [];
     for (const [key, value] of Object.entries(updates)) {
+      if (!ALLOWED_PRODUCT_COLUMNS.includes(key)) continue;
       if (key === 'product_details') {
         updateFields.push(`${key} = ?`);
         updateValues.push(JSON.stringify(value));
-      } else if (key !== 'stock' && key !== 'category') { // Filter out non-DB columns if present
+      } else {
         updateFields.push(`${key} = ?`);
         updateValues.push(value);
       }

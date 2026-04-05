@@ -1,16 +1,39 @@
 const express = require('express');
 const cors = require('cors');
+const helmet = require('helmet');
 const path = require('path');
 const cookieParser = require('cookie-parser');
 const LoggingMiddleware = require('./middleware/loggingMiddleware');
 const ResponseFormatter = require('./utils/responseFormatter');
 
+const rateLimit = require('express-rate-limit');
+
 const app = express();
 const PORT = process.env.PORT || 6666;
 
-// Middleware
+// Security headers
+app.use(helmet({
+  contentSecurityPolicy: false, // API server, CSP not needed for JSON responses
+  crossOriginEmbedderPolicy: false, // Allow cross-origin for image serving
+}));
+
+// Global rate limiter for all API routes
+const globalLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 100, // 100 requests per minute per IP
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { status: 'FAIL', message: 'Too many requests, please try again later' },
+});
+app.use('/api', globalLimiter);
+
+// CORS - use env-based origins in production
+const allowedOrigins = process.env.CORS_ORIGINS
+  ? process.env.CORS_ORIGINS.split(',').map(s => s.trim())
+  : ['http://localhost:3000', 'http://127.0.0.1:3000', 'http://localhost:3005'];
+
 app.use(cors({
-  origin: ['http://localhost:3000', 'http://127.0.0.1:3000', 'http://localhost:3005'], // Add admin dashboard
+  origin: allowedOrigins,
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'X-CSRF-Token']
@@ -94,6 +117,12 @@ app.use('/api/images', require('./routes/imageRoutes'));
 // Shipping routes (FedEx)
 app.use('/api/shipping', require('./routes/shippingRoutes'));
 
+// Wishlist routes
+app.use('/api/wishlist', require('./routes/wishlistRoutes'));
+
+// Return/RMA routes
+app.use('/api/returns', require('./routes/returnRoutes'));
+
 // Backward compatibility - redirect old endpoints to new structure
 app.get('/api/health', (req, res) => {
   res.redirect(301, '/api/status/health');
@@ -121,12 +150,13 @@ app.use('*', (req, res) => {
 // Logging error middleware (logs errors before handling them)
 app.use(LoggingMiddleware.errorMiddleware());
 
-// Error handler
+// Error handler - never leak internal errors to clients
 app.use((err, req, res, next) => {
   console.error('Error:', err);
+  const isProd = process.env.NODE_ENV === 'production';
   const keyValueTable = {
     timestamp: new Date().toISOString(),
-    error: err.message || 'Internal server error'
+    error: isProd ? 'Internal server error' : (err.message || 'Internal server error'),
   };
   res.status(500).json(ResponseFormatter.failure('Internal server error', keyValueTable));
 });

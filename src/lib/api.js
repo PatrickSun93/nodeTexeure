@@ -293,24 +293,6 @@ export const databaseAPI = {
     }
   },
 
-  /**
-   * Execute custom SELECT query
-   * @param {string} query - SQL SELECT query
-   * @param {Array} params - Query parameters (optional)
-   * @returns {Promise<object>} - Query execution result
-   */
-  executeQuery: async (query, params = []) => {
-    try {
-      const response = await apiRequest('/database/query', {
-        method: 'POST',
-        body: JSON.stringify({ query, params }),
-      });
-      return response;
-    } catch (error) {
-      throw new Error('Error executing query - Make sure backend is running');
-    }
-  },
-
   // Legacy methods for backward compatibility
   /**
    * @deprecated Use testConnection() instead

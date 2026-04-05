@@ -12,8 +12,26 @@ const emailQueueProducer = require('../services/emailQueueProducer');
 
 const router = express.Router();
 
-// Rate limiter for login and forgot password
+// Rate limiters
 const ADMIN_ROLES = ['admin', 'staff', 'superadmin', 'owner'];
+
+const registerLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 5, // 5 registrations per hour per IP
+  message: { status: 'FAIL', message: 'Too many registration attempts, please try again later' },
+});
+
+const refreshLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 10, // 10 refresh requests per minute per IP
+  message: { status: 'FAIL', message: 'Too many refresh attempts' },
+});
+
+const verifyEmailLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 10, // 10 verification attempts per 15 min per IP
+  message: { status: 'FAIL', message: 'Too many verification attempts' },
+});
 
 /**
  * POST /api/users/register
@@ -24,19 +42,40 @@ const ADMIN_ROLES = ['admin', 'staff', 'superadmin', 'owner'];
  * @param {string} lastName - User's last name
  * @param {string} address - User's address
  */
-router.post('/register', async (req, res) => {
+router.post('/register', registerLimiter, async (req, res) => {
   try {
     const { email, password, firstName, lastName } = req.body;
 
     // Input validation
     if (!email || !password || !firstName || !lastName) {
-      const keyValueTable = {
-        error: 'All fields are required: email, password, firstName, lastName'
-      };
       return res.status(400).json(ResponseFormatter.failure(
         'Missing required fields',
-        keyValueTable
+        { error: 'All fields are required: email, password, firstName, lastName' }
       ));
+    }
+
+    // Password strength validation
+    if (password.length < 8) {
+      return res.status(400).json(ResponseFormatter.failure('Password must be at least 8 characters'));
+    }
+    if (!/[A-Z]/.test(password)) {
+      return res.status(400).json(ResponseFormatter.failure('Password must contain at least one uppercase letter'));
+    }
+    if (!/[a-z]/.test(password)) {
+      return res.status(400).json(ResponseFormatter.failure('Password must contain at least one lowercase letter'));
+    }
+    if (!/[0-9]/.test(password)) {
+      return res.status(400).json(ResponseFormatter.failure('Password must contain at least one number'));
+    }
+
+    // Email format validation
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return res.status(400).json(ResponseFormatter.failure('Invalid email format'));
+    }
+
+    // Input length limits
+    if (firstName.length > 50 || lastName.length > 50) {
+      return res.status(400).json(ResponseFormatter.failure('Name fields must be 50 characters or less'));
     }
 
     // Check if email already exists
@@ -67,9 +106,10 @@ router.post('/register', async (req, res) => {
     const userId = idResult.data[0].id;
 
     // Insert new user
+    const verificationToken = crypto.randomBytes(32).toString('hex');
     const insertResult = await DatabaseUtil.executeQuery(
-      'INSERT INTO users (id, email, password_hash, first_name, last_name) VALUES (?, ?, ?, ?, ?)',
-      [userId, email, hashedPassword, firstName, lastName]
+      'INSERT INTO users (id, email, password_hash, first_name, last_name, email_verified, email_verification_token) VALUES (?, ?, ?, ?, ?, FALSE, ?)',
+      [userId, email, hashedPassword, firstName, lastName, verificationToken]
     );
 
     if (insertResult.success) {
@@ -80,11 +120,18 @@ router.post('/register', async (req, res) => {
         customer_name: `${firstName} ${lastName}`,
       }).catch(err => console.error('Non-fatal: welcome email enqueue failed:', err.message));
 
+      const verifyLink = `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/verify-email?token=${verificationToken}`;
+      emailQueueProducer.enqueue(email, firstName, 'email_verification', {
+        first_name: firstName,
+        verify_link: verifyLink,
+      }).catch(err => console.error('Non-fatal: verification email enqueue failed:', err.message));
+
       const keyValueTable = {
         userId: userId,
         email: email,
         firstName: firstName,
-        lastName: lastName
+        lastName: lastName,
+        emailVerified: false
       };
       res.status(201).json(ResponseFormatter.success(
         'User registered successfully',
@@ -142,10 +189,7 @@ router.post('/login', loginLimiter, async (req, res) => {
       const keyValueTable = { error: 'Email and password are required' };
       return res.status(400).json(ResponseFormatter.failure('Missing required fields', keyValueTable));
     }
-    console.log(email);
-    console.log(password);
     const result = await DatabaseUtil.executeQuery('SELECT * FROM users WHERE email = ?', [email]);
-    console.log(result)
     if (!result.success || result.data.length === 0) {
       const keyValueTable = { error: 'Invalid email or password' };
       return res.status(401).json(ResponseFormatter.failure('Invalid credentials', keyValueTable));
@@ -159,7 +203,7 @@ router.post('/login', loginLimiter, async (req, res) => {
     if (await bcrypt.compare(password, user.password_hash)) {
       // Compute isAdmin from role field
       const isAdmin = ADMIN_ROLES.includes(userRole);
-      const accessToken = jwt.sign({ id: user.id, email: user.email, isAdmin }, process.env.JWT_SECRET, { expiresIn: '24h' });
+      const accessToken = jwt.sign({ id: user.id, email: user.email, isAdmin }, process.env.JWT_SECRET, { algorithm: 'HS256', expiresIn: '24h' });
       const refreshToken = crypto.randomBytes(64).toString('hex');
       const refreshExpiry = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
 
@@ -242,7 +286,7 @@ router.post('/login', loginLimiter, async (req, res) => {
   }
 });
 
-router.post('/refresh', async (req, res) => {
+router.post('/refresh', refreshLimiter, async (req, res) => {
   try {
     const { refreshToken } = req.body;
     if (!refreshToken) {
@@ -261,7 +305,7 @@ router.post('/refresh', async (req, res) => {
     // Compute isAdmin from role field
     const userRole = user.role.toLowerCase();
     const isAdmin = ADMIN_ROLES.includes(userRole);
-    const newAccessToken = jwt.sign({ id: user.id, email: user.email, isAdmin }, process.env.JWT_SECRET, { expiresIn: '24h' });
+    const newAccessToken = jwt.sign({ id: user.id, email: user.email, isAdmin }, process.env.JWT_SECRET, { algorithm: 'HS256', expiresIn: '24h' });
     res.json(ResponseFormatter.success('Token refreshed', { accessToken: newAccessToken }));
   } catch (error) {
     console.error('Refresh token error:', error);
@@ -306,7 +350,6 @@ router.get('/profile', protect, async (req, res) => {
        WHERE u.id = ?`,
       [req.user.id]
     );
-    console.log(result)
     if (!result.success || result.data.length === 0) {
       const keyValueTable = { error: 'User not found' };
       return res.status(404).json(ResponseFormatter.failure('User not found', keyValueTable));
@@ -375,6 +418,166 @@ router.put('/profile', protect, async (req, res) => {
   }
 });
 
+// =====================================================
+// ADDRESS MANAGEMENT
+// =====================================================
+
+/**
+ * GET /api/users/addresses
+ * List current user's addresses
+ */
+router.get('/addresses', protect, async (req, res) => {
+  try {
+    const result = await DatabaseUtil.executeQuery(
+      'SELECT id, type, is_default, first_name, last_name, phone, address_json FROM user_addresses WHERE user_id = ? ORDER BY is_default DESC, created_at DESC',
+      [req.user.id]
+    );
+    if (!result.success) throw new Error('Failed to fetch addresses');
+    const addresses = result.data.map(row => ({
+      ...row,
+      address: typeof row.address_json === 'string' ? JSON.parse(row.address_json) : row.address_json,
+    }));
+    res.json(ResponseFormatter.success('Addresses fetched', { addresses }));
+  } catch (error) {
+    console.error('Get addresses error:', error);
+    res.status(500).json(ResponseFormatter.failure('Failed to fetch addresses'));
+  }
+});
+
+/**
+ * POST /api/users/addresses
+ * Create a new address
+ */
+router.post('/addresses', protect, async (req, res) => {
+  try {
+    const { type, first_name, last_name, phone, address_line_1, address_line_2, city, state, postal_code, country, is_default } = req.body;
+
+    if (!first_name || !last_name || !address_line_1 || !city || !state || !postal_code || !country) {
+      return res.status(400).json(ResponseFormatter.failure('Required address fields missing'));
+    }
+
+    const idResult = await DatabaseUtil.executeQuery('SELECT get_next_id("ADDR") as id');
+    const addressId = idResult.data[0].id;
+
+    const addressJson = JSON.stringify({ address_line_1, address_line_2: address_line_2 || '', city, state, postal_code, country });
+
+    // If setting as default, clear existing defaults of same type
+    if (is_default) {
+      await DatabaseUtil.executeQuery(
+        'UPDATE user_addresses SET is_default = FALSE WHERE user_id = ? AND type = ?',
+        [req.user.id, type || 'shipping']
+      );
+    }
+
+    await DatabaseUtil.executeQuery(
+      'INSERT INTO user_addresses (id, user_id, type, is_default, first_name, last_name, phone, address_json) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+      [addressId, req.user.id, type || 'shipping', is_default ? 1 : 0, first_name, last_name, phone || null, addressJson]
+    );
+
+    res.status(201).json(ResponseFormatter.success('Address created', { addressId }));
+  } catch (error) {
+    console.error('Create address error:', error);
+    res.status(500).json(ResponseFormatter.failure('Failed to create address'));
+  }
+});
+
+/**
+ * PUT /api/users/addresses/:id
+ * Update an address (verify ownership)
+ */
+router.put('/addresses/:id', protect, async (req, res) => {
+  try {
+    const { id } = req.params;
+    // Verify ownership
+    const check = await DatabaseUtil.executeQuery('SELECT id FROM user_addresses WHERE id = ? AND user_id = ?', [id, req.user.id]);
+    if (!check.success || check.data.length === 0) {
+      return res.status(404).json(ResponseFormatter.failure('Address not found'));
+    }
+
+    const { type, first_name, last_name, phone, address_line_1, address_line_2, city, state, postal_code, country, is_default } = req.body;
+
+    const updates = [];
+    const params = [];
+
+    if (type) { updates.push('type = ?'); params.push(type); }
+    if (first_name) { updates.push('first_name = ?'); params.push(first_name); }
+    if (last_name) { updates.push('last_name = ?'); params.push(last_name); }
+    if (phone !== undefined) { updates.push('phone = ?'); params.push(phone || null); }
+
+    if (address_line_1 || city || state || postal_code || country) {
+      const addressJson = JSON.stringify({
+        address_line_1: address_line_1 || '',
+        address_line_2: address_line_2 || '',
+        city: city || '',
+        state: state || '',
+        postal_code: postal_code || '',
+        country: country || '',
+      });
+      updates.push('address_json = ?');
+      params.push(addressJson);
+    }
+
+    if (is_default) {
+      const addrType = type || 'shipping';
+      await DatabaseUtil.executeQuery(
+        'UPDATE user_addresses SET is_default = FALSE WHERE user_id = ? AND type = ?',
+        [req.user.id, addrType]
+      );
+      updates.push('is_default = TRUE');
+    }
+
+    if (updates.length === 0) {
+      return res.status(400).json(ResponseFormatter.failure('No fields to update'));
+    }
+
+    params.push(id);
+    await DatabaseUtil.executeQuery(`UPDATE user_addresses SET ${updates.join(', ')} WHERE id = ?`, params);
+    res.json(ResponseFormatter.success('Address updated'));
+  } catch (error) {
+    console.error('Update address error:', error);
+    res.status(500).json(ResponseFormatter.failure('Failed to update address'));
+  }
+});
+
+/**
+ * DELETE /api/users/addresses/:id
+ * Delete an address (verify ownership)
+ */
+router.delete('/addresses/:id', protect, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await DatabaseUtil.executeQuery('DELETE FROM user_addresses WHERE id = ? AND user_id = ?', [id, req.user.id]);
+    if (!result.success || result.data.affectedRows === 0) {
+      return res.status(404).json(ResponseFormatter.failure('Address not found'));
+    }
+    res.json(ResponseFormatter.success('Address deleted'));
+  } catch (error) {
+    console.error('Delete address error:', error);
+    res.status(500).json(ResponseFormatter.failure('Failed to delete address'));
+  }
+});
+
+/**
+ * PATCH /api/users/addresses/:id/default
+ * Set an address as default
+ */
+router.patch('/addresses/:id/default', protect, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const check = await DatabaseUtil.executeQuery('SELECT id, type FROM user_addresses WHERE id = ? AND user_id = ?', [id, req.user.id]);
+    if (!check.success || check.data.length === 0) {
+      return res.status(404).json(ResponseFormatter.failure('Address not found'));
+    }
+    const addrType = check.data[0].type;
+    await DatabaseUtil.executeQuery('UPDATE user_addresses SET is_default = FALSE WHERE user_id = ? AND type = ?', [req.user.id, addrType]);
+    await DatabaseUtil.executeQuery('UPDATE user_addresses SET is_default = TRUE WHERE id = ?', [id]);
+    res.json(ResponseFormatter.success('Default address updated'));
+  } catch (error) {
+    console.error('Set default address error:', error);
+    res.status(500).json(ResponseFormatter.failure('Failed to set default address'));
+  }
+});
+
 /**
  * GET /api/users
  * Get all users (admin)
@@ -406,8 +609,6 @@ router.get('/csrf-token', protect, admin, async (req, res) => {
   try {
     // Generate CSRF token bound to the current user session
     const csrfToken = generateCSRFToken(req.user);
-    console.log('--------------------')
-    console.log(csrfToken);
     // Set CSRF token in a non-HttpOnly cookie that JavaScript can read
     // This follows the double-submit cookie pattern for CSRF protection
     const ttlMs = Number.parseInt(process.env.CSRF_TOKEN_TTL_MS || '86400000', 10); // 24 hours default
@@ -549,7 +750,7 @@ router.post('/forgot-password', forgotLimiter, async (req, res) => {
     }
 
     const userId = result.data[0].id;
-    const token = jwt.sign({ userId }, process.env.JWT_SECRET, { expiresIn: '1h' });
+    const token = jwt.sign({ userId }, process.env.JWT_SECRET, { algorithm: 'HS256', expiresIn: '1h' });
 
     await DatabaseUtil.executeQuery('UPDATE users SET resetToken = ?, resetTokenExpiry = DATE_ADD(NOW(), INTERVAL 1 HOUR) WHERE id = ?', [token, userId]);
 
@@ -585,7 +786,7 @@ router.post('/reset-password', async (req, res) => {
 
     let decoded;
     try {
-      decoded = jwt.verify(token, process.env.JWT_SECRET);
+      decoded = jwt.verify(token, process.env.JWT_SECRET, { algorithms: ['HS256'] });
     } catch (err) {
       const keyValueTable = { error: 'Invalid or expired token' };
       return res.status(400).json(ResponseFormatter.failure('Invalid token', keyValueTable));
@@ -614,5 +815,36 @@ router.post('/reset-password', async (req, res) => {
 });
 
 
+/**
+ * GET /api/users/verify-email
+ * Verify email address via token
+ */
+router.get('/verify-email', verifyEmailLimiter, async (req, res) => {
+  try {
+    const { token } = req.query;
+    if (!token) {
+      return res.status(400).json(ResponseFormatter.failure('Verification token is required'));
+    }
+
+    const result = await DatabaseUtil.executeQuery(
+      'SELECT id, email FROM users WHERE email_verification_token = ? AND email_verified = FALSE',
+      [token]
+    );
+
+    if (!result.success || result.data.length === 0) {
+      return res.status(400).json(ResponseFormatter.failure('Invalid or expired verification token'));
+    }
+
+    await DatabaseUtil.executeQuery(
+      'UPDATE users SET email_verified = TRUE, email_verification_token = NULL WHERE id = ?',
+      [result.data[0].id]
+    );
+
+    res.json(ResponseFormatter.success('Email verified successfully', { email: result.data[0].email }));
+  } catch (error) {
+    console.error('Email verification error:', error);
+    res.status(500).json(ResponseFormatter.failure('Email verification failed'));
+  }
+});
 
 module.exports = router;

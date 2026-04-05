@@ -109,8 +109,17 @@ export default function OrdersPage() {
                       </div>
                     )}
                   </div>
-                  <div className="nt-order-card-footer">
+                  <div className="nt-order-card-footer" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <span className="nt-view-details">View Details →</span>
+                    {order.status === 'delivered' && (
+                      <Link
+                        href={`/returns/request/${order.id || order.order_number}`}
+                        onClick={e => e.stopPropagation()}
+                        style={{ fontSize: '0.8rem', color: '#dc2626', textDecoration: 'none' }}
+                      >
+                        Request Return
+                      </Link>
+                    )}
                   </div>
                 </Link>
               ))}

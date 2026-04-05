@@ -20,7 +20,6 @@ class ResponseFormatter {
     }
     
     response.keyValueTable = keyValueTable;
-    console.log(response)
     return response;
   }
 

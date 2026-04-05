@@ -6,14 +6,15 @@
 const express = require('express');
 const DatabaseUtil = require('../utils/database');
 const ResponseFormatter = require('../utils/responseFormatter');
+const { protect: dbProtect, admin: dbAdmin } = require('../middleware/authMiddleware');
 
 const router = express.Router();
 
 /**
  * GET /api/database/test
- * Test database connection
+ * Test database connection (admin only)
  */
-router.get('/test', async (req, res) => {
+router.get('/test', dbProtect, dbAdmin, async (req, res) => {
   try {
     const result = await DatabaseUtil.testConnection();
     const keyValueTable = {
@@ -25,8 +26,6 @@ router.get('/test', async (req, res) => {
       version: result.version,
       databaseExists: result.databaseExists
     };
-    console.log(keyValueTable);
-    
     res.json(ResponseFormatter.success(
       'Database connection test completed',
       keyValueTable
@@ -48,7 +47,7 @@ router.get('/test', async (req, res) => {
  * GET /api/database/tables
  * Get table count information
  */
-router.get('/tables', async (req, res) => {
+router.get('/tables', dbProtect, dbAdmin, async (req, res) => {
   try {
     // Get table count
     const countResult = await DatabaseUtil.executeQuery(
@@ -61,8 +60,6 @@ router.get('/tables', async (req, res) => {
       'SELECT table_name FROM information_schema.tables WHERE table_schema = ? ORDER BY table_name',
       [process.env.DB_NAME || 'bed_texture_ecommerce']
     );
-    console.log(tablesResult);
-    console.log(countResult)
     if (countResult.success && tablesResult.success) {
       const tables = tablesResult.data.map(row => row.table_name || row.TABLE_NAME);
       const keyValueTable = {
@@ -103,7 +100,7 @@ router.get('/tables', async (req, res) => {
  * GET /api/database/transno
  * Get transno table data
  */
-router.get('/transno', async (req, res) => {
+router.get('/transno', dbProtect, dbAdmin, async (req, res) => {
   try {
     const result = await DatabaseUtil.executeQuery('SELECT * FROM transno');
     
@@ -139,9 +136,13 @@ router.get('/transno', async (req, res) => {
 
 /**
  * POST /api/database/query
- * Execute custom query (for testing purposes)
+ * Execute custom query (admin only, non-production)
  */
-router.post('/query', async (req, res) => {
+const { protect, admin } = require('../middleware/authMiddleware');
+router.post('/query', protect, admin, async (req, res) => {
+  if (process.env.NODE_ENV === 'production') {
+    return res.status(403).json(ResponseFormatter.failure('Query endpoint disabled in production'));
+  }
   try {
     const { query, params = [] } = req.body;
     

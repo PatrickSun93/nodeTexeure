@@ -172,6 +172,13 @@ import SearchBar from './SearchBar';
                       >
                         Profile
                       </Link>
+                      <Link
+                        href="/wishlist"
+                        className="aesop-dropdown-item"
+                        onClick={() => setIsUserMenuOpen(false)}
+                      >
+                        Wishlist
+                      </Link>
                       <button
                         onClick={handleSignOut}
                         className="aesop-dropdown-item aesop-dropdown-button"

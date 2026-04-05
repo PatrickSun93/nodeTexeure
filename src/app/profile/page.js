@@ -5,7 +5,7 @@ import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Header from '../../components/Header';
 import Footer from '../../components/Footer';
-import { extractResponseData, profileAPI } from '../../lib/api';
+import { extractResponseData, profileAPI, apiRequest } from '../../lib/api';
 
 export default function Profile() {
   const { data: session, status } = useSession();
@@ -22,6 +22,13 @@ export default function Profile() {
     phone: '',
     password: '',
     confirmPassword: ''
+  });
+  const [addresses, setAddresses] = useState([]);
+  const [showAddressForm, setShowAddressForm] = useState(false);
+  const [editingAddress, setEditingAddress] = useState(null);
+  const [addressFormData, setAddressFormData] = useState({
+    type: 'shipping', first_name: '', last_name: '', phone: '',
+    address_line_1: '', address_line_2: '', city: '', state: '', postal_code: '', country: 'US', is_default: false,
   });
 
   useEffect(() => {
@@ -113,6 +120,88 @@ export default function Profile() {
     });
     setError('');
     setSuccess('');
+  };
+
+  const fetchAddresses = async () => {
+    try {
+      const data = await apiRequest('/users/addresses', {
+        headers: { Authorization: `Bearer ${session.accessToken}` },
+      });
+      if (data?.status === 'SUCCESS') {
+        setAddresses(data.keyValueTable?.addresses || []);
+      }
+    } catch {}
+  };
+
+  useEffect(() => {
+    if (session?.accessToken) fetchAddresses();
+  }, [session]);
+
+  const handleSaveAddress = async () => {
+    try {
+      const method = editingAddress ? 'PUT' : 'POST';
+      const url = editingAddress ? `/users/addresses/${editingAddress}` : '/users/addresses';
+      const data = await apiRequest(url, {
+        method,
+        headers: { Authorization: `Bearer ${session.accessToken}` },
+        body: JSON.stringify(addressFormData),
+      });
+      if (data?.status === 'SUCCESS') {
+        setShowAddressForm(false);
+        setEditingAddress(null);
+        fetchAddresses();
+        setSuccess('Address saved successfully');
+      } else {
+        setError(data?.message || 'Failed to save address');
+      }
+    } catch (err) {
+      setError('Failed to save address');
+    }
+  };
+
+  const handleEditAddress = (address) => {
+    setEditingAddress(address.id);
+    setAddressFormData({
+      type: address.type || 'shipping',
+      first_name: address.first_name || '',
+      last_name: address.last_name || '',
+      phone: address.phone || '',
+      address_line_1: address.address?.address_line_1 || '',
+      address_line_2: address.address?.address_line_2 || '',
+      city: address.address?.city || '',
+      state: address.address?.state || '',
+      postal_code: address.address?.postal_code || '',
+      country: address.address?.country || 'US',
+      is_default: !!address.is_default,
+    });
+    setShowAddressForm(true);
+  };
+
+  const handleDeleteAddress = async (addressId) => {
+    if (!confirm('Delete this address?')) return;
+    try {
+      const data = await apiRequest(`/users/addresses/${addressId}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${session.accessToken}` },
+      });
+      if (data?.status === 'SUCCESS') {
+        fetchAddresses();
+        setSuccess('Address deleted');
+      }
+    } catch { setError('Failed to delete address'); }
+  };
+
+  const handleSetDefault = async (addressId) => {
+    try {
+      const data = await apiRequest(`/users/addresses/${addressId}/default`, {
+        method: 'PATCH',
+        headers: { Authorization: `Bearer ${session.accessToken}` },
+      });
+      if (data?.status === 'SUCCESS') {
+        fetchAddresses();
+        setSuccess('Default address updated');
+      }
+    } catch { setError('Failed to set default'); }
   };
 
   if (loading) {
@@ -341,37 +430,120 @@ export default function Profile() {
         </div>
 
         {/* Addresses Section */}
-        {userData?.addresses && userData.addresses.length > 0 && (
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 mt-6">
-            <div className="px-6 py-6">
-              <h2 className="text-lg font-medium text-gray-900 mb-6">Saved Addresses</h2>
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 mt-6">
+          <div className="px-6 py-6">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-lg font-medium text-gray-900">Saved Addresses</h2>
+              <button
+                onClick={() => {
+                  setEditingAddress(null);
+                  setAddressFormData({ type: 'shipping', first_name: '', last_name: '', phone: '', address_line_1: '', address_line_2: '', city: '', state: '', postal_code: '', country: 'US', is_default: false });
+                  setShowAddressForm(true);
+                }}
+                className="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+              >
+                + Add Address
+              </button>
+            </div>
+
+            {showAddressForm && (
+              <div className="border border-gray-200 rounded-lg p-4 mb-4">
+                <h3 className="text-md font-medium text-gray-900 mb-4">{editingAddress ? 'Edit Address' : 'New Address'}</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
+                    <select value={addressFormData.type} onChange={e => setAddressFormData(p => ({...p, type: e.target.value}))} className="w-full px-3 py-2 border border-gray-300 rounded-md">
+                      <option value="shipping">Shipping</option>
+                      <option value="billing">Billing</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">First Name</label>
+                    <input type="text" value={addressFormData.first_name} onChange={e => setAddressFormData(p => ({...p, first_name: e.target.value}))} className="w-full px-3 py-2 border border-gray-300 rounded-md" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
+                    <input type="text" value={addressFormData.last_name} onChange={e => setAddressFormData(p => ({...p, last_name: e.target.value}))} className="w-full px-3 py-2 border border-gray-300 rounded-md" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+                    <input type="tel" value={addressFormData.phone} onChange={e => setAddressFormData(p => ({...p, phone: e.target.value}))} className="w-full px-3 py-2 border border-gray-300 rounded-md" />
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Address Line 1</label>
+                    <input type="text" value={addressFormData.address_line_1} onChange={e => setAddressFormData(p => ({...p, address_line_1: e.target.value}))} className="w-full px-3 py-2 border border-gray-300 rounded-md" />
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Address Line 2</label>
+                    <input type="text" value={addressFormData.address_line_2} onChange={e => setAddressFormData(p => ({...p, address_line_2: e.target.value}))} className="w-full px-3 py-2 border border-gray-300 rounded-md" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">City</label>
+                    <input type="text" value={addressFormData.city} onChange={e => setAddressFormData(p => ({...p, city: e.target.value}))} className="w-full px-3 py-2 border border-gray-300 rounded-md" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">State</label>
+                    <input type="text" value={addressFormData.state} onChange={e => setAddressFormData(p => ({...p, state: e.target.value}))} className="w-full px-3 py-2 border border-gray-300 rounded-md" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Postal Code</label>
+                    <input type="text" value={addressFormData.postal_code} onChange={e => setAddressFormData(p => ({...p, postal_code: e.target.value}))} className="w-full px-3 py-2 border border-gray-300 rounded-md" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Country</label>
+                    <input type="text" value={addressFormData.country} onChange={e => setAddressFormData(p => ({...p, country: e.target.value}))} className="w-full px-3 py-2 border border-gray-300 rounded-md" />
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="flex items-center">
+                      <input type="checkbox" checked={addressFormData.is_default} onChange={e => setAddressFormData(p => ({...p, is_default: e.target.checked}))} className="h-4 w-4 text-blue-600 border-gray-300 rounded" />
+                      <span className="ml-2 text-sm text-gray-700">Set as default address</span>
+                    </label>
+                  </div>
+                </div>
+                <div className="flex justify-end gap-2 mt-4">
+                  <button onClick={() => { setShowAddressForm(false); setEditingAddress(null); }} className="px-4 py-2 border border-gray-300 rounded-md text-sm text-gray-700 hover:bg-gray-50">Cancel</button>
+                  <button onClick={handleSaveAddress} className="px-4 py-2 bg-blue-600 text-white rounded-md text-sm hover:bg-blue-700">Save Address</button>
+                </div>
+              </div>
+            )}
+
+            {addresses.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {userData.addresses.map((address, index) => (
+                {addresses.map((address) => (
                   <div key={address.id} className="border border-gray-200 rounded-lg p-4">
                     <div className="flex items-center justify-between mb-2">
                       <span className="text-sm font-medium text-gray-900 capitalize">
                         {address.type} Address
                       </span>
-                      {address.is_default && (
-                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                          Default
-                        </span>
-                      )}
+                      <div className="flex items-center gap-2">
+                        {address.is_default && (
+                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">Default</span>
+                        )}
+                      </div>
                     </div>
                     <div className="text-sm text-gray-600 space-y-1">
                       <p>{address.first_name} {address.last_name}</p>
-                      <p>{address.address.address_line_1}</p>
-                      {address.address.address_line_2 && <p>{address.address.address_line_2}</p>}
-                      <p>{address.address.city}, {address.address.state} {address.address.postal_code}</p>
-                      <p>{address.address.country}</p>
+                      <p>{address.address?.address_line_1}</p>
+                      {address.address?.address_line_2 && <p>{address.address.address_line_2}</p>}
+                      <p>{address.address?.city}, {address.address?.state} {address.address?.postal_code}</p>
+                      <p>{address.address?.country}</p>
                       {address.phone && <p>Phone: {address.phone}</p>}
+                    </div>
+                    <div className="flex gap-2 mt-3 pt-3 border-t border-gray-100">
+                      <button onClick={() => handleEditAddress(address)} className="text-sm text-blue-600 hover:text-blue-800">Edit</button>
+                      {!address.is_default && (
+                        <button onClick={() => handleSetDefault(address.id)} className="text-sm text-gray-600 hover:text-gray-800">Set Default</button>
+                      )}
+                      <button onClick={() => handleDeleteAddress(address.id)} className="text-sm text-red-600 hover:text-red-800">Delete</button>
                     </div>
                   </div>
                 ))}
               </div>
-            </div>
+            ) : !showAddressForm && (
+              <p className="text-sm text-gray-500">No saved addresses. Click "Add Address" to add one.</p>
+            )}
           </div>
-        )}
+        </div>
       </div>
       <Footer />
     </div>

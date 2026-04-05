@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Header from '../../components/Header';
 import Footer from '../../components/Footer';
@@ -9,6 +9,8 @@ import { apiRequest } from '../../lib/api';
 
 export default function CheckoutPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const paymentCancelled = searchParams.get('cancelled') === 'true';
 
   // Auth state
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -49,7 +51,7 @@ export default function CheckoutPage() {
   const [step, setStep] = useState(1); // 1=info, 2=shipping, 3=payment
   const [pageLoading, setPageLoading] = useState(true);
 
-  const TAX_RATE = 0.08875;
+  const [taxRate, setTaxRate] = useState(0.08875);
 
   // Check auth & fetch cart
   useEffect(() => {
@@ -85,15 +87,37 @@ export default function CheckoutPage() {
     init();
   }, []);
 
+  // Fetch tax rate from backend when shipping address changes
+  useEffect(() => {
+    const fetchTaxRate = async () => {
+      if (!shippingAddress.state && !shippingAddress.country) return;
+      try {
+        const data = await apiRequest('/orders/calculate-tax', {
+          method: 'POST',
+          body: JSON.stringify({
+            stateCode: shippingAddress.state,
+            countryCode: shippingAddress.country,
+            subtotal: Math.max(0, subtotal - discount),
+          }),
+        });
+        if (data?.status === 'SUCCESS') {
+          const kvt = data.keyValueTable || {};
+          setTaxRate(kvt.taxRate ?? 0.08875);
+        }
+      } catch { /* keep current rate */ }
+    };
+    fetchTaxRate();
+  }, [shippingAddress.state, shippingAddress.country]);
+
   // Recalculate total
   useEffect(() => {
     const taxable = subtotal - discount;
-    const newTax = Math.round(Math.max(0, taxable) * TAX_RATE * 100) / 100;
+    const newTax = Math.round(Math.max(0, taxable) * taxRate * 100) / 100;
     setTax(newTax);
     const freeShipping = subtotal >= 100;
     const shippingCost = freeShipping ? 0 : shipping;
     setTotal(subtotal + newTax + shippingCost - discount);
-  }, [subtotal, discount, shipping]);
+  }, [subtotal, discount, shipping, taxRate]);
 
   // Fetch shipping rates
   const fetchShippingRates = useCallback(async () => {
@@ -218,10 +242,27 @@ export default function CheckoutPage() {
 
       if (data?.status === 'SUCCESS') {
         const kvt = data.keyValueTable || {};
-        const oid = kvt.orderId || kvt.orderNumber;
+        const orderId = kvt.orderId || kvt.orderNumber;
         // Dispatch cart update event
         if (typeof window !== 'undefined') window.dispatchEvent(new Event('cart:updated'));
-        router.push(`/order/confirmation/${oid}`);
+
+        // Attempt Stripe Checkout redirect
+        try {
+          const paymentData = await apiRequest('/payments/create-checkout-session', {
+            method: 'POST',
+            body: JSON.stringify({ orderId }),
+          });
+          if (paymentData?.status === 'SUCCESS' && paymentData.keyValueTable?.url) {
+            window.location.href = paymentData.keyValueTable.url;
+            return;
+          }
+        } catch (stripeErr) {
+          // Stripe not configured — fall through to confirmation page
+          console.warn('Stripe checkout unavailable, proceeding to confirmation:', stripeErr.message);
+        }
+
+        // Fallback: go directly to confirmation (for when Stripe is not configured)
+        router.push(`/order/confirmation/${orderId}`);
       } else {
         setErrors({ submit: data?.message || 'Order creation failed' });
       }
@@ -291,6 +332,7 @@ export default function CheckoutPage() {
             ))}
           </div>
 
+          {paymentCancelled && <div className="nt-error-banner" style={{ backgroundColor: '#fef3cd', borderColor: '#ffc107', color: '#856404' }}>Payment was cancelled. You can try again when ready.</div>}
           {errors.submit && <div className="nt-error-banner">{errors.submit}</div>}
 
           <div className="nt-checkout-grid">

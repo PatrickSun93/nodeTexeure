@@ -74,7 +74,7 @@ export default function Register() {
 
       if (isSuccessResponse(response)) {
         // Registration successful
-        router.push('/login?message=Registration successful! Please sign in.');
+        router.push('/login?message=Registration successful! Please check your email to verify your account.');
       } else {
         // Registration failed
         setError(response.message || 'Registration failed. Please try again.');
