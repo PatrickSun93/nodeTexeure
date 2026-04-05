@@ -32,7 +32,7 @@ export default function OrdersPage() {
           setOrders(extracted);
         }
       } catch (err) {
-        if (err.message?.includes('401') || err.message?.includes('Unauthorized')) {
+        if (err.message?.includes('401') || err.message?.includes('Unauthorized') || err.message?.includes('Not authorized') || err.message?.includes('no token')) {
           router.push('/login?redirect=/orders');
           return;
         }
