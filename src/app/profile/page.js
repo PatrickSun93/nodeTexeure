@@ -34,7 +34,7 @@ export default function Profile() {
   useEffect(() => {
     if (status === 'loading') return;
     if (!session) {
-      router.push('/login');
+      router.push('/signin?redirect=/profile');
       return;
     }
     fetchProfile();

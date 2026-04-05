@@ -190,7 +190,7 @@ import SearchBar from './SearchBar';
                 </div>
               ) : (
                 <Link
-                  href="/login"
+                  href="/signin"
                   className="aesop-sign-in-link"
                 >
                   Sign In

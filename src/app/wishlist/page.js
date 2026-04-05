@@ -18,7 +18,7 @@ export default function WishlistPage() {
   useEffect(() => {
     if (status === 'loading') return;
     if (!session) {
-      router.push('/login');
+      router.push('/signin?redirect=/wishlist');
       return;
     }
     fetchWishlist();

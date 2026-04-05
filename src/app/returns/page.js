@@ -26,7 +26,7 @@ export default function ReturnsPage() {
 
   useEffect(() => {
     if (authStatus === 'loading') return;
-    if (!session) { router.push('/login'); return; }
+    if (!session) { router.push('/signin?redirect=/returns'); return; }
     fetchReturns();
   }, [authStatus, session]);
 

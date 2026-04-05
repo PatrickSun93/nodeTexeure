@@ -17,13 +17,12 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (status === 'authenticated') {
-      // Redirect to dashboard for admin/staff only
       getSession().then((session) => {
         if (session?.user?.isAdmin || session?.user?.role === 'admin' || session?.user?.role === 'staff') {
           router.push('/dashboard');
         } else {
-          // If somehow a customer is authenticated, sign them out
-          setError('Access denied. Only admin and staff can login.');
+          // Customer is authenticated but on admin login page, send them to profile
+          router.push('/profile');
         }
       });
     }
@@ -43,22 +42,15 @@ export default function LoginPage() {
     setIsLoading(false);
 
     if (result?.error) {
-      // Check if it's an access denied error
-      if (result.error.includes('Access denied') || result.error.includes('not allowed to login')) {
-        setError('Customer accounts are not allowed to login. This site is for admin and staff only.');
-      } else {
-        setError('Login failed. Please check your credentials.');
-      }
+      setError('Login failed. Please check your credentials.');
     } else if (result?.ok) {
-      // Refresh router to ensure session is updated, then redirect
       router.refresh();
-      // Get the updated session to check user role
       const session = await getSession();
       if (session?.user?.isAdmin || session?.user?.role === 'admin' || session?.user?.role === 'staff') {
         router.push('/dashboard');
       } else {
-        // This shouldn't happen since customers can't login, but just in case
-        setError('Access denied. Only admin and staff can login.');
+        // Customer logged in on admin page, redirect to profile
+        router.push('/profile');
       }
     } else {
       setError('An unexpected error occurred.');

@@ -106,13 +106,7 @@ const handler = NextAuth({
           if (data.status == 'SUCCESS') {
             // Extract user data from successful response
             const { userId, email, accessToken, refreshToken, role, isAdmin } = data.keyValueTable;
-            
-            // Double check: only allow admin/staff to proceed
-            if (role !== 'admin' && role !== 'staff') {
-              console.log('[NextAuth] Customer account attempted login - denied');
-              throw new Error('Customer accounts are not allowed to login. This site is for admin and staff only.');
-            }
-            
+
             console.log('[NextAuth] Login successful, returning user object');
             return {
               id: userId.toString(),

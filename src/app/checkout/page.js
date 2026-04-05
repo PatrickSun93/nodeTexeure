@@ -344,7 +344,7 @@ export default function CheckoutPage() {
                   {!isLoggedIn && (
                     <div className="nt-form-section">
                       <h2>Contact Information</h2>
-                      <p className="nt-form-hint">Already have an account? <Link href="/login?redirect=/checkout">Log in</Link></p>
+                      <p className="nt-form-hint">Already have an account? <Link href="/signin?redirect=/checkout">Log in</Link></p>
                       <div className="nt-form-group">
                         <label>Email *</label>
                         <input type="email" value={guestEmail} onChange={e => setGuestEmail(e.target.value)}
