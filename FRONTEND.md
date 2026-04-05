@@ -40,10 +40,18 @@ src/
 │   ├── shop/              # Product listing
 │   ├── products/[id]/     # Product detail pages
 │   ├── cart/              # Shopping cart
-│   ├── checkout/          # Checkout flow
+│   ├── checkout/          # Checkout flow (multi-step with Stripe)
+│   ├── order/confirmation/[id]/ # Order confirmation
+│   ├── orders/            # Order history listing
+│   ├── track-order/       # Order tracking page
+│   ├── returns/           # Returns management
+│   ├── wishlist/          # Product wishlist
+│   ├── verify-email/      # Email verification
 │   ├── login/             # Authentication
 │   ├── register/          # User registration
 │   ├── profile/           # User dashboard
+│   ├── sitemap.js         # Dynamic sitemap
+│   ├── robots.js          # Robots.txt config
 │   └── api/               # API route handlers
 ├── components/            # React components
 │   ├── Header.js          # Site header
@@ -347,8 +355,36 @@ export default function Page() {
 **Steps:**
 1. Shipping address
 2. Billing address
-3. Payment method
-4. Order review
+3. Payment method (Stripe integration)
+4. Order review & confirmation
+
+### Order Confirmation (`/order/confirmation/[id]`)
+
+**File:** `src/app/order/confirmation/[id]/page.js`
+
+**Features:**
+- Order summary with line items
+- Payment status display
+- Shipping details
+- Print-friendly layout
+
+### Order History (`/orders`)
+
+**File:** `src/app/orders/page.js`
+
+**Features:**
+- Order list with status badges
+- Order detail expansion
+- Reorder functionality
+
+### Order Tracking (`/track-order`)
+
+**File:** `src/app/track-order/page.js`
+
+**Features:**
+- Track by order number or tracking number
+- Shipping status timeline
+- Carrier tracking integration
 
 ### User Profile (`/profile`)
 
@@ -788,5 +824,5 @@ npm run dev
 
 ---
 
-**Last Updated:** January 24, 2025  
+**Last Updated:** April 5, 2026  
 **Version:** 1.0

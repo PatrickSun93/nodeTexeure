@@ -566,6 +566,152 @@ X-CSRF-Token: <csrf-token>
 
 ---
 
+## 💳 Payments API (Stripe)
+
+All payment endpoints degrade gracefully when Stripe keys are not configured (returns 503).
+
+### Create Checkout Session
+
+**POST** `/api/payments/create-checkout-session`
+
+Auth: Optional
+
+```json
+// Request
+{
+  "orderId": "ORDER0000000001"
+}
+
+// Response
+{
+  "status": "SUCCESS",
+  "message": "Checkout session created",
+  "keyValueTable": {
+    "sessionId": "cs_test_...",
+    "url": "https://checkout.stripe.com/..."
+  }
+}
+```
+
+### Create Payment Intent
+
+**POST** `/api/payments/create-payment-intent`
+
+Auth: Optional
+
+```json
+{
+  "orderId": "ORDER0000000001"
+}
+```
+
+### Stripe Webhook
+
+**POST** `/api/payments/webhook`
+
+Handles: `checkout.session.completed`, `payment_intent.succeeded`, `payment_intent.payment_failed`, `charge.refunded`
+
+### Refund Payment
+
+**POST** `/api/payments/refund`
+
+Auth: Admin
+
+```json
+{
+  "orderId": "ORDER0000000001",
+  "amount": 50.00,
+  "reason": "Customer request"
+}
+```
+
+### Get Payment Status
+
+**GET** `/api/payments/status/:orderId`
+
+Auth: Required
+
+---
+
+## 🚚 Shipping API (FedEx)
+
+Falls back to default rate estimates when FedEx credentials are not configured.
+
+### Get Shipping Rates
+
+**POST** `/api/shipping/rates`
+
+```json
+// Request
+{
+  "destination": {
+    "postalCode": "90001",
+    "stateOrProvinceCode": "CA",
+    "countryCode": "US",
+    "city": "Los Angeles"
+  },
+  "items": [{ "weight": 2 }]
+}
+```
+
+### Create Shipping Label
+
+**POST** `/api/shipping/create-label`
+
+Auth: Admin
+
+```json
+{
+  "orderId": "ORDER0000000001",
+  "serviceType": "FEDEX_GROUND"
+}
+```
+
+### Track Shipment
+
+**GET** `/api/shipping/track/:trackingNumber`
+
+---
+
+## 🖼️ Images API (S3)
+
+Falls back to local file storage when S3 credentials are not configured.
+
+### Upload Image
+
+**POST** `/api/images/upload`
+
+Auth: Required  
+Content-Type: `multipart/form-data`  
+Max file size: 10MB  
+Allowed types: JPEG, PNG, GIF, WebP
+
+### Upload Product Image (with thumbnails)
+
+**POST** `/api/images/product/:productId`
+
+Auth: Admin  
+Auto-generates small, medium, and large thumbnails.
+
+### Delete Image
+
+**DELETE** `/api/images/:imageId`
+
+Auth: Admin
+
+---
+
+## 📧 Email Service (AWS SES)
+
+The email system uses a producer/consumer architecture:
+
+- **Producer** (`backend/services/emailQueueProducer.js`) — enqueues emails to the `email_queue` database table
+- **Daemon** (`backend/services/emailDaemon.js`) — processes the queue, sends via SES or falls back to console logging
+
+Start the daemon: `npm run email-daemon` (from `backend/`)
+
+---
+
 ## 🔒 Security
 
 ### CSRF Protection
@@ -817,5 +963,5 @@ All requests are logged with:
 
 ---
 
-**Last Updated:** January 24, 2025  
+**Last Updated:** April 5, 2026  
 **Version:** 1.0

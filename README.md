@@ -1,7 +1,7 @@
 # NodeTexeure - Project Overview
 
 **Version:** 1.0  
-**Last Updated:** January 24, 2025
+**Last Updated:** April 5, 2026
 
 ---
 
@@ -63,10 +63,10 @@ NodeTexeure is a full-stack luxury bed texture e-commerce platform specializing 
 - Coupon/discount system
 
 ### Shipping
-- FedEx integration (planned)
+- FedEx integration (service built, needs API credentials)
 - Weight-based + zone-based calculation
 - International shipping support
-- Real-time tracking
+- Real-time tracking via `/track-order` page
 
 ---
 
@@ -212,15 +212,22 @@ npm run clean:full       # Stop + clean + restart
 - Inventory tracking
 - Role-based permissions
 - Database with audit logging
-- **Enhanced search with autocomplete** ✨ *NEW*
+- Enhanced search with autocomplete
+- Product reviews & ratings system
+- Admin analytics dashboard
+- Stripe payment service (needs API keys to activate)
+- AWS SES email service with producer/consumer daemon
+- AWS S3 image upload service
+- FedEx shipping service with rate calculation
+- Order confirmation & tracking pages
+- Sitemap & robots.txt for SEO
 
 ### 🚧 In Progress
-- AWS SES configuration (backend ready)
-- Stripe payment integration (SDK installed)
-- Email template triggers
+- Admin review moderation UI
+- End-to-end integration testing with live API keys
 
 ### 📋 Planned Features
-See `todolist.md` for detailed task list
+See `TODO.md` for detailed task list
 
 ---
 
@@ -352,6 +359,6 @@ See `TROUBLESHOOTING.md` for detailed solutions.
 
 ---
 
-**Last Updated:** January 24, 2025  
+**Last Updated:** April 5, 2026  
 **Current Version:** 1.0  
 **Status:** Active Development
