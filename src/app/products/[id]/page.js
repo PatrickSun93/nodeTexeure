@@ -193,7 +193,7 @@ export default function ProductDetails() {
               >
                 {isOutOfStock ? 'Out of Stock' : adding ? 'Adding to Cart...' : 'Add to Cart'}
               </button>
-              <WishlistButton productId={id} variantId={selectedVariant?.id} />
+              <WishlistButton productId={id} variantId={selectedVariantId} />
             </div>
 
             {/* Product Features */}
