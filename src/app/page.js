@@ -1,11 +1,17 @@
 "use client";
 
+import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useBackendHealth } from '../lib';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import { fetchSettings } from '../lib/fetchSettings';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
+
+const NewsletterSection = dynamic(
+  () => import('../components/NewsletterSection'),
+  { ssr: false }
+);
 
 // Hero Section Component - Full screen with serif typography
 function HeroSection() {
@@ -246,64 +252,6 @@ function ValuesSection() {
   );
 }
 
-// Newsletter Component
-function NewsletterSection() {
-  const [email, setEmail] = useState('');
-  const [status, setStatus] = useState(''); // 'success', 'error', or ''
-  const statusTimeoutRef = useRef(null);
-
-  // Cleanup timeout on unmount
-  useEffect(() => {
-    return () => {
-      if (statusTimeoutRef.current) {
-        clearTimeout(statusTimeoutRef.current);
-      }
-    };
-  }, []);
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    // Clear any existing timeout
-    if (statusTimeoutRef.current) {
-      clearTimeout(statusTimeoutRef.current);
-    }
-    // Placeholder for newsletter signup
-    setStatus('success');
-    setEmail('');
-    statusTimeoutRef.current = setTimeout(() => setStatus(''), 3000);
-  };
-
-  return (
-    <section className="noirae-newsletter-section">
-      <div className="aesop-container">
-        <div className="noirae-newsletter-content">
-          <h2 className="noirae-heading-2">Join Our Community</h2>
-          <p className="noirae-newsletter-description">
-            Subscribe to receive exclusive offers, styling tips, and early access to new collections
-          </p>
-          
-          <form onSubmit={handleSubmit} className="noirae-newsletter-form">
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="Enter your email address"
-              className="noirae-newsletter-input"
-              required
-            />
-            <button type="submit" className="noirae-btn-primary">
-              Subscribe
-            </button>
-          </form>
-          
-          {status === 'success' && (
-            <p className="noirae-newsletter-success">Thank you for subscribing!</p>
-          )}
-        </div>
-      </div>
-    </section>
-  );
-}
 
 export default function Home() {
   const { isConnected, loading } = useBackendHealth();
