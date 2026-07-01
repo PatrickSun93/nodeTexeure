@@ -19,16 +19,6 @@ export default function NewArrivePage() {
   const [settings, setSettings] = useState({});
   const [loading, setLoading] = useState(true);
 
-  // Fallback sample items to guarantee visual
-  const sampleProducts = [
-    { id: 1001, name: "Amber Essence Candle", description: "Warm amber notes with calming presence", price: 59, image: "/api/placeholder/300/300", isNew: true },
-    { id: 1002, name: "Lucent Duo", description: "Refined skincare combination set", price: 120, image: "/api/placeholder/300/300", isNew: true },
-    { id: 1003, name: "Eleos Body Cleanser", description: "Nourishing, aromatic body wash", price: 39, image: "/api/placeholder/300/300", isNew: true },
-    { id: 1004, name: "Aurner Eau de Parfum", description: "Floral fragrance with depth", price: 165, image: "/api/placeholder/300/300" },
-    { id: 1005, name: "Resurrection Hand Wash", description: "Citrus, woody, herbaceous", price: 39, image: "/api/placeholder/300/300" },
-    { id: 1006, name: "Reverence Hand Wash", description: "Earthy, smoky, woody", price: 41, image: "/api/placeholder/300/300" }
-  ];
-
   // Fetch products from backend and map to UI-friendly structure
   const fetchProducts = async () => {
     try {
@@ -50,11 +40,11 @@ export default function NewArrivePage() {
         }));
         setProducts(mapped);
       } else {
-        setProducts(sampleProducts);
+        setProducts([]);
       }
     } catch (e) {
       console.error("Failed to fetch products for New Arrive:", e);
-      setProducts(sampleProducts);
+      setProducts([]);
     } finally {
       setLoading(false);
     }
@@ -68,7 +58,7 @@ export default function NewArrivePage() {
   const newArrivals = useMemo(() => {
     const days = 60;
     const now = Date.now();
-    const base = products.length ? products : sampleProducts;
+    const base = products;
     const selected = base.filter((p) => {
       if (p.isNew) return true;
       if (!p.created_at) return false;
@@ -82,7 +72,7 @@ export default function NewArrivePage() {
   // Remove old newArrivals and notableFormulations if not used
   // Notable formulations: the rest/top picks
   const notableFormulations = useMemo(() => {
-    const base = products.length ? products : sampleProducts;
+    const base = products;
     return base.filter((p) => !newArrivals.some((n) => n.id === p.id)).slice(0, 8);
   }, [products, newArrivals]);
 

@@ -2,9 +2,52 @@
 
 import { useState, useEffect } from 'react';
 import ExportButton from '../../../components/ExportButton';
+import { apiRequest, getErrorMessage } from '@/lib/api';
+
+// Scheduled reports admin API (proxied to the Express backend at /api/admin/*).
+const SCHEDULED_REPORTS_ENDPOINT = 'admin/reports/scheduled';
+
+const scheduledReportsAPI = {
+  list() {
+    return apiRequest(SCHEDULED_REPORTS_ENDPOINT);
+  },
+  create(payload) {
+    return apiRequest(SCHEDULED_REPORTS_ENDPOINT, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  },
+  update(id, payload) {
+    return apiRequest(`${SCHEDULED_REPORTS_ENDPOINT}/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(payload),
+    });
+  },
+  remove(id) {
+    return apiRequest(`${SCHEDULED_REPORTS_ENDPOINT}/${id}`, {
+      method: 'DELETE',
+    });
+  },
+};
+
+// Tolerate the different response shapes the backend may use (ResponseFormatter
+// keyValueTable, or a plain { data } envelope) and always return an array.
+function extractSchedules(response) {
+  const kvt = response?.keyValueTable;
+  if (Array.isArray(kvt)) return kvt;
+  if (Array.isArray(kvt?.scheduledReports)) return kvt.scheduledReports;
+  if (Array.isArray(kvt?.schedules)) return kvt.schedules;
+  const data = response?.data;
+  if (Array.isArray(data?.scheduledReports)) return data.scheduledReports;
+  if (Array.isArray(data?.schedules)) return data.schedules;
+  if (Array.isArray(data)) return data;
+  return [];
+}
 
 export default function ScheduledReportsPage() {
   const [schedules, setSchedules] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [newSchedule, setNewSchedule] = useState({
     name: '',
@@ -17,47 +60,26 @@ export default function ScheduledReportsPage() {
     isActive: true
   });
 
-  // Mock data for demonstration
+  const fetchSchedules = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await scheduledReportsAPI.list();
+      setSchedules(extractSchedules(response));
+    } catch (err) {
+      console.error('Error fetching scheduled reports:', err);
+      setSchedules([]);
+      setError(getErrorMessage(err));
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    setSchedules([
-      {
-        id: 1,
-        name: 'Weekly Financial Summary',
-        reportType: 'financial-overview',
-        frequency: 'weekly',
-        dayOfWeek: 1,
-        time: '09:00',
-        recipients: 'admin@bedtexture.com, finance@bedtexture.com',
-        isActive: true,
-        lastRun: '2025-01-15T09:00:00Z',
-        nextRun: '2025-01-22T09:00:00Z'
-      },
-      {
-        id: 2,
-        name: 'Monthly Tax Report',
-        reportType: 'tax-collection',
-        frequency: 'monthly',
-        dayOfMonth: 1,
-        time: '08:00',
-        recipients: 'accounting@bedtexture.com',
-        isActive: true,
-        lastRun: '2025-01-01T08:00:00Z',
-        nextRun: '2025-02-01T08:00:00Z'
-      }
-    ]);
+    fetchSchedules();
   }, []);
 
-  const handleCreateSchedule = (e) => {
-    e.preventDefault();
-    const schedule = {
-      id: Date.now(),
-      ...newSchedule,
-      recipients: newSchedule.recipients,
-      lastRun: null,
-      nextRun: calculateNextRun(newSchedule)
-    };
-    
-    setSchedules([...schedules, schedule]);
+  const resetNewSchedule = () => {
     setNewSchedule({
       name: '',
       reportType: 'financial-overview',
@@ -68,40 +90,41 @@ export default function ScheduledReportsPage() {
       recipients: '',
       isActive: true
     });
-    setShowCreateForm(false);
   };
 
-  const calculateNextRun = (schedule) => {
-    const now = new Date();
-    let nextRun = new Date();
-    
-    if (schedule.frequency === 'weekly') {
-      const dayOfWeek = parseInt(schedule.dayOfWeek);
-      const daysUntilNext = (dayOfWeek - now.getDay() + 7) % 7;
-      nextRun.setDate(now.getDate() + (daysUntilNext === 0 ? 7 : daysUntilNext));
-    } else if (schedule.frequency === 'monthly') {
-      const dayOfMonth = parseInt(schedule.dayOfMonth);
-      nextRun.setMonth(now.getMonth() + 1);
-      nextRun.setDate(dayOfMonth);
+  const handleCreateSchedule = async (e) => {
+    e.preventDefault();
+    try {
+      await scheduledReportsAPI.create(newSchedule);
+      resetNewSchedule();
+      setShowCreateForm(false);
+      await fetchSchedules();
+    } catch (err) {
+      console.error('Error creating scheduled report:', err);
+      alert(`Failed to create scheduled report: ${getErrorMessage(err)}`);
     }
-    
-    const [hours, minutes] = schedule.time.split(':');
-    nextRun.setHours(parseInt(hours), parseInt(minutes), 0, 0);
-    
-    return nextRun.toISOString();
   };
 
-  const toggleScheduleStatus = (id) => {
-    setSchedules(schedules.map(schedule => 
-      schedule.id === id 
-        ? { ...schedule, isActive: !schedule.isActive }
-        : schedule
-    ));
+  const toggleScheduleStatus = async (schedule) => {
+    try {
+      await scheduledReportsAPI.update(schedule.id, { isActive: !schedule.isActive });
+      await fetchSchedules();
+    } catch (err) {
+      console.error('Error updating scheduled report:', err);
+      alert(`Failed to update scheduled report: ${getErrorMessage(err)}`);
+    }
   };
 
-  const deleteSchedule = (id) => {
-    if (confirm('Are you sure you want to delete this scheduled report?')) {
-      setSchedules(schedules.filter(schedule => schedule.id !== id));
+  const deleteSchedule = async (id) => {
+    if (!confirm('Are you sure you want to delete this scheduled report?')) {
+      return;
+    }
+    try {
+      await scheduledReportsAPI.remove(id);
+      await fetchSchedules();
+    } catch (err) {
+      console.error('Error deleting scheduled report:', err);
+      alert(`Failed to delete scheduled report: ${getErrorMessage(err)}`);
     }
   };
 
@@ -318,7 +341,22 @@ export default function ScheduledReportsPage() {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {schedules.map((schedule) => (
+              {loading ? (
+                <tr>
+                  <td colSpan={8} className="px-6 py-12 text-center text-sm text-gray-500">
+                    Loading scheduled reports…
+                  </td>
+                </tr>
+              ) : schedules.length === 0 ? (
+                <tr>
+                  <td colSpan={8} className="px-6 py-12 text-center text-sm text-gray-500">
+                    {error
+                      ? `Unable to load scheduled reports: ${error}. No scheduled reports are configured yet.`
+                      : 'No scheduled reports yet. Click “New Schedule” to create one.'}
+                  </td>
+                </tr>
+              ) : (
+                schedules.map((schedule) => (
                 <tr key={schedule.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                     {schedule.name}
@@ -330,7 +368,9 @@ export default function ScheduledReportsPage() {
                     {getFrequencyLabel(schedule.frequency)}
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">
-                    {schedule.recipients}
+                    {Array.isArray(schedule.recipients)
+                      ? schedule.recipients.join(', ')
+                      : schedule.recipients}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {formatDateTime(schedule.lastRun)}
@@ -350,7 +390,7 @@ export default function ScheduledReportsPage() {
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     <div className="flex space-x-2">
                       <button
-                        onClick={() => toggleScheduleStatus(schedule.id)}
+                        onClick={() => toggleScheduleStatus(schedule)}
                         className="text-blue-600 hover:text-blue-900"
                       >
                         {schedule.isActive ? 'Pause' : 'Resume'}
@@ -364,7 +404,8 @@ export default function ScheduledReportsPage() {
                     </div>
                   </td>
                 </tr>
-              ))}
+                ))
+              )}
             </tbody>
           </table>
         </div>

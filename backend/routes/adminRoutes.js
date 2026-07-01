@@ -819,10 +819,16 @@ router.post('/products/:id/image', adminWriteLimiter, csrfProtection, async (req
 router.get('/analytics/summary', adminReadLimiter, async (req, res) => {
   try {
     // Parallel queries for performance
-    const [revenueResult, ordersResult, customersResult] = await Promise.all([
+    const [revenueResult, ordersResult, customersResult, visitorsResult, paidOrdersResult] = await Promise.all([
       DatabaseUtil.executeQuery("SELECT SUM(total_amount) as total FROM orders WHERE status != 'cancelled'"),
       DatabaseUtil.executeQuery("SELECT COUNT(*) as count FROM orders WHERE status != 'cancelled'"),
-      DatabaseUtil.executeQuery("SELECT COUNT(*) as count FROM users WHERE role = 'customer' AND status = 'active'")
+      DatabaseUtil.executeQuery("SELECT COUNT(*) as count FROM users WHERE role = 'customer' AND status = 'active'"),
+      // Visitor proxy: there is no analytics/tracking table, but shopping_carts records one row per
+      // browser session (session_id for guests, user_id once logged in). Distinct sessions is therefore
+      // an honest real-data proxy for unique visitors. COALESCE(..., id) guarantees every cart counts once.
+      DatabaseUtil.executeQuery("SELECT COUNT(DISTINCT COALESCE(session_id, user_id, id)) as count FROM shopping_carts"),
+      // Paid orders: orders with a completed payment. DISTINCT so multiple payment rows for one order count once.
+      DatabaseUtil.executeQuery("SELECT COUNT(DISTINCT order_id) as count FROM payments WHERE status = 'completed'")
     ]);
 
     const totalRevenue = revenueResult.data[0].total || 0;
@@ -830,13 +836,21 @@ router.get('/analytics/summary', adminReadLimiter, async (req, res) => {
     const avgOrderValue = totalOrders > 0 ? (totalRevenue / totalOrders) : 0;
     const activeCustomers = customersResult.data[0].count || 0;
 
+    // Derived from real DB data (no hardcoded constants).
+    // COUNT() comes back as a BIGINT string from the driver, so coerce to Number for clean arithmetic/output.
+    const visitors = Number(visitorsResult.data[0].count) || 0;    // distinct shopping-cart sessions
+    const paidOrders = Number(paidOrdersResult.data[0].count) || 0; // orders with a completed payment
+    // Conversion rate as a percentage of visitor sessions that resulted in a paid order.
+    // Falls back to 0 when no visitor proxy exists (avoids divide-by-zero and never fabricates a rate).
+    const conversionRate = visitors > 0 ? Number(((paidOrders / visitors) * 100).toFixed(2)) : 0;
+
     res.json(ResponseFormatter.success('Summary metrics fetched', [{
       metrics: {
         totalRevenue,
         activeOrders: totalOrders, // Naming: using total for now
         avgOrderValue,
-        conversionRate: 2.4, // detailed analytics implementation required for real conversion
-        visitors: 1250, // mock
+        conversionRate, // derived: (paid orders / visitor sessions) * 100
+        visitors,       // derived: distinct shopping_carts sessions (honest visitor proxy)
         activeCustomers
       }
     }]));

@@ -58,76 +58,6 @@ function Shop() {
   const [currentPage, setCurrentPage] = useState(1);
   const productsPerPage = 9; // 3x3 grid
 
-  // Sample products as fallback
-  const sampleProducts = [
-    {
-      id: 1,
-      name: "100% Mulberry Silk Sheet Set",
-      price: 450,
-      material: "Silk",
-      color: "Ivory",
-      size: "Queen",
-      brand: "Siken Dream",
-      threadCount: 600,
-      image: "/api/placeholder/400/400"
-    },
-    {
-      id: 2,
-      name: "Cashmere Silk Blend Duvet Cover",
-      price: 520,
-      material: "Cashmere",
-      color: "Champagne",
-      size: "King",
-      brand: "Sishmere Comfort",
-      threadCount: 800,
-      image: "/api/placeholder/400/400"
-    },
-    {
-      id: 3,
-      name: "Pure Cashmere Throw Blanket",
-      price: 380,
-      material: "Cashmere",
-      color: "Silver",
-      size: "Twin",
-      brand: "Cloud Weave",
-      threadCount: 400,
-      image: "/api/placeholder/400/400"
-    },
-    {
-      id: 4,
-      name: "Silk Pillowcase Duo",
-      price: 120,
-      material: "Silk",
-      color: "Ivory",
-      size: "Queen",
-      brand: "Siken Dream",
-      threadCount: 600,
-      image: "/api/placeholder/400/400"
-    },
-    {
-      id: 5,
-      name: "Luxe Cashmere Bed Runner",
-      price: 250,
-      material: "Cashmere",
-      color: "Charcoal",
-      size: "King",
-      brand: "Cloud Weave",
-      threadCount: 500,
-      image: "/api/placeholder/400/400"
-    },
-    {
-      id: 6,
-      name: "Premium Mulberry Silk Comforter",
-      price: 600,
-      material: "Silk",
-      color: "Silver",
-      size: "King",
-      brand: "Siken Dream",
-      threadCount: 1000,
-      image: "/api/placeholder/400/400"
-    }
-  ];
-
   // Fetch products
   useEffect(() => {
     const fetchProducts = async () => {
@@ -148,11 +78,11 @@ function Shop() {
         if (data.status === 'SUCCESS') {
           setProducts(data.keyValueTable.products || []);
         } else {
-          setProducts(sampleProducts);
+          setProducts([]);
         }
       } catch (error) {
         console.error('Error fetching products:', error);
-        setProducts(sampleProducts);
+        setProducts([]);
       } finally {
         setLoading(false);
       }
