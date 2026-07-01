@@ -363,25 +363,20 @@ class Logger {
   }
 
   /**
-   * Leveled console logging used by services, routes, and middleware.
+   * Debug/warn logging used by services and middleware.
+   * (info() and error() already exist above and also persist to the log file.)
    * DEBUG is suppressed unless LOG_LEVEL=debug, keeping normal output clean.
    */
-  debug(...args) {
-    if ((process.env.LOG_LEVEL || 'info').toLowerCase() === 'debug') {
-      console.log(`[${new Date().toISOString()}] DEBUG |`, ...args);
-    }
+  debug(message, data = null) {
+    if ((process.env.LOG_LEVEL || 'info').toLowerCase() !== 'debug') return;
+    const logLine = `[${new Date().toISOString()}] DEBUG | ${message}${data ? ' | Data: ' + JSON.stringify(data) : ''}`;
+    console.log(logLine);
   }
 
-  info(...args) {
-    console.log(`[${new Date().toISOString()}] INFO |`, ...args);
-  }
-
-  warn(...args) {
-    console.warn(`[${new Date().toISOString()}] WARN |`, ...args);
-  }
-
-  error(...args) {
-    console.error(`[${new Date().toISOString()}] ERROR |`, ...args);
+  warn(message, data = null) {
+    const logLine = `[${new Date().toISOString()}] WARN | ${message}${data ? ' | Data: ' + JSON.stringify(data) : ''}`;
+    console.warn(logLine);
+    this.writeLog(logLine).catch(() => {});
   }
 
   /**

@@ -275,7 +275,7 @@ class EmailQueueService {
     const isRetryable = this._isEmailErrorRetryable(error);
 
     // Don't retry non-retryable errors (like invalid email addresses)
-    if (!isRetryable || newRetryCount >= this.maxRetries) {
+    if (!isRetryable || newAttempts >= this.maxRetries) {
       // Max retries reached or non-retryable error, mark as failed
       await this.markEmailFailed(emailItem.id, error.message, error.type);
       
@@ -285,7 +285,7 @@ class EmailQueueService {
         recipient: emailItem.recipient,
         error: error.message,
         errorType: error.type,
-        retryCount: newRetryCount,
+        retryCount: newAttempts,
         retryable: isRetryable,
         reason: !isRetryable ? 'non-retryable error' : 'max retries exceeded'
       });
@@ -296,7 +296,7 @@ class EmailQueueService {
       }
     } else {
       // Calculate retry delay with exponential backoff and jitter
-      const baseDelay = this.retryDelays[newRetryCount - 1] || this.retryDelays[this.retryDelays.length - 1];
+      const baseDelay = this.retryDelays[newAttempts - 1] || this.retryDelays[this.retryDelays.length - 1];
       const jitter = Math.random() * 1000; // Add up to 1 second of jitter
       const retryDelay = baseDelay + jitter;
       const nextRetryAt = new Date(Date.now() + retryDelay);
