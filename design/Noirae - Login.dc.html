@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=EB+Garamond:ital@0;1&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{background:#F3EBDD;color:#2A2621;font-family:'Jost',-apple-system,Arial,sans-serif;font-weight:300;-webkit-font-smoothing:antialiased}
+img{display:block;max-width:100%}
+a{color:inherit;text-decoration:none}
+button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+h1,h2,h3{font-family:'Cormorant Garamond',Georgia,serif;font-weight:500;margin:0;color:#2A2621;line-height:1.08}
+p{margin:0}
+input::placeholder{color:#B4A990}
+</style>
+</helmet>
+
+<div style="min-height:100vh;display:grid;grid-template-columns:1.05fr 0.95fr;background:#F3EBDD;">
+
+<!-- IMAGE SIDE -->
+<div style="position:relative;overflow:hidden;min-height:100vh;background:#ECDCC4;">
+<img src="https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&q=80&w=1300" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;">
+<div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(26,22,18,0.5) 0%,rgba(26,22,18,0.12) 34%,rgba(26,22,18,0.62) 100%);"></div>
+<a href="Noiraé — Home.dc.html" style="position:absolute;top:36px;left:44px;font-family:'Cormorant Garamond',serif;font-size:30px;font-weight:600;letter-spacing:0.14em;color:#F7EFE1;">Noiraé</a>
+<div style="position:absolute;left:44px;right:44px;bottom:48px;color:#F7EFE1;">
+<div style="font-family:'Cormorant Garamond',serif;font-size:32px;line-height:1.25;max-width:440px;font-weight:500;">"The best sleep of your life begins the moment you lie down."</div>
+<div style="font-size:11px;letter-spacing:0.22em;text-transform:uppercase;color:#DCC08A;margin-top:18px;">Silk &amp; Cashmere · Est. 2019</div>
+</div>
+</div>
+
+<!-- FORM SIDE -->
+<div style="display:flex;flex-direction:column;padding:34px 44px;">
+<div style="display:flex;justify-content:flex-end;">
+<a href="Noiraé — Home.dc.html" style="font-size:12px;letter-spacing:0.06em;color:#6A6156;display:flex;align-items:center;gap:7px;transition:color .2s;" style-hover="color:#2A2621"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="14 6 8 12 14 18"/></svg>Back to store</a>
+</div>
+<div style="flex:1;display:flex;flex-direction:column;justify-content:center;max-width:400px;width:100%;margin:0 auto;padding:36px 0;">
+<div style="font-size:11px;letter-spacing:0.26em;text-transform:uppercase;color:#A8863F;">Welcome back</div>
+<h1 style="font-size:42px;margin-top:12px;letter-spacing:-0.01em;">Sign in</h1>
+<p style="font-size:14.5px;line-height:1.6;color:#6A6156;margin-top:12px;">View your orders, manage your details, and check out faster.</p>
+
+<form onSubmit="{{ onSubmit }}" style="margin-top:30px;display:flex;flex-direction:column;gap:18px;">
+<div>
+<label style="display:block;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:#6A6156;margin-bottom:8px;">Email</label>
+<input type="email" placeholder="you@example.com" style="width:100%;background:#FBF6EE;border:1px solid #D6C4A8;padding:14px 15px;font-family:'Jost',sans-serif;font-size:14px;color:#2A2621;outline:none;transition:border-color .2s;" style-focus="border-color:#A8863F" />
+</div>
+<div>
+<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;">
+<label style="font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:#6A6156;">Password</label>
+<a href="Noiraé — Forgot Password.dc.html" style="font-size:12px;color:#A8863F;" style-hover="color:#2A2621">Forgot?</a>
+</div>
+<div style="position:relative;">
+<input type="{{ pwType }}" placeholder="Enter your password" style="width:100%;background:#FBF6EE;border:1px solid #D6C4A8;padding:14px 62px 14px 15px;font-family:'Jost',sans-serif;font-size:14px;color:#2A2621;outline:none;transition:border-color .2s;" style-focus="border-color:#A8863F" />
+<button type="button" onClick="{{ togglePw }}" style="position:absolute;right:14px;top:50%;transform:translateY(-50%);font-size:11px;letter-spacing:0.08em;text-transform:uppercase;color:#A8863F;">{{ eyeLabel }}</button>
+</div>
+</div>
+<label style="display:flex;align-items:center;gap:9px;font-size:13px;color:#6A6156;cursor:pointer;"><input type="checkbox" defaultChecked style="width:16px;height:16px;accent-color:#A8863F;" />Keep me signed in</label>
+<button type="submit" style="width:100%;background:#2A2621;color:#F3EBDD;height:52px;font-size:12px;letter-spacing:0.18em;text-transform:uppercase;transition:background .25s;" style-hover="background:#A8863F">Sign in</button>
+</form>
+
+<div style="display:flex;align-items:center;gap:16px;margin:26px 0;">
+<span style="flex:1;height:1px;background:#E2D6C1;"></span>
+<span style="font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:#9C9284;">or</span>
+<span style="flex:1;height:1px;background:#E2D6C1;"></span>
+</div>
+<div style="display:flex;flex-direction:column;gap:10px;">
+<button style="width:100%;background:#FBF6EE;border:1px solid #D6C4A8;height:48px;font-size:13px;letter-spacing:0.02em;color:#2A2621;transition:border-color .2s;" style-hover="border-color:#2A2621">Continue with Apple</button>
+<button style="width:100%;background:#FBF6EE;border:1px solid #D6C4A8;height:48px;font-size:13px;letter-spacing:0.02em;color:#2A2621;transition:border-color .2s;" style-hover="border-color:#2A2621">Continue with Google</button>
+</div>
+<div style="text-align:center;margin-top:28px;font-size:13.5px;color:#6A6156;">New to Noiraé? <a href="Noiraé — Register.dc.html" style="color:#2A2621;border-bottom:1px solid #C9B48C;padding-bottom:2px;" style-hover="color:#A8863F">Create an account</a></div>
+</div>
+</div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  constructor(props){ super(props); this.state = { showPw:false }; }
+  renderVals(){
+    var self=this, s=this.state;
+    return {
+      pwType: s.showPw ? 'text' : 'password',
+      eyeLabel: s.showPw ? 'Hide' : 'Show',
+      togglePw: function(){ self.setState(function(p){ return {showPw:!p.showPw}; }); },
+      onSubmit: function(e){ e.preventDefault(); }
+    };
+  }
+}
+</script>
+</body>
+</html>

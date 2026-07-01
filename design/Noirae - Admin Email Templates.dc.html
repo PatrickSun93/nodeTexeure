@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{background:#F3EBDD;color:#2A2621;font-family:'Jost',-apple-system,Arial,sans-serif;font-weight:300;-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}
+button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+input,textarea,select{font-family:inherit}
+h1,h2,h3,h4{font-family:'Cormorant Garamond',Georgia,serif;font-weight:500;margin:0;color:#2A2621;line-height:1.1}
+p{margin:0}
+</style>
+</helmet>
+
+<div style="display:grid;grid-template-columns:248px 1fr;min-height:100vh;">
+
+<aside style="background:#211E1A;color:#B6AC99;display:flex;flex-direction:column;padding:26px 18px;position:sticky;top:0;height:100vh;">
+<div style="padding:0 10px 6px;">
+<div style="font-family:'Cormorant Garamond',serif;font-size:26px;font-weight:600;letter-spacing:0.14em;color:#F3EBDD;">Noiraé</div>
+<div style="font-size:10px;letter-spacing:0.28em;text-transform:uppercase;color:#8C8371;margin-top:2px;">Admin</div>
+</div>
+<nav style="display:flex;flex-direction:column;gap:3px;margin-top:26px;">
+<a href="Noiraé - Admin Dashboard.dc.html" style="display:flex;align-items:center;gap:12px;padding:11px 12px;border-radius:6px;color:#B6AC99;font-size:13.5px;transition:background .2s;" style-hover="background:#2C2925"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>Dashboard</a>
+<a href="Noiraé - Admin Orders.dc.html" style="display:flex;align-items:center;gap:12px;padding:11px 12px;border-radius:6px;color:#B6AC99;font-size:13.5px;transition:background .2s;" style-hover="background:#2C2925"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 8h12l1 12H5z"/><path d="M9 8V6.5a3 3 0 0 1 6 0V8"/></svg>Orders <span style="margin-left:auto;font-size:11px;background:#A8863F;color:#211E1A;padding:1px 7px;border-radius:10px;">12</span></a>
+<a href="Noiraé - Admin Products.dc.html" style="display:flex;align-items:center;gap:12px;padding:11px 12px;border-radius:6px;color:#B6AC99;font-size:13.5px;transition:background .2s;" style-hover="background:#2C2925"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 7l8-4 8 4v10l-8 4-8-4z"/><path d="M4 7l8 4 8-4M12 11v10"/></svg>Products</a>
+<a href="#" style="display:flex;align-items:center;gap:12px;padding:11px 12px;border-radius:6px;color:#B6AC99;font-size:13.5px;transition:background .2s;" style-hover="background:#2C2925"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>Customers</a>
+<a href="Noiraé - Admin Analytics.dc.html" style="display:flex;align-items:center;gap:12px;padding:11px 12px;border-radius:6px;color:#B6AC99;font-size:13.5px;transition:background .2s;" style-hover="background:#2C2925"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="4" y1="20" x2="4" y2="12"/><line x1="10" y1="20" x2="10" y2="6"/><line x1="16" y1="20" x2="16" y2="10"/><line x1="21" y1="20" x2="3" y2="20"/></svg>Analytics</a>
+<div style="height:1px;background:#33302A;margin:8px 12px;"></div>
+<div style="font-size:9.5px;letter-spacing:0.2em;text-transform:uppercase;color:#6E6656;padding:4px 12px 6px;">Marketing</div>
+<a href="Noiraé - Admin Reviews.dc.html" style="display:flex;align-items:center;gap:12px;padding:11px 12px;border-radius:6px;color:#B6AC99;font-size:13.5px;transition:background .2s;" style-hover="background:#2C2925"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 3l2.6 5.3 5.9.9-4.3 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8L3.5 9.2l5.9-.9z"/></svg>Reviews <span style="margin-left:auto;font-size:11px;background:#A8863F;color:#211E1A;padding:1px 7px;border-radius:10px;">3</span></a>
+<a href="Noiraé - Admin Promotions.dc.html" style="display:flex;align-items:center;gap:12px;padding:11px 12px;border-radius:6px;color:#B6AC99;font-size:13.5px;transition:background .2s;" style-hover="background:#2C2925"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20.6 13.4L13.4 20.6a2 2 0 0 1-2.8 0l-7.2-7.2a2 2 0 0 1-.6-1.4V4a1 1 0 0 1 1-1h7.9a2 2 0 0 1 1.4.6l7.5 7.4a2 2 0 0 1 0 2.8z"/><circle cx="7.5" cy="7.5" r="1.3"/></svg>Promotions</a>
+<a href="Noiraé - Admin Email Templates.dc.html" style="display:flex;align-items:center;gap:12px;padding:11px 12px;border-radius:6px;background:#33302A;color:#F3EBDD;font-size:13.5px;"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#DCC08A" stroke-width="1.5"><rect x="3" y="5" width="18" height="14" rx="1.5"/><path d="M3 7l9 6 9-6"/></svg>Email templates</a>
+<div style="height:1px;background:#33302A;margin:8px 12px;"></div>
+<a href="Noiraé - Admin Users & Roles.dc.html" style="display:flex;align-items:center;gap:12px;padding:11px 12px;border-radius:6px;color:#B6AC99;font-size:13.5px;transition:background .2s;" style-hover="background:#2C2925"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 20c0-3 2.5-4.6 5.5-4.6s5.5 1.6 5.5 4.6"/><circle cx="17.5" cy="9" r="2.6"/><path d="M16 15.4c2.6.2 4.5 1.7 4.5 4.1"/></svg>Users &amp; roles</a>
+<a href="#" style="display:flex;align-items:center;gap:12px;padding:11px 12px;border-radius:6px;color:#B6AC99;font-size:13.5px;transition:background .2s;" style-hover="background:#2C2925"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="3"/><path d="M20 12a8 8 0 1 0-8 8"/><path d="M12 4v3M12 17v3M4 12h3M17 12h3"/></svg>Settings</a>
+</nav>
+<div style="margin-top:auto;display:flex;align-items:center;gap:11px;padding:12px 10px;border-top:1px solid #33302A;">
+<div style="width:34px;height:34px;border-radius:50%;background:#33302A;color:#DCC08A;display:flex;align-items:center;justify-content:center;font-family:'Cormorant Garamond',serif;font-size:15px;">P</div>
+<div style="flex:1;"><div style="font-size:13px;color:#F3EBDD;">Patrick Sun</div><div style="font-size:11px;color:#8C8371;">Owner · Admin</div></div>
+<a href="Noiraé - Login.dc.html" aria-label="Sign out" style="color:#8C8371;" style-hover="color:#F3EBDD"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3"/><polyline points="10 8 4 12 10 16"/><line x1="4" y1="12" x2="15" y2="12"/></svg></a>
+</div>
+</aside>
+
+<main style="min-width:0;">
+<div style="display:flex;justify-content:space-between;align-items:center;padding:22px 34px;border-bottom:1px solid #E2D6C1;background:#F6EFE3;position:sticky;top:0;z-index:10;">
+<div><h1 style="font-size:26px;">Email templates</h1><div style="font-size:12.5px;color:#9C9284;margin-top:2px;">{{ totalCount }} templates · {{ activeCount }} active · {{ draftCount }} drafts</div></div>
+<div style="display:flex;align-items:center;gap:16px;">
+<div style="display:flex;align-items:center;gap:9px;"><span style="font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:#9C9284;">Viewing as</span>
+<div style="display:inline-flex;border:1px solid #D6C4A8;border-radius:30px;overflow:hidden;">
+<button onClick="{{ setAdmin }}" style="padding:7px 16px;font-size:12px;background:{{ adminBtnBg }};color:{{ adminBtnColor }};transition:all .2s;">Admin</button>
+<button onClick="{{ setStaff }}" style="padding:7px 16px;font-size:12px;background:{{ staffBtnBg }};color:{{ staffBtnColor }};transition:all .2s;">Staff</button>
+</div>
+</div>
+<button onClick="{{ openNew }}" style="background:#2A2621;color:#F3EBDD;padding:11px 20px;font-size:11px;letter-spacing:0.14em;text-transform:uppercase;align-items:center;gap:8px;transition:background .2s;display:{{ addDisplay }};" style-hover="background:#A8863F"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>New template</button>
+</div>
+</div>
+
+<div style="padding:26px 34px;">
+
+<sc-if value="{{ isStaff }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;align-items:center;gap:12px;background:#F3E4DA;border:1px solid #E4C7B8;border-left:3px solid #B5654D;padding:13px 18px;margin-bottom:22px;">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#B5654D" stroke-width="1.6"><rect x="5" y="11" width="14" height="9" rx="1.5"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>
+<span style="font-size:13px;color:#7A4230;">You're viewing as <strong style="font-weight:500;">Staff</strong>. You can preview templates and send yourself a test — editing content and publishing is reserved for Admins.</span>
+</div>
+</sc-if>
+
+<div style="display:grid;grid-template-columns:352px 1fr;gap:24px;align-items:start;">
+
+<!-- LEFT: template list -->
+<div style="display:flex;flex-direction:column;gap:10px;">
+<sc-for list="{{ list }}" as="t" hint-placeholder-count="7">
+<button onClick="{{ t.select }}" style="text-align:left;background:{{ t.cardBg }};border:1px solid {{ t.cardBorder }};border-left:3px solid {{ t.accent }};padding:15px 17px;transition:all .15s;display:block;width:100%;" style-hover="border-color:#C9B792">
+<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
+<span style="font-size:14.5px;color:#2A2621;">{{ t.name }}</span>
+<span style="font-size:9.5px;letter-spacing:0.06em;text-transform:uppercase;color:{{ t.statusColor }};background:{{ t.statusBg }};padding:3px 9px;border-radius:20px;flex:0 0 auto;">{{ t.status }}</span>
+</div>
+<div style="font-size:12px;color:#9C9284;margin-top:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ t.subject }}</div>
+<div style="display:flex;align-items:center;gap:10px;margin-top:10px;">
+<span style="font-size:10px;letter-spacing:0.06em;text-transform:uppercase;color:{{ t.catColor }};background:{{ t.catBg }};padding:3px 8px;border-radius:4px;">{{ t.category }}</span>
+<span style="font-size:11.5px;color:#B4A990;">Edited {{ t.lastEdited }}</span>
+<span style="margin-left:auto;font-size:11.5px;color:#9C9284;">{{ t.openRate }} open</span>
+</div>
+</button>
+</sc-for>
+</div>
+
+<!-- RIGHT: preview + meta -->
+<div style="display:grid;grid-template-columns:1fr 232px;gap:20px;align-items:start;">
+
+<!-- email preview -->
+<div style="background:#EAE1D0;border:1px solid #E2D6C1;padding:26px;border-radius:4px;">
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+<div style="font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:#9C9284;">Preview</div>
+<div style="display:inline-flex;border:1px solid #D2C4AA;border-radius:24px;overflow:hidden;">
+<button onClick="{{ setDesktop }}" style="display:flex;align-items:center;gap:5px;padding:5px 12px;font-size:11px;background:{{ pmDesktopBg }};color:{{ pmDesktopColor }};transition:all .2s;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="2" y="4" width="20" height="13" rx="1.5"/><path d="M8 21h8M12 17v4"/></svg>Desktop</button>
+<button onClick="{{ setMobile }}" style="display:flex;align-items:center;gap:5px;padding:5px 12px;font-size:11px;background:{{ pmMobileBg }};color:{{ pmMobileColor }};transition:all .2s;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="7" y="2" width="10" height="20" rx="2"/><line x1="11" y1="18" x2="13" y2="18"/></svg>Mobile</button>
+</div>
+</div>
+<div style="background:#FFFFFF;border:1px solid #E7DECB;max-width:{{ previewWidth }};margin:0 auto;box-shadow:0 12px 30px rgba(42,38,33,0.08);transition:max-width .25s;">
+<div style="padding:26px 40px;text-align:center;border-bottom:1px solid #F0E9DB;">
+<div style="font-family:'Cormorant Garamond',serif;font-size:24px;font-weight:600;letter-spacing:0.18em;color:#2A2621;">NOIRAÉ</div>
+</div>
+<div style="height:5px;background:{{ sel.band }};"></div>
+<div style="padding:38px 40px 34px;">
+<div style="font-size:10.5px;letter-spacing:0.16em;text-transform:uppercase;color:#A8863F;text-align:center;">{{ sel.eyebrow }}</div>
+<h2 style="font-size:30px;text-align:center;margin-top:12px;line-height:1.15;">{{ sel.heading }}</h2>
+<p style="font-size:14px;line-height:1.75;color:#5C554B;margin-top:18px;">{{ sel.body1 }}</p>
+<p style="font-size:14px;line-height:1.75;color:#5C554B;margin-top:14px;">{{ sel.body2 }}</p>
+<div style="text-align:center;margin-top:26px;"><span style="display:inline-block;background:#2A2621;color:#F3EBDD;font-size:11px;letter-spacing:0.16em;text-transform:uppercase;padding:14px 34px;">{{ sel.cta }}</span></div>
+</div>
+<div style="padding:22px 40px;background:#FBF7EF;border-top:1px solid #F0E9DB;text-align:center;">
+<div style="font-size:11.5px;color:#9C9284;line-height:1.7;">Noiraé · 14 Marchmont Street, London</div>
+<div style="font-size:11px;color:#B4A990;margin-top:6px;">Unsubscribe · Update preferences · View in browser</div>
+</div>
+</div>
+</div>
+
+<!-- meta rail -->
+<div style="display:flex;flex-direction:column;gap:16px;">
+<div style="background:#FBF6EE;border:1px solid #E7DBC6;padding:18px 18px;">
+<div style="font-size:10.5px;letter-spacing:0.1em;text-transform:uppercase;color:#9C9284;">Subject line</div>
+<div style="font-size:13.5px;color:#2A2621;margin-top:6px;line-height:1.4;">{{ sel.subject }}</div>
+<div style="height:1px;background:#EEE4D3;margin:14px 0;"></div>
+<div style="font-size:10.5px;letter-spacing:0.1em;text-transform:uppercase;color:#9C9284;">Preheader</div>
+<div style="font-size:12.5px;color:#5C554B;margin-top:6px;line-height:1.5;">{{ sel.preheader }}</div>
+</div>
+
+<div style="background:#FBF6EE;border:1px solid #E7DBC6;padding:18px 18px;">
+<div style="font-size:10.5px;letter-spacing:0.1em;text-transform:uppercase;color:#9C9284;margin-bottom:10px;">Merge variables</div>
+<div style="display:flex;flex-wrap:wrap;gap:6px;">
+<sc-for list="{{ sel.vars }}" as="v" hint-placeholder-count="3">
+<span style="font-family:ui-monospace,Menlo,monospace;font-size:11px;color:#7A6A38;background:#F1E7D2;border:1px solid #E4D6BB;padding:3px 8px;border-radius:4px;">{{ v }}</span>
+</sc-for>
+</div>
+</div>
+
+<div style="background:#FBF6EE;border:1px solid #E7DBC6;padding:18px 18px;">
+<div style="display:flex;justify-content:space-between;font-size:12.5px;margin-bottom:9px;"><span style="color:#5C554B;">Sent · 30d</span><span style="color:#2A2621;">{{ sel.sent }}</span></div>
+<div style="display:flex;justify-content:space-between;font-size:12.5px;margin-bottom:9px;"><span style="color:#5C554B;">Open rate</span><span style="color:#4A7A46;">{{ sel.openRate }}</span></div>
+<div style="display:flex;justify-content:space-between;font-size:12.5px;"><span style="color:#5C554B;">Click rate</span><span style="color:#2A2621;">{{ sel.clickRate }}</span></div>
+</div>
+
+<div style="display:flex;flex-direction:column;gap:9px;">
+<sc-if value="{{ isAdmin }}" hint-placeholder-val="{{ true }}"><button onClick="{{ editSelected }}" style="width:100%;background:#2A2621;color:#F3EBDD;padding:12px;font-size:11px;letter-spacing:0.14em;text-transform:uppercase;transition:background .2s;" style-hover="background:#A8863F">Edit template</button></sc-if>
+<button style="width:100%;background:transparent;border:1px solid #D6C4A8;color:#4A443B;padding:11px;font-size:11px;letter-spacing:0.14em;text-transform:uppercase;transition:background .2s;" style-hover="background:#F4ECDD">Send test to me</button>
+<button style="width:100%;background:transparent;border:1px solid #D6C4A8;color:#4A443B;padding:11px;font-size:11px;letter-spacing:0.14em;text-transform:uppercase;transition:background .2s;" style-hover="background:#F4ECDD">Duplicate</button>
+</div>
+</div>
+
+</div>
+</div>
+</div>
+
+<!-- ============ EDIT TEMPLATE MODAL ============ -->
+<sc-if value="{{ editing }}" hint-placeholder-val="{{ false }}">
+<div style="position:fixed;inset:0;z-index:50;display:flex;background:rgba(33,30,26,0.55);backdrop-filter:blur(3px);padding:3vh 2vw;">
+<div style="background:#F3EBDD;margin:auto;width:min(1200px,96vw);height:94vh;display:flex;flex-direction:column;box-shadow:0 40px 90px rgba(0,0,0,0.35);overflow:hidden;">
+
+<!-- modal header -->
+<div style="display:flex;align-items:center;justify-content:space-between;padding:16px 24px;border-bottom:1px solid #E2D6C1;background:#F6EFE3;">
+<div style="display:flex;align-items:center;gap:13px;min-width:0;">
+<span style="font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:#A8863F;flex:0 0 auto;">{{ editorMode }}</span>
+<h2 style="font-size:21px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ draft.name }}</h2>
+</div>
+<div style="display:flex;align-items:center;gap:10px;flex:0 0 auto;">
+<div style="display:flex;align-items:center;border:1px solid #D6C4A8;background:#FBF6EE;">
+<input placeholder="you@noirae.com" style="border:none;background:transparent;padding:9px 12px;font-size:12.5px;color:#2A2621;width:150px;outline:none;">
+<button style="font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:#4A443B;padding:9px 14px;border-left:1px solid #E2D6C1;" style-hover="background:#F4ECDD">Send test</button>
+</div>
+<button onClick="{{ closeEdit }}" style="font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:#4A443B;border:1px solid #D6C4A8;padding:10px 18px;transition:background .2s;" style-hover="background:#F4ECDD">Cancel</button>
+<button onClick="{{ saveEdit }}" style="font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:#F3EBDD;background:#2A2621;padding:11px 22px;transition:background .2s;" style-hover="background:#A8863F">Save changes</button>
+</div>
+</div>
+
+<!-- modal body: form | preview -->
+<div style="flex:1;display:grid;grid-template-columns:452px 1fr;min-height:0;">
+
+<!-- FORM -->
+<div style="overflow-y:auto;padding:24px 26px 40px;border-right:1px solid #E2D6C1;">
+
+<div style="font-size:10.5px;letter-spacing:0.14em;text-transform:uppercase;color:#A8863F;margin-bottom:14px;">Details</div>
+<div style="margin-bottom:16px;">
+<label style="font-size:10.5px;letter-spacing:0.1em;text-transform:uppercase;color:#9C9284;margin-bottom:6px;display:block;">Template name</label>
+<input value="{{ draft.name }}" onChange="{{ setName }}" style="width:100%;background:#FFFFFF;border:1px solid #D6C4A8;padding:10px 12px;font-size:13.5px;color:#2A2621;font-weight:300;outline:none;" style-focus="border-color:#A8863F">
+</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:22px;">
+<div>
+<label style="font-size:10.5px;letter-spacing:0.1em;text-transform:uppercase;color:#9C9284;margin-bottom:6px;display:block;">Status</label>
+<div style="display:inline-flex;border:1px solid #D6C4A8;border-radius:6px;overflow:hidden;width:100%;">
+<button onClick="{{ setStatusActive }}" style="flex:1;padding:9px;font-size:11.5px;background:{{ statusActiveBg }};color:{{ statusActiveColor }};transition:all .2s;">Active</button>
+<button onClick="{{ setStatusDraft }}" style="flex:1;padding:9px;font-size:11.5px;background:{{ statusDraftBg }};color:{{ statusDraftColor }};transition:all .2s;">Draft</button>
+</div>
+</div>
+<div>
+<label style="font-size:10.5px;letter-spacing:0.1em;text-transform:uppercase;color:#9C9284;margin-bottom:6px;display:block;">Category</label>
+<div style="display:inline-flex;border:1px solid #D6C4A8;border-radius:6px;overflow:hidden;width:100%;">
+<button onClick="{{ setCatTrans }}" style="flex:1;padding:9px;font-size:10.5px;background:{{ catTransBg }};color:{{ catTransColor }};transition:all .2s;">Transact.</button>
+<button onClick="{{ setCatMkt }}" style="flex:1;padding:9px;font-size:10.5px;background:{{ catMktBg }};color:{{ catMktColor }};transition:all .2s;">Marketing</button>
+</div>
+</div>
+</div>
+
+<div style="font-size:10.5px;letter-spacing:0.14em;text-transform:uppercase;color:#A8863F;margin-bottom:14px;">Subject &amp; preview text</div>
+<div style="margin-bottom:16px;">
+<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px;">
+<label style="font-size:10.5px;letter-spacing:0.1em;text-transform:uppercase;color:#9C9284;">Subject line</label>
+<span style="font-size:11px;color:{{ subjectColor }};">{{ subjectLen }} / 50 ideal</span>
+</div>
+<input value="{{ draft.subject }}" onChange="{{ setSubject }}" onFocus="{{ focusSubject }}" style="width:100%;background:#FFFFFF;border:1px solid #D6C4A8;padding:10px 12px;font-size:13.5px;color:#2A2621;font-weight:300;outline:none;" style-focus="border-color:#A8863F">
+</div>
+<div style="margin-bottom:22px;">
+<label style="font-size:10.5px;letter-spacing:0.1em;text-transform:uppercase;color:#9C9284;margin-bottom:6px;display:block;">Preview text (preheader)</label>
+<input value="{{ draft.preheader }}" onChange="{{ setPreheader }}" onFocus="{{ focusPreheader }}" style="width:100%;background:#FFFFFF;border:1px solid #D6C4A8;padding:10px 12px;font-size:13.5px;color:#2A2621;font-weight:300;outline:none;" style-focus="border-color:#A8863F">
+</div>
+
+<div style="background:#F6EFE3;border:1px solid #E7DBC6;padding:14px 16px;margin-bottom:22px;">
+<div style="font-size:10.5px;letter-spacing:0.1em;text-transform:uppercase;color:#9C9284;margin-bottom:9px;">Insert personalisation</div>
+<div style="display:flex;flex-wrap:wrap;gap:7px;">
+<sc-for list="{{ varChips }}" as="v" hint-placeholder-count="6">
+<button onClick="{{ v.insert }}" style="font-family:ui-monospace,Menlo,monospace;font-size:11px;color:#7A6A38;background:#F1E7D2;border:1px solid #E4D6BB;padding:5px 9px;border-radius:4px;transition:all .15s;" style-hover="background:#E9DBBE;border-color:#D4C39E">{{ v.label }}</button>
+</sc-for>
+</div>
+<div style="font-size:11px;color:#B4A990;margin-top:9px;">Click a field, then a token to insert it.</div>
+</div>
+
+<div style="font-size:10.5px;letter-spacing:0.14em;text-transform:uppercase;color:#A8863F;margin-bottom:14px;">Content</div>
+<div style="margin-bottom:16px;">
+<label style="font-size:10.5px;letter-spacing:0.1em;text-transform:uppercase;color:#9C9284;margin-bottom:6px;display:block;">Eyebrow</label>
+<input value="{{ draft.eyebrow }}" onChange="{{ setEyebrow }}" onFocus="{{ focusEyebrow }}" style="width:100%;background:#FFFFFF;border:1px solid #D6C4A8;padding:10px 12px;font-size:13.5px;color:#2A2621;font-weight:300;outline:none;" style-focus="border-color:#A8863F">
+</div>
+<div style="margin-bottom:16px;">
+<label style="font-size:10.5px;letter-spacing:0.1em;text-transform:uppercase;color:#9C9284;margin-bottom:6px;display:block;">Headline</label>
+<input value="{{ draft.heading }}" onChange="{{ setHeading }}" onFocus="{{ focusHeading }}" style="width:100%;background:#FFFFFF;border:1px solid #D6C4A8;padding:10px 12px;font-family:'Cormorant Garamond',serif;font-size:18px;color:#2A2621;outline:none;" style-focus="border-color:#A8863F">
+</div>
+<div style="margin-bottom:16px;">
+<label style="font-size:10.5px;letter-spacing:0.1em;text-transform:uppercase;color:#9C9284;margin-bottom:6px;display:block;">Body — paragraph 1</label>
+<textarea value="{{ draft.body1 }}" onChange="{{ setBody1 }}" onFocus="{{ focusBody1 }}" style="width:100%;background:#FFFFFF;border:1px solid #D6C4A8;padding:10px 12px;font-size:13.5px;line-height:1.6;color:#2A2621;font-weight:300;min-height:78px;resize:vertical;outline:none;" style-focus="border-color:#A8863F"></textarea>
+</div>
+<div style="margin-bottom:16px;">
+<label style="font-size:10.5px;letter-spacing:0.1em;text-transform:uppercase;color:#9C9284;margin-bottom:6px;display:block;">Body — paragraph 2</label>
+<textarea value="{{ draft.body2 }}" onChange="{{ setBody2 }}" onFocus="{{ focusBody2 }}" style="width:100%;background:#FFFFFF;border:1px solid #D6C4A8;padding:10px 12px;font-size:13.5px;line-height:1.6;color:#2A2621;font-weight:300;min-height:78px;resize:vertical;outline:none;" style-focus="border-color:#A8863F"></textarea>
+</div>
+<div style="margin-bottom:24px;">
+<label style="font-size:10.5px;letter-spacing:0.1em;text-transform:uppercase;color:#9C9284;margin-bottom:6px;display:block;">Button label</label>
+<input value="{{ draft.cta }}" onChange="{{ setCta }}" onFocus="{{ focusCta }}" style="width:100%;background:#FFFFFF;border:1px solid #D6C4A8;padding:10px 12px;font-size:13.5px;color:#2A2621;font-weight:300;outline:none;" style-focus="border-color:#A8863F">
+</div>
+
+<div style="font-size:10.5px;letter-spacing:0.14em;text-transform:uppercase;color:#A8863F;margin-bottom:14px;">Appearance</div>
+<label style="font-size:10.5px;letter-spacing:0.1em;text-transform:uppercase;color:#9C9284;margin-bottom:9px;display:block;">Accent band</label>
+<div style="display:flex;gap:10px;">
+<sc-for list="{{ bandOptions }}" as="b" hint-placeholder-count="5">
+<button onClick="{{ b.pick }}" aria-label="Accent colour" style="width:34px;height:34px;border-radius:50%;background:{{ b.c }};box-shadow:{{ b.ring }};transition:all .15s;"></button>
+</sc-for>
+</div>
+
+</div>
+
+<!-- LIVE PREVIEW -->
+<div style="overflow-y:auto;padding:26px;background:#EAE1D0;">
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+<div style="display:flex;align-items:center;gap:8px;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:#9C9284;"><span style="width:7px;height:7px;border-radius:50%;background:#4A7A46;"></span>Live preview · updates as you type</div>
+<div style="display:inline-flex;border:1px solid #D2C4AA;border-radius:24px;overflow:hidden;">
+<button onClick="{{ setDesktop }}" style="display:flex;align-items:center;gap:5px;padding:5px 12px;font-size:11px;background:{{ pmDesktopBg }};color:{{ pmDesktopColor }};transition:all .2s;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="2" y="4" width="20" height="13" rx="1.5"/><path d="M8 21h8M12 17v4"/></svg>Desktop</button>
+<button onClick="{{ setMobile }}" style="display:flex;align-items:center;gap:5px;padding:5px 12px;font-size:11px;background:{{ pmMobileBg }};color:{{ pmMobileColor }};transition:all .2s;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="7" y="2" width="10" height="20" rx="2"/><line x1="11" y1="18" x2="13" y2="18"/></svg>Mobile</button>
+</div>
+</div>
+<div style="background:#FFFFFF;border:1px solid #E7DECB;max-width:{{ previewWidth }};margin:0 auto;box-shadow:0 16px 40px rgba(42,38,33,0.12);transition:max-width .25s;">
+<div style="padding:26px 40px;text-align:center;border-bottom:1px solid #F0E9DB;">
+<div style="font-family:'Cormorant Garamond',serif;font-size:24px;font-weight:600;letter-spacing:0.18em;color:#2A2621;">NOIRAÉ</div>
+</div>
+<div style="height:5px;background:{{ draft.band }};"></div>
+<div style="padding:38px 40px 34px;">
+<div style="font-size:10.5px;letter-spacing:0.16em;text-transform:uppercase;color:#A8863F;text-align:center;">{{ draft.eyebrow }}</div>
+<h2 style="font-size:30px;text-align:center;margin-top:12px;line-height:1.15;">{{ draft.heading }}</h2>
+<p style="font-size:14px;line-height:1.75;color:#5C554B;margin-top:18px;">{{ draft.body1 }}</p>
+<p style="font-size:14px;line-height:1.75;color:#5C554B;margin-top:14px;">{{ draft.body2 }}</p>
+<div style="text-align:center;margin-top:26px;"><span style="display:inline-block;background:#2A2621;color:#F3EBDD;font-size:11px;letter-spacing:0.16em;text-transform:uppercase;padding:14px 34px;">{{ draft.cta }}</span></div>
+</div>
+<div style="padding:22px 40px;background:#FBF7EF;border-top:1px solid #F0E9DB;text-align:center;">
+<div style="font-size:11.5px;color:#9C9284;line-height:1.7;">Noiraé · 14 Marchmont Street, London</div>
+<div style="font-size:11px;color:#B4A990;margin-top:6px;">Unsubscribe · Update preferences · View in browser</div>
+</div>
+</div>
+<div style="max-width:{{ previewWidth }};margin:16px auto 0;background:#F6EFE3;border:1px solid #E7DBC6;padding:12px 16px;display:flex;align-items:center;gap:9px;">
+<span style="font-size:10.5px;letter-spacing:0.1em;text-transform:uppercase;color:#9C9284;flex:0 0 auto;">Inbox subject</span>
+<span style="font-size:12.5px;color:#2A2621;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ draft.subject }}</span>
+</div>
+</div>
+
+</div>
+</div>
+</div>
+</sc-if>
+
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = {
+    viewer: 'admin',
+    selected: 1,
+    editing: false,
+    draft: null,
+    focusedField: null,
+    previewMode: 'desktop',
+    templates: [
+      { id: 1, name: 'Welcome', category: 'Marketing', status: 'Active', lastEdited: '3d ago', band: '#A8863F', subject: 'Welcome to Noiraé — your 10% is inside', preheader: 'A little something to begin your collection.', eyebrow: 'A warm welcome', heading: 'Welcome to Noiraé', body1: 'Thank you for joining us. From mulberry silk to Scottish cashmere, every piece is chosen to make the everyday feel considered.', body2: 'As a welcome, enjoy 10% off your first order with the code below — no rush, it is yours to keep.', cta: 'Begin exploring', vars: ['{first_name}', '{promo_code}'], sent: '1,240', openRate: '58%', clickRate: '19%' },
+      { id: 2, name: 'Order confirmation', category: 'Transactional', status: 'Active', lastEdited: '1w ago', band: '#4A7A46', subject: 'Your Noiraé order #{order_number} is confirmed', preheader: 'We are preparing your order with care.', eyebrow: 'Order confirmed', heading: 'Thank you for your order', body1: 'We have received your order and our atelier is preparing it now. You will receive tracking details as soon as it ships.', body2: 'A full summary of your items and delivery address is saved to your account for your records.', cta: 'View your order', vars: ['{first_name}', '{order_number}', '{order_total}'], sent: '3,910', openRate: '71%', clickRate: '34%' },
+      { id: 3, name: 'Shipping notification', category: 'Transactional', status: 'Active', lastEdited: '1w ago', band: '#4A5578', subject: 'Your order is on its way', preheader: 'Track your parcel every step of the way.', eyebrow: 'On its way', heading: 'Your order has shipped', body1: 'Good news — your Noiraé order is now with our carrier and heading to you. Estimated delivery is 2–4 working days.', body2: 'You can follow its journey at any time using the tracking link below.', cta: 'Track my parcel', vars: ['{first_name}', '{tracking_url}', '{carrier}'], sent: '3,640', openRate: '69%', clickRate: '41%' },
+      { id: 4, name: 'Abandoned cart', category: 'Marketing', status: 'Active', lastEdited: '5d ago', band: '#A8863F', subject: 'You left something beautiful behind', preheader: 'Your selection is waiting — but not for long.', eyebrow: 'Still thinking?', heading: 'Your bag is waiting', body1: 'The pieces you were admiring are still here. We have saved your bag so you can pick up exactly where you left off.', body2: 'Popular items sell quickly — complete your order to make them yours.', cta: 'Return to my bag', vars: ['{first_name}', '{cart_url}'], sent: '2,180', openRate: '44%', clickRate: '22%' },
+      { id: 5, name: 'Password reset', category: 'Transactional', status: 'Active', lastEdited: '3w ago', band: '#B5654D', subject: 'Reset your Noiraé password', preheader: 'A secure link to set a new password.', eyebrow: 'Account security', heading: 'Reset your password', body1: 'We received a request to reset the password on your account. Use the button below to choose a new one — the link expires in 60 minutes.', body2: 'If you did not request this, you can safely ignore this email and your password will remain unchanged.', cta: 'Reset password', vars: ['{first_name}', '{reset_url}'], sent: '640', openRate: '62%', clickRate: '48%' },
+      { id: 6, name: 'Back in stock', category: 'Marketing', status: 'Draft', lastEdited: '2d ago', band: '#4A7A46', subject: 'It is back — {product_name} has returned', preheader: 'The piece you wanted is available again.', eyebrow: 'Back by request', heading: 'It is back in stock', body1: 'The item you asked to be notified about is available once more. Quantities are limited, so we wanted you to be first to know.', body2: 'Secure yours before it sells out again.', cta: 'Shop the restock', vars: ['{first_name}', '{product_name}', '{product_url}'], sent: '—', openRate: '—', clickRate: '—' },
+      { id: 7, name: 'We miss you', category: 'Marketing', status: 'Draft', lastEdited: '2d ago', band: '#A8863F', subject: 'A quiet hello from Noiraé', preheader: 'It has been a while — here is 15% to return.', eyebrow: 'Come back to us', heading: 'We have missed you', body1: 'It has been a little while since your last visit. We have added new textures and seasonal pieces we think you will love.', body2: 'Here is 15% off to welcome you back whenever you are ready.', cta: 'See what is new', vars: ['{first_name}', '{promo_code}'], sent: '—', openRate: '—', clickRate: '—' }
+    ]
+  };
+
+  openEdit(id) {
+    if (this.state.viewer !== 'admin') return;
+    const t = this.state.templates.find(x => x.id === id);
+    if (!t) return;
+    this.setState({ editing: true, focusedField: null, previewMode: 'desktop', draft: JSON.parse(JSON.stringify(t)) });
+  }
+  openNew() {
+    if (this.state.viewer !== 'admin') return;
+    const id = Math.max(0, ...this.state.templates.map(t => t.id)) + 1;
+    this.setState({ editing: true, focusedField: null, previewMode: 'desktop', draft: { id, isNew: true, name: 'Untitled template', category: 'Marketing', status: 'Draft', lastEdited: 'just now', band: '#A8863F', subject: '', preheader: '', eyebrow: '', heading: '', body1: '', body2: '', cta: 'Shop now', vars: ['{first_name}'], sent: '—', openRate: '—', clickRate: '—' } });
+  }
+  closeEdit() { this.setState({ editing: false, draft: null }); }
+  setDraft(field, value) { this.setState(s => ({ draft: { ...s.draft, [field]: value } })); }
+  appendVar(tok) {
+    const f = this.state.focusedField || 'body2';
+    this.setState(s => {
+      const cur = s.draft[f] || '';
+      return { draft: { ...s.draft, [f]: cur + (cur && !cur.endsWith(' ') ? ' ' : '') + tok } };
+    });
+  }
+  saveEdit() {
+    this.setState(s => {
+      const d = { ...s.draft, lastEdited: 'just now' };
+      delete d.isNew;
+      const exists = s.templates.some(t => t.id === d.id);
+      const templates = exists ? s.templates.map(t => t.id === d.id ? d : t) : [...s.templates, d];
+      return { templates, editing: false, draft: null, selected: d.id };
+    });
+  }
+
+  renderVals() {
+    const isAdmin = this.state.viewer === 'admin';
+    const catStyle = {
+      Transactional: { catColor: '#4A5578', catBg: '#DEE2EE' },
+      Marketing: { catColor: '#8C7A3F', catBg: '#F1E7D2' }
+    };
+    const statusStyle = {
+      Active: { statusColor: '#4A7A46', statusBg: '#DCEBD4', accent: '#4A7A46' },
+      Draft: { statusColor: '#9C9284', statusBg: '#E7DED0', accent: '#C2B7A2' }
+    };
+    const T = this.state.templates;
+
+    const list = T.map(t => {
+      const active = t.id === this.state.selected;
+      return { ...t, ...catStyle[t.category], ...statusStyle[t.status], select: () => this.setState({ selected: t.id }), cardBg: active ? '#F4ECDD' : '#FBF6EE', cardBorder: active ? '#C9B792' : '#E7DBC6' };
+    });
+    const selRaw = T.find(t => t.id === this.state.selected) || T[0];
+    const sel = { ...selRaw, ...statusStyle[selRaw.status] };
+
+    // editor
+    const D = this.state.draft || {};
+    const mkSet = f => e => this.setDraft(f, e.target.value);
+    const mkFocus = f => () => this.setState({ focusedField: f });
+    const subjectLen = (D.subject || '').length;
+    const subjectColor = subjectLen > 60 ? '#B5654D' : (subjectLen > 50 ? '#8C7A3F' : '#9C9284');
+
+    const varChips = ['{first_name}', '{last_name}', '{order_number}', '{order_total}', '{product_name}', '{promo_code}', '{tracking_url}'].map(v => ({ label: v, insert: () => this.appendVar(v) }));
+    const bandOptions = ['#A8863F', '#4A7A46', '#B5654D', '#4A5578', '#2A2621'].map(c => ({ c, pick: () => this.setDraft('band', c), ring: D.band === c ? '0 0 0 2px #F3EBDD, 0 0 0 4px ' + c : 'inset 0 0 0 1px rgba(0,0,0,0.08)' }));
+
+    const dStatus = D.status || 'Draft';
+    const dCat = D.category || 'Marketing';
+    const pm = this.state.previewMode;
+
+    return {
+      isAdmin, isStaff: !isAdmin,
+      setAdmin: () => this.setState({ viewer: 'admin' }),
+      setStaff: () => this.setState({ viewer: 'staff' }),
+      adminBtnBg: isAdmin ? '#2A2621' : 'transparent',
+      adminBtnColor: isAdmin ? '#F3EBDD' : '#6A6156',
+      staffBtnBg: !isAdmin ? '#2A2621' : 'transparent',
+      staffBtnColor: !isAdmin ? '#F3EBDD' : '#6A6156',
+      addDisplay: isAdmin ? 'inline-flex' : 'none',
+      totalCount: T.length,
+      activeCount: T.filter(t => t.status === 'Active').length,
+      draftCount: T.filter(t => t.status === 'Draft').length,
+      list, sel,
+      openNew: () => this.openNew(),
+      editSelected: () => this.openEdit(this.state.selected),
+
+      // preview device toggle (shared)
+      previewWidth: pm === 'mobile' ? '360px' : '540px',
+      setDesktop: () => this.setState({ previewMode: 'desktop' }),
+      setMobile: () => this.setState({ previewMode: 'mobile' }),
+      pmDesktopBg: pm === 'desktop' ? '#2A2621' : 'transparent',
+      pmDesktopColor: pm === 'desktop' ? '#F3EBDD' : '#7A7160',
+      pmMobileBg: pm === 'mobile' ? '#2A2621' : 'transparent',
+      pmMobileColor: pm === 'mobile' ? '#F3EBDD' : '#7A7160',
+
+      // editor
+      editing: this.state.editing,
+      editorMode: D.isNew ? 'New template' : 'Editing template',
+      draft: D,
+      closeEdit: () => this.closeEdit(),
+      saveEdit: () => this.saveEdit(),
+      setName: mkSet('name'),
+      setSubject: mkSet('subject'), focusSubject: mkFocus('subject'),
+      setPreheader: mkSet('preheader'), focusPreheader: mkFocus('preheader'),
+      setEyebrow: mkSet('eyebrow'), focusEyebrow: mkFocus('eyebrow'),
+      setHeading: mkSet('heading'), focusHeading: mkFocus('heading'),
+      setBody1: mkSet('body1'), focusBody1: mkFocus('body1'),
+      setBody2: mkSet('body2'), focusBody2: mkFocus('body2'),
+      setCta: mkSet('cta'), focusCta: mkFocus('cta'),
+      subjectLen, subjectColor,
+      varChips, bandOptions,
+      setStatusActive: () => this.setDraft('status', 'Active'),
+      setStatusDraft: () => this.setDraft('status', 'Draft'),
+      statusActiveBg: dStatus === 'Active' ? '#4A7A46' : 'transparent',
+      statusActiveColor: dStatus === 'Active' ? '#F3EBDD' : '#6A6156',
+      statusDraftBg: dStatus === 'Draft' ? '#8A8071' : 'transparent',
+      statusDraftColor: dStatus === 'Draft' ? '#F3EBDD' : '#6A6156',
+      setCatTrans: () => this.setDraft('category', 'Transactional'),
+      setCatMkt: () => this.setDraft('category', 'Marketing'),
+      catTransBg: dCat === 'Transactional' ? '#4A5578' : 'transparent',
+      catTransColor: dCat === 'Transactional' ? '#F3EBDD' : '#6A6156',
+      catMktBg: dCat === 'Marketing' ? '#8C7A3F' : 'transparent',
+      catMktColor: dCat === 'Marketing' ? '#F3EBDD' : '#6A6156'
+    };
+  }
+}
+</script>
+</body>
+</html>

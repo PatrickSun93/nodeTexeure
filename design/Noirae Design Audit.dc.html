@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Jost:wght@300;400;500;600&family=Libre+Caslon+Display&display=swap" rel="stylesheet">
+<style>
+doc-page:not(:defined){visibility:hidden}
+h1,h2,h3,h4,h5,h6,p,ul,ol,li,figure,blockquote,dl,dd,dt,table,thead,tbody,tr,th,td{margin:0;padding:0;}
+li{list-style:none;}
+strong{font-weight:600;color:var(--ink,#1A1712);}
+em{font-style:italic;}
+h1,h2,h3,h4{font-family:var(--display,'Cormorant Garamond',Georgia,serif);color:var(--ink,#1A1712);font-weight:500;line-height:1.12;}
+p,li,td,th,dd,dt,figcaption{font-family:'Jost',-apple-system,Arial,sans-serif;color:var(--body,#4A443B);font-size:var(--base-size,15px);line-height:var(--leading,1.72);font-weight:300;}
+code{font-family:ui-monospace,'SFMono-Regular',Menlo,monospace;font-size:12px;background:#F1EDE4;padding:1px 6px;border-radius:4px;color:#5A5347;font-weight:400;}
+b{font-weight:600;color:var(--ink,#1A1712);}
+</style>
+</helmet>
+<x-import component-from-global-scope="doc-page" from="./doc-page.js" size="letter" margin="0.9in" hint-size="100%,100%">
+
+<div slot="footer" style="display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--hairstrong,#D8D2C4);padding-top:8px;font-family:'Jost',sans-serif;font-size:10px;letter-spacing:0.18em;text-transform:uppercase;color:#9A9488;">
+<span>Noiraé — Storefront Design Review</span>
+<span>Confidential · July 2026</span>
+</div>
+
+<!-- ============ MASTHEAD ============ -->
+<div style="border-bottom:2px solid var(--ink,#1A1712);padding-bottom:26px;">
+<div style="font-family:'Jost',sans-serif;font-size:11px;letter-spacing:0.32em;text-transform:uppercase;color:var(--accent,#8A7A66);font-weight:500;">Design Audit &amp; Recommendations</div>
+<h1 style="font-size:56px;letter-spacing:-0.012em;margin-top:16px;line-height:1.0;">Noiraé Storefront<br>Design Review</h1>
+<p style="margin-top:18px;font-size:16px;line-height:1.65;color:#5A5347;max-width:62ch;">A page-by-page assessment of the current luxury bedding storefront — what is working, where the design fragments into competing visual languages, and a prioritised path to one coherent, modern system.</p>
+<div style="display:flex;flex-wrap:wrap;gap:10px 26px;margin-top:22px;font-family:'Jost',sans-serif;font-size:11px;letter-spacing:0.16em;text-transform:uppercase;color:#9A9488;">
+<span><span style="color:var(--ink,#1A1712);font-weight:500;">23</span> &nbsp;pages reviewed</span>
+<span>Next.js 15 · React 19 · Tailwind 4</span>
+<span>Brand — Noiraé, silk &amp; cashmere</span>
+</div>
+</div>
+
+<!-- ============ CONTENTS ============ -->
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:0 44px;margin-top:26px;">
+<div style="display:flex;gap:12px;border-bottom:1px solid var(--hairfaint,#EAE5DA);padding:9px 0;font-family:'Jost',sans-serif;font-size:13px;color:var(--body,#4A443B);"><span style="color:var(--accentsoft,#B8AF9C);width:20px;">01</span>Executive summary &amp; scorecard</div>
+<div style="display:flex;gap:12px;border-bottom:1px solid var(--hairfaint,#EAE5DA);padding:9px 0;font-family:'Jost',sans-serif;font-size:13px;color:var(--body,#4A443B);"><span style="color:var(--accentsoft,#B8AF9C);width:20px;">05</span>Page-by-page audit</div>
+<div style="display:flex;gap:12px;border-bottom:1px solid var(--hairfaint,#EAE5DA);padding:9px 0;font-family:'Jost',sans-serif;font-size:13px;color:var(--body,#4A443B);"><span style="color:var(--accentsoft,#B8AF9C);width:20px;">02</span>What is working</div>
+<div style="display:flex;gap:12px;border-bottom:1px solid var(--hairfaint,#EAE5DA);padding:9px 0;font-family:'Jost',sans-serif;font-size:13px;color:var(--body,#4A443B);"><span style="color:var(--accentsoft,#B8AF9C);width:20px;">06</span>Three redesign directions</div>
+<div style="display:flex;gap:12px;border-bottom:1px solid var(--hairfaint,#EAE5DA);padding:9px 0;font-family:'Jost',sans-serif;font-size:13px;color:var(--body,#4A443B);"><span style="color:var(--accentsoft,#B8AF9C);width:20px;">03</span>The core problem</div>
+<div style="display:flex;gap:12px;border-bottom:1px solid var(--hairfaint,#EAE5DA);padding:9px 0;font-family:'Jost',sans-serif;font-size:13px;color:var(--body,#4A443B);"><span style="color:var(--accentsoft,#B8AF9C);width:20px;">07</span>Roadmap &amp; next steps</div>
+<div style="display:flex;gap:12px;border-bottom:1px solid var(--hairfaint,#EAE5DA);padding:9px 0;font-family:'Jost',sans-serif;font-size:13px;color:var(--body,#4A443B);"><span style="color:var(--accentsoft,#B8AF9C);width:20px;">04</span>Cross-cutting recommendations</div>
+</div>
+
+<!-- ============ 01 EXEC SUMMARY ============ -->
+<section style="margin-top:var(--sec,52px);">
+<div style="display:flex;align-items:baseline;gap:16px;border-bottom:1px solid var(--hairstrong,#D8D2C4);padding-bottom:12px;margin-bottom:24px;">
+<span style="font-family:var(--display,'Cormorant Garamond',serif);font-size:30px;color:var(--accentsoft,#B8AF9C);font-weight:500;line-height:1;">01</span>
+<h2 style="font-size:28px;letter-spacing:-0.005em;">Executive summary</h2>
+</div>
+<p style="font-size:16.5px;line-height:1.7;color:#3E392F;max-width:70ch;">Noiraé has a genuinely elegant foundation. The homepage, shop and product pages already speak an Aesop-inspired luxury language — serif display type, generous whitespace, quiet monochrome buttons. The problem is not taste; it is <strong>consistency</strong>.</p>
+<p style="margin-top:14px;max-width:70ch;">Underneath the storefront sit <strong>two separate design-system files that disagree with each other</strong>, and several pages ignore both and fall back to a generic template look. The journey changes personality screen to screen: a monochrome home, a <strong>teal</strong> shopping cart, an <strong>indigo</strong> registration form, and a <strong>gold</strong> accent that is defined in the tokens but never actually used. For a brand whose promise is refinement, that drift quietly erodes trust in exactly the places it matters most — the account and checkout flows.</p>
+
+<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-top:26px;">
+<div style="background:var(--panel,#F7F4EE);border-radius:5px;padding:20px 22px;">
+<div style="font-family:var(--display,'Cormorant Garamond',serif);font-size:42px;color:var(--ink,#1A1712);line-height:1;">3</div>
+<div style="font-family:'Jost',sans-serif;font-size:12.5px;color:var(--muted,#6B655C);margin-top:8px;line-height:1.5;">competing visual languages across the storefront</div>
+</div>
+<div style="background:var(--panel,#F7F4EE);border-radius:5px;padding:20px 22px;">
+<div style="font-family:var(--display,'Cormorant Garamond',serif);font-size:42px;color:var(--ink,#1A1712);line-height:1;">4+</div>
+<div style="font-family:'Jost',sans-serif;font-size:12.5px;color:var(--muted,#6B655C);margin-top:8px;line-height:1.5;">accent colours in use where there should be one</div>
+</div>
+<div style="background:var(--panel,#F7F4EE);border-radius:5px;padding:20px 22px;">
+<div style="font-family:var(--display,'Cormorant Garamond',serif);font-size:42px;color:var(--ink,#1A1712);line-height:1;">2</div>
+<div style="font-family:'Jost',sans-serif;font-size:12.5px;color:var(--muted,#6B655C);margin-top:8px;line-height:1.5;">overlapping login routes with conflicting copy</div>
+</div>
+</div>
+
+<h3 style="font-size:19px;margin-top:36px;margin-bottom:4px;">Where the experience stands today</h3>
+<p style="font-size:12.5px;color:#7A7469;margin-bottom:16px;">Current-state assessment across seven dimensions — a baseline to measure the redesign against.</p>
+
+<div style="border:1px solid var(--hair,#E6E1D6);border-radius:6px;overflow:hidden;">
+<div style="display:grid;grid-template-columns:1.5fr 108px 2.6fr;gap:18px;align-items:center;padding:13px 22px;border-bottom:1px solid #EEEAE0;">
+<span style="font-family:'Jost',sans-serif;font-size:13.5px;color:var(--ink,#1A1712);font-weight:400;">Brand identity &amp; consistency</span>
+<span style="display:flex;gap:5px;"><i style="width:8px;height:8px;border-radius:50%;background:var(--ink,#1A1712);display:inline-block;"></i><i style="width:8px;height:8px;border-radius:50%;background:var(--ink,#1A1712);display:inline-block;"></i><i style="width:8px;height:8px;border-radius:50%;background:#DAD3C6;display:inline-block;"></i><i style="width:8px;height:8px;border-radius:50%;background:#DAD3C6;display:inline-block;"></i><i style="width:8px;height:8px;border-radius:50%;background:#DAD3C6;display:inline-block;"></i></span>
+<span style="font-family:'Jost',sans-serif;font-size:12.5px;color:#7A7469;">Three visual languages fighting for the same brand.</span>
+</div>
+<div style="display:grid;grid-template-columns:1.5fr 108px 2.6fr;gap:18px;align-items:center;padding:13px 22px;border-bottom:1px solid #EEEAE0;background:var(--panel2,#FBF9F4);">
+<span style="font-family:'Jost',sans-serif;font-size:13.5px;color:var(--ink,#1A1712);">Colour system</span>
+<span style="display:flex;gap:5px;"><i style="width:8px;height:8px;border-radius:50%;background:var(--ink,#1A1712);display:inline-block;"></i><i style="width:8px;height:8px;border-radius:50%;background:var(--ink,#1A1712);display:inline-block;"></i><i style="width:8px;height:8px;border-radius:50%;background:#DAD3C6;display:inline-block;"></i><i style="width:8px;height:8px;border-radius:50%;background:#DAD3C6;display:inline-block;"></i><i style="width:8px;height:8px;border-radius:50%;background:#DAD3C6;display:inline-block;"></i></span>
+<span style="font-family:'Jost',sans-serif;font-size:12.5px;color:#7A7469;">Black, teal, indigo and unused gold all in play.</span>
+</div>
+<div style="display:grid;grid-template-columns:1.5fr 108px 2.6fr;gap:18px;align-items:center;padding:13px 22px;border-bottom:1px solid #EEEAE0;">
+<span style="font-family:'Jost',sans-serif;font-size:13.5px;color:var(--ink,#1A1712);">Componentry &amp; states</span>
+<span style="display:flex;gap:5px;"><i style="width:8px;height:8px;border-radius:50%;background:var(--ink,#1A1712);display:inline-block;"></i><i style="width:8px;height:8px;border-radius:50%;background:var(--ink,#1A1712);display:inline-block;"></i><i style="width:8px;height:8px;border-radius:50%;background:#DAD3C6;display:inline-block;"></i><i style="width:8px;height:8px;border-radius:50%;background:#DAD3C6;display:inline-block;"></i><i style="width:8px;height:8px;border-radius:50%;background:#DAD3C6;display:inline-block;"></i></span>
+<span style="font-family:'Jost',sans-serif;font-size:12.5px;color:#7A7469;">Buttons/inputs differ per page; error &amp; empty states leak.</span>
+</div>
+<div style="display:grid;grid-template-columns:1.5fr 108px 2.6fr;gap:18px;align-items:center;padding:13px 22px;border-bottom:1px solid #EEEAE0;background:var(--panel2,#FBF9F4);">
+<span style="font-family:'Jost',sans-serif;font-size:13.5px;color:var(--ink,#1A1712);">Typography</span>
+<span style="display:flex;gap:5px;"><i style="width:8px;height:8px;border-radius:50%;background:var(--ink,#1A1712);display:inline-block;"></i><i style="width:8px;height:8px;border-radius:50%;background:var(--ink,#1A1712);display:inline-block;"></i><i style="width:8px;height:8px;border-radius:50%;background:var(--ink,#1A1712);display:inline-block;"></i><i style="width:8px;height:8px;border-radius:50%;background:#DAD3C6;display:inline-block;"></i><i style="width:8px;height:8px;border-radius:50%;background:#DAD3C6;display:inline-block;"></i></span>
+<span style="font-family:'Jost',sans-serif;font-size:12.5px;color:#7A7469;">Serif display is lovely but applied unevenly; register drops to bold sans.</span>
+</div>
+<div style="display:grid;grid-template-columns:1.5fr 108px 2.6fr;gap:18px;align-items:center;padding:13px 22px;border-bottom:1px solid #EEEAE0;">
+<span style="font-family:'Jost',sans-serif;font-size:13.5px;color:var(--ink,#1A1712);">Layout &amp; spacing</span>
+<span style="display:flex;gap:5px;"><i style="width:8px;height:8px;border-radius:50%;background:var(--ink,#1A1712);display:inline-block;"></i><i style="width:8px;height:8px;border-radius:50%;background:var(--ink,#1A1712);display:inline-block;"></i><i style="width:8px;height:8px;border-radius:50%;background:var(--ink,#1A1712);display:inline-block;"></i><i style="width:8px;height:8px;border-radius:50%;background:#DAD3C6;display:inline-block;"></i><i style="width:8px;height:8px;border-radius:50%;background:#DAD3C6;display:inline-block;"></i></span>
+<span style="font-family:'Jost',sans-serif;font-size:12.5px;color:#7A7469;">Shop wastes right-side space; profile header overlaps itself.</span>
+</div>
+<div style="display:grid;grid-template-columns:1.5fr 108px 2.6fr;gap:18px;align-items:center;padding:13px 22px;border-bottom:1px solid #EEEAE0;background:var(--panel2,#FBF9F4);">
+<span style="font-family:'Jost',sans-serif;font-size:13.5px;color:var(--ink,#1A1712);">Imagery &amp; art direction</span>
+<span style="display:flex;gap:5px;"><i style="width:8px;height:8px;border-radius:50%;background:var(--ink,#1A1712);display:inline-block;"></i><i style="width:8px;height:8px;border-radius:50%;background:#DAD3C6;display:inline-block;"></i><i style="width:8px;height:8px;border-radius:50%;background:#DAD3C6;display:inline-block;"></i><i style="width:8px;height:8px;border-radius:50%;background:#DAD3C6;display:inline-block;"></i><i style="width:8px;height:8px;border-radius:50%;background:#DAD3C6;display:inline-block;"></i></span>
+<span style="font-family:'Jost',sans-serif;font-size:12.5px;color:#7A7469;">Grey 400×400 placeholders everywhere; no real photography.</span>
+</div>
+<div style="display:grid;grid-template-columns:1.5fr 108px 2.6fr;gap:18px;align-items:center;padding:13px 22px;">
+<span style="font-family:'Jost',sans-serif;font-size:13.5px;color:var(--ink,#1A1712);">Accessibility &amp; mobile</span>
+<span style="display:flex;gap:5px;"><i style="width:8px;height:8px;border-radius:50%;background:var(--ink,#1A1712);display:inline-block;"></i><i style="width:8px;height:8px;border-radius:50%;background:var(--ink,#1A1712);display:inline-block;"></i><i style="width:8px;height:8px;border-radius:50%;background:#DAD3C6;display:inline-block;"></i><i style="width:8px;height:8px;border-radius:50%;background:#DAD3C6;display:inline-block;"></i><i style="width:8px;height:8px;border-radius:50%;background:#DAD3C6;display:inline-block;"></i></span>
+<span style="font-family:'Jost',sans-serif;font-size:12.5px;color:#7A7469;">Focus rings inconsistent; contrast on muted greys is borderline.</span>
+</div>
+</div>
+</section>
+
+<!-- ============ 02 WHAT WORKS ============ -->
+<section style="margin-top:var(--sec,52px);">
+<div style="display:flex;align-items:baseline;gap:16px;border-bottom:1px solid var(--hairstrong,#D8D2C4);padding-bottom:12px;margin-bottom:24px;">
+<span style="font-family:var(--display,'Cormorant Garamond',serif);font-size:30px;color:var(--accentsoft,#B8AF9C);font-weight:500;line-height:1;">02</span>
+<h2 style="font-size:28px;letter-spacing:-0.005em;">What is working — keep it</h2>
+</div>
+<p style="max-width:70ch;margin-bottom:20px;">The redesign should preserve and extend these strengths rather than start over. There is a real point of view here worth protecting.</p>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+<div style="border:1px solid var(--hair,#E6E1D6);border-radius:5px;padding:18px 20px;">
+<h4 style="font-size:17px;margin-bottom:6px;">Serif display voice</h4>
+<p style="font-size:13.5px;color:var(--muted,#6B655C);">Cormorant-style headings give the marketing pages an editorial, gallery-like calm that suits silk and cashmere.</p>
+</div>
+<div style="border:1px solid var(--hair,#E6E1D6);border-radius:5px;padding:18px 20px;">
+<h4 style="font-size:17px;margin-bottom:6px;">Restraint &amp; whitespace</h4>
+<p style="font-size:13.5px;color:var(--muted,#6B655C);">Home, shop and product pages breathe. Quiet monochrome buttons read as premium, not shouty.</p>
+</div>
+<div style="border:1px solid var(--hair,#E6E1D6);border-radius:5px;padding:18px 20px;">
+<h4 style="font-size:17px;margin-bottom:6px;">A capable shop filter rail</h4>
+<p style="font-size:13.5px;color:var(--muted,#6B655C);">Material, colour, price, size, brand and thread-count filters are a strong merchandising base — they just need balancing and polish.</p>
+</div>
+<div style="border:1px solid var(--hair,#E6E1D6);border-radius:5px;padding:18px 20px;">
+<h4 style="font-size:17px;margin-bottom:6px;">Design tokens already exist</h4>
+<p style="font-size:13.5px;color:var(--muted,#6B655C);">A full token file (colour, type, spacing, radius, shadow) is in place. The scaffolding for one system is there — it simply is not enforced.</p>
+</div>
+</div>
+</section>
+
+<!-- ============ 03 CORE PROBLEM ============ -->
+<section style="margin-top:var(--sec,52px);">
+<div style="display:flex;align-items:baseline;gap:16px;border-bottom:1px solid var(--hairstrong,#D8D2C4);padding-bottom:12px;margin-bottom:24px;">
+<span style="font-family:var(--display,'Cormorant Garamond',serif);font-size:30px;color:var(--accentsoft,#B8AF9C);font-weight:500;line-height:1;">03</span>
+<h2 style="font-size:28px;letter-spacing:-0.005em;">The core problem — two systems, three looks</h2>
+</div>
+<p style="max-width:70ch;">The storefront ships with two stylesheets that each define their own colour, type and component rules — and they contradict each other. A handful of pages then bypass both.</p>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:22px;">
+<div style="border:1px solid var(--hair,#E6E1D6);border-radius:6px;padding:20px 22px;">
+<div style="font-family:'Jost',sans-serif;font-size:10.5px;letter-spacing:0.2em;text-transform:uppercase;color:var(--accent,#8A7A66);margin-bottom:10px;">System A · <code>design-tokens.css</code></div>
+<dl style="display:grid;grid-template-columns:auto 1fr;gap:9px 14px;">
+<dt style="font-family:'Jost',sans-serif;font-size:12px;color:#9A9488;">Accent</dt><dd style="font-family:'Jost',sans-serif;font-size:13px;color:var(--ink,#1A1712);">Gold <code>#D4AF37</code> / champagne</dd>
+<dt style="font-family:'Jost',sans-serif;font-size:12px;color:#9A9488;">Serif</dt><dd style="font-family:'Jost',sans-serif;font-size:13px;color:var(--ink,#1A1712);">Cormorant Garamond</dd>
+<dt style="font-family:'Jost',sans-serif;font-size:12px;color:#9A9488;">Surface</dt><dd style="font-family:'Jost',sans-serif;font-size:13px;color:var(--ink,#1A1712);">Warm beige / cream</dd>
+</dl>
+</div>
+<div style="border:1px solid var(--hair,#E6E1D6);border-radius:6px;padding:20px 22px;">
+<div style="font-family:'Jost',sans-serif;font-size:10.5px;letter-spacing:0.2em;text-transform:uppercase;color:var(--accent,#8A7A66);margin-bottom:10px;">System B · <code>aesop-design-system.css</code></div>
+<dl style="display:grid;grid-template-columns:auto 1fr;gap:9px 14px;">
+<dt style="font-family:'Jost',sans-serif;font-size:12px;color:#9A9488;">Accent</dt><dd style="font-family:'Jost',sans-serif;font-size:13px;color:var(--ink,#1A1712);">Eucalyptus teal <code>#2C7A7B</code></dd>
+<dt style="font-family:'Jost',sans-serif;font-size:12px;color:#9A9488;">Serif</dt><dd style="font-family:'Jost',sans-serif;font-size:13px;color:var(--ink,#1A1712);">EB Garamond / Playfair</dd>
+<dt style="font-family:'Jost',sans-serif;font-size:12px;color:#9A9488;">Buttons</dt><dd style="font-family:'Jost',sans-serif;font-size:13px;color:var(--ink,#1A1712);">Black — <em>and</em> teal</dd>
+</dl>
+</div>
+</div>
+<p style="margin-top:14px;font-size:13.5px;color:var(--muted,#6B655C);max-width:70ch;">Even within System B the two disagree: <code>.btn-primary</code> is black while <code>.aesop-button-primary</code> is teal — which is exactly why the cart's "Continue shopping" button is teal while the product page's "Add to cart" is black.</p>
+
+<h3 style="font-size:19px;margin-top:34px;margin-bottom:4px;">The accents customers actually see</h3>
+<p style="font-size:12.5px;color:#7A7469;margin-bottom:16px;">One brand should own one accent. Today it owns four.</p>
+<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;">
+<div><div style="height:70px;border-radius:5px;background:#141414;border:1px solid rgba(0,0,0,0.06);"></div><div style="font-family:'Jost',sans-serif;font-size:12px;color:var(--ink,#1A1712);margin-top:8px;font-weight:400;">Black</div><div style="font-family:ui-monospace,monospace;font-size:10.5px;color:#9A9488;">#141414</div><div style="font-family:'Jost',sans-serif;font-size:11.5px;color:#7A7469;margin-top:2px;">Home · shop · product</div></div>
+<div><div style="height:70px;border-radius:5px;background:#2C7A7B;border:1px solid rgba(0,0,0,0.06);"></div><div style="font-family:'Jost',sans-serif;font-size:12px;color:var(--ink,#1A1712);margin-top:8px;font-weight:400;">Teal</div><div style="font-family:ui-monospace,monospace;font-size:10.5px;color:#9A9488;">#2C7A7B</div><div style="font-family:'Jost',sans-serif;font-size:11.5px;color:#7A7469;margin-top:2px;">Cart CTA · CTA hovers</div></div>
+<div><div style="height:70px;border-radius:5px;background:#6366F1;border:1px solid rgba(0,0,0,0.06);"></div><div style="font-family:'Jost',sans-serif;font-size:12px;color:var(--ink,#1A1712);margin-top:8px;font-weight:400;">Indigo</div><div style="font-family:ui-monospace,monospace;font-size:10.5px;color:#9A9488;">#6366F1</div><div style="font-family:'Jost',sans-serif;font-size:11.5px;color:#7A7469;margin-top:2px;">Register form</div></div>
+<div><div style="height:70px;border-radius:5px;background:#D4AF37;border:1px solid rgba(0,0,0,0.06);"></div><div style="font-family:'Jost',sans-serif;font-size:12px;color:var(--ink,#1A1712);margin-top:8px;font-weight:400;">Gold</div><div style="font-family:ui-monospace,monospace;font-size:10.5px;color:#9A9488;">#D4AF37</div><div style="font-family:'Jost',sans-serif;font-size:11.5px;color:#7A7469;margin-top:2px;">Defined, never used</div></div>
+</div>
+<p style="margin-top:14px;font-size:13px;color:var(--muted,#6B655C);max-width:70ch;">A gold-to-orange gradient "VIP" badge adds a fifth. None of these are wrong on their own — the issue is that they appear <em>together</em>, unplanned, across a single visit.</p>
+</section>
+
+<!-- ============ 04 CROSS-CUTTING ============ -->
+<section style="margin-top:var(--sec,52px);">
+<div style="display:flex;align-items:baseline;gap:16px;border-bottom:1px solid var(--hairstrong,#D8D2C4);padding-bottom:12px;margin-bottom:24px;">
+<span style="font-family:var(--display,'Cormorant Garamond',serif);font-size:30px;color:var(--accentsoft,#B8AF9C);font-weight:500;line-height:1;">04</span>
+<h2 style="font-size:28px;letter-spacing:-0.005em;">Cross-cutting recommendations</h2>
+</div>
+<p style="max-width:70ch;margin-bottom:22px;">Six moves that fix most pages at once, before any single screen is redrawn.</p>
+<div style="display:flex;flex-direction:column;gap:2px;">
+<div style="display:grid;grid-template-columns:34px 1fr;gap:16px;padding:16px 0;border-bottom:1px solid var(--hairfaint,#EAE5DA);">
+<span style="font-family:var(--display,'Cormorant Garamond',serif);font-size:22px;color:var(--accentsoft,#B8AF9C);">01</span>
+<div><h4 style="font-size:17px;margin-bottom:4px;">Collapse to one design system</h4><p style="font-size:13.5px;color:var(--muted,#6B655C);">Merge the two stylesheets into a single source of truth. One token set, imported everywhere; delete the duplicates so nothing can drift again.</p></div>
+</div>
+<div style="display:grid;grid-template-columns:34px 1fr;gap:16px;padding:16px 0;border-bottom:1px solid var(--hairfaint,#EAE5DA);">
+<span style="font-family:var(--display,'Cormorant Garamond',serif);font-size:22px;color:var(--accentsoft,#B8AF9C);">02</span>
+<div><h4 style="font-size:17px;margin-bottom:4px;">Choose one accent — and one only</h4><p style="font-size:13.5px;color:var(--muted,#6B655C);">Pick a single accent (see the three directions in §06), retire teal and indigo entirely, and reserve any metallic strictly for a real VIP tier.</p></div>
+</div>
+<div style="display:grid;grid-template-columns:34px 1fr;gap:16px;padding:16px 0;border-bottom:1px solid var(--hairfaint,#EAE5DA);">
+<span style="font-family:var(--display,'Cormorant Garamond',serif);font-size:22px;color:var(--accentsoft,#B8AF9C);">03</span>
+<div><h4 style="font-size:17px;margin-bottom:4px;">Fix authentication routing &amp; copy</h4><p style="font-size:13.5px;color:var(--muted,#6B655C);">Merge <code>/login</code> and <code>/signin</code>, remove "Admin Login" from the customer path, and separate admin sign-in behind its own clearly labelled route.</p></div>
+</div>
+<div style="display:grid;grid-template-columns:34px 1fr;gap:16px;padding:16px 0;border-bottom:1px solid var(--hairfaint,#EAE5DA);">
+<span style="font-family:var(--display,'Cormorant Garamond',serif);font-size:22px;color:var(--accentsoft,#B8AF9C);">04</span>
+<div><h4 style="font-size:17px;margin-bottom:4px;">Build one component kit</h4><p style="font-size:13.5px;color:var(--muted,#6B655C);">A single set of buttons, inputs, cards, badges and empty states — with defined hover, focus, disabled, loading, error and empty variants — used on every page.</p></div>
+</div>
+<div style="display:grid;grid-template-columns:34px 1fr;gap:16px;padding:16px 0;border-bottom:1px solid var(--hairfaint,#EAE5DA);">
+<span style="font-family:var(--display,'Cormorant Garamond',serif);font-size:22px;color:var(--accentsoft,#B8AF9C);">05</span>
+<div><h4 style="font-size:17px;margin-bottom:4px;">Commit to real art direction</h4><p style="font-size:13.5px;color:var(--muted,#6B655C);">Replace every grey placeholder with consistent, warm-lit photography. A luxury textile brand lives or dies on the imagery.</p></div>
+</div>
+<div style="display:grid;grid-template-columns:34px 1fr;gap:16px;padding:16px 0;">
+<span style="font-family:var(--display,'Cormorant Garamond',serif);font-size:22px;color:var(--accentsoft,#B8AF9C);">06</span>
+<div><h4 style="font-size:17px;margin-bottom:4px;">Raise the accessibility floor</h4><p style="font-size:13.5px;color:var(--muted,#6B655C);">One visible focus style, AA-contrast text, 44px minimum hit targets, and honest loading/error states that never appear simultaneously.</p></div>
+</div>
+</div>
+</section>
+
+<!-- ============ 05 PAGE-BY-PAGE ============ -->
+<section style="margin-top:var(--sec,56px);">
+<div style="display:flex;align-items:baseline;gap:16px;border-bottom:1px solid var(--hairstrong,#D8D2C4);padding-bottom:12px;margin-bottom:10px;">
+<span style="font-family:var(--display,'Cormorant Garamond',serif);font-size:30px;color:var(--accentsoft,#B8AF9C);font-weight:500;line-height:1;">05</span>
+<h2 style="font-size:28px;letter-spacing:-0.005em;">Page-by-page audit</h2>
+</div>
+<p style="max-width:70ch;margin-bottom:8px;font-size:13.5px;color:#7A7469;">Each card lists what ships today, the specific issues found, and the recommended fix. Priority reflects revenue impact and how broken the current state is.</p>
+<div style="display:flex;gap:8px;margin-bottom:4px;font-family:'Jost',sans-serif;font-size:10px;letter-spacing:0.12em;text-transform:uppercase;">
+<span style="display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;background:#F6E7E4;color:#8F3A30;">High priority</span>
+<span style="display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;background:#F4ECDD;color:#82652E;">Medium</span>
+<span style="display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;background:#EEEDE7;color:#5B564D;">Low</span>
+</div>
+</section>
+
+<!-- PAGE CARD TEMPLATE INSTANCES -->
+<article style="border:1px solid var(--hair,#E6E1D6);border-radius:6px;padding:22px 24px;margin-top:16px;">
+<div style="display:flex;justify-content:space-between;align-items:baseline;gap:14px;margin-bottom:4px;">
+<h3 style="font-size:21px;">Homepage <span style="font-family:'Jost',sans-serif;font-size:12px;color:#9A9488;letter-spacing:0.04em;">&nbsp;/&nbsp;</span></h3>
+<span style="flex:0 0 auto;font-family:'Jost',sans-serif;font-size:10px;letter-spacing:0.12em;text-transform:uppercase;padding:4px 10px;border-radius:999px;background:#F6E7E4;color:#8F3A30;">High</span>
+</div>
+<p style="font-size:13px;color:#7A7469;margin-bottom:16px;">Serif hero, two stacked collection tiles, featured products, brand story, three feature icons, newsletter.</p>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;">
+<div>
+<div style="font-family:'Jost',sans-serif;font-size:10.5px;letter-spacing:0.16em;text-transform:uppercase;color:#8F3A30;margin-bottom:10px;">Issues</div>
+<ul style="display:flex;flex-direction:column;gap:8px;">
+<li style="display:flex;gap:10px;font-size:13px;color:var(--body,#4A443B);"><i style="flex:0 0 auto;width:5px;height:5px;border-radius:50%;background:#C08579;margin-top:8px;"></i>Text-only hero on white — low impact for a visual brand; "Scroll to discover" floats awkwardly.</li>
+<li style="display:flex;gap:10px;font-size:13px;color:var(--body,#4A443B);"><i style="flex:0 0 auto;width:5px;height:5px;border-radius:50%;background:#C08579;margin-top:8px;"></i>"Our Collections" title and its subtitle collide with no spacing.</li>
+<li style="display:flex;gap:10px;font-size:13px;color:var(--body,#4A443B);"><i style="flex:0 0 auto;width:5px;height:5px;border-radius:50%;background:#C08579;margin-top:8px;"></i>"Featured Products," ships with a stray trailing comma.</li>
+<li style="display:flex;gap:10px;font-size:13px;color:var(--body,#4A443B);"><i style="flex:0 0 auto;width:5px;height:5px;border-radius:50%;background:#C08579;margin-top:8px;"></i>Giant grey placeholders dominate; collection tiles stack full-width and tall with weak hierarchy.</li>
+</ul>
+</div>
+<div>
+<div style="font-family:'Jost',sans-serif;font-size:10.5px;letter-spacing:0.16em;text-transform:uppercase;color:#6E8A6E;margin-bottom:10px;">Recommendations</div>
+<ul style="display:flex;flex-direction:column;gap:8px;">
+<li style="display:flex;gap:10px;font-size:13px;color:var(--body,#4A443B);"><i style="flex:0 0 auto;width:5px;height:5px;border-radius:50%;background:var(--accent,#8A7A66);margin-top:8px;"></i>Full-bleed photographic hero with restrained overlay text and a single primary CTA.</li>
+<li style="display:flex;gap:10px;font-size:13px;color:var(--body,#4A443B);"><i style="flex:0 0 auto;width:5px;height:5px;border-radius:50%;background:var(--accent,#8A7A66);margin-top:8px;"></i>One reusable section-header pattern (eyebrow, title, subtitle) with fixed spacing.</li>
+<li style="display:flex;gap:10px;font-size:13px;color:var(--body,#4A443B);"><i style="flex:0 0 auto;width:5px;height:5px;border-radius:50%;background:var(--accent,#8A7A66);margin-top:8px;"></i>Editorial 2-up collections; 3–4-up featured grid with hover quick-add.</li>
+<li style="display:flex;gap:10px;font-size:13px;color:var(--body,#4A443B);"><i style="flex:0 0 auto;width:5px;height:5px;border-radius:50%;background:var(--accent,#8A7A66);margin-top:8px;"></i>Fix copy and replace placeholders with real photography.</li>
+</ul>
+</div>
+</div>
+</article>
+
+<article style="border:1px solid var(--hair,#E6E1D6);border-radius:6px;padding:22px 24px;margin-top:16px;">
+<div style="display:flex;justify-content:space-between;align-items:baseline;gap:14px;margin-bottom:4px;">
+<h3 style="font-size:21px;">Shop — listing &amp; filters</h3>
+<span style="flex:0 0 auto;font-family:'Jost',sans-serif;font-size:10px;letter-spacing:0.12em;text-transform:uppercase;padding:4px 10px;border-radius:999px;background:#F6E7E4;color:#8F3A30;">High</span>
+</div>
+<p style="font-size:13px;color:#7A7469;margin-bottom:16px;">Left filter rail (material, colour, price, size, brand, thread count), sort dropdown, three-column product grid.</p>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;">
+<div>
+<div style="font-family:'Jost',sans-serif;font-size:10.5px;letter-spacing:0.16em;text-transform:uppercase;color:#8F3A30;margin-bottom:10px;">Issues</div>
+<ul style="display:flex;flex-direction:column;gap:8px;">
+<li style="display:flex;gap:10px;font-size:13px;color:var(--body,#4A443B);"><i style="flex:0 0 auto;width:5px;height:5px;border-radius:50%;background:#C08579;margin-top:8px;"></i>Content capped at ~1000px, leaving a large empty right margin on desktop; layout reads left-heavy.</li>
+<li style="display:flex;gap:10px;font-size:13px;color:var(--body,#4A443B);"><i style="flex:0 0 auto;width:5px;height:5px;border-radius:50%;background:#C08579;margin-top:8px;"></i>Price is a single-thumb slider — no minimum; colour swatches have no labels or selected state.</li>
+<li style="display:flex;gap:10px;font-size:13px;color:var(--body,#4A443B);"><i style="flex:0 0 auto;width:5px;height:5px;border-radius:50%;background:#C08579;margin-top:8px;"></i>No result count or active-filter chips visible; placeholder imagery.</li>
+</ul>
+</div>
+<div>
+<div style="font-family:'Jost',sans-serif;font-size:10.5px;letter-spacing:0.16em;text-transform:uppercase;color:#6E8A6E;margin-bottom:10px;">Recommendations</div>
+<ul style="display:flex;flex-direction:column;gap:8px;">
+<li style="display:flex;gap:10px;font-size:13px;color:var(--body,#4A443B);"><i style="flex:0 0 auto;width:5px;height:5px;border-radius:50%;background:var(--accent,#8A7A66);margin-top:8px;"></i>Widen the container and rebalance the grid; keep the rail sticky.</li>
+<li style="display:flex;gap:10px;font-size:13px;color:var(--body,#4A443B);"><i style="flex:0 0 auto;width:5px;height:5px;border-radius:50%;background:var(--accent,#8A7A66);margin-top:8px;"></i>Dual-handle price range; named colour swatches with clear selected state.</li>
+<li style="display:flex;gap:10px;font-size:13px;color:var(--body,#4A443B);"><i style="flex:0 0 auto;width:5px;height:5px;border-radius:50%;background:var(--accent,#8A7A66);margin-top:8px;"></i>Result count, active-filter chips with clear-all, and a mobile filter drawer.</li>
+</ul>
+</div>
+</div>
+</article>
+
+<article style="border:1px solid var(--hair,#E6E1D6);border-radius:6px;padding:22px 24px;margin-top:16px;">
+<div style="display:flex;justify-content:space-between;align-items:baseline;gap:14px;margin-bottom:4px;">
+<h3 style="font-size:21px;">Product detail</h3>
+<span style="flex:0 0 auto;font-family:'Jost',sans-serif;font-size:10px;letter-spacing:0.12em;text-transform:uppercase;padding:4px 10px;border-radius:999px;background:#F6E7E4;color:#8F3A30;">High</span>
+</div>
+<p style="font-size:13px;color:#7A7469;margin-bottom:16px;">Single image, title, price, option chips, add-to-cart, trust badges, reviews block.</p>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;">
+<div>
+<div style="font-family:'Jost',sans-serif;font-size:10.5px;letter-spacing:0.16em;text-transform:uppercase;color:#8F3A30;margin-bottom:10px;">Issues</div>
+<ul style="display:flex;flex-direction:column;gap:8px;">
+<li style="display:flex;gap:10px;font-size:13px;color:var(--body,#4A443B);"><i style="flex:0 0 auto;width:5px;height:5px;border-radius:50%;background:#C08579;margin-top:8px;"></i>Reviews show "Network error. Please try again." <em>and</em> "No reviews yet" at the same time — two conflicting states shipped together.</li>
+<li style="display:flex;gap:10px;font-size:13px;color:var(--body,#4A443B);"><i style="flex:0 0 auto;width:5px;height:5px;border-radius:50%;background:#C08579;margin-top:8px;"></i>Only one image, no gallery or zoom; an empty grey band sits above "Select options".</li>
+<li style="display:flex;gap:10px;font-size:13px;color:var(--body,#4A443B);"><i style="flex:0 0 auto;width:5px;height:5px;border-radius:50%;background:#C08579;margin-top:8px;"></i>Thin for luxury bedding — no materials, care, dimensions or thread-count detail.</li>
+</ul>
+</div>
+<div>
+<div style="font-family:'Jost',sans-serif;font-size:10.5px;letter-spacing:0.16em;text-transform:uppercase;color:#6E8A6E;margin-bottom:10px;">Recommendations</div>
+<ul style="display:flex;flex-direction:column;gap:8px;">
+<li style="display:flex;gap:10px;font-size:13px;color:var(--body,#4A443B);"><i style="flex:0 0 auto;width:5px;height:5px;border-radius:50%;background:var(--accent,#8A7A66);margin-top:8px;"></i>Image gallery with thumbnails and zoom; sticky buy box.</li>
+<li style="display:flex;gap:10px;font-size:13px;color:var(--body,#4A443B);"><i style="flex:0 0 auto;width:5px;height:5px;border-radius:50%;background:var(--accent,#8A7A66);margin-top:8px;"></i>One review state at a time; graceful empty and error handling.</li>
+<li style="display:flex;gap:10px;font-size:13px;color:var(--body,#4A443B);"><i style="flex:0 0 auto;width:5px;height:5px;border-radius:50%;background:var(--accent,#8A7A66);margin-top:8px;"></i>Details accordion (materials, care, dimensions, thread count) plus related products.</li>
+</ul>
+</div>
+</div>
+</article>
+
+<article style="border:1px solid var(--hair,#E6E1D6);border-radius:6px;padding:22px 24px;margin-top:16px;">
+<div style="display:flex;justify-content:space-between;align-items:baseline;gap:14px;margin-bottom:4px;">
+<h3 style="font-size:21px;">Cart</h3>
+<span style="flex:0 0 auto;font-family:'Jost',sans-serif;font-size:10px;letter-spacing:0.12em;text-transform:uppercase;padding:4px 10px;border-radius:999px;background:#F4ECDD;color:#82652E;">Medium</span>
+</div>
+<p style="font-size:13px;color:#7A7469;margin-bottom:16px;">Empty state exists in two conflicting variants; filled cart with line items and summary.</p>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;">
+<div>
+<div style="font-family:'Jost',sans-serif;font-size:10.5px;letter-spacing:0.16em;text-transform:uppercase;color:#8F3A30;margin-bottom:10px;">Issues</div>
+<ul style="display:flex;flex-direction:column;gap:8px;">
+<li style="display:flex;gap:10px;font-size:13px;color:var(--body,#4A443B);"><i style="flex:0 0 auto;width:5px;height:5px;border-radius:50%;background:#C08579;margin-top:8px;"></i>Two empty states: one teal "Continue shopping" button jammed top-left, one centred black "Browse products".</li>
+<li style="display:flex;gap:10px;font-size:13px;color:var(--body,#4A443B);"><i style="flex:0 0 auto;width:5px;height:5px;border-radius:50%;background:#C08579;margin-top:8px;"></i>Copy and vertical alignment differ between the two.</li>
+</ul>
+</div>
+<div>
+<div style="font-family:'Jost',sans-serif;font-size:10.5px;letter-spacing:0.16em;text-transform:uppercase;color:#6E8A6E;margin-bottom:10px;">Recommendations</div>
+<ul style="display:flex;flex-direction:column;gap:8px;">
+<li style="display:flex;gap:10px;font-size:13px;color:var(--body,#4A443B);"><i style="flex:0 0 auto;width:5px;height:5px;border-radius:50%;background:var(--accent,#8A7A66);margin-top:8px;"></i>One canonical, centred empty state; serif heading, single primary CTA.</li>
+<li style="display:flex;gap:10px;font-size:13px;color:var(--body,#4A443B);"><i style="flex:0 0 auto;width:5px;height:5px;border-radius:50%;background:var(--accent,#8A7A66);margin-top:8px;"></i>Filled cart with product thumbnails, qty steppers, sticky summary and a free-shipping progress bar.</li>
+</ul>
+</div>
+</div>
+</article>
+
+<article style="border:1px solid var(--hair,#E6E1D6);border-radius:6px;padding:22px 24px;margin-top:16px;">
+<div style="display:flex;justify-content:space-between;align-items:baseline;gap:14px;margin-bottom:4px;">
+<h3 style="font-size:21px;">Checkout</h3>
+<span style="flex:0 0 auto;font-family:'Jost',sans-serif;font-size:10px;letter-spacing:0.12em;text-transform:uppercase;padding:4px 10px;border-radius:999px;background:#F6E7E4;color:#8F3A30;">High</span>
+</div>
+<p style="font-size:13px;color:#7A7469;margin-bottom:16px;">Multi-step flow (shipping, billing, payment, review) with Stripe; empty-cart guard.</p>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;">
+<div>
+<div style="font-family:'Jost',sans-serif;font-size:10.5px;letter-spacing:0.16em;text-transform:uppercase;color:#8F3A30;margin-bottom:10px;">Issues</div>
+<ul style="display:flex;flex-direction:column;gap:8px;">
+<li style="display:flex;gap:10px;font-size:13px;color:var(--body,#4A443B);"><i style="flex:0 0 auto;width:5px;height:5px;border-radius:50%;background:#C08579;margin-top:8px;"></i>No persistent order summary or clear step indicator to reassure the buyer.</li>
+<li style="display:flex;gap:10px;font-size:13px;color:var(--body,#4A443B);"><i style="flex:0 0 auto;width:5px;height:5px;border-radius:50%;background:#C08579;margin-top:8px;"></i>Long single view; trust cues and inline validation are minimal.</li>
+</ul>
+</div>
+<div>
+<div style="font-family:'Jost',sans-serif;font-size:10.5px;letter-spacing:0.16em;text-transform:uppercase;color:#6E8A6E;margin-bottom:10px;">Recommendations</div>
+<ul style="display:flex;flex-direction:column;gap:8px;">
+<li style="display:flex;gap:10px;font-size:13px;color:var(--body,#4A443B);"><i style="flex:0 0 auto;width:5px;height:5px;border-radius:50%;background:var(--accent,#8A7A66);margin-top:8px;"></i>Sticky order-summary rail and a clear progress stepper.</li>
+<li style="display:flex;gap:10px;font-size:13px;color:var(--body,#4A443B);"><i style="flex:0 0 auto;width:5px;height:5px;border-radius:50%;background:var(--accent,#8A7A66);margin-top:8px;"></i>Guest checkout, express-pay options, inline validation and visible security cues.</li>
+</ul>
+</div>
+</div>
+</article>
+
+<article style="border:1px solid var(--hair,#E6E1D6);border-radius:6px;padding:22px 24px;margin-top:16px;">
+<div style="display:flex;justify-content:space-between;align-items:baseline;gap:14px;margin-bottom:4px;">
+<h3 style="font-size:21px;">Login &amp; Sign-in <span style="font-family:'Jost',sans-serif;font-size:12px;color:#9A9488;letter-spacing:0.04em;">two routes</span></h3>
+<span style="flex:0 0 auto;font-family:'Jost',sans-serif;font-size:10px;letter-spacing:0.12em;text-transform:uppercase;padding:4px 10px;border-radius:999px;background:#F6E7E4;color:#8F3A30;">High</span>
+</div>
+<p style="font-size:13px;color:#7A7469;margin-bottom:16px;">Elegant serif card that matches the marketing pages — undermined by its copy and routing.</p>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;">
+<div>
+<div style="font-family:'Jost',sans-serif;font-size:10.5px;letter-spacing:0.16em;text-transform:uppercase;color:#8F3A30;margin-bottom:10px;">Issues</div>
+<ul style="display:flex;flex-direction:column;gap:8px;">
+<li style="display:flex;gap:10px;font-size:13px;color:var(--body,#4A443B);"><i style="flex:0 0 auto;width:5px;height:5px;border-radius:50%;background:#C08579;margin-top:8px;"></i>The customer login is titled "Admin Login" / "Sign in to access the admin dashboard".</li>
+<li style="display:flex;gap:10px;font-size:13px;color:var(--body,#4A443B);"><i style="flex:0 0 auto;width:5px;height:5px;border-radius:50%;background:#C08579;margin-top:8px;"></i>Two overlapping routes (<code>/login</code>, <code>/signin</code>); register sends success to one and its "Sign in" link to the other.</li>
+<li style="display:flex;gap:10px;font-size:13px;color:var(--body,#4A443B);"><i style="flex:0 0 auto;width:5px;height:5px;border-radius:50%;background:#C08579;margin-top:8px;"></i>No "create account" link or remember-me on the card.</li>
+</ul>
+</div>
+<div>
+<div style="font-family:'Jost',sans-serif;font-size:10.5px;letter-spacing:0.16em;text-transform:uppercase;color:#6E8A6E;margin-bottom:10px;">Recommendations</div>
+<ul style="display:flex;flex-direction:column;gap:8px;">
+<li style="display:flex;gap:10px;font-size:13px;color:var(--body,#4A443B);"><i style="flex:0 0 auto;width:5px;height:5px;border-radius:50%;background:var(--accent,#8A7A66);margin-top:8px;"></i>One customer login ("Welcome back") that role-routes silently; admin sign-in on its own route.</li>
+<li style="display:flex;gap:10px;font-size:13px;color:var(--body,#4A443B);"><i style="flex:0 0 auto;width:5px;height:5px;border-radius:50%;background:var(--accent,#8A7A66);margin-top:8px;"></i>Consolidate the routes; add register link, remember-me and clear error text.</li>
+</ul>
+</div>
+</div>
+</article>
+
+<article style="border:1px solid var(--hair,#E6E1D6);border-radius:6px;padding:22px 24px;margin-top:16px;background:#FDF7F5;">
+<div style="display:flex;justify-content:space-between;align-items:baseline;gap:14px;margin-bottom:4px;">
+<h3 style="font-size:21px;">Register <span style="font-family:'Jost',sans-serif;font-size:11px;color:#8F3A30;letter-spacing:0.1em;text-transform:uppercase;">worst offender</span></h3>
+<span style="flex:0 0 auto;font-family:'Jost',sans-serif;font-size:10px;letter-spacing:0.12em;text-transform:uppercase;padding:4px 10px;border-radius:999px;background:#F6E7E4;color:#8F3A30;">High</span>
+</div>
+<p style="font-size:13px;color:#7A7469;margin-bottom:16px;">A generic Tailwind template form that shares none of the brand's language.</p>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;">
+<div>
+<div style="font-family:'Jost',sans-serif;font-size:10.5px;letter-spacing:0.16em;text-transform:uppercase;color:#8F3A30;margin-bottom:10px;">Issues</div>
+<ul style="display:flex;flex-direction:column;gap:8px;">
+<li style="display:flex;gap:10px;font-size:13px;color:var(--body,#4A443B);"><i style="flex:0 0 auto;width:5px;height:5px;border-radius:50%;background:#C08579;margin-top:8px;"></i>Indigo <code>bg-indigo-600</code> button, bold sans heading, <code>rounded-xl shadow-lg</code> card — contradicts the whole brand.</li>
+<li style="display:flex;gap:10px;font-size:13px;color:var(--body,#4A443B);"><i style="flex:0 0 auto;width:5px;height:5px;border-radius:50%;background:#C08579;margin-top:8px;"></i>Cramped field spacing; visually unrelated to the login page it sits beside.</li>
+</ul>
+</div>
+<div>
+<div style="font-family:'Jost',sans-serif;font-size:10.5px;letter-spacing:0.16em;text-transform:uppercase;color:#6E8A6E;margin-bottom:10px;">Recommendations</div>
+<ul style="display:flex;flex-direction:column;gap:8px;">
+<li style="display:flex;gap:10px;font-size:13px;color:var(--body,#4A443B);"><i style="flex:0 0 auto;width:5px;height:5px;border-radius:50%;background:var(--accent,#8A7A66);margin-top:8px;"></i>Rebuild on the brand system — serif heading, hairline inputs, primary button matching login.</li>
+<li style="display:flex;gap:10px;font-size:13px;color:var(--body,#4A443B);"><i style="flex:0 0 auto;width:5px;height:5px;border-radius:50%;background:var(--accent,#8A7A66);margin-top:8px;"></i>Add password-strength feedback, inline validation and a clear terms row.</li>
+</ul>
+</div>
+</div>
+</article>
+
+<article style="border:1px solid var(--hair,#E6E1D6);border-radius:6px;padding:22px 24px;margin-top:16px;">
+<div style="display:flex;justify-content:space-between;align-items:baseline;gap:14px;margin-bottom:4px;">
+<h3 style="font-size:21px;">Profile &amp; account</h3>
+<span style="flex:0 0 auto;font-family:'Jost',sans-serif;font-size:10px;letter-spacing:0.12em;text-transform:uppercase;padding:4px 10px;border-radius:999px;background:#F6E7E4;color:#8F3A30;">High</span>
+</div>
+<p style="font-size:13px;color:#7A7469;margin-bottom:16px;">Profile header, personal-information form, saved-addresses list.</p>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;">
+<div>
+<div style="font-family:'Jost',sans-serif;font-size:10.5px;letter-spacing:0.16em;text-transform:uppercase;color:#8F3A30;margin-bottom:10px;">Issues</div>
+<ul style="display:flex;flex-direction:column;gap:8px;">
+<li style="display:flex;gap:10px;font-size:13px;color:var(--body,#4A443B);"><i style="flex:0 0 auto;width:5px;height:5px;border-radius:50%;background:#C08579;margin-top:8px;"></i>The avatar overlaps the name and email — a positioning bug in the header.</li>
+<li style="display:flex;gap:10px;font-size:13px;color:var(--body,#4A443B);"><i style="flex:0 0 auto;width:5px;height:5px;border-radius:50%;background:#C08579;margin-top:8px;"></i>A stray "0" renders beside the billing address; sections lack padding and hierarchy.</li>
+<li style="display:flex;gap:10px;font-size:13px;color:var(--body,#4A443B);"><i style="flex:0 0 auto;width:5px;height:5px;border-radius:50%;background:#C08579;margin-top:8px;"></i>Inputs carry heavy shadows unlike the shop's hairline fields; no account navigation.</li>
+</ul>
+</div>
+<div>
+<div style="font-family:'Jost',sans-serif;font-size:10.5px;letter-spacing:0.16em;text-transform:uppercase;color:#6E8A6E;margin-bottom:10px;">Recommendations</div>
+<ul style="display:flex;flex-direction:column;gap:8px;">
+<li style="display:flex;gap:10px;font-size:13px;color:var(--body,#4A443B);"><i style="flex:0 0 auto;width:5px;height:5px;border-radius:50%;background:var(--accent,#8A7A66);margin-top:8px;"></i>Account layout with side nav (Profile, Orders, Addresses, Wishlist, Security).</li>
+<li style="display:flex;gap:10px;font-size:13px;color:var(--body,#4A443B);"><i style="flex:0 0 auto;width:5px;height:5px;border-radius:50%;background:var(--accent,#8A7A66);margin-top:8px;"></i>Fix the header, card-based address book, consistent hairline inputs, accent "Default" badge.</li>
+</ul>
+</div>
+</div>
+</article>
+
+<!-- Remaining pages compact table -->
+<h3 style="font-size:19px;margin-top:30px;margin-bottom:12px;">Remaining pages — at a glance</h3>
+<div style="border:1px solid var(--hair,#E6E1D6);border-radius:6px;overflow:hidden;">
+<div style="display:grid;grid-template-columns:1.1fr 2.5fr 78px;gap:16px;padding:11px 20px;background:#F4F0E8;font-family:'Jost',sans-serif;font-size:10px;letter-spacing:0.16em;text-transform:uppercase;color:var(--accent,#8A7A66);">
+<span>Page</span><span>Headline recommendation</span><span style="text-align:right;">Priority</span>
+</div>
+<div style="display:grid;grid-template-columns:1.1fr 2.5fr 78px;gap:16px;padding:12px 20px;border-top:1px solid #EEEAE0;align-items:center;">
+<span style="font-family:'Jost',sans-serif;font-size:13px;color:var(--ink,#1A1712);">Forgot / reset password</span><span style="font-family:'Jost',sans-serif;font-size:12.5px;color:var(--muted,#6B655C);">Single branded card matching login; clear sent / success / expired states.</span><span style="text-align:right;"><span style="font-family:'Jost',sans-serif;font-size:9.5px;letter-spacing:0.1em;text-transform:uppercase;padding:3px 8px;border-radius:999px;background:#F4ECDD;color:#82652E;">Med</span></span>
+</div>
+<div style="display:grid;grid-template-columns:1.1fr 2.5fr 78px;gap:16px;padding:12px 20px;border-top:1px solid #EEEAE0;align-items:center;background:var(--panel2,#FBF9F4);">
+<span style="font-family:'Jost',sans-serif;font-size:13px;color:var(--ink,#1A1712);">Orders &amp; order detail</span><span style="font-family:'Jost',sans-serif;font-size:12.5px;color:var(--muted,#6B655C);">Consistent status-pill system, tracking timeline, reorder and invoice.</span><span style="text-align:right;"><span style="font-family:'Jost',sans-serif;font-size:9.5px;letter-spacing:0.1em;text-transform:uppercase;padding:3px 8px;border-radius:999px;background:#F4ECDD;color:#82652E;">Med</span></span>
+</div>
+<div style="display:grid;grid-template-columns:1.1fr 2.5fr 78px;gap:16px;padding:12px 20px;border-top:1px solid #EEEAE0;align-items:center;">
+<span style="font-family:'Jost',sans-serif;font-size:13px;color:var(--ink,#1A1712);">Wishlist</span><span style="font-family:'Jost',sans-serif;font-size:12.5px;color:var(--muted,#6B655C);">Reuse shop product cards; move-to-cart; consistent empty state.</span><span style="text-align:right;"><span style="font-family:'Jost',sans-serif;font-size:9.5px;letter-spacing:0.1em;text-transform:uppercase;padding:3px 8px;border-radius:999px;background:#EEEDE7;color:#5B564D;">Low</span></span>
+</div>
+<div style="display:grid;grid-template-columns:1.1fr 2.5fr 78px;gap:16px;padding:12px 20px;border-top:1px solid #EEEAE0;align-items:center;background:var(--panel2,#FBF9F4);">
+<span style="font-family:'Jost',sans-serif;font-size:13px;color:var(--ink,#1A1712);">Track order &amp; returns</span><span style="font-family:'Jost',sans-serif;font-size:12.5px;color:var(--muted,#6B655C);">Status timeline with clear milestones; branded, reassuring returns flow.</span><span style="text-align:right;"><span style="font-family:'Jost',sans-serif;font-size:9.5px;letter-spacing:0.1em;text-transform:uppercase;padding:3px 8px;border-radius:999px;background:#F4ECDD;color:#82652E;">Med</span></span>
+</div>
+<div style="display:grid;grid-template-columns:1.1fr 2.5fr 78px;gap:16px;padding:12px 20px;border-top:1px solid #EEEAE0;align-items:center;">
+<span style="font-family:'Jost',sans-serif;font-size:13px;color:var(--ink,#1A1712);">Content — About, Contact, FAQ, Journal, Shipping</span><span style="font-family:'Jost',sans-serif;font-size:12.5px;color:var(--muted,#6B655C);">One shared page-header pattern, editorial imagery and the unified type scale.</span><span style="text-align:right;"><span style="font-family:'Jost',sans-serif;font-size:9.5px;letter-spacing:0.1em;text-transform:uppercase;padding:3px 8px;border-radius:999px;background:#EEEDE7;color:#5B564D;">Low</span></span>
+</div>
+</div>
+
+<!-- ============ 06 DIRECTIONS ============ -->
+<section style="margin-top:var(--sec,56px);">
+<div style="display:flex;align-items:baseline;gap:16px;border-bottom:1px solid var(--hairstrong,#D8D2C4);padding-bottom:12px;margin-bottom:20px;">
+<span style="font-family:var(--display,'Cormorant Garamond',serif);font-size:30px;color:var(--accentsoft,#B8AF9C);font-weight:500;line-height:1;">06</span>
+<h2 style="font-size:28px;letter-spacing:-0.005em;">Three redesign directions</h2>
+</div>
+<p style="max-width:70ch;margin-bottom:22px;">Each direction is a complete visual language — colour, type and mood. The next phase builds the key pages (home, product, checkout) in all three so the choice can be made on real screens.</p>
+<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;">
+
+<article style="border:1px solid var(--hair,#E6E1D6);border-radius:7px;overflow:hidden;">
+<div style="display:flex;height:88px;">
+<div style="flex:1;background:#f4f1ea;"></div><div style="flex:1;background:#EAE3D6;"></div><div style="flex:1;background:#8a7a66;"></div><div style="flex:1.4;background:#17150f;"></div>
+</div>
+<div style="padding:18px 20px;">
+<div style="font-family:'Jost',sans-serif;font-size:10px;letter-spacing:0.22em;text-transform:uppercase;color:#8a7a66;">Direction A</div>
+<h3 style="font-size:23px;margin-top:6px;">Maison Noir</h3>
+<p style="font-size:12.5px;color:var(--muted,#6B655C);margin-top:8px;line-height:1.6;">The elevated version of today — quiet, gallery-like monochrome on warm paper with a single stone accent.</p>
+<dl style="display:grid;grid-template-columns:auto 1fr;gap:7px 12px;margin-top:14px;">
+<dt style="font-family:'Jost',sans-serif;font-size:10.5px;text-transform:uppercase;letter-spacing:0.08em;color:#9A9488;">Type</dt><dd style="font-family:'Jost',sans-serif;font-size:12px;color:var(--ink,#1A1712);">Cormorant Garamond · Jost</dd>
+<dt style="font-family:'Jost',sans-serif;font-size:10.5px;text-transform:uppercase;letter-spacing:0.08em;color:#9A9488;">Mood</dt><dd style="font-family:'Jost',sans-serif;font-size:12px;color:var(--ink,#1A1712);">Restrained, editorial</dd>
+<dt style="font-family:'Jost',sans-serif;font-size:10.5px;text-transform:uppercase;letter-spacing:0.08em;color:#9A9488;">Best for</dt><dd style="font-family:'Jost',sans-serif;font-size:12px;color:var(--ink,#1A1712);">Lowest risk, highest brand fit</dd>
+</dl>
+</div>
+</article>
+
+<article style="border:1px solid var(--hair,#E6E1D6);border-radius:7px;overflow:hidden;">
+<div style="display:flex;height:88px;">
+<div style="flex:1;background:#F3E9DB;"></div><div style="flex:1;background:#E4CFB0;"></div><div style="flex:1;background:#B08D4C;"></div><div style="flex:1.4;background:#2B2824;"></div>
+</div>
+<div style="padding:18px 20px;">
+<div style="font-family:'Jost',sans-serif;font-size:10px;letter-spacing:0.22em;text-transform:uppercase;color:#B08D4C;">Direction B</div>
+<h3 style="font-size:23px;margin-top:6px;">Champagne &amp; Charcoal</h3>
+<p style="font-size:12.5px;color:var(--muted,#6B655C);margin-top:8px;line-height:1.6;">Leans into the tokens' warmth — champagne surfaces, charcoal ink and a muted antique-gold accent. Boutique-hotel feel.</p>
+<dl style="display:grid;grid-template-columns:auto 1fr;gap:7px 12px;margin-top:14px;">
+<dt style="font-family:'Jost',sans-serif;font-size:10.5px;text-transform:uppercase;letter-spacing:0.08em;color:#9A9488;">Type</dt><dd style="font-family:'Jost',sans-serif;font-size:12px;color:var(--ink,#1A1712);">Cormorant · EB Garamond · Jost</dd>
+<dt style="font-family:'Jost',sans-serif;font-size:10.5px;text-transform:uppercase;letter-spacing:0.08em;color:#9A9488;">Mood</dt><dd style="font-family:'Jost',sans-serif;font-size:12px;color:var(--ink,#1A1712);">Warm, tactile, indulgent</dd>
+<dt style="font-family:'Jost',sans-serif;font-size:10.5px;text-transform:uppercase;letter-spacing:0.08em;color:#9A9488;">Best for</dt><dd style="font-family:'Jost',sans-serif;font-size:12px;color:var(--ink,#1A1712);">Leaning into the existing palette</dd>
+</dl>
+</div>
+</article>
+
+<article style="border:1px solid var(--hair,#E6E1D6);border-radius:7px;overflow:hidden;">
+<div style="display:flex;height:88px;">
+<div style="flex:1;background:#F4F4F2;"></div><div style="flex:1;background:#D9DDD6;"></div><div style="flex:1;background:#3C4A40;"></div><div style="flex:1.4;background:#141414;"></div>
+</div>
+<div style="padding:18px 20px;">
+<div style="font-family:'Jost',sans-serif;font-size:10px;letter-spacing:0.22em;text-transform:uppercase;color:#3C4A40;">Direction C</div>
+<h3 style="font-size:23px;margin-top:6px;">Modern Noiraé</h3>
+<p style="font-size:12.5px;color:var(--muted,#6B655C);margin-top:8px;line-height:1.6;">A contemporary refresh — cooler neutrals, a deep sage accent and bigger, more confident type. Fashion-forward.</p>
+<dl style="display:grid;grid-template-columns:auto 1fr;gap:7px 12px;margin-top:14px;">
+<dt style="font-family:'Jost',sans-serif;font-size:10.5px;text-transform:uppercase;letter-spacing:0.08em;color:#9A9488;">Type</dt><dd style="font-family:'Jost',sans-serif;font-size:12px;color:var(--ink,#1A1712);">Modern serif · Jost</dd>
+<dt style="font-family:'Jost',sans-serif;font-size:10.5px;text-transform:uppercase;letter-spacing:0.08em;color:#9A9488;">Mood</dt><dd style="font-family:'Jost',sans-serif;font-size:12px;color:var(--ink,#1A1712);">Confident, current</dd>
+<dt style="font-family:'Jost',sans-serif;font-size:10.5px;text-transform:uppercase;letter-spacing:0.08em;color:#9A9488;">Best for</dt><dd style="font-family:'Jost',sans-serif;font-size:12px;color:var(--ink,#1A1712);">A visible step-change</dd>
+</dl>
+</div>
+</article>
+
+</div>
+</section>
+
+<!-- ============ 07 ROADMAP ============ -->
+<section style="margin-top:var(--sec,56px);">
+<div style="display:flex;align-items:baseline;gap:16px;border-bottom:1px solid var(--hairstrong,#D8D2C4);padding-bottom:12px;margin-bottom:22px;">
+<span style="font-family:var(--display,'Cormorant Garamond',serif);font-size:30px;color:var(--accentsoft,#B8AF9C);font-weight:500;line-height:1;">07</span>
+<h2 style="font-size:28px;letter-spacing:-0.005em;">Roadmap &amp; next steps</h2>
+</div>
+<div style="display:flex;flex-direction:column;gap:0;">
+<div style="display:grid;grid-template-columns:120px 1fr;gap:20px;padding:16px 0;border-bottom:1px solid var(--hairfaint,#EAE5DA);">
+<div><div style="font-family:'Jost',sans-serif;font-size:10px;letter-spacing:0.18em;text-transform:uppercase;color:var(--accent,#8A7A66);">Phase 0</div><div style="font-family:'Jost',sans-serif;font-size:11.5px;color:#9A9488;margin-top:2px;">~1 week</div></div>
+<div><h4 style="font-size:16.5px;margin-bottom:4px;">Stop the bleeding</h4><p style="font-size:13px;color:var(--muted,#6B655C);">Fix the "Admin Login" copy, consolidate the auth routes, remove the indigo and teal strays, and pick one accent.</p></div>
+</div>
+<div style="display:grid;grid-template-columns:120px 1fr;gap:20px;padding:16px 0;border-bottom:1px solid var(--hairfaint,#EAE5DA);">
+<div><div style="font-family:'Jost',sans-serif;font-size:10px;letter-spacing:0.18em;text-transform:uppercase;color:var(--accent,#8A7A66);">Phase 1</div><div style="font-family:'Jost',sans-serif;font-size:11.5px;color:#9A9488;margin-top:2px;">1–2 weeks</div></div>
+<div><h4 style="font-size:16.5px;margin-bottom:4px;">One system</h4><p style="font-size:13px;color:var(--muted,#6B655C);">Merge the stylesheets into a single token set and a shared component kit (buttons, inputs, cards, badges, states).</p></div>
+</div>
+<div style="display:grid;grid-template-columns:120px 1fr;gap:20px;padding:16px 0;border-bottom:1px solid var(--hairfaint,#EAE5DA);">
+<div><div style="font-family:'Jost',sans-serif;font-size:10px;letter-spacing:0.18em;text-transform:uppercase;color:var(--accent,#8A7A66);">Phase 2</div><div style="font-family:'Jost',sans-serif;font-size:11.5px;color:#9A9488;margin-top:2px;">2–3 weeks</div></div>
+<div><h4 style="font-size:16.5px;margin-bottom:4px;">Redesign the money pages</h4><p style="font-size:13px;color:var(--muted,#6B655C);">Home, product, cart and checkout — in the chosen direction, desktop and mobile, with real photography.</p></div>
+</div>
+<div style="display:grid;grid-template-columns:120px 1fr;gap:20px;padding:16px 0;border-bottom:1px solid var(--hairfaint,#EAE5DA);">
+<div><div style="font-family:'Jost',sans-serif;font-size:10px;letter-spacing:0.18em;text-transform:uppercase;color:var(--accent,#8A7A66);">Phase 3</div><div style="font-family:'Jost',sans-serif;font-size:11.5px;color:#9A9488;margin-top:2px;">~2 weeks</div></div>
+<div><h4 style="font-size:16.5px;margin-bottom:4px;">The account suite</h4><p style="font-size:13px;color:var(--muted,#6B655C);">Login, register, profile, orders and wishlist rebuilt on the system; content pages brought in line.</p></div>
+</div>
+<div style="display:grid;grid-template-columns:120px 1fr;gap:20px;padding:16px 0;">
+<div><div style="font-family:'Jost',sans-serif;font-size:10px;letter-spacing:0.18em;text-transform:uppercase;color:var(--accent,#8A7A66);">Phase 4</div><div style="font-family:'Jost',sans-serif;font-size:11.5px;color:#9A9488;margin-top:2px;">Ongoing</div></div>
+<div><h4 style="font-size:16.5px;margin-bottom:4px;">Polish</h4><p style="font-size:13px;color:var(--muted,#6B655C);">Motion, micro-interactions, full accessibility pass and mobile QA across the flow.</p></div>
+</div>
+</div>
+
+<div style="margin-top:30px;background:var(--dark,#17150F);border-radius:7px;padding:26px 28px;">
+<div style="font-family:'Jost',sans-serif;font-size:10px;letter-spacing:0.24em;text-transform:uppercase;color:var(--accentsoft,#B8AF9C);">Immediate next step</div>
+<h3 style="font-size:23px;color:var(--paperhi,#F4F1EA);margin-top:8px;">Pick a direction — I will build the key pages in all three</h3>
+<p style="font-size:13.5px;color:var(--darksub,#C8C1B2);margin-top:10px;max-width:74ch;line-height:1.65;">Next I will recreate the current screens as a faithful "before", then design the homepage, product and checkout pages in Maison Noir, Champagne &amp; Charcoal and Modern Noiraé — desktop and mobile, with real free-to-use photography — so you can compare on real screens and lock the system.</p>
+</div>
+</section>
+
+</x-import>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{
+ &quot;palette&quot;: {&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;Warm Champagne&quot;,&quot;options&quot;:[&quot;Warm Champagne&quot;,&quot;Cool Slate&quot;,&quot;Ink &amp; Paper&quot;,&quot;Sage Atelier&quot;],&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Feel&quot;,&quot;label&quot;:&quot;Mood&quot;},
+ &quot;voice&quot;: {&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;Cormorant&quot;,&quot;options&quot;:[&quot;Cormorant&quot;,&quot;Libre Caslon&quot;,&quot;Jost Sans&quot;],&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Feel&quot;,&quot;label&quot;:&quot;Voice&quot;},
+ &quot;rhythm&quot;: {&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;Editorial&quot;,&quot;options&quot;:[&quot;Compact&quot;,&quot;Editorial&quot;,&quot;Airy&quot;],&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Feel&quot;,&quot;label&quot;:&quot;Rhythm&quot;}
+}">
+class Component extends DCLogic {
+  applyTheme() {
+    var P = this.props || {};
+    var root = document.documentElement;
+    var palettes = {
+      'Warm Champagne': {'--ink':'#1A1712','--body':'#4A443B','--muted':'#6B655C','--accent':'#8A7A66','--accentsoft':'#B8AF9C','--panel':'#F7F4EE','--panel2':'#FBF9F4','--dark':'#17150F','--paperhi':'#F4F1EA','--darksub':'#C8C1B2','--hair':'#E6E1D6','--hairstrong':'#D8D2C4','--hairfaint':'#EAE5DA'},
+      'Cool Slate': {'--ink':'#1B2126','--body':'#454C53','--muted':'#6B727A','--accent':'#5F7183','--accentsoft':'#A9B4BE','--panel':'#EFF2F4','--panel2':'#F7F9FA','--dark':'#191F24','--paperhi':'#EDF1F3','--darksub':'#B6C0C8','--hair':'#E1E6EA','--hairstrong':'#D1D8DE','--hairfaint':'#E9EDF0'},
+      'Ink & Paper': {'--ink':'#141414','--body':'#34322E','--muted':'#6C675E','--accent':'#141414','--accentsoft':'#B3AEA2','--panel':'#F3F1EB','--panel2':'#FAF9F4','--dark':'#0A0A08','--paperhi':'#F4F2EB','--darksub':'#C7C2B6','--hair':'#E4E0D6','--hairstrong':'#D3CEC1','--hairfaint':'#EDEAE1'},
+      'Sage Atelier': {'--ink':'#1F261E','--body':'#454B40','--muted':'#6C7263','--accent':'#5E6E51','--accentsoft':'#A8B39A','--panel':'#F0F3EC','--panel2':'#F7F9F3','--dark':'#1A201A','--paperhi':'#EDF1E8','--darksub':'#BDC6B2','--hair':'#E1E5D9','--hairstrong':'#D0D6C5','--hairfaint':'#EBEEE5'}
+    };
+    var pal = palettes[P.palette] || palettes['Warm Champagne'];
+    for (var k in pal) root.style.setProperty(k, pal[k]);
+    var voices = {
+      'Cormorant': "'Cormorant Garamond',Georgia,serif",
+      'Libre Caslon': "'Libre Caslon Display','Cormorant Garamond',Georgia,serif",
+      'Jost Sans': "'Jost',system-ui,sans-serif"
+    };
+    root.style.setProperty('--display', voices[P.voice] || voices['Cormorant']);
+    var rhythms = { 'Compact':['14px','1.55','38px'], 'Editorial':['15px','1.72','52px'], 'Airy':['16px','1.92','72px'] };
+    var r = rhythms[P.rhythm] || rhythms['Editorial'];
+    root.style.setProperty('--base-size', r[0]);
+    root.style.setProperty('--leading', r[1]);
+    root.style.setProperty('--sec', r[2]);
+  }
+  componentDidMount() { this.applyTheme(); }
+  componentDidUpdate() { this.applyTheme(); }
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

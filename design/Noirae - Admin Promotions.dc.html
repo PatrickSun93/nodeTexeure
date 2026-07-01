@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{background:#F3EBDD;color:#2A2621;font-family:'Jost',-apple-system,Arial,sans-serif;font-weight:300;-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}
+button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+h1,h2,h3,h4{font-family:'Cormorant Garamond',Georgia,serif;font-weight:500;margin:0;color:#2A2621;line-height:1.1}
+p{margin:0}
+</style>
+</helmet>
+
+<div style="display:grid;grid-template-columns:248px 1fr;min-height:100vh;">
+
+<aside style="background:#211E1A;color:#B6AC99;display:flex;flex-direction:column;padding:26px 18px;position:sticky;top:0;height:100vh;">
+<div style="padding:0 10px 6px;">
+<div style="font-family:'Cormorant Garamond',serif;font-size:26px;font-weight:600;letter-spacing:0.14em;color:#F3EBDD;">Noiraé</div>
+<div style="font-size:10px;letter-spacing:0.28em;text-transform:uppercase;color:#8C8371;margin-top:2px;">Admin</div>
+</div>
+<nav style="display:flex;flex-direction:column;gap:3px;margin-top:26px;">
+<a href="Noiraé - Admin Dashboard.dc.html" style="display:flex;align-items:center;gap:12px;padding:11px 12px;border-radius:6px;color:#B6AC99;font-size:13.5px;transition:background .2s;" style-hover="background:#2C2925"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>Dashboard</a>
+<a href="Noiraé - Admin Orders.dc.html" style="display:flex;align-items:center;gap:12px;padding:11px 12px;border-radius:6px;color:#B6AC99;font-size:13.5px;transition:background .2s;" style-hover="background:#2C2925"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 8h12l1 12H5z"/><path d="M9 8V6.5a3 3 0 0 1 6 0V8"/></svg>Orders <span style="margin-left:auto;font-size:11px;background:#A8863F;color:#211E1A;padding:1px 7px;border-radius:10px;">12</span></a>
+<a href="Noiraé - Admin Products.dc.html" style="display:flex;align-items:center;gap:12px;padding:11px 12px;border-radius:6px;color:#B6AC99;font-size:13.5px;transition:background .2s;" style-hover="background:#2C2925"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 7l8-4 8 4v10l-8 4-8-4z"/><path d="M4 7l8 4 8-4M12 11v10"/></svg>Products</a>
+<a href="#" style="display:flex;align-items:center;gap:12px;padding:11px 12px;border-radius:6px;color:#B6AC99;font-size:13.5px;transition:background .2s;" style-hover="background:#2C2925"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>Customers</a>
+<a href="Noiraé - Admin Analytics.dc.html" style="display:flex;align-items:center;gap:12px;padding:11px 12px;border-radius:6px;color:#B6AC99;font-size:13.5px;transition:background .2s;" style-hover="background:#2C2925"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="4" y1="20" x2="4" y2="12"/><line x1="10" y1="20" x2="10" y2="6"/><line x1="16" y1="20" x2="16" y2="10"/><line x1="21" y1="20" x2="3" y2="20"/></svg>Analytics</a>
+<div style="height:1px;background:#33302A;margin:8px 12px;"></div>
+<div style="font-size:9.5px;letter-spacing:0.2em;text-transform:uppercase;color:#6E6656;padding:4px 12px 6px;">Marketing</div>
+<a href="Noiraé - Admin Reviews.dc.html" style="display:flex;align-items:center;gap:12px;padding:11px 12px;border-radius:6px;color:#B6AC99;font-size:13.5px;transition:background .2s;" style-hover="background:#2C2925"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 3l2.6 5.3 5.9.9-4.3 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8L3.5 9.2l5.9-.9z"/></svg>Reviews <span style="margin-left:auto;font-size:11px;background:#A8863F;color:#211E1A;padding:1px 7px;border-radius:10px;">3</span></a>
+<a href="Noiraé - Admin Promotions.dc.html" style="display:flex;align-items:center;gap:12px;padding:11px 12px;border-radius:6px;background:#33302A;color:#F3EBDD;font-size:13.5px;"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#DCC08A" stroke-width="1.5"><path d="M20.6 13.4L13.4 20.6a2 2 0 0 1-2.8 0l-7.2-7.2a2 2 0 0 1-.6-1.4V4a1 1 0 0 1 1-1h7.9a2 2 0 0 1 1.4.6l7.5 7.4a2 2 0 0 1 0 2.8z"/><circle cx="7.5" cy="7.5" r="1.3"/></svg>Promotions</a>
+<a href="Noiraé - Admin Email Templates.dc.html" style="display:flex;align-items:center;gap:12px;padding:11px 12px;border-radius:6px;color:#B6AC99;font-size:13.5px;transition:background .2s;" style-hover="background:#2C2925"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="5" width="18" height="14" rx="1.5"/><path d="M3 7l9 6 9-6"/></svg>Email templates</a>
+<a href="Noiraé - Admin Email Queue.dc.html" style="display:flex;align-items:center;gap:12px;padding:11px 12px;border-radius:6px;color:#B6AC99;font-size:13.5px;transition:background .2s;" style-hover="background:#2C2925"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 6h16M4 12h16M4 18h10"/><circle cx="19" cy="18" r="2.5"/></svg>Email queue <span style="margin-left:auto;font-size:11px;background:#A8863F;color:#211E1A;padding:1px 7px;border-radius:10px;">248</span></a>
+<div style="height:1px;background:#33302A;margin:8px 12px;"></div>
+<a href="Noiraé - Admin Users & Roles.dc.html" style="display:flex;align-items:center;gap:12px;padding:11px 12px;border-radius:6px;color:#B6AC99;font-size:13.5px;transition:background .2s;" style-hover="background:#2C2925"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 20c0-3 2.5-4.6 5.5-4.6s5.5 1.6 5.5 4.6"/><circle cx="17.5" cy="9" r="2.6"/><path d="M16 15.4c2.6.2 4.5 1.7 4.5 4.1"/></svg>Users &amp; roles</a>
+<a href="Noiraé - Admin Settings.dc.html" style="display:flex;align-items:center;gap:12px;padding:11px 12px;border-radius:6px;color:#B6AC99;font-size:13.5px;transition:background .2s;" style-hover="background:#2C2925"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="3"/><path d="M20 12a8 8 0 1 0-8 8"/><path d="M12 4v3M12 17v3M4 12h3M17 12h3"/></svg>Settings</a>
+</nav>
+<div style="margin-top:auto;display:flex;align-items:center;gap:11px;padding:12px 10px;border-top:1px solid #33302A;">
+<div style="width:34px;height:34px;border-radius:50%;background:#33302A;color:#DCC08A;display:flex;align-items:center;justify-content:center;font-family:'Cormorant Garamond',serif;font-size:15px;">P</div>
+<div style="flex:1;"><div style="font-size:13px;color:#F3EBDD;">Patrick Sun</div><div style="font-size:11px;color:#8C8371;">Owner · Admin</div></div>
+<a href="Noiraé - Login.dc.html" aria-label="Sign out" style="color:#8C8371;" style-hover="color:#F3EBDD"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3"/><polyline points="10 8 4 12 10 16"/><line x1="4" y1="12" x2="15" y2="12"/></svg></a>
+</div>
+</aside>
+
+<main style="min-width:0;">
+<div style="display:flex;justify-content:space-between;align-items:center;padding:22px 34px;border-bottom:1px solid #E2D6C1;background:#F6EFE3;position:sticky;top:0;z-index:10;">
+<div><h1 style="font-size:26px;">Promotions</h1><div style="font-size:12.5px;color:#9C9284;margin-top:2px;">{{ activeCount }} active · {{ scheduledCount }} scheduled · {{ expiredCount }} expired</div></div>
+<div style="display:flex;align-items:center;gap:16px;">
+<div style="display:flex;align-items:center;gap:9px;"><span style="font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:#9C9284;">Viewing as</span>
+<div style="display:inline-flex;border:1px solid #D6C4A8;border-radius:30px;overflow:hidden;">
+<button onClick="{{ setAdmin }}" style="padding:7px 16px;font-size:12px;background:{{ adminBtnBg }};color:{{ adminBtnColor }};transition:all .2s;">Admin</button>
+<button onClick="{{ setStaff }}" style="padding:7px 16px;font-size:12px;background:{{ staffBtnBg }};color:{{ staffBtnColor }};transition:all .2s;">Staff</button>
+</div>
+</div>
+<button style="background:#2A2621;color:#F3EBDD;padding:11px 20px;font-size:11px;letter-spacing:0.14em;text-transform:uppercase;align-items:center;gap:8px;transition:background .2s;display:{{ addDisplay }};" style-hover="background:#A8863F"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Create code</button>
+</div>
+</div>
+
+<div style="padding:26px 34px;">
+
+<sc-if value="{{ isStaff }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;align-items:center;gap:12px;background:#F3E4DA;border:1px solid #E4C7B8;border-left:3px solid #B5654D;padding:13px 18px;margin-bottom:22px;">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#B5654D" stroke-width="1.6"><rect x="5" y="11" width="14" height="9" rx="1.5"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>
+<span style="font-size:13px;color:#7A4230;">You're viewing as <strong style="font-weight:500;">Staff</strong>. Discount codes are read-only — creating, editing or deactivating a promotion is reserved for Admins.</span>
+</div>
+</sc-if>
+
+<!-- SUMMARY -->
+<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px;">
+<div style="background:#FBF6EE;border:1px solid #E7DBC6;border-top:3px solid #4A7A46;padding:18px 20px;"><div style="font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:#9C9284;">Active codes</div><div style="font-family:'Cormorant Garamond',serif;font-size:34px;color:#2A2621;margin-top:6px;line-height:1;">{{ activeCount }}</div><div style="font-size:11.5px;color:#4A7A46;margin-top:6px;">running right now</div></div>
+<div style="background:#FBF6EE;border:1px solid #E7DBC6;border-top:3px solid #A8863F;padding:18px 20px;"><div style="font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:#9C9284;">Redemptions · 30d</div><div style="font-family:'Cormorant Garamond',serif;font-size:34px;color:#2A2621;margin-top:6px;line-height:1;">1,860</div><div style="font-size:11.5px;color:#4A7A46;margin-top:6px;">+14% vs prev.</div></div>
+<div style="background:#FBF6EE;border:1px solid #E7DBC6;border-top:3px solid #4A5578;padding:18px 20px;"><div style="font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:#9C9284;">Revenue w/ code</div><div style="font-family:'Cormorant Garamond',serif;font-size:34px;color:#2A2621;margin-top:6px;line-height:1;">£48.2k</div><div style="font-size:11.5px;color:#9C9284;margin-top:6px;">30-day window</div></div>
+<div style="background:#FBF6EE;border:1px solid #E7DBC6;border-top:3px solid #B5654D;padding:18px 20px;"><div style="font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:#9C9284;">Avg. discount</div><div style="font-family:'Cormorant Garamond',serif;font-size:34px;color:#2A2621;margin-top:6px;line-height:1;">£19.40</div><div style="font-size:11.5px;color:#9C9284;margin-top:6px;">per redemption</div></div>
+</div>
+
+<!-- FILTERS -->
+<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;">
+<sc-for list="{{ tabs }}" as="t" hint-placeholder-count="4">
+<button onClick="{{ t.onClick }}" style="font-size:12px;color:{{ t.color }};background:{{ t.bg }};border:1px solid {{ t.border }};padding:8px 15px;border-radius:30px;transition:all .2s;">{{ t.label }} <span style="opacity:0.6;">{{ t.count }}</span></button>
+</sc-for>
+</div>
+
+<!-- TABLE -->
+<div style="background:#FBF6EE;border:1px solid #E7DBC6;">
+<div style="display:grid;grid-template-columns:1.5fr 1.4fr 1.4fr 1.2fr 0.9fr 46px;gap:16px;padding:13px 22px;background:#F4ECDD;font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:#8C7A3F;"><span>Code</span><span>Discount</span><span>Usage</span><span>Active period</span><span>Status</span><span></span></div>
+<sc-for list="{{ list }}" as="p" hint-placeholder-count="6">
+<div style="display:grid;grid-template-columns:1.5fr 1.4fr 1.4fr 1.2fr 0.9fr 46px;gap:16px;padding:16px 22px;border-top:1px solid #EEE4D3;align-items:center;">
+<span>
+<span style="display:inline-flex;align-items:center;gap:8px;"><span style="font-family:ui-monospace,Menlo,monospace;font-size:13px;letter-spacing:0.04em;color:#2A2621;background:#F1E7D2;border:1px dashed #D4C39E;padding:4px 10px;border-radius:4px;">{{ p.code }}</span><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#B4A990" stroke-width="1.6" style="cursor:pointer;"><rect x="9" y="9" width="11" height="11" rx="1.5"/><path d="M5 15V5a1 1 0 0 1 1-1h10"/></svg></span>
+<span style="display:block;font-size:12px;color:#9C9284;margin-top:6px;">{{ p.desc }}</span>
+</span>
+<span><span style="font-size:10px;letter-spacing:0.06em;text-transform:uppercase;color:{{ p.typeColor }};background:{{ p.typeBg }};padding:3px 9px;border-radius:4px;">{{ p.type }}</span><span style="display:block;font-size:15px;color:#2A2621;margin-top:7px;">{{ p.value }}</span></span>
+<span>
+<span style="font-size:12.5px;color:#5C554B;">{{ p.usageLabel }}</span>
+<div style="height:6px;background:#EEE4D3;border-radius:4px;overflow:hidden;margin-top:7px;"><div style="height:100%;width:{{ p.usagePct }};background:{{ p.usageBar }};"></div></div>
+</span>
+<span style="font-size:12.5px;color:#5C554B;line-height:1.5;">{{ p.periodStart }}<span style="color:#B4A990;"> → </span>{{ p.periodEnd }}</span>
+<span><span style="display:inline-flex;align-items:center;gap:6px;font-size:10.5px;letter-spacing:0.06em;text-transform:uppercase;color:{{ p.statusColor }};background:{{ p.statusBg }};padding:4px 11px;border-radius:20px;"><span style="width:6px;height:6px;border-radius:50%;background:{{ p.statusColor }};"></span>{{ p.status }}</span></span>
+<span style="text-align:right;opacity:{{ actOpacity }};pointer-events:{{ actPE }};"><button aria-label="Actions" style="color:#9C9284;" style-hover="color:#2A2621"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="12" cy="19" r="1.6"/></svg></button></span>
+</div>
+</sc-for>
+</div>
+<p style="font-size:12px;color:#9C9284;margin-top:14px;">Codes are case-insensitive at checkout. Redemption limits and schedules apply automatically.</p>
+
+</div>
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { viewer: 'admin', filter: 'all' };
+
+  renderVals() {
+    const isAdmin = this.state.viewer === 'admin';
+    const typeStyle = {
+      'Percentage': { typeColor: '#8C7A3F', typeBg: '#F1E7D2' },
+      'Fixed amount': { typeColor: '#4A5578', typeBg: '#DEE2EE' },
+      'Free shipping': { typeColor: '#4A7A46', typeBg: '#DCEBD4' }
+    };
+    const statusStyle = {
+      Active: { statusColor: '#4A7A46', statusBg: '#DCEBD4' },
+      Scheduled: { statusColor: '#8C7A3F', statusBg: '#EFE3CD' },
+      Expired: { statusColor: '#9C9284', statusBg: '#E7DED0' }
+    };
+
+    const promos = [
+      { code: 'WELCOME10', desc: '10% off a first order', type: 'Percentage', value: '10% off', used: 412, limit: null, periodStart: 'Always on', periodEnd: 'No end', status: 'Active' },
+      { code: 'FREESHIP150', desc: 'Free shipping over £150', type: 'Free shipping', value: 'Free ship', used: 1204, limit: 2000, periodStart: '1 Feb 2026', periodEnd: '31 Mar 2026', status: 'Active' },
+      { code: 'SILK25', desc: '£25 off the silk collection', type: 'Fixed amount', value: '£25 off', used: 89, limit: 500, periodStart: '10 Mar 2026', periodEnd: '10 Apr 2026', status: 'Active' },
+      { code: 'SPRING15', desc: '15% spring refresh event', type: 'Percentage', value: '15% off', used: 0, limit: 1000, periodStart: '1 Apr 2026', periodEnd: '14 Apr 2026', status: 'Scheduled' },
+      { code: 'BLACKFRI20', desc: 'Black Friday sitewide', type: 'Percentage', value: '20% off', used: 3410, limit: 3500, periodStart: '29 Nov 2025', periodEnd: '2 Dec 2025', status: 'Expired' },
+      { code: 'VIP50', desc: '£50 loyalty reward', type: 'Fixed amount', value: '£50 off', used: 156, limit: 200, periodStart: '1 Dec 2025', periodEnd: '31 Dec 2025', status: 'Expired' }
+    ];
+
+    const activeCount = promos.filter(p => p.status === 'Active').length;
+    const scheduledCount = promos.filter(p => p.status === 'Scheduled').length;
+    const expiredCount = promos.filter(p => p.status === 'Expired').length;
+
+    const counts = { all: promos.length, Active: activeCount, Scheduled: scheduledCount, Expired: expiredCount };
+    const tabs = [
+      { key: 'all', label: 'All' }, { key: 'Active', label: 'Active' },
+      { key: 'Scheduled', label: 'Scheduled' }, { key: 'Expired', label: 'Expired' }
+    ].map(t => {
+      const active = this.state.filter === t.key;
+      return { label: t.label, count: counts[t.key], onClick: () => this.setState({ filter: t.key }),
+        bg: active ? '#2A2621' : '#FBF6EE', color: active ? '#F3EBDD' : '#4A443B', border: active ? '#2A2621' : '#E2D6C1' };
+    });
+
+    const filtered = this.state.filter === 'all' ? promos : promos.filter(p => p.status === this.state.filter);
+    const list = filtered.map(p => {
+      const pct = p.limit ? Math.min(100, Math.round((p.used / p.limit) * 100)) : 42;
+      const near = p.limit && pct >= 90;
+      return {
+        ...p, ...typeStyle[p.type], ...statusStyle[p.status],
+        usageLabel: p.limit ? (p.used.toLocaleString() + ' / ' + p.limit.toLocaleString() + ' used') : (p.used.toLocaleString() + ' used · no limit'),
+        usagePct: (p.limit ? pct : 42) + '%',
+        usageBar: p.status === 'Expired' ? '#C2B7A2' : (near ? '#B5654D' : '#A8863F')
+      };
+    });
+
+    return {
+      isAdmin, isStaff: !isAdmin,
+      setAdmin: () => this.setState({ viewer: 'admin' }),
+      setStaff: () => this.setState({ viewer: 'staff' }),
+      adminBtnBg: isAdmin ? '#2A2621' : 'transparent',
+      adminBtnColor: isAdmin ? '#F3EBDD' : '#6A6156',
+      staffBtnBg: !isAdmin ? '#2A2621' : 'transparent',
+      staffBtnColor: !isAdmin ? '#F3EBDD' : '#6A6156',
+      addDisplay: isAdmin ? 'inline-flex' : 'none',
+      actOpacity: isAdmin ? '1' : '0.3',
+      actPE: isAdmin ? 'auto' : 'none',
+      activeCount, scheduledCount, expiredCount,
+      tabs, list
+    };
+  }
+}
+</script>
+</body>
+</html>
