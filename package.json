@@ -13,6 +13,8 @@
     "start": "next start",
     "start:backend": "cd backend && npm start",
     "lint": "next lint",
+    "test": "next lint && next build",
+    "smoke": "node scripts/smoke-test.js",
     "clean": "rm -rf .next node_modules/.cache .swc && echo 'All caches cleared successfully'",
     "clean:full": "npm run pm2:stop && npm run clean && npm run dev:full",
     "db:init": "node database/init-database.js",
