@@ -21,19 +21,32 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Design Tokens (added) */
+/* Design Tokens (added) — remapped to the "Champagne & Charcoal" palette.
+   These legacy --color-* aliases feed the whole stylesheet, so pointing them
+   at the --noirae-* tokens (design-tokens.css) is what makes the warm palette
+   render site-wide. */
 :root {
-  --color-black: #111111;
-  --color-white: #ffffff;
-  --color-gray-dark: #4B5563;
-  --color-gray-medium: #6B7280;
-  --color-gray-light: #9CA3AF;
-  --color-gray-lighter: #E5E7EB;
+  --color-black: var(--noirae-text-primary);        /* charcoal ink #2A2621 */
+  --color-white: var(--noirae-bg-white);            /* warm card / panel #FBF6EE */
+  --color-gray-dark: var(--noirae-text-secondary);  /* body text #6A6156 */
+  --color-gray-medium: var(--noirae-text-muted);    /* muted text #9C9284 */
+  --color-gray-light: var(--noirae-text-light);     /* #B5AC9E */
+  --color-gray-lighter: var(--noirae-border-light); /* borders #EEE4D3 */
 
-  --color-primary-bg: #ffffff;
-  --color-secondary-bg: #F7F7F7;
-  --color-tertiary-bg: #F3F4F6;
-  --color-accent: #2C7A7B; /* Eucalyptus teal accent */
+  --color-primary-bg: var(--noirae-bg-cream);         /* champagne page bg #F3EBDD */
+  --color-secondary-bg: var(--noirae-bg-light-gray);  /* raised surface #F6EFE3 */
+  --color-tertiary-bg: var(--noirae-bg-sand);         /* deep sand / hover #EADFCB */
+  --color-accent: var(--noirae-accent-gold);          /* gold accent #A8863F */
+
+  /* Semantic aliases referenced across the file but previously undefined */
+  --color-text-primary: var(--noirae-text-primary);
+  --color-text-secondary: var(--noirae-text-secondary);
+
+  --noirae-color-background: var(--noirae-bg-cream);
+  --noirae-color-primary: var(--noirae-bg-sand);
+  --noirae-color-secondary: var(--noirae-charcoal);
+  --noirae-color-accent: var(--noirae-accent-gold);
+  --noirae-color-text-secondary: var(--noirae-text-secondary);
 
   --font-family-primary: var(--font-inter, 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif);
   --font-family-serif: var(--font-playfair, 'EB Garamond', 'Times New Roman', serif);
@@ -589,8 +602,8 @@ body {
 .aesop-max-width-md { max-width: 28rem; }
 
 /* Dark theme */
-.aesop-bg-dark { background-color: #1f2937; }
-.aesop-text-white { color: #ffffff; }
+.aesop-bg-dark { background-color: var(--noirae-charcoal); }
+.aesop-text-white { color: var(--noirae-bg-white); }
 
 /* Padding utilities */
 .aesop-py-16 { padding-top: 4rem; padding-bottom: 4rem; }
@@ -598,7 +611,7 @@ body {
 .aesop-pt-8 { padding-top: 2rem; }
 
 /* Hover states */
-.aesop-hover-text-white:hover { color: #ffffff; }
+.aesop-hover-text-white:hover { color: var(--noirae-bg-white); }
 .aesop-hover-text-primary:hover { color: var(--color-accent); }
 .aesop-hover-border-primary:hover { border-color: var(--color-accent); }
 .aesop-hover-bg-primary-light:hover { background-color: var(--color-tertiary-bg); }
@@ -636,8 +649,8 @@ body {
 .aesop-block { display: block; }
 
 /* Warning colors */
-.aesop-bg-warning-light { background-color: #fef3c7; }
-.aesop-text-warning { color: #d97706; }
+.aesop-bg-warning-light { background-color: var(--noirae-warning-bg); }
+.aesop-text-warning { color: var(--noirae-warning); }
 
 /* Font utilities */
 .aesop-font-medium { font-weight: 500; }
@@ -1119,13 +1132,13 @@ p {
   font-size: var(--font-size-xs);
   font-weight: var(--font-weight-bold);
   color: var(--color-white);
-  background: linear-gradient(135deg, #FFD700, #FFA500);
+  background: linear-gradient(135deg, var(--noirae-accent-gold-light), var(--noirae-accent-gold));
   padding: 4px 8px;
   border-radius: var(--radius-sm);
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  box-shadow: 0 2px 4px rgba(255, 215, 0, 0.3);
-  border: 1px solid #FFD700;
+  box-shadow: 0 2px 4px rgba(168, 134, 63, 0.3);
+  border: 1px solid var(--noirae-accent-gold);
   white-space: nowrap;
 }
 
@@ -1133,13 +1146,13 @@ p {
   font-size: var(--font-size-xs);
   font-weight: var(--font-weight-bold);
   color: var(--color-white);
-  background: linear-gradient(135deg, #FFD700, #FFA500);
+  background: linear-gradient(135deg, var(--noirae-accent-gold-light), var(--noirae-accent-gold));
   padding: 2px 6px;
   border-radius: var(--radius-sm);
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  box-shadow: 0 2px 4px rgba(255, 215, 0, 0.3);
-  border: 1px solid #FFD700;
+  box-shadow: 0 2px 4px rgba(168, 134, 63, 0.3);
+  border: 1px solid var(--noirae-accent-gold);
 }
 
 .aesop-dropdown {
@@ -1281,7 +1294,7 @@ p {
   bottom: var(--space-3);
   right: var(--space-3);
   background: rgba(0,0,0,0.55);
-  color: #fff;
+  color: var(--noirae-bg-white);
   padding: 2px 6px;
   border-radius: var(--radius-sm);
   font-size: var(--font-size-xs);
@@ -1303,7 +1316,7 @@ p {
 }
 
 .aesop-indicator.active {
-  background: #ffffff;
+  background: var(--noirae-bg-white);
 }
 
 /* Thin progress bar along bottom edge */
@@ -1887,8 +1900,8 @@ p {
 }
 
 /* ===== Buttons ===== */
-.aesop-button-primary { background: var(--color-accent); color: #ffffff; border: 1px solid var(--color-accent); padding: var(--space-3) var(--space-4); border-radius: var(--radius-sm); cursor: pointer; text-decoration: none; display: inline-block; text-transform: uppercase; letter-spacing: 0.08em; font-size: var(--font-size-sm); transition: background-color var(--transition-fast), box-shadow var(--transition-fast), transform var(--transition-fast); }
-.aesop-button-primary:hover { background: #2FA19D; box-shadow: var(--shadow-sm); transform: translateY(-1px); }
+.aesop-button-primary { background: var(--color-accent); color: var(--noirae-bg-white); border: 1px solid var(--color-accent); padding: var(--space-3) var(--space-4); border-radius: var(--radius-sm); cursor: pointer; text-decoration: none; display: inline-block; text-transform: uppercase; letter-spacing: 0.08em; font-size: var(--font-size-sm); transition: background-color var(--transition-fast), box-shadow var(--transition-fast), transform var(--transition-fast); }
+.aesop-button-primary:hover { background: var(--noirae-charcoal); box-shadow: var(--shadow-sm); transform: translateY(-1px); }
 .aesop-button-primary:disabled { opacity: 0.6; cursor: not-allowed; }
 
 /* ===== Utilities (footer & common) ===== */
@@ -3884,7 +3897,7 @@ p {
 /* ===== SHOP PAGE REDESIGN ===== */
 
 .noirae-shop-layout {
-  background: #F9F9F9;
+  background: var(--noirae-bg-cream);
   min-height: 100vh;
   padding: var(--space-8) 0 var(--space-12);
 }
@@ -4287,10 +4300,10 @@ p {
 .noirae-login-error {
   padding: var(--space-4);
   margin-bottom: var(--space-6);
-  background: #FEE2E2;
-  border: 1px solid #FCA5A5;
+  background: var(--noirae-error-bg);
+  border: 1px solid var(--noirae-error);
   border-radius: var(--radius-base);
-  color: #DC2626;
+  color: var(--noirae-error);
   font-size: var(--font-size-sm);
   text-align: center;
 }
@@ -4298,10 +4311,10 @@ p {
 .noirae-login-success {
   padding: var(--space-4);
   margin-bottom: var(--space-6);
-  background: #D1FAE5;
-  border: 1px solid #6EE7B7;
+  background: var(--noirae-success-bg);
+  border: 1px solid var(--noirae-success);
   border-radius: var(--radius-base);
-  color: #065F46;
+  color: var(--noirae-success);
   font-size: var(--font-size-sm);
   text-align: center;
 }
@@ -4510,11 +4523,11 @@ p {
 .noirae-contact-textarea {
   width: 100%;
   padding: var(--space-3) var(--space-4);
-  border: 1px solid #D1D5DB;
+  border: 1px solid var(--noirae-border-medium);
   border-radius: var(--radius-base);
   font-size: var(--font-size-base);
   color: var(--color-text-primary);
-  background: white;
+  background: var(--noirae-bg-white);
   transition: var(--transition-base);
 }
 
@@ -4527,7 +4540,7 @@ p {
 
 .noirae-contact-input::placeholder,
 .noirae-contact-textarea::placeholder {
-  color: #9CA3AF;
+  color: var(--noirae-text-muted);
 }
 
 .noirae-contact-textarea {
@@ -4539,8 +4552,8 @@ p {
 .noirae-contact-button {
   width: 100%;
   padding: var(--space-4) var(--space-6);
-  background: #9B8B9E;
-  color: white;
+  background: var(--noirae-accent-gold);
+  color: var(--noirae-bg-white);
   border: none;
   border-radius: var(--radius-base);
   font-size: var(--font-size-base);
@@ -4550,7 +4563,7 @@ p {
 }
 
 .noirae-contact-button:hover:not(:disabled) {
-  background: #8A7A8D;
+  background: var(--noirae-charcoal);
   transform: translateY(-1px);
   box-shadow: var(--shadow-md);
 }
@@ -4562,10 +4575,10 @@ p {
 
 .noirae-contact-success {
   padding: var(--space-4);
-  background: #D1FAE5;
-  border: 1px solid #6EE7B7;
+  background: var(--noirae-success-bg);
+  border: 1px solid var(--noirae-success);
   border-radius: var(--radius-base);
-  color: #065F46;
+  color: var(--noirae-success);
   font-size: var(--font-size-sm);
   margin-bottom: var(--space-4);
 }
@@ -4654,7 +4667,7 @@ p {
 .noirae-faq-main {
   min-height: calc(100vh - 200px);
   padding: var(--space-20) 0;
-  background: #F5F5F0;
+  background: var(--noirae-bg-cream);
 }
 
 .noirae-faq-header {
@@ -4680,8 +4693,8 @@ p {
 .noirae-faq-search-input {
   width: 100%;
   padding: var(--space-4) var(--space-16) var(--space-4) var(--space-4);
-  border: 1px solid #D1D5DB;
-  background: white;
+  border: 1px solid var(--noirae-border-medium);
+  background: var(--noirae-bg-white);
   font-size: var(--font-size-sm);
   color: var(--color-text-secondary);
   letter-spacing: 0.05em;
@@ -4694,7 +4707,7 @@ p {
 }
 
 .noirae-faq-search-input::placeholder {
-  color: #D1D5DB;
+  color: var(--noirae-text-muted);
   letter-spacing: 0.05em;
 }
 
@@ -4705,7 +4718,7 @@ p {
   transform: translateY(-50%);
   background: none;
   border: none;
-  color: #C9AE74;
+  color: var(--noirae-accent-gold);
   cursor: pointer;
   padding: var(--space-2);
   display: flex;
@@ -4752,13 +4765,13 @@ p {
 }
 
 .noirae-faq-category.active {
-  background: white;
+  background: var(--noirae-bg-white);
   font-weight: 600;
 }
 
 /* FAQ Content */
 .noirae-faq-content {
-  background: white;
+  background: var(--noirae-bg-white);
   border-radius: var(--radius-lg);
   overflow: hidden;
 }
@@ -4769,7 +4782,7 @@ p {
 }
 
 .noirae-faq-item {
-  border-bottom: 1px solid #F5F5F0;
+  border-bottom: 1px solid var(--noirae-border-light);
 }
 
 .noirae-faq-item:last-child {
@@ -4779,7 +4792,7 @@ p {
 .noirae-faq-question {
   width: 100%;
   padding: var(--space-6) var(--space-8);
-  background: white;
+  background: var(--noirae-bg-white);
   border: none;
   text-align: left;
   display: flex;
@@ -4795,12 +4808,12 @@ p {
 }
 
 .noirae-faq-question:hover {
-  background: #FAFAFA;
+  background: var(--noirae-bg-light-gray);
 }
 
 .noirae-faq-icon {
   flex-shrink: 0;
-  color: #C9AE74;
+  color: var(--noirae-accent-gold);
   transition: transform var(--transition-base);
 }
 
@@ -4887,7 +4900,7 @@ p {
 .noirae-shipping-main {
   min-height: calc(100vh - 200px);
   padding: var(--space-20) 0;
-  background: #F5F5F0;
+  background: var(--noirae-bg-cream);
 }
 
 .noirae-shipping-container {
@@ -4929,7 +4942,7 @@ p {
 
 /* Accordion Styles */
 .noirae-shipping-accordion {
-  background: white;
+  background: var(--noirae-bg-white);
   border-radius: var(--radius-lg);
   overflow: hidden;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
@@ -4937,7 +4950,7 @@ p {
 }
 
 .noirae-shipping-accordion-item {
-  border-bottom: 1px solid #F0F0F0;
+  border-bottom: 1px solid var(--noirae-border-light);
 }
 
 .noirae-shipping-accordion-item:last-child {
@@ -4947,7 +4960,7 @@ p {
 .noirae-shipping-accordion-button {
   width: 100%;
   padding: var(--space-6) var(--space-8);
-  background: white;
+  background: var(--noirae-bg-white);
   border: none;
   text-align: left;
   display: flex;
@@ -4962,7 +4975,7 @@ p {
 }
 
 .noirae-shipping-accordion-button:hover {
-  background: #FAFAFA;
+  background: var(--noirae-bg-light-gray);
 }
 
 .noirae-shipping-accordion-icon {
@@ -5016,8 +5029,8 @@ p {
   align-items: center;
   gap: var(--space-2);
   padding: var(--space-4) var(--space-8);
-  background: #2563EB;
-  color: white;
+  background: var(--noirae-accent-gold);
+  color: var(--noirae-bg-white);
   border: none;
   border-radius: var(--radius-base);
   font-size: var(--font-size-base);
@@ -5028,7 +5041,7 @@ p {
 }
 
 .noirae-shipping-cta-button:hover {
-  background: #1D4ED8;
+  background: var(--noirae-charcoal);
   transform: translateY(-1px);
   box-shadow: var(--shadow-lg);
 }

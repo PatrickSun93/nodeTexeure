@@ -7,6 +7,97 @@ import Header from '../../components/Header';
 import Footer from '../../components/Footer';
 import { apiRequest } from '../../lib/api';
 
+// Champagne & Charcoal theme overrides, scoped to the checkout route so the
+// existing nt-* class markup (styled with legacy grays in checkout-orders.css)
+// renders in the Noiraé palette without touching any component logic.
+const CHECKOUT_STYLES = `
+  .nt-checkout-page { background: var(--noirae-bg-cream); color: var(--noirae-text-primary); font-family: var(--noirae-font-sans); }
+
+  .nt-checkout-page .nt-breadcrumb { color: var(--noirae-text-secondary); }
+  .nt-checkout-page .nt-breadcrumb a { color: var(--noirae-text-muted); }
+  .nt-checkout-page .nt-breadcrumb a:hover { color: var(--noirae-text-primary); }
+  .nt-checkout-page .nt-breadcrumb-sep { color: var(--noirae-border-dark); }
+
+  .nt-checkout-page .nt-page-title { font-family: var(--noirae-font-serif); font-weight: 600; color: var(--noirae-text-primary); }
+
+  /* Buttons */
+  .nt-checkout-page .nt-btn { border-radius: 0; text-transform: uppercase; letter-spacing: 0.1em; font-family: var(--noirae-font-sans); }
+  .nt-checkout-page .nt-btn-primary { background: var(--noirae-charcoal); color: var(--noirae-bg-cream); }
+  .nt-checkout-page .nt-btn-primary:hover { background: var(--noirae-accent-gold); }
+  .nt-checkout-page .nt-btn-primary:disabled { background: var(--noirae-text-muted); color: var(--noirae-bg-cream); }
+  .nt-checkout-page .nt-btn-secondary { background: transparent; color: var(--noirae-text-primary); border: 1px solid var(--noirae-charcoal); }
+  .nt-checkout-page .nt-btn-secondary:hover { background: var(--noirae-charcoal); color: var(--noirae-bg-cream); border-color: var(--noirae-charcoal); }
+  .nt-checkout-page .nt-btn-secondary:disabled { color: var(--noirae-text-muted); border-color: var(--noirae-border-medium); }
+
+  /* Loading / empty / error states */
+  .nt-checkout-page .nt-loading-state { color: var(--noirae-text-secondary); }
+  .nt-checkout-page .nt-empty-state h2 { font-family: var(--noirae-font-serif); color: var(--noirae-text-primary); }
+  .nt-checkout-page .nt-empty-state p { color: var(--noirae-text-secondary); }
+  .nt-checkout-page .nt-error-banner { background: var(--noirae-error-bg); border-color: var(--noirae-error); color: var(--noirae-error); border-radius: 0; }
+
+  /* Progress steps */
+  .nt-checkout-page .nt-checkout-steps { border-bottom-color: var(--noirae-border-medium); }
+  .nt-checkout-page .nt-checkout-step { color: var(--noirae-text-muted); }
+  .nt-checkout-page .nt-checkout-step:not(:last-child)::after { color: var(--noirae-border-dark); }
+  .nt-checkout-page .nt-checkout-step.nt-step-active { color: var(--noirae-text-primary); }
+  .nt-checkout-page .nt-checkout-step.nt-step-done { color: var(--noirae-success); }
+  .nt-checkout-page .nt-step-number { border-color: var(--noirae-border-dark); color: var(--noirae-text-muted); }
+  .nt-checkout-page .nt-step-active .nt-step-number { border-color: var(--noirae-charcoal); background: var(--noirae-charcoal); color: var(--noirae-bg-cream); }
+  .nt-checkout-page .nt-step-done .nt-step-number { border-color: var(--noirae-success); background: var(--noirae-success); color: var(--noirae-bg-white); }
+
+  /* Forms */
+  .nt-checkout-page .nt-form-section h2 { font-family: var(--noirae-font-serif); color: var(--noirae-text-primary); font-size: 1.35rem; font-weight: 600; letter-spacing: 0; }
+  .nt-checkout-page .nt-form-section h3 { font-family: var(--noirae-font-serif); color: var(--noirae-text-primary); font-size: 1.15rem; font-weight: 600; }
+  .nt-checkout-page .nt-form-hint { color: var(--noirae-text-secondary); }
+  .nt-checkout-page .nt-form-hint a { color: var(--noirae-accent-gold); text-decoration: none; border-bottom: 1px solid var(--noirae-accent-gold-light); }
+  .nt-checkout-page .nt-form-group label { color: var(--noirae-text-muted); }
+  .nt-checkout-page .nt-form-group input,
+  .nt-checkout-page .nt-form-group select { background: var(--noirae-bg-white); border: 1px solid var(--noirae-border-dark); border-radius: 0; color: var(--noirae-text-primary); }
+  .nt-checkout-page .nt-form-group input:focus,
+  .nt-checkout-page .nt-form-group select:focus { border-color: var(--noirae-accent-gold); }
+  .nt-checkout-page input::placeholder { color: var(--noirae-text-muted); }
+  .nt-checkout-page .nt-input-error { border-color: var(--noirae-error) !important; }
+  .nt-checkout-page .nt-field-error { color: var(--noirae-error); }
+  .nt-checkout-page .nt-checkbox-label { color: var(--noirae-text-secondary); }
+  .nt-checkout-page .nt-checkbox-label input[type="checkbox"] { accent-color: var(--noirae-accent-gold); }
+
+  /* Shipping options */
+  .nt-checkout-page .nt-shipping-option { background: var(--noirae-bg-white); border: 1px solid var(--noirae-border-dark); border-radius: 0; }
+  .nt-checkout-page .nt-shipping-option:hover { border-color: var(--noirae-text-muted); }
+  .nt-checkout-page .nt-shipping-option.nt-option-selected { border-color: var(--noirae-charcoal); background: var(--noirae-bg-light-gray); }
+  .nt-checkout-page .nt-shipping-option input[type="radio"] { accent-color: var(--noirae-accent-gold); }
+  .nt-checkout-page .nt-option-name { color: var(--noirae-text-primary); }
+  .nt-checkout-page .nt-option-est { color: var(--noirae-text-secondary); }
+  .nt-checkout-page .nt-option-price { color: var(--noirae-text-primary); }
+  .nt-checkout-page .nt-free-shipping-banner { background: var(--noirae-success-bg); border-color: var(--noirae-success); color: var(--noirae-success); border-radius: 0; }
+
+  /* Review & coupon */
+  .nt-checkout-page .nt-review-summary { background: var(--noirae-bg-white); border: 1px solid var(--noirae-border-medium); border-radius: 0; }
+  .nt-checkout-page .nt-review-row { border-bottom-color: var(--noirae-border-light); color: var(--noirae-text-primary); }
+  .nt-checkout-page .nt-review-label { color: var(--noirae-text-muted); }
+  .nt-checkout-page .nt-change-btn { color: var(--noirae-text-secondary); }
+  .nt-checkout-page .nt-change-btn:hover { color: var(--noirae-accent-gold); }
+  .nt-checkout-page .nt-coupon-row input { background: var(--noirae-bg-cream); border: 1px solid var(--noirae-border-dark); border-radius: 0; color: var(--noirae-text-primary); }
+  .nt-checkout-page .nt-coupon-row input:focus { border-color: var(--noirae-accent-gold); outline: none; }
+  .nt-checkout-page .nt-payment-note { background: var(--noirae-bg-light-gray); border: 1px solid var(--noirae-border-medium); border-radius: 0; color: var(--noirae-text-secondary); }
+
+  /* Order summary sidebar */
+  .nt-checkout-page .nt-checkout-summary { background: var(--noirae-bg-white); border: 1px solid var(--noirae-border-medium); border-radius: 0; }
+  .nt-checkout-page .nt-checkout-summary h2 { font-family: var(--noirae-font-serif); font-size: 1.25rem; font-weight: 600; text-transform: none; letter-spacing: 0; color: var(--noirae-text-primary); }
+  .nt-checkout-page .nt-summary-items { border-bottom-color: var(--noirae-border-medium); }
+  .nt-checkout-page .nt-summary-item-image { border: 1px solid var(--noirae-border-dark); border-radius: 0; background: var(--noirae-bg-sand); }
+  .nt-checkout-page .nt-summary-item-qty { background: var(--noirae-text-secondary); color: var(--noirae-bg-cream); }
+  .nt-checkout-page .nt-summary-item-name { color: var(--noirae-text-primary); }
+  .nt-checkout-page .nt-summary-item-variant { color: var(--noirae-text-muted); }
+  .nt-checkout-page .nt-summary-item-price { color: var(--noirae-text-primary); }
+  .nt-checkout-page .nt-summary-row { color: var(--noirae-text-secondary); }
+  .nt-checkout-page .nt-summary-row span:last-child { color: var(--noirae-text-primary); }
+  .nt-checkout-page .nt-summary-row.nt-discount span:last-child { color: var(--noirae-success); }
+  .nt-checkout-page .nt-summary-row.nt-summary-total { border-top-color: var(--noirae-border-medium); align-items: baseline; color: var(--noirae-text-primary); }
+  .nt-checkout-page .nt-summary-row.nt-summary-total span:last-child { font-family: var(--noirae-font-serif); font-size: 1.75rem; font-weight: 600; color: var(--noirae-text-primary); }
+  .nt-checkout-page .nt-free-shipping-hint { background: var(--noirae-warning-bg); border-color: var(--noirae-warning); color: var(--noirae-warning); border-radius: 0; }
+`;
+
 export default function CheckoutPage() {
   return (
     <Suspense fallback={<div style={{ minHeight: '60vh' }} />}>
@@ -293,6 +384,7 @@ function CheckoutContent() {
   if (pageLoading) {
     return (
       <div className="aesop-page"><Header />
+        <style>{CHECKOUT_STYLES}</style>
         <main className="nt-checkout-page"><div className="aesop-container">
           <div className="nt-loading-state"><div className="aesop-loading-spinner"></div><p>Loading checkout...</p></div>
         </div></main><Footer />
@@ -303,6 +395,7 @@ function CheckoutContent() {
   if (cartItems.length === 0) {
     return (
       <div className="aesop-page"><Header />
+        <style>{CHECKOUT_STYLES}</style>
         <main className="nt-checkout-page"><div className="aesop-container">
           <div className="nt-empty-state">
             <div className="nt-empty-icon">🛒</div><h2>Your cart is empty</h2>
@@ -319,6 +412,7 @@ function CheckoutContent() {
   return (
     <div className="aesop-page">
       <Header />
+      <style>{CHECKOUT_STYLES}</style>
       <main className="nt-checkout-page">
         <div className="aesop-container">
           {/* Breadcrumb */}
@@ -340,7 +434,7 @@ function CheckoutContent() {
             ))}
           </div>
 
-          {paymentCancelled && <div className="nt-error-banner" style={{ backgroundColor: '#fef3cd', borderColor: '#ffc107', color: '#856404' }}>Payment was cancelled. You can try again when ready.</div>}
+          {paymentCancelled && <div className="nt-error-banner" style={{ backgroundColor: 'var(--noirae-warning-bg)', borderColor: 'var(--noirae-warning)', color: 'var(--noirae-warning)' }}>Payment was cancelled. You can try again when ready.</div>}
           {errors.submit && <div className="nt-error-banner">{errors.submit}</div>}
 
           <div className="nt-checkout-grid">

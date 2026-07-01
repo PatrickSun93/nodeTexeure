@@ -6,46 +6,53 @@
 :root {
   /* ===== COLORS ===== */
   
-  /* Primary Colors */
-  --noirae-primary-beige: #F5E6D3;
-  --noirae-primary-champagne: #E8D5C4;
-  --noirae-primary-gold: #C9A572;
-  --noirae-charcoal: #4A4A4A;
-  --noirae-dark-charcoal: #2C2C2C;
-  
+  /* Primary Colors — "Champagne & Charcoal" */
+  --noirae-primary-beige: #EADFCB;      /* deep sand */
+  --noirae-primary-champagne: #F3EBDD;  /* champagne base */
+  --noirae-primary-gold: #A8863F;       /* gold accent */
+  --noirae-charcoal: #2A2621;           /* primary ink */
+  --noirae-dark-charcoal: #211E1A;      /* deepest ink / admin sidebar */
+
   /* Background Colors */
-  --noirae-bg-cream: #FAFAFA;
-  --noirae-bg-white: #FFFFFF;
-  --noirae-bg-light-gray: #F5F5F5;
-  --noirae-bg-overlay: rgba(0, 0, 0, 0.4);
-  
+  --noirae-bg-cream: #F3EBDD;           /* champagne base (page background) */
+  --noirae-bg-white: #FBF6EE;           /* card / panel */
+  --noirae-bg-light-gray: #F6EFE3;      /* raised surface */
+  --noirae-bg-sand: #EADFCB;            /* deep sand */
+  --noirae-bg-overlay: rgba(42, 38, 33, 0.45);
+
   /* Text Colors */
-  --noirae-text-primary: #2C2C2C;
-  --noirae-text-secondary: #4A4A4A;
-  --noirae-text-muted: #6B6B6B;
-  --noirae-text-light: #9B9B9B;
-  
+  --noirae-text-primary: #2A2621;       /* primary ink */
+  --noirae-text-secondary: #6A6156;     /* body text */
+  --noirae-text-muted: #9C9284;         /* muted text */
+  --noirae-text-light: #B5AC9E;
+
   /* Accent Colors */
-  --noirae-accent-gold: #D4AF37;
-  --noirae-accent-bronze: #CD7F32;
-  --noirae-accent-rose-gold: #B76E79;
-  
-  /* State Colors */
-  --noirae-success: #4CAF50;
-  --noirae-error: #F44336;
-  --noirae-warning: #FF9800;
-  --noirae-info: #2196F3;
-  
+  --noirae-accent-gold: #A8863F;
+  --noirae-accent-gold-light: #DCC08A;
+  --noirae-accent-bronze: #DCC08A;
+  --noirae-accent-rose-gold: #C9A572;
+
+  /* State Colors (champagne semantic — text + soft background) */
+  --noirae-success: #4A7A46;
+  --noirae-success-bg: #DCEBD4;
+  --noirae-error: #B5654D;
+  --noirae-error-bg: #F3DED4;
+  --noirae-warning: #8C7A3F;
+  --noirae-warning-bg: #EFE3CD;
+  --noirae-info: #4A5578;
+  --noirae-info-bg: #DEE2EE;
+
   /* Border Colors */
-  --noirae-border-light: #E0E0E0;
-  --noirae-border-medium: #CCCCCC;
-  --noirae-border-dark: #999999;
+  --noirae-border-light: #EEE4D3;
+  --noirae-border-medium: #E7DBC6;
+  --noirae-border-dark: #E2D6C1;
   
   /* ===== TYPOGRAPHY ===== */
   
   /* Font Families */
-  --noirae-font-serif: 'Cormorant Garamond', 'EB Garamond', 'Playfair Display', Georgia, serif;
-  --noirae-font-sans: var(--font-inter, 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif);
+  --noirae-font-serif: var(--font-serif, 'Cormorant Garamond'), 'EB Garamond', Georgia, serif;
+  --noirae-font-sans: var(--font-jost, 'Jost'), -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --noirae-font-editorial: var(--font-editorial, 'EB Garamond'), Georgia, serif;
   
   /* Font Sizes */
   --noirae-text-xs: 0.75rem;      /* 12px */
@@ -178,15 +185,40 @@
   --noirae-card-shadow-hover: var(--noirae-shadow-md);
 }
 
-/* ===== DARK MODE (Optional) ===== */
-@media (prefers-color-scheme: dark) {
-  :root {
-    /* Uncomment and adjust if dark mode is needed
-    --noirae-bg-cream: #1a1a1a;
-    --noirae-bg-white: #2d2d2d;
-    --noirae-text-primary: #ffffff;
-    --noirae-text-secondary: #e0e0e0;
-    */
-  }
+/* ===== DARK MODE — "Charcoal & Candlelight" =====
+ * Set data-theme="dark" on <html> (the toggle + no-flash script handle this).
+ * Only the SEMANTIC tokens flip; spacing/type/shadows are shared. Because the
+ * whole app styles through these tokens, one block re-skins every page. */
+[data-theme='dark'] {
+  color-scheme: dark;
+
+  /* Surfaces — warm espresso, not flat black */
+  --noirae-bg-cream: #1A1613;        /* page background */
+  --noirae-bg-white: #241F19;        /* card / panel */
+  --noirae-bg-light-gray: #1F1A15;   /* raised surface */
+  --noirae-bg-sand: #2C261E;         /* deep surface */
+  --noirae-bg-overlay: rgba(0, 0, 0, 0.6);
+
+  /* Ink -> light. --noirae-charcoal is used as heading/ink color, so it flips. */
+  --noirae-charcoal: #EDE4D5;
+  --noirae-text-primary: #F3EBDD;
+  --noirae-text-secondary: #C7BDAD;
+  --noirae-text-muted: #948B7D;
+  --noirae-text-light: #7C7365;
+
+  /* Accents brighten slightly so gold reads on dark */
+  --noirae-accent-gold: #DCC08A;
+  --noirae-accent-gold-light: #E8D3A6;
+  --noirae-accent-bronze: #E8D3A6;
+
+  /* Borders */
+  --noirae-border-light: #332D25;
+  --noirae-border-medium: #3D372E;
+  --noirae-border-dark: #4A4238;
+
+  /* Softer, deeper shadows on dark */
+  --noirae-card-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.5);
+  --noirae-card-shadow-hover: 0 10px 20px -4px rgba(0, 0, 0, 0.6);
+  --noirae-input-focus-border-color: var(--noirae-accent-gold);
 }
 

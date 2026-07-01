@@ -42,7 +42,7 @@
 
 .noirae-cta-button {
   background: var(--color-black);
-  color: white;
+  color: var(--noirae-bg-white);
   padding: 15px 40px;
   border: none;
   font-size: 14px;
@@ -74,7 +74,7 @@
 
 /* Product Cards Enhancement */
 .aesop-product-card {
-  background: white;
+  background: var(--noirae-bg-white);
   border: 1px solid var(--color-gray-lighter);
   transition: all 0.3s ease;
 }
@@ -127,7 +127,7 @@
 
 /* Features Section */
 .aesop-features {
-  background: white;
+  background: var(--noirae-bg-white);
   border-top: 1px solid var(--color-gray-lighter);
   border-bottom: 1px solid var(--color-gray-lighter);
 }

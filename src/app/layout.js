@@ -1,21 +1,30 @@
 import Providers from '../components/Providers';
-import { Inter, Cormorant_Garamond } from "next/font/google";
+import { Jost, Cormorant_Garamond, EB_Garamond } from "next/font/google";
 import "./globals.css";
 import "../styles/design-tokens.css";
 import "../styles/aesop-design-system.css";
 import "../styles/searchbar.css";
 import "../styles/header-search.css";
 
-const inter = Inter({
-  variable: "--font-inter",
+// "Champagne & Charcoal" typography
+const jost = Jost({
+  variable: "--font-jost",
   subsets: ["latin"],
+  weight: ['300', '400', '500', '600'],
   display: 'swap',
 });
 
 const cormorantGaramond = Cormorant_Garamond({
   variable: "--font-serif",
   subsets: ["latin"],
-  weight: ['300', '400', '500', '600', '700'],
+  weight: ['400', '500', '600'],
+  display: 'swap',
+});
+
+const ebGaramond = EB_Garamond({
+  variable: "--font-editorial",
+  subsets: ["latin"],
+  style: ['normal', 'italic'],
   display: 'swap',
 });
 
@@ -25,11 +34,17 @@ export const metadata = {
   description: "Noiraé shop",
 };
 
+// Applies the saved theme before first paint so there's no light->dark flash.
+const themeInitScript = `try{var t=localStorage.getItem('noirae-theme');if(t==='dark'||t==='light'){document.documentElement.setAttribute('data-theme',t);}}catch(e){}`;
+
 export default function RootLayout({ children }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
+      </head>
       <body
-        className={`${inter.variable} ${cormorantGaramond.variable} antialiased`}
+        className={`${jost.variable} ${cormorantGaramond.variable} ${ebGaramond.variable} antialiased`}
       >
         <Providers>
           {children}

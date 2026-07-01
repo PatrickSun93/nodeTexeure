@@ -176,3 +176,10 @@ cookies.txt
 *.cookies
 *.pem
 *.key
+
+# design-sync transient (staged scripts, build output, machine cache)
+.ds-sync/
+ds-bundle/
+.design-sync/.cache/
+.design-sync/learnings/
+.design-sync/node_modules

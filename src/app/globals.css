@@ -4,8 +4,8 @@
 @import "../styles/checkout-orders.css";
 
 :root {
-  --background: #F7F7F7;
-  --foreground: #000000;
+  --background: var(--noirae-bg-cream);
+  --foreground: var(--noirae-text-primary);
 }
 
 @theme inline {
@@ -18,8 +18,8 @@
 /* Aesop-inspired design maintains light theme consistency */
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #F7F7F7;
-    --foreground: #000000;
+    --background: var(--noirae-bg-cream);
+    --foreground: var(--noirae-text-primary);
   }
 }
 
@@ -37,10 +37,10 @@ body {
 input,
 textarea,
 select {
-  color: var(--color-black, #000000);
-  caret-color: var(--color-black, #000000);
-  background-color: var(--color-white, #ffffff);
-  border: 1px solid var(--color-gray-lighter, #CCCCCC);
+  color: var(--color-black, #2A2621);
+  caret-color: var(--color-black, #2A2621);
+  background-color: var(--color-white, #FBF6EE);
+  border: 1px solid var(--color-gray-lighter, #EEE4D3);
   border-radius: var(--radius-base, 0.25rem);
   padding: var(--space-3, 0.75rem);
   font-family: inherit;
@@ -51,12 +51,12 @@ input:focus,
 textarea:focus,
 select:focus {
   outline: none;
-  border-color: var(--color-black, #000000);
+  border-color: var(--color-black, #2A2621);
 }
 
 input::placeholder,
 textarea::placeholder {
-  color: var(--color-gray-medium, #666666);
+  color: var(--color-gray-medium, #9C9284);
   opacity: 1;
 }
 

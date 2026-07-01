@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import { useCartCount } from '../lib';
 import CartDrawer from './CartDrawer';
 import SearchBar from './SearchBar';
+import ThemeToggle from './ThemeToggle';
 
   export default function Header({ siteName = 'Noiraé' }) {
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
@@ -132,6 +133,8 @@ import SearchBar from './SearchBar';
                 </button>
               )}
             </div>
+
+            <ThemeToggle />
 
             <button
               type="button"

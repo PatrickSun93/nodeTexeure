@@ -88,145 +88,357 @@ export default function Register() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
-      <div className="max-w-md w-full space-y-8 bg-white p-8 rounded-xl shadow-lg">
-        <div className="text-center">
-          <h2 className="text-3xl font-bold text-gray-900">Create Account</h2>
-          <p className="mt-2 text-sm text-gray-600">Join us today and start shopping</p>
+    <div className="noirae-auth">
+      {/* ===== FORM SIDE ===== */}
+      <div className="na-form-side">
+        <div className="na-topbar">
+          <Link href="/" className="na-back">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <polyline points="14 6 8 12 14 18" />
+            </svg>
+            Back to store
+          </Link>
         </div>
 
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label htmlFor="firstName" className="block text-sm font-medium text-gray-700">
-                  First Name
-                </label>
+        <div className="na-form-inner">
+          <div className="na-eyebrow">Join Noiraé</div>
+          <h1 className="na-title">Create account</h1>
+          <p className="na-subtitle">
+            Save your details, track orders and enjoy early access to new collections.
+          </p>
+
+          <form className="na-form" onSubmit={handleSubmit}>
+            <div className="na-grid-2">
+              <div className="na-field">
+                <label htmlFor="firstName" className="na-label">First name</label>
                 <input
                   id="firstName"
                   name="firstName"
                   type="text"
                   required
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                  className="na-input"
                   value={formData.firstName}
                   onChange={handleChange}
-                  placeholder="Enter your first name"
+                  placeholder="First name"
                 />
               </div>
-              <div>
-                <label htmlFor="lastName" className="block text-sm font-medium text-gray-700">
-                  Last Name
-                </label>
+              <div className="na-field">
+                <label htmlFor="lastName" className="na-label">Last name</label>
                 <input
                   id="lastName"
                   name="lastName"
                   type="text"
                   required
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                  className="na-input"
                   value={formData.lastName}
                   onChange={handleChange}
-                  placeholder="Enter your last name"
+                  placeholder="Last name"
                 />
               </div>
             </div>
 
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                Email Address
-              </label>
+            <div className="na-field">
+              <label htmlFor="email" className="na-label">Email</label>
               <input
                 id="email"
                 name="email"
                 type="email"
                 required
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                className="na-input"
                 value={formData.email}
                 onChange={handleChange}
-                placeholder="Enter your email address"
+                placeholder="you@example.com"
               />
             </div>
 
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                Password
-              </label>
+            <div className="na-field">
+              <label htmlFor="password" className="na-label">Password</label>
               <input
                 id="password"
                 name="password"
                 type="password"
                 required
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                className="na-input"
                 value={formData.password}
                 onChange={handleChange}
-                placeholder="Create a password (min. 6 characters)"
+                placeholder="At least 6 characters"
               />
             </div>
 
-            <div>
-              <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700">
-                Confirm Password
-              </label>
+            <div className="na-field">
+              <label htmlFor="confirmPassword" className="na-label">Confirm password</label>
               <input
                 id="confirmPassword"
                 name="confirmPassword"
                 type="password"
                 required
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                className="na-input"
                 value={formData.confirmPassword}
                 onChange={handleChange}
-                placeholder="Confirm your password"
+                placeholder="Re-enter your password"
               />
             </div>
 
-            
-          </div>
-
-          <div className="mt-4">
-            <div className="flex items-center">
+            <label htmlFor="terms" className="na-terms">
               <input
                 id="terms"
                 type="checkbox"
                 checked={termsAccepted}
                 onChange={handleTermsChange}
-                className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                className="na-checkbox"
               />
-              <label htmlFor="terms" className="ml-2 block text-sm text-gray-900">
+              <span>
                 I agree to the{' '}
-                <Link href="/terms" className="font-medium text-indigo-600 hover:text-indigo-500">
-                  Terms of Service
-                </Link>{' '}
+                <Link href="/terms" className="na-inline-link">Terms of Service</Link>{' '}
                 and{' '}
-                <Link href="/privacy" className="font-medium text-indigo-600 hover:text-indigo-500">
-                  Privacy Policy
-                </Link>
-              </label>
-            </div>
+                <Link href="/privacy" className="na-inline-link">Privacy Policy</Link>
+              </span>
+            </label>
+
+            {error && (
+              <div className="na-error" role="alert">{error}</div>
+            )}
+
+            <button type="submit" disabled={loading} className="na-submit">
+              {loading ? 'Creating account…' : 'Create account'}
+            </button>
+          </form>
+
+          <div className="na-footer">
+            Already have an account?{' '}
+            <Link href="/login" className="na-inline-link">Sign in</Link>
           </div>
-
-          {error && (
-            <div className="bg-red-50 border border-red-200 rounded-md p-3">
-              <p className="text-red-600 text-sm">{error}</p>
-            </div>
-          )}
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {loading ? 'Creating Account...' : 'Create Account'}
-          </button>
-        </form>
-
-        
-
-        <p className="mt-4 text-center text-sm text-gray-600">
-          Already have an account?{' '}
-          <Link href="/login" className="font-medium text-indigo-600 hover:text-indigo-500">
-            Sign in
-          </Link>
-        </p>
+        </div>
       </div>
+
+      {/* ===== IMAGE SIDE ===== */}
+      <div className="na-image-side" aria-hidden="true">
+        <img
+          src="https://images.unsplash.com/photo-1631049307264-da0ec9d70304?auto=format&fit=crop&q=80&w=1300"
+          alt=""
+          className="na-image"
+        />
+        <div className="na-scrim" />
+        <Link href="/" className="na-wordmark">Noiraé</Link>
+        <div className="na-caption">
+          <div className="na-caption-quote">
+            Become a member for 30-night trials, early access and a note from our founders.
+          </div>
+          <div className="na-caption-kicker">The Noiraé Atelier</div>
+        </div>
+      </div>
+
+      <style>{`
+        .noirae-auth {
+          min-height: 100vh;
+          display: grid;
+          grid-template-columns: 0.95fr 1.05fr;
+          background: var(--noirae-bg-cream);
+          color: var(--noirae-text-primary);
+          font-family: var(--noirae-font-sans);
+          font-weight: 300;
+        }
+        .na-form-side {
+          display: flex;
+          flex-direction: column;
+          padding: 34px 44px;
+        }
+        .na-topbar { display: flex; justify-content: flex-start; }
+        .na-back {
+          display: inline-flex;
+          align-items: center;
+          gap: 7px;
+          font-size: 12px;
+          letter-spacing: 0.06em;
+          color: var(--noirae-text-secondary);
+          text-decoration: none;
+          transition: color 0.2s ease;
+        }
+        .na-back:hover { color: var(--noirae-text-primary); }
+        .na-form-inner {
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+          width: 100%;
+          max-width: 420px;
+          margin: 0 auto;
+          padding: 36px 0;
+        }
+        .na-eyebrow {
+          font-size: 11px;
+          letter-spacing: 0.26em;
+          text-transform: uppercase;
+          color: var(--noirae-accent-gold);
+        }
+        .na-title {
+          font-family: var(--noirae-font-serif);
+          font-weight: 500;
+          font-size: 42px;
+          line-height: 1.08;
+          letter-spacing: -0.01em;
+          color: var(--noirae-text-primary);
+          margin: 12px 0 0;
+        }
+        .na-subtitle {
+          font-size: 14.5px;
+          line-height: 1.6;
+          color: var(--noirae-text-secondary);
+          margin: 12px 0 0;
+        }
+        .na-form {
+          margin-top: 28px;
+          display: flex;
+          flex-direction: column;
+          gap: 16px;
+        }
+        .na-grid-2 {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 12px;
+        }
+        .na-field { display: flex; flex-direction: column; }
+        .na-label {
+          display: block;
+          font-size: 11px;
+          letter-spacing: 0.1em;
+          text-transform: uppercase;
+          color: var(--noirae-text-secondary);
+          margin-bottom: 8px;
+        }
+        .na-input {
+          width: 100%;
+          background: var(--noirae-bg-white);
+          border: 1px solid var(--noirae-border-dark);
+          border-radius: 0;
+          padding: 14px 15px;
+          font-family: var(--noirae-font-sans);
+          font-size: 14px;
+          color: var(--noirae-text-primary);
+          outline: none;
+          transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+        .na-input::placeholder { color: var(--noirae-text-light); }
+        .na-input:focus {
+          border-color: var(--noirae-accent-gold);
+          box-shadow: 0 0 0 3px rgba(168, 134, 63, 0.12);
+        }
+        .na-terms {
+          display: flex;
+          align-items: flex-start;
+          gap: 9px;
+          font-size: 13px;
+          line-height: 1.5;
+          color: var(--noirae-text-secondary);
+          cursor: pointer;
+        }
+        .na-checkbox {
+          width: 16px;
+          height: 16px;
+          margin-top: 2px;
+          flex: 0 0 auto;
+          accent-color: var(--noirae-accent-gold);
+        }
+        .na-inline-link {
+          color: var(--noirae-text-primary);
+          text-decoration: none;
+          border-bottom: 1px solid var(--noirae-accent-gold-light);
+          padding-bottom: 1px;
+          transition: color 0.2s ease, border-color 0.2s ease;
+        }
+        .na-inline-link:hover {
+          color: var(--noirae-accent-gold);
+          border-color: var(--noirae-accent-gold);
+        }
+        .na-error {
+          background: var(--noirae-error-bg);
+          border: 1px solid var(--noirae-error);
+          color: var(--noirae-error);
+          font-size: 13px;
+          line-height: 1.5;
+          padding: 12px 14px;
+        }
+        .na-submit {
+          width: 100%;
+          height: 52px;
+          margin-top: 4px;
+          background: var(--noirae-charcoal);
+          color: var(--noirae-bg-cream);
+          border: none;
+          border-radius: 0;
+          font-family: var(--noirae-font-sans);
+          font-size: 12px;
+          font-weight: 500;
+          letter-spacing: 0.18em;
+          text-transform: uppercase;
+          cursor: pointer;
+          transition: background 0.25s ease;
+        }
+        .na-submit:hover:not(:disabled) { background: var(--noirae-accent-gold); }
+        .na-submit:disabled { opacity: 0.55; cursor: not-allowed; }
+        .na-footer {
+          text-align: center;
+          margin-top: 26px;
+          font-size: 13.5px;
+          color: var(--noirae-text-secondary);
+        }
+        .na-image-side {
+          position: relative;
+          overflow: hidden;
+          min-height: 100vh;
+          background: var(--noirae-bg-sand);
+        }
+        .na-image {
+          position: absolute;
+          inset: 0;
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+        }
+        .na-scrim {
+          position: absolute;
+          inset: 0;
+          background: linear-gradient(180deg, rgba(42, 38, 33, 0.50) 0%, rgba(42, 38, 33, 0.12) 34%, rgba(42, 38, 33, 0.62) 100%);
+        }
+        .na-wordmark {
+          position: absolute;
+          top: 36px;
+          right: 44px;
+          font-family: var(--noirae-font-serif);
+          font-weight: 600;
+          font-size: 30px;
+          letter-spacing: 0.14em;
+          color: var(--noirae-bg-cream);
+          text-decoration: none;
+        }
+        .na-caption {
+          position: absolute;
+          left: 44px;
+          right: 44px;
+          bottom: 48px;
+          color: var(--noirae-bg-cream);
+        }
+        .na-caption-quote {
+          font-family: var(--noirae-font-serif);
+          font-weight: 500;
+          font-size: 32px;
+          line-height: 1.25;
+          max-width: 460px;
+        }
+        .na-caption-kicker {
+          margin-top: 18px;
+          font-size: 11px;
+          letter-spacing: 0.22em;
+          text-transform: uppercase;
+          color: var(--noirae-accent-bronze);
+        }
+        @media (max-width: 900px) {
+          .noirae-auth { grid-template-columns: 1fr; }
+          .na-image-side { display: none; }
+          .na-form-side { padding: 30px 22px; }
+          .na-title { font-size: 34px; }
+        }
+      `}</style>
     </div>
   );
 }

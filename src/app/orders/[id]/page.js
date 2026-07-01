@@ -7,6 +7,52 @@ import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import OrderTracking from '../../../components/OrderTracking';
 
+// Champagne & Charcoal restyle — scoped remap of the page's raw Tailwind color
+// utilities onto the --noirae-* design tokens (unlayered, so it wins over
+// Tailwind's layered utilities without touching the shared design system).
+const DETAIL_CSS = `
+  .noirae-order-detail{background:var(--noirae-bg-cream);color:var(--noirae-text-primary);font-family:var(--noirae-font-sans);}
+  .noirae-order-detail h1,.noirae-order-detail h2{font-family:var(--noirae-font-serif);font-weight:500;letter-spacing:-0.01em;}
+  .noirae-order-detail .bg-white{background:var(--noirae-bg-white);border:1px solid var(--noirae-border-medium);}
+  .noirae-order-detail .bg-gray-50{background:var(--noirae-bg-cream);}
+  .noirae-order-detail .bg-gray-100{background:var(--noirae-bg-sand);}
+  .noirae-order-detail .bg-gray-200{background:var(--noirae-bg-sand);}
+  .noirae-order-detail .shadow{box-shadow:0 6px 22px rgba(42,38,33,0.05);}
+  .noirae-order-detail .rounded-lg{border-radius:2px;}
+  .noirae-order-detail .rounded{border-radius:2px;}
+  .noirae-order-detail .text-gray-900{color:var(--noirae-text-primary);}
+  .noirae-order-detail .text-gray-600{color:var(--noirae-text-secondary);}
+  .noirae-order-detail .text-gray-500{color:var(--noirae-text-secondary);}
+  .noirae-order-detail .text-gray-400{color:var(--noirae-text-muted);}
+  .noirae-order-detail .text-gray-300{color:var(--noirae-border-dark);}
+  .noirae-order-detail .hover\\:text-gray-500:hover{color:var(--noirae-text-primary);}
+  .noirae-order-detail .text-green-600{color:var(--noirae-success);}
+  .noirae-order-detail .border-gray-200{border-color:var(--noirae-border-light);}
+  .noirae-order-detail .bg-yellow-100{background:var(--noirae-warning-bg);}
+  .noirae-order-detail .text-yellow-800{color:var(--noirae-warning);}
+  .noirae-order-detail .bg-blue-100{background:var(--noirae-info-bg);}
+  .noirae-order-detail .text-blue-800{color:var(--noirae-info);}
+  .noirae-order-detail .bg-purple-100{background:var(--noirae-info-bg);}
+  .noirae-order-detail .text-purple-800{color:var(--noirae-info);}
+  .noirae-order-detail .bg-indigo-100{background:var(--noirae-warning-bg);}
+  .noirae-order-detail .text-indigo-800{color:var(--noirae-warning);}
+  .noirae-order-detail .bg-green-100{background:var(--noirae-success-bg);}
+  .noirae-order-detail .text-green-800{color:var(--noirae-success);}
+  .noirae-order-detail .bg-red-100{background:var(--noirae-error-bg);}
+  .noirae-order-detail .text-red-800{color:var(--noirae-error);}
+  .noirae-order-detail .text-gray-800{color:var(--noirae-text-secondary);}
+  .noirae-order-detail .ring-white{--tw-ring-color:var(--noirae-bg-white);}
+  .noirae-order-detail .bg-red-50{background:var(--noirae-error-bg);}
+  .noirae-order-detail .border-red-200{border-color:var(--noirae-error);}
+  .noirae-order-detail .text-red-600{color:var(--noirae-error);}
+  .noirae-order-detail .od-btn-primary{display:inline-flex;align-items:center;justify-content:center;background:var(--noirae-text-primary);color:var(--noirae-bg-cream);border-radius:2px;font-size:11px;font-weight:500;letter-spacing:0.12em;text-transform:uppercase;padding:12px 22px;transition:background .2s ease,color .2s ease;}
+  .noirae-order-detail .od-btn-primary:hover{background:var(--noirae-accent-gold);color:var(--noirae-bg-white);}
+  .noirae-order-detail .od-btn-secondary{display:inline-flex;align-items:center;justify-content:center;background:transparent;color:var(--noirae-text-primary);border:1px solid var(--noirae-border-dark);border-radius:2px;font-size:11px;font-weight:500;letter-spacing:0.12em;text-transform:uppercase;padding:12px 22px;transition:border-color .2s ease,color .2s ease;}
+  .noirae-order-detail .od-btn-secondary:hover{border-color:var(--noirae-text-primary);}
+  .noirae-order-detail .od-link{color:var(--noirae-accent-gold);transition:color .2s ease;}
+  .noirae-order-detail .od-link:hover{color:var(--noirae-text-primary);}
+`;
+
 export default function OrderDetailsPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
@@ -77,7 +123,8 @@ export default function OrderDetailsPage() {
 
   if (status === 'loading' || loading) {
     return (
-      <div className="min-h-screen bg-gray-50 py-8">
+      <div className="noirae-order-detail min-h-screen py-8">
+        <style>{DETAIL_CSS}</style>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="animate-pulse">
             <div className="h-8 bg-gray-200 rounded w-1/4 mb-8"></div>
@@ -94,7 +141,8 @@ export default function OrderDetailsPage() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50 py-8">
+      <div className="noirae-order-detail min-h-screen py-8">
+        <style>{DETAIL_CSS}</style>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="bg-red-50 border border-red-200 rounded-lg p-6">
             <h3 className="text-lg font-semibold text-red-800 mb-2">Error</h3>
@@ -102,13 +150,13 @@ export default function OrderDetailsPage() {
             <div className="mt-4 space-x-4">
               <button
                 onClick={fetchOrderDetails}
-                className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
+                className="od-btn-primary"
               >
                 Try Again
               </button>
               <Link
                 href="/orders"
-                className="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700"
+                className="od-btn-secondary"
               >
                 Back to Orders
               </Link>
@@ -121,13 +169,14 @@ export default function OrderDetailsPage() {
 
   if (!order) {
     return (
-      <div className="min-h-screen bg-gray-50 py-8">
+      <div className="noirae-order-detail min-h-screen py-8">
+        <style>{DETAIL_CSS}</style>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
             <h3 className="text-lg font-semibold text-gray-900 mb-2">Order not found</h3>
             <Link
               href="/orders"
-              className="text-indigo-600 hover:text-indigo-500"
+              className="od-link"
             >
               Back to Orders
             </Link>
@@ -138,7 +187,8 @@ export default function OrderDetailsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className="noirae-order-detail min-h-screen py-8">
+      <style>{DETAIL_CSS}</style>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="mb-8">
