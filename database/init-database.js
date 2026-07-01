@@ -21,7 +21,7 @@ const dbConfig = {
   host: process.env.DB_HOST || 'localhost',
   port: parseInt(process.env.DB_PORT) || 3306,
   user: process.env.DB_USER || 'root',
-  password: process.env.DB_PASSWORD || 'Aaaaaaaaa!11111',
+  password: process.env.DB_PASSWORD || 'change_me_local_mysql_password',
   database: process.env.DB_NAME || 'bed_texture_ecommerce',
   multipleStatements: true
 };
