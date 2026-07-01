@@ -19,7 +19,7 @@ router.post('/request', protect, async (req, res) => {
     }
 
     // Verify order belongs to user and is delivered
-    const orderResult = await db.executeQuery(
+    const orderResult = await DatabaseUtil.executeQuery(
       'SELECT id, status, user_id FROM orders WHERE id = ? AND user_id = ?',
       [orderId, req.user.id]
     );
@@ -31,7 +31,7 @@ router.post('/request', protect, async (req, res) => {
     }
 
     // Check for existing return on this order
-    const existingReturn = await db.executeQuery(
+    const existingReturn = await DatabaseUtil.executeQuery(
       "SELECT id FROM returns WHERE order_id = ? AND status NOT IN ('rejected','closed')",
       [orderId]
     );
@@ -46,7 +46,7 @@ router.post('/request', protect, async (req, res) => {
 
     const returnDetails = JSON.stringify({ description: description || '', customer_notes: '', admin_notes: '', evidence_urls: [] });
 
-    await db.executeQuery(
+    await DatabaseUtil.executeQuery(
       'INSERT INTO returns (id, order_id, user_id, return_number, reason, return_details) VALUES (?, ?, ?, ?, ?, ?)',
       [returnId, orderId, req.user.id, returnNumber, reason, returnDetails]
     );
@@ -55,7 +55,7 @@ router.post('/request', protect, async (req, res) => {
     for (const item of items) {
       const itemIdResult = await DatabaseUtil.executeQuery('SELECT get_next_id("RMAITEM") as id');
       const itemId = itemIdResult.data[0].id;
-      await db.executeQuery(
+      await DatabaseUtil.executeQuery(
         'INSERT INTO return_items (id, return_id, order_item_id, quantity, reason) VALUES (?, ?, ?, ?, ?)',
         [itemId, returnId, item.orderItemId, item.quantity || 1, item.reason || '']
       );
@@ -74,7 +74,7 @@ router.post('/request', protect, async (req, res) => {
  */
 router.get('/my-returns', protect, async (req, res) => {
   try {
-    const returns = await db.executeQuery(
+    const returns = await DatabaseUtil.executeQuery(
       `SELECT r.id, r.return_number, r.order_id, r.status, r.reason, r.refund_amount,
               r.return_tracking_number, r.created_at, r.updated_at,
               o.order_number
@@ -84,7 +84,9 @@ router.get('/my-returns', protect, async (req, res) => {
        ORDER BY r.created_at DESC`,
       [req.user.id]
     );
-    res.json(ResponseFormatter.success('Returns fetched', { returns: returns || [] }));
+    // executeQuery may return a rows array or a {success, data} wrapper — normalize.
+    const rows = Array.isArray(returns) ? returns : (returns && returns.data) || [];
+    res.json(ResponseFormatter.success('Returns fetched', { returns: rows }));
   } catch (error) {
     console.error('Get returns error:', error);
     res.status(500).json(ResponseFormatter.failure('Failed to fetch returns'));
@@ -98,7 +100,7 @@ router.get('/my-returns', protect, async (req, res) => {
 router.get('/:id', protect, async (req, res) => {
   try {
     const { id } = req.params;
-    const returnResult = await db.executeQuery(
+    const returnResult = await DatabaseUtil.executeQuery(
       `SELECT r.*, o.order_number
        FROM returns r
        JOIN orders o ON r.order_id = o.id
@@ -116,7 +118,7 @@ router.get('/:id', protect, async (req, res) => {
     }
 
     // Fetch return items
-    const itemsResult = await db.executeQuery(
+    const itemsResult = await DatabaseUtil.executeQuery(
       `SELECT ri.*, oi.product_name, oi.unit_price
        FROM return_items ri
        JOIN order_items oi ON ri.order_item_id = oi.id
@@ -172,7 +174,7 @@ router.put('/:id/status', protect, admin, async (req, res) => {
     }
 
     params.push(id);
-    await db.executeQuery(`UPDATE returns SET ${updates.join(', ')} WHERE id = ?`, params);
+    await DatabaseUtil.executeQuery(`UPDATE returns SET ${updates.join(', ')} WHERE id = ?`, params);
     res.json(ResponseFormatter.success('Return status updated'));
   } catch (error) {
     console.error('Update return status error:', error);
@@ -197,7 +199,7 @@ router.get('/admin/all', protect, admin, async (req, res) => {
     }
 
     params.push(parseInt(limit), offset);
-    const returns = await db.executeQuery(
+    const returns = await DatabaseUtil.executeQuery(
       `SELECT r.*, o.order_number, u.email AS user_email, u.first_name, u.last_name
        FROM returns r
        JOIN orders o ON r.order_id = o.id
@@ -208,7 +210,7 @@ router.get('/admin/all', protect, admin, async (req, res) => {
       params
     );
 
-    const countResult = await db.executeQuery(
+    const countResult = await DatabaseUtil.executeQuery(
       `SELECT COUNT(*) AS total FROM returns r WHERE ${where}`,
       status ? [status] : []
     );
