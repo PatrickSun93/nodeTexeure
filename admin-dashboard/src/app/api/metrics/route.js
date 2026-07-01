@@ -117,7 +117,8 @@ function getErrorMetrics() {
 }
 
 // Prometheus-style metrics endpoint
-export async function GET_PROMETHEUS() {
+// Internal helper (not a route export — Next only allows GET/POST/etc. as route handlers)
+async function GET_PROMETHEUS() {
   try {
     const memUsage = process.memoryUsage();
     const cpuUsage = process.cpuUsage();

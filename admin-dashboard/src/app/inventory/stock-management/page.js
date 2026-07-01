@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { apiRequest, getErrorMessage } from '@/lib/api';
@@ -455,6 +455,14 @@ function BulkAdjustmentModal({ isOpen, onClose, selectedItems, onSubmit }) {
 }
 
 export default function StockManagement() {
+  return (
+    <Suspense fallback={<div style={{ padding: '2rem' }}>Loading…</div>}>
+      <StockManagementContent />
+    </Suspense>
+  );
+}
+
+function StockManagementContent() {
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { apiRequest, getErrorMessage } from '@/lib/api';
@@ -381,6 +381,14 @@ function PurchaseOrderFormModal({ isOpen, onClose, onSubmit }) {
 }
 
 export default function PurchaseOrdersPage() {
+  return (
+    <Suspense fallback={<div style={{ padding: '2rem' }}>Loading…</div>}>
+      <PurchaseOrdersContent />
+    </Suspense>
+  );
+}
+
+function PurchaseOrdersContent() {
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();

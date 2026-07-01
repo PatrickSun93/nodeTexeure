@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 
 // Dynamically import the rich text editor to avoid SSR issues
-const RichTextEditor = dynamic(() => import('../../../components/RichTextEditor'), {
+const RichTextEditor = dynamic(() => import('@/components/RichTextEditor'), {
   ssr: false,
   loading: () => <div className="h-64 bg-gray-100 animate-pulse rounded"></div>
 });
