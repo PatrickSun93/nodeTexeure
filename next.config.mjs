@@ -8,9 +8,9 @@
 const nextConfig = {
   async rewrites() {
     const isDev = process.env.NODE_ENV === 'development';
-    const backendUrl = isDev 
-      ? (process.env.BACKEND_URL || 'http://localhost:5000')
-      : (process.env.PRODUCTION_BACKEND_URL || 'http://localhost:5000');
+    const backendUrl = isDev
+      ? (process.env.BACKEND_URL || 'http://localhost:6666')
+      : (process.env.PRODUCTION_BACKEND_URL || 'http://localhost:6666');
     
     // Only add rewrites if we have a valid backend URL
     if (!backendUrl || backendUrl === 'undefined') {
@@ -39,7 +39,7 @@ const nextConfig = {
       {
         protocol: 'http',
         hostname: 'localhost',
-        port: '5000',
+        port: '6666',
         pathname: '/uploads/**',
       },
     ],

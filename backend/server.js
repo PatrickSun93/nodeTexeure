@@ -17,10 +17,10 @@ app.use(helmet({
   crossOriginEmbedderPolicy: false, // Allow cross-origin for image serving
 }));
 
-// Global rate limiter for all API routes
+// Global rate limiter for all API routes (configurable via RATE_LIMIT_* env vars)
 const globalLimiter = rateLimit({
-  windowMs: 60 * 1000, // 1 minute
-  max: 100, // 100 requests per minute per IP
+  windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 60 * 1000,
+  max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 100,
   standardHeaders: true,
   legacyHeaders: false,
   message: { status: 'FAIL', message: 'Too many requests, please try again later' },
