@@ -57,7 +57,7 @@ export default function SearchBar({
 
         setIsLoading(true);
         try {
-            const response = await fetch(`http://localhost:6666/api/search/autocomplete?q=${encodeURIComponent(searchQuery)}`);
+            const response = await fetch(`/api/search/autocomplete?q=${encodeURIComponent(searchQuery)}`);
             const data = await response.json();
             
             if (data.status === 'SUCCESS') {
@@ -78,7 +78,7 @@ export default function SearchBar({
     // Fetch popular/trending suggestions
     const fetchPopularSuggestions = async () => {
         try {
-            const response = await fetch('http://localhost:6666/api/search/suggestions');
+            const response = await fetch('/api/search/suggestions');
             const data = await response.json();
             
             if (data.status === 'SUCCESS') {

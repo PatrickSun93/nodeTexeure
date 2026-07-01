@@ -45,7 +45,7 @@ router.get('/product/:productId', async (req, res) => {
                 END as is_verified_purchase
             FROM product_reviews pr
             LEFT JOIN users u ON pr.user_id = u.id
-            WHERE pr.product_id = ? AND pr.status = 'approved'
+            WHERE pr.product_id = ? AND pr.is_approved = 1
             ORDER BY ${orderBy}
             LIMIT ? OFFSET ?
         `;
@@ -63,7 +63,7 @@ router.get('/product/:productId', async (req, res) => {
                 SUM(CASE WHEN rating = 2 THEN 1 ELSE 0 END) as two_star,
                 SUM(CASE WHEN rating = 1 THEN 1 ELSE 0 END) as one_star
             FROM product_reviews
-            WHERE product_id = ? AND status = 'approved'
+            WHERE product_id = ? AND is_approved = 1
         `;
 
         const countResult = await DatabaseUtil.executeQuery(countQuery, [productId]);

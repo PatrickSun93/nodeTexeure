@@ -39,7 +39,7 @@ export default function ReviewForm({ productId, onSuccess, onCancel }) {
         setIsSubmitting(true);
 
         try {
-            const response = await fetch('http://localhost:6666/api/reviews/create', {
+            const response = await fetch('/api/reviews/create', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

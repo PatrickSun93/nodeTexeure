@@ -35,7 +35,7 @@ export default function BulkUploadView() {
     const handleDownloadTemplate = async () => {
         try {
             const token = localStorage.getItem('token');
-            const response = await fetch('http://localhost:6666/api/admin/bulk/products/template', {
+            const response = await fetch('/api/admin/bulk/products/template', {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
 
@@ -68,7 +68,7 @@ export default function BulkUploadView() {
             const formData = new FormData();
             formData.append('file', file);
 
-            const response = await fetch('http://localhost:6666/api/admin/bulk/products/validate', {
+            const response = await fetch('/api/admin/bulk/products/validate', {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${token}` },
                 body: formData
@@ -104,7 +104,7 @@ export default function BulkUploadView() {
             const formData = new FormData();
             formData.append('file', file);
 
-            const response = await fetch('http://localhost:6666/api/admin/bulk/products/upload', {
+            const response = await fetch('/api/admin/bulk/products/upload', {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${token}`,

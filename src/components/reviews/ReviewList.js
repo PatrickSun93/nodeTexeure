@@ -30,7 +30,7 @@ export default function ReviewList({ productId, showSummary = true }) {
 
         try {
             const response = await fetch(
-                `http://localhost:6666/api/reviews/product/${productId}?page=${pagination.page}&limit=${pagination.limit}&sort=${sortBy}`
+                `/api/reviews/product/${productId}?page=${pagination.page}&limit=${pagination.limit}&sort=${sortBy}`
             );
             const data = await response.json();
 
@@ -54,7 +54,7 @@ export default function ReviewList({ productId, showSummary = true }) {
 
     const handleHelpful = async (reviewId) => {
         try {
-            const response = await fetch(`http://localhost:6666/api/reviews/${reviewId}/helpful`, {
+            const response = await fetch(`/api/reviews/${reviewId}/helpful`, {
                 method: 'POST'
             });
 

@@ -46,12 +46,12 @@ export default function AnalyticsDashboard() {
 
             // Fetch all analytics in parallel
             const [summary, trend, products, customers, inventory, categories] = await Promise.all([
-                fetch(`http://localhost:6666/api/admin/analytics/sales-summary?${params}`, { headers }).then(r => r.json()),
-                fetch(`http://localhost:6666/api/admin/analytics/revenue-trend?${params}&group_by=day`, { headers }).then(r => r.json()),
-                fetch(`http://localhost:6666/api/admin/analytics/top-products?${params}&limit=10`, { headers }).then(r => r.json()),
-                fetch(`http://localhost:6666/api/admin/analytics/customer-stats?${params}`, { headers }).then(r => r.json()),
-                fetch(`http://localhost:6666/api/admin/analytics/inventory-status`, { headers }).then(r => r.json()),
-                fetch(`http://localhost:6666/api/admin/analytics/revenue-by-category?${params}`, { headers }).then(r => r.json())
+                fetch(`/api/admin/analytics/sales-summary?${params}`, { headers }).then(r => r.json()),
+                fetch(`/api/admin/analytics/revenue-trend?${params}&group_by=day`, { headers }).then(r => r.json()),
+                fetch(`/api/admin/analytics/top-products?${params}&limit=10`, { headers }).then(r => r.json()),
+                fetch(`/api/admin/analytics/customer-stats?${params}`, { headers }).then(r => r.json()),
+                fetch(`/api/admin/analytics/inventory-status`, { headers }).then(r => r.json()),
+                fetch(`/api/admin/analytics/revenue-by-category?${params}`, { headers }).then(r => r.json())
             ]);
 
             if (summary.status === 'SUCCESS') setSalesSummary(summary.keyValueTable);
@@ -76,7 +76,7 @@ export default function AnalyticsDashboard() {
                 ? `?period=custom&start_date=${dateRange.start}&end_date=${dateRange.end}`
                 : `?period=${period}`;
 
-            const response = await fetch(`http://localhost:6666/api/admin/bulk/${type}/export${params}`, {
+            const response = await fetch(`/api/admin/bulk/${type}/export${params}`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
 
