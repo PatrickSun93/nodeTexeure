@@ -1,0 +1,14 @@
+node_modules
+.next
+.git
+.gitignore
+ds-bundle
+.ds-sync
+.design-sync/.cache
+design
+docs/screenshots
+logs
+*.log
+.DS_Store
+Dockerfile*
+docker-compose*

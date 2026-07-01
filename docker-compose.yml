@@ -1,0 +1,88 @@
+# NodeTexeure — Docker dev stack (replaces PM2).
+#   docker compose up          -> mysql + backend + frontend + admin, hot-reload
+#   docker compose up mysql backend frontend   -> storefront only
+# First run: MySQL initializes the schema from docker/mysql/init.sql and the
+# backend auto-seeds demo data. Open http://localhost:3000.
+services:
+  mysql:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-noirae_dev}
+      MYSQL_DATABASE: bed_texture_ecommerce
+    ports:
+      - "3307:3306" # host 3307 to avoid clashing with a local MySQL on 3306
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./docker/mysql/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-p${DB_PASSWORD:-noirae_dev}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev
+    environment:
+      DB_HOST: mysql
+      DB_PORT: "3306"
+      DB_NAME: bed_texture_ecommerce
+      DB_USER: root
+      DB_PASSWORD: ${DB_PASSWORD:-noirae_dev}
+      PORT: "6666"
+      NODE_ENV: development
+      JWT_SECRET: ${JWT_SECRET:-dev_only_jwt_secret_change_me_min_32_characters}
+      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:-dev_only_nextauth_secret}
+    ports:
+      - "6666:6666"
+    volumes:
+      - ./backend:/app
+      - backend_node_modules:/app/node_modules
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    environment:
+      BACKEND_URL: http://backend:6666
+      NEXTAUTH_URL: http://localhost:3000
+      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:-dev_only_nextauth_secret}
+      NODE_ENV: development
+      WATCHPACK_POLLING: "true" # reliable hot-reload over the macOS bind mount
+    ports:
+      - "3000:3000"
+    volumes:
+      - .:/app
+      - frontend_node_modules:/app/node_modules
+      - frontend_next:/app/.next
+    depends_on:
+      - backend
+
+  admin-dashboard:
+    build:
+      context: ./admin-dashboard
+      dockerfile: Dockerfile.dev
+    environment:
+      BACKEND_URL: http://backend:6666
+      NODE_ENV: development
+      WATCHPACK_POLLING: "true"
+    ports:
+      - "3005:3005"
+    volumes:
+      - ./admin-dashboard:/app
+      - admin_node_modules:/app/node_modules
+      - admin_next:/app/.next
+    depends_on:
+      - backend
+
+volumes:
+  mysql_data:
+  backend_node_modules:
+  frontend_node_modules:
+  admin_node_modules:
+  frontend_next:
+  admin_next:

@@ -1,0 +1,78 @@
+# NodeTexeure — Docker PRODUCTION stack.
+#   Provide secrets via a .env file next to this one (gitignored) or the shell:
+#     DB_PASSWORD=... JWT_SECRET=... NEXTAUTH_SECRET=... NEXTAUTH_URL=https://...
+#   Build + run:  docker compose -f docker-compose.prod.yml up -d --build
+# First deploy initializes the schema from docker/mysql/init.sql. It does NOT
+# auto-seed. For an nginx-fronted variant see the deployment/ folder.
+services:
+  mysql:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:?set DB_PASSWORD}
+      MYSQL_DATABASE: bed_texture_ecommerce
+    volumes:
+      - mysql_prod_data:/var/lib/mysql
+      - ./docker/mysql/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-p${DB_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.prod
+    environment:
+      DB_HOST: mysql
+      DB_PORT: "3306"
+      DB_NAME: bed_texture_ecommerce
+      DB_USER: root
+      DB_PASSWORD: ${DB_PASSWORD:?set DB_PASSWORD}
+      PORT: "6666"
+      NODE_ENV: production
+      JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET}
+      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:?set NEXTAUTH_SECRET}
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-}
+    expose:
+      - "6666"
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.prod
+      args:
+        PRODUCTION_BACKEND_URL: http://backend:6666
+    environment:
+      PRODUCTION_BACKEND_URL: http://backend:6666
+      NEXTAUTH_URL: ${NEXTAUTH_URL:-http://localhost:3000}
+      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:?set NEXTAUTH_SECRET}
+      NODE_ENV: production
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
+    depends_on:
+      - backend
+
+  admin-dashboard:
+    build:
+      context: ./admin-dashboard
+      dockerfile: Dockerfile.prod
+    environment:
+      BACKEND_URL: http://backend:6666
+      NODE_ENV: production
+    ports:
+      - "3005:3005"
+    restart: unless-stopped
+    depends_on:
+      - backend
+
+volumes:
+  mysql_prod_data:
