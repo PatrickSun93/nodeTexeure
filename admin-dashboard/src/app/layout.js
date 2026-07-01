@@ -1,19 +1,41 @@
-import { Inter } from "next/font/google";
-import "./globals.css";
-
-const inter = Inter({ subsets: ["latin"] });
+import './globals.css'
+import { AuthProvider } from '@/contexts/AuthContext'
+import { AdminProvider } from '@/contexts/AdminContext'
+import NotificationSystem from '@/components/NotificationSystem'
+import PerformanceMonitor from '@/components/PerformanceMonitor'
+import ServiceWorkerRegistration from '@/components/ServiceWorkerRegistration'
+import GlobalErrorHandler from '@/components/GlobalErrorHandler'
+import SessionManager from '@/components/SessionManager'
+import IntegrationTest from '@/components/IntegrationTest'
+import { GlobalLoadingOverlay } from '@/components/LoadingStateManager'
 
 export const metadata = {
-  title: "Admin Dashboard",
-  description: "Admin panel for e-commerce management",
-};
+  title: 'Admin Dashboard - Bed Texture',
+  description: 'Administrative interface for Bed Texture e-commerce platform',
+}
 
-export default function RootLayout({
-  children,
-}) {
+export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      <body className={inter.className}>{children}</body>
+      <body className="bg-gray-50 text-gray-900 antialiased">
+        <AuthProvider>
+          <AdminProvider>
+            {children}
+            <NotificationSystem />
+            <GlobalLoadingOverlay />
+            <GlobalErrorHandler />
+            <SessionManager />
+            <IntegrationTest />
+            <PerformanceMonitor 
+              enabled={process.env.NODE_ENV === 'development'} 
+              showWidget={false}
+            />
+            <ServiceWorkerRegistration 
+              enabled={process.env.NODE_ENV === 'production'}
+            />
+          </AdminProvider>
+        </AuthProvider>
+      </body>
     </html>
-  );
+  )
 }

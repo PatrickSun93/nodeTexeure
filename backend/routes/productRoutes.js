@@ -1,17 +1,24 @@
 const express = require('express');
 const DatabaseUtil = require('../utils/database');
 const ResponseFormatter = require('../utils/responseFormatter');
+const PerformanceMiddleware = require('../middleware/performanceMiddleware');
+const cacheManager = require('../utils/cacheManager');
 const router = express.Router();
 
-// GET /api/products - Product listing with pagination and filters
-router.get('/', async (req, res) => {
+// GET /api/products - Product listing with pagination and filters (with caching)
+router.get('/', PerformanceMiddleware.responseCache({
+  ttl: 300, // 5 minutes cache
+  cacheType: 'products',
+  keyGenerator: (req) => `products_list_${JSON.stringify(req.query)}`,
+  skipCache: (req) => req.query.nocache === 'true'
+}), async (req, res) => {
   try {
     const { page = 1, limit = 10, category, min_price, max_price, search } = req.query;
     const offset = (page - 1) * limit;
     let query = 'SELECT * FROM products';
     let countQuery = 'SELECT COUNT(*) as total FROM products';
-    let whereClauses = [];
-    let filterParams = [];
+    let whereClauses = ['status = ?']; // Only show approved products to public
+    let filterParams = ['approved'];
 
     // Category filter
     if (category) {
@@ -112,13 +119,13 @@ router.get('/by-ids', async (req, res) => {
       return res.status(400).json(ResponseFormatter.failure('Too many ids provided (max 100)'));
     }
 
-    // Build placeholders for IN clause and ORDER BY FIELD to preserve order
+    // Build placeholders for IN clause and ORDER BY FIELD to preserve order, only approved products
     const placeholders = ids.map(() => '?').join(', ');
     const orderPlaceholders = ids.map(() => '?').join(', ');
 
-    const query = `SELECT * FROM products WHERE id IN (${placeholders}) ORDER BY FIELD(id, ${orderPlaceholders})`;
+    const query = `SELECT * FROM products WHERE id IN (${placeholders}) AND status = ? ORDER BY FIELD(id, ${orderPlaceholders})`;
 
-    const result = await DatabaseUtil.executeQuery(query, [...ids, ...ids]);
+    const result = await DatabaseUtil.executeQuery(query, [...ids, 'approved', ...ids]);
     if (!result.success) throw new Error(result.error || 'Failed to fetch products by ids');
 
     const rows = result.data || [];
@@ -137,15 +144,20 @@ router.get('/by-ids', async (req, res) => {
   }
 });
 
-// GET /api/products/:id - Product details
-router.get('/:id', async (req, res) => {
+// GET /api/products/:id - Product details (with caching)
+router.get('/:id', PerformanceMiddleware.responseCache({
+  ttl: 600, // 10 minutes cache for individual products
+  cacheType: 'products',
+  keyGenerator: (req) => `product_${req.params.id}`,
+  skipCache: (req) => req.query.nocache === 'true'
+}), async (req, res) => {
   try {
     const { id: param } = req.params;
 
-    // Allow fetching by numeric/primary id OR by slug
+    // Allow fetching by numeric/primary id OR by slug, but only approved products for public
     const productResult = await DatabaseUtil.executeQuery(
-      'SELECT * FROM products WHERE id = ? OR slug = ? LIMIT 1',
-      [param, param]
+      'SELECT * FROM products WHERE (id = ? OR slug = ?) AND status = ? LIMIT 1',
+      [param, param, 'approved']
     );
     if (!productResult.success) throw new Error(productResult.error || 'Failed to fetch product');
     if (!productResult.data || productResult.data.length === 0) {

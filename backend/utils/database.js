@@ -7,7 +7,7 @@ const mysql = require('mysql2/promise');
 const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
 
-// Database configuration from .env
+// Database configuration from .env with performance optimizations
 const dbConfig = {
   host: process.env.DB_HOST || 'localhost',
   port: parseInt(process.env.DB_PORT) || 3306,
@@ -16,12 +16,27 @@ const dbConfig = {
   database: process.env.DB_NAME || 'bed_texture_ecommerce',
   // MySQL2 connection options
   connectTimeout: 60000,
+  acquireTimeout: 60000,
+  timeout: 60000,
   charset: 'utf8mb4',
   timezone: '+00:00',
-  // Pool-specific options
+  // Performance optimizations
+  ssl: false,
+  multipleStatements: false,
+  // Pool-specific options for better performance
   waitForConnections: true,
-  connectionLimit: 10,
-  queueLimit: 0
+  connectionLimit: process.env.NODE_ENV === 'production' ? 20 : 10,
+  queueLimit: 0,
+  acquireTimeout: 60000,
+  reconnect: true,
+  // Connection pool optimization
+  idleTimeout: 300000, // 5 minutes
+  maxIdle: 10,
+  // Query optimization
+  supportBigNumbers: true,
+  bigNumberStrings: true,
+  dateStrings: false,
+  debug: process.env.NODE_ENV === 'development' ? ['ComQueryPacket'] : false
 };
 
 // Global connection pool
@@ -197,6 +212,126 @@ class DatabaseUtil {
   }
 
   /**
+   * Execute a prepared statement with caching
+   * @param {string} sql - SQL query to execute
+   * @param {Array} bindParams - Parameters to bind to the query
+   * @returns {Promise<Object>} Query execution result
+   */
+  static async executePrepared(sql, bindParams = []) {
+    let connection;
+    try {
+      connection = await this.getConnection();
+      
+      // Use prepared statements for better performance and security
+      const [rows, fields] = await connection.execute(sql, bindParams);
+      
+      return {
+        success: true,
+        data: rows,
+        affectedRows: rows.affectedRows || 0,
+        insertId: rows.insertId || null
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error.message,
+        code: error.code,
+        sqlState: error.sqlState
+      };
+    } finally {
+      if (connection) {
+        connection.release();
+      }
+    }
+  }
+
+  /**
+   * Execute a query with connection reuse for batch operations
+   * @param {Array} queries - Array of query objects
+   * @param {boolean} useTransaction - Whether to wrap in transaction
+   * @returns {Promise<Object>} Batch execution result
+   */
+  static async executeBatch(queries, useTransaction = true) {
+    let connection;
+    try {
+      connection = await this.getConnection();
+      
+      if (useTransaction) {
+        await connection.beginTransaction();
+      }
+      
+      const results = [];
+      
+      for (const query of queries) {
+        const [rows, fields] = await connection.execute(query.sql, query.bindParams || []);
+        results.push({
+          data: rows,
+          affectedRows: rows.affectedRows || 0,
+          insertId: rows.insertId || null
+        });
+      }
+      
+      if (useTransaction) {
+        await connection.commit();
+      }
+      
+      return {
+        success: true,
+        results: results
+      };
+    } catch (error) {
+      if (useTransaction && connection) {
+        try {
+          await connection.rollback();
+        } catch (rollbackError) {
+          console.error('Rollback error:', rollbackError);
+        }
+      }
+      
+      return {
+        success: false,
+        error: error.message,
+        code: error.code,
+        sqlState: error.sqlState
+      };
+    } finally {
+      if (connection) {
+        connection.release();
+      }
+    }
+  }
+
+  /**
+   * Get connection pool statistics
+   * @returns {Object} Pool statistics
+   */
+  static getPoolStats() {
+    try {
+      const pool = getConnectionPool();
+      if (pool && pool.pool) {
+        return {
+          totalConnections: pool.pool._allConnections ? pool.pool._allConnections.length : 0,
+          freeConnections: pool.pool._freeConnections ? pool.pool._freeConnections.length : 0,
+          acquiringConnections: pool.pool._acquiringConnections ? pool.pool._acquiringConnections.length : 0,
+          connectionLimit: dbConfig.connectionLimit,
+          queueLimit: dbConfig.queueLimit
+        };
+      }
+    } catch (error) {
+      console.warn('Unable to get pool stats:', error.message);
+    }
+    
+    return {
+      totalConnections: 0,
+      freeConnections: 0,
+      acquiringConnections: 0,
+      connectionLimit: dbConfig.connectionLimit,
+      queueLimit: dbConfig.queueLimit,
+      error: 'Pool not available'
+    };
+  }
+
+  /**
    * Get database configuration (without sensitive data)
    * @returns {Object} Database configuration
    */
@@ -206,7 +341,8 @@ class DatabaseUtil {
       port: dbConfig.port,
       database: dbConfig.database,
       user: dbConfig.user,
-      connectionLimit: dbConfig.connectionLimit
+      connectionLimit: dbConfig.connectionLimit,
+      poolStats: this.getPoolStats()
     };
   }
 }

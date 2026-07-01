@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # NodeTexture Development Startup Script
-# This script starts frontend, backend, and admin dashboard servers
+# This script starts frontend and backend servers
 
 echo "🚀 Starting NodeTexture Development Environment..."
 echo ""
@@ -19,7 +19,7 @@ function kill_port() {
 # Kill existing processes on ports
 kill_port 3000
 kill_port 6666
-kill_port 3005
+kill_port 3001
 
 sleep 2  # Give time for processes to terminate
 
@@ -51,19 +51,22 @@ FRONTEND_PID=$!
 # Wait a moment for frontend to start
 sleep 3
 
-# Start admin dashboard
-echo "🛡️ Starting admin dashboard on port 3005..."
+# Start admin-dashboard server
+echo "🛡️ Starting admin-dashboard server on port 3001..."
 cd admin-dashboard
 npm run dev &
 ADMIN_PID=$!
 cd ..
 
+# Wait a moment for admin-dashboard to start
+sleep 3
+
 echo ""
 echo "✅ Development environment started!"
 echo "📱 Frontend: http://localhost:3000"
 echo "🔧 Backend:  http://localhost:6666"
+echo "🛠️ Admin Dashboard: http://localhost:3001/admin"
 echo "📡 API:      http://localhost:6666/api"
-echo "🛡️ Admin:   http://localhost:3005"
 echo ""
 echo "Press Ctrl+C to stop all servers"
 echo ""
