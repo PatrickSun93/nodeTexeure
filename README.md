@@ -1,364 +1,199 @@
-# NodeTexeure - Project Overview
+# NodeTexeure
 
-**Version:** 1.0  
-**Last Updated:** April 5, 2026
+A full-stack luxury bedding e-commerce platform (silk & cashmere) — customer
+storefront, REST API, and admin dashboard. Pure JavaScript, no TypeScript, no
+Docker.
 
----
+![Home](docs/screenshots/01-home.png)
 
-## 📋 Project Summary
-
-NodeTexeure is a full-stack luxury bed texture e-commerce platform specializing in premium silk and cashmere bedding products. The platform features a customer-facing storefront, comprehensive admin dashboard, and robust backend API.
-
-### Tech Stack
-
-**Frontend (Port 3000)**
-- Next.js 15.3.5
-- React 19
-- TailwindCSS 4
-- Context API for state management
-
-**Backend (Port 6666)**
-- Express.js
-- Node.js v22.15.1
-- JWT authentication
-- Rate limiting (1000/15min, 10000/hour)
-
-**Admin Dashboard (Port 3005)**
-- Next.js
-- TypeScript
-- Separate authentication
-
-**Database**
-- MySQL
-- 44 tables with audit logging
-- 66 triggers
-- Custom ID system with prefixes
-- JSON support for flexible data
-
-**Infrastructure**
-- AWS (production): EC2, S3, SES, Certificate Manager
-- Local development: macOS
-- No Docker (per requirements)
+> More screenshots: **[docs/screenshots/](docs/screenshots/)** (23 pages, full gallery below).
 
 ---
 
-## 🎯 Business Model
+## What's inside
 
-### Target Market
-- Premium bedding customers globally
-- Focus on silk and cashmere products
-- Multi-language: English, Simplified Chinese
-- Multi-currency with real-time exchange rates
+Three independent apps in one repo:
 
-### Product Catalog
-- **Materials:** Silk, Cashmere, Blends
-- **Categories:** Sheets, Comforters, Pillowcases, Throws, Runners
-- **Variants:** Size, Color, Thread Count, Weight, Organic status
-- **Images:** 20-40 per product with auto-generated thumbnails
+| App | Path | Stack | Port |
+|-----|------|-------|------|
+| **Storefront** (frontend) | `src/` | Next.js 15, React 19, Tailwind 4 | 3000 |
+| **Backend API** | `backend/` | Express.js, MySQL, JWT | 6666 |
+| **Admin dashboard** | `admin-dashboard/` | Next.js 14, React 18 | 3005 |
 
-### Pricing & Payment
-- Stripe (primary)
-- PayPal (secondary option)
-- Real-time tax calculation by region
-- Coupon/discount system
-
-### Shipping
-- FedEx integration (service built, needs API credentials)
-- Weight-based + zone-based calculation
-- International shipping support
-- Real-time tracking via `/track-order` page
+**Database:** MySQL 8.0+ (44 tables, custom prefixed IDs like `PROD0000000001`).
+The frontend never touches the DB directly — it proxies `/api/*` to the backend
+(see `next.config.mjs`).
 
 ---
 
-## 🏗️ Architecture
+## Quick start (≈5 minutes)
 
-### Application Structure
-```
-nodeTexeure/
-├── src/                    # Frontend (Next.js)
-│   ├── app/               # Next.js 15 app router
-│   ├── components/        # React components
-│   ├── lib/              # Utilities
-│   └── styles/           # CSS
-├── backend/               # Express.js API
-│   ├── routes/           # API endpoints
-│   ├── middleware/       # Auth, CSRF, logging
-│   ├── utils/            # Helpers
-│   └── uploads/          # Product images
-├── admin-dashboard/       # Admin panel (separate app)
-│   └── src/
-│       ├── app/
-│       └── components/
-├── database/             # SQL schemas & docs
-└── docs/                 # Documentation
-```
+### 1. Prerequisites
 
-### Service Separation
-- **Frontend:** Customer-facing UI, shopping experience
-- **Backend:** REST API, business logic, database access
-- **Admin:** Product/order/user management, analytics
+- Node.js 18+ (tested on 22)
+- MySQL 8.0+ running locally
+- npm
 
----
+### 2. Install dependencies
 
-## 🔐 Security
-
-### Authentication
-- JWT tokens (stateless)
-- Role-based access control (Admin, Staff, Customer)
-- Password hashing with bcrypt
-- Session timeout: 24 hours
-
-### API Security
-- CSRF protection
-- Rate limiting (global + per-user)
-- Input validation & sanitization
-- SQL injection prevention (prepared statements)
-- HTTPS/SSL (AWS Certificate Manager)
-
-### PCI Compliance
-- Stripe handles card processing
-- No card data stored locally
-- PCI DSS compliant payment flow
-
----
-
-## 🚀 Quick Start
-
-### Prerequisites
 ```bash
-node --version  # v22.15.1 or higher
-npm --version
-mysql --version
-```
-
-### Initial Setup
-```bash
-# 1. Install dependencies
 npm install
-
-# 2. Configure environment
-cp .env.example .env
-# Edit .env with database credentials
-
-# 3. Initialize database
-npm run db:test    # Test connection
-npm run db:init    # Create schema
-
-# 4. Start development
-npm run dev        # Starts frontend + backend
+cd backend && npm install && cd ..
+cd admin-dashboard && npm install && cd ..
 ```
 
-### Port Configuration
-- **Frontend:** http://localhost:3000
-- **Backend API:** http://localhost:6666
-- **Admin Dashboard:** http://localhost:3005
+### 3. Configure environment
 
-### Common Commands
 ```bash
-# Development
-npm run dev              # Start all services
-npm run dev:frontend     # Frontend only
-npm run dev:backend      # Backend only
-
-# Database
-npm run db:init          # Initialize database
-npm run db:reset         # Reset database (dev only)
-npm run db:test          # Test connection
-
-# Process Management
-npm run pm2:dev          # Start with PM2
-npm run pm2:stop         # Stop all
-npm run pm2:restart      # Restart all
-npm run pm2:logs         # View logs
-
-# Cleanup
-npm run clean            # Clear Next.js cache
-npm run clean:full       # Stop + clean + restart
+cp .env.example .env                 # frontend (BACKEND_URL, NextAuth)
+cp backend/.env.example backend/.env # backend (DB, secrets, integrations)
 ```
 
----
+Then edit `backend/.env` and set `DB_PASSWORD` to your local MySQL password. All
+third-party integrations (Stripe, AWS SES/S3, FedEx) are optional and degrade
+gracefully — leave them as placeholders and the app logs instead of calling them.
 
-## 📁 Key Files
+### 4. Create and seed the database
 
-### Configuration
-- `.env` - Environment variables (not in git)
-- `.env.example` - Template for environment setup
-- `package.json` - Dependencies & scripts
-- `next.config.mjs` - Next.js configuration
-
-### Documentation
-- `README.md` - This file
-- `BACKEND.md` - API & backend documentation
-- `FRONTEND.md` - Frontend development guide
-- `DATABASE.md` - Database schema & design
-- `TROUBLESHOOTING.md` - Common issues & fixes
-
-### Database
-- `database/database_schema.sql` - Full schema
-- `database/init-database.js` - Setup script
-- `database/test-db-connection.js` - Connection test
-
----
-
-## 🗂️ Current Status
-
-### ✅ Completed
-- User authentication & authorization
-- Product catalog with advanced search
-- Shopping cart (guest + logged-in)
-- Order management system
-- Admin dashboard (products, orders, users, coupons)
-- Email template system
-- Inventory tracking
-- Role-based permissions
-- Database with audit logging
-- Enhanced search with autocomplete
-- Product reviews & ratings system
-- Admin analytics dashboard
-- Stripe payment service (needs API keys to activate)
-- AWS SES email service with producer/consumer daemon
-- AWS S3 image upload service
-- FedEx shipping service with rate calculation
-- Order confirmation & tracking pages
-- Sitemap & robots.txt for SEO
-
-### 🚧 In Progress
-- Admin review moderation UI
-- End-to-end integration testing with live API keys
-
-### 📋 Planned Features
-See `TODO.md` for detailed task list
-
----
-
-## 👥 User Roles
-
-### Customer
-- Browse & search products
-- Add to cart & checkout
-- View order history
-- Manage profile & addresses
-- Leave product reviews
-
-### Staff
-- Upload new products (pending approval)
-- Set initial prices & stock
-- Link tracking numbers to orders
-- View assigned orders
-- Basic support tasks
-
-### Admin
-- Approve/reject products
-- Modify prices & inventory
-- Manage users & permissions
-- Create/edit coupons
-- Configure system settings
-- View analytics & reports
-- Manage email templates
-
----
-
-## 🌍 Internationalization
-
-### Languages
-- English (primary)
-- Simplified Chinese
-
-### Localization
-- Currency conversion (real-time rates)
-- Regional tax calculation
-- Timezone handling (UTC → local)
-- SEO-friendly URLs (English only)
-- Search supports both languages
-
----
-
-## 📊 Analytics & Reporting
-
-### Metrics Tracked
-- Sales by product/category
-- Revenue trends
-- Customer acquisition
-- Inventory levels
-- Order fulfillment times
-
-### Reports Available
-- Daily/weekly/monthly sales
-- Low stock alerts
-- Customer analytics
-- Product performance
-
----
-
-## 🛠️ Troubleshooting
-
-### Common Issues
-
-**Port conflicts:**
 ```bash
-lsof -i :3000
-kill -9 $(lsof -ti:3000)
+# Make sure MySQL is running first, then:
+npm run db:init                 # creates the `bed_texture_ecommerce` DB + schema
+cd backend && npm run seed:rnd  # seeds demo products, users, orders
+cd ..
 ```
 
-**Cache issues:**
+### 5. Run
+
 ```bash
-npm run clean:full
+npm run dev        # starts frontend + backend + admin via PM2
 ```
 
-**Database connection:**
+Open **http://localhost:3000**.
+
+### 6. Verify it works
+
 ```bash
-npm run db:test
+npm run smoke      # checks the storefront + API proxy are healthy
 ```
 
-See `TROUBLESHOOTING.md` for detailed solutions.
+---
+
+## Demo accounts
+
+Created by `npm run seed:rnd`:
+
+| Role | Email | Password |
+|------|-------|----------|
+| Customer | `alice.customer@example.com` | `Customer@123` |
+| Customer | `bob.customer@example.com` | `Customer@123` |
+| Admin | `admin@example.com` | `Admin@123` |
+| Staff | `staff@example.com` | `Staff@123` |
 
 ---
 
-## 📞 Support & Resources
+## Common commands
 
-### Documentation
-- Backend API: See `BACKEND.md`
-- Frontend Guide: See `FRONTEND.md`
-- Database Schema: See `DATABASE.md`
+```bash
+npm run dev            # start all three apps (PM2)
+npm run dev:frontend   # storefront only (next dev)
+npm run dev:backend    # backend only (nodemon)
+npm run pm2:logs       # tail logs
+npm run pm2:stop       # stop everything
 
-### Development
-- Node.js: https://nodejs.org/
-- Next.js: https://nextjs.org/
-- Express: https://expressjs.com/
-- MySQL: https://dev.mysql.com/doc/
+npm run db:init        # create schema (safe to re-run)
+npm run db:reset       # drop + recreate (dev only, destroys data)
+npm run db:test        # test the DB connection
 
-### Deployment
-- AWS EC2: Compute
-- AWS S3: Image storage
-- AWS SES: Email delivery
-- AWS Certificate Manager: SSL/TLS
+npm run test           # lint + production build (CI gate)
+npm run smoke          # health-check the running stack
+npm run lint           # ESLint only
+```
 
----
+Backend-only helpers (run from `backend/`):
 
-## 📝 Notes
-
-### Design Philosophy
-- **Clean separation** between frontend, backend, admin
-- **Security first** approach
-- **Scalable architecture** ready for growth
-- **Developer friendly** with clear documentation
-
-### Code Standards
-- ESNext features
-- No TypeScript (per requirements)
-- Prepared statements for SQL
-- RESTful API design
-- Responsive UI (mobile-first)
-
-### Performance
-- Image optimization (thumbnails)
-- Database indexing
-- Query optimization
-- CDN for static assets (planned)
-- Redis caching (future)
+```bash
+npm run seed:rnd       # seed demo data
+npm run email-daemon   # start the email queue processor
+```
 
 ---
 
-**Last Updated:** April 5, 2026  
-**Current Version:** 1.0  
-**Status:** Active Development
+## Architecture
+
+```
+Browser ──► Storefront (Next.js, :3000)
+                │  rewrites /api/* ──► Backend (Express, :6666) ──► MySQL
+                │
+            Admin dashboard (Next.js, :3005) ──► Backend
+```
+
+- **API proxy:** the storefront's `next.config.mjs` rewrites `/api/<route>/*` to
+  the backend. The browser only ever talks to `:3000`.
+- **Auth:** JWT via `Authorization` header or an `admin_auth` HttpOnly cookie;
+  NextAuth manages the storefront session. Three middleware levels: `protect`,
+  `admin`, `protectOptional`.
+- **API responses:** every endpoint returns
+  `{ status, message, keyValueTable }` via `backend/utils/responseFormatter.js`.
+- **IDs:** a SQL function `get_next_id('PREFIX')` generates human-readable IDs
+  (`USER0000000001`, `PROD0000000002`).
+
+More detail: [`BACKEND.md`](BACKEND.md), [`FRONTEND.md`](FRONTEND.md),
+[`DATABASE.md`](DATABASE.md), [`docs/PROJECT_STATUS.md`](docs/PROJECT_STATUS.md).
+
+---
+
+## Troubleshooting
+
+**MySQL not running / connection refused**
+```bash
+npm run db:test           # confirm the backend can connect
+```
+Start MySQL, verify `DB_PASSWORD` in `backend/.env`, then re-run `db:init`.
+
+**Backend on `:6666` looks unreachable in a browser**
+Port 6666 is on the browser "bad ports" blocklist, so browsers (and Node's
+`fetch`) refuse to connect to it directly. This is expected — the app reaches the
+backend through the storefront proxy at `http://localhost:3000/api/*`. Use that,
+or `curl http://localhost:6666/api/products` for a direct check.
+
+**Port already in use**
+```bash
+lsof -ti:3000 | xargs kill -9   # (or :6666, :3005)
+```
+
+**Stale cache / weird build errors**
+```bash
+npm run clean         # clears .next and caches
+```
+
+---
+
+## Screenshot gallery
+
+All 23 storefront pages, captured from the running app. See
+[`docs/screenshots/`](docs/screenshots/).
+
+| | | |
+|---|---|---|
+| ![Home](docs/screenshots/01-home.png) | ![Shop](docs/screenshots/02-shop.png) | ![Product](docs/screenshots/06-product-detail.png) |
+| Home | Shop | Product detail |
+| ![Silk](docs/screenshots/04-collection-silk.png) | ![Cart](docs/screenshots/17-cart.png) | ![Profile](docs/screenshots/18-profile.png) |
+| Silk collection | Cart | Profile (logged in) |
+| ![Checkout](docs/screenshots/23-checkout.png) | ![Orders](docs/screenshots/19-orders.png) | ![Login](docs/screenshots/13-login.png) |
+| Checkout | Orders | Login |
+
+---
+
+## Tech notes
+
+- **No TypeScript** — plain JavaScript everywhere (ESNext, JSDoc where useful).
+- **No Docker** — runs directly on the host.
+- **Prepared statements** for all user input (SQL-injection safe).
+- **Graceful degradation** — missing integration credentials fall back to console
+  logging instead of failing.
+
+## Working on this repo with Claude Code
+
+This repo includes a `CLAUDE.md` with project conventions that Claude Code reads
+automatically. Good first prompts: "run the app and take a screenshot",
+"explain the API proxy setup", or "add an endpoint to the backend".
