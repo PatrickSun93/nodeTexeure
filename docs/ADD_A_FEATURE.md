@@ -1,0 +1,101 @@
+# Adding a feature
+
+The end-to-end path for a typical feature (a new resource with a page + API +
+storage), following this repo's conventions. Example: a "gift messages" feature.
+
+## 1. Database
+
+Add a table via a migration (don't hand-edit a live DB):
+
+```sql
+-- database/migrations/003_gift_messages.sql
+CREATE TABLE IF NOT EXISTS gift_messages (
+  id VARCHAR(50) PRIMARY KEY,
+  order_id VARCHAR(50) NOT NULL,
+  message TEXT NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE
+);
+-- register the custom-ID prefix so get_next_id('GIFT') works
+INSERT IGNORE INTO transno (prefix, count, details) VALUES ('GIFT', 0, 'Gift message id');
+```
+
+Include the migration in `docker/mysql/init.sql` (append it) so `docker compose up`
+creates it on a fresh DB, and run it against your current DB.
+
+## 2. Backend route
+
+Create `backend/routes/giftMessageRoutes.js`, use prepared statements and the
+custom-ID function, and return the standard envelope:
+
+```js
+const express = require('express');
+const router = express.Router();
+const DatabaseUtil = require('../utils/database');
+const ResponseFormatter = require('../utils/responseFormatter');
+const { protect } = require('../middleware/authMiddleware');
+
+router.post('/', protect, async (req, res) => {
+  try {
+    const [{ id }] = (await DatabaseUtil.executeQuery("SELECT get_next_id('GIFT') AS id")).data ?? await DatabaseUtil.executeQuery("SELECT get_next_id('GIFT') AS id");
+    await DatabaseUtil.executeQuery(
+      'INSERT INTO gift_messages (id, order_id, message) VALUES (?, ?, ?)',
+      [id, req.body.order_id, req.body.message]
+    );
+    res.status(201).json(ResponseFormatter.success('Gift message saved', { id }));
+  } catch (e) {
+    res.status(500).json(ResponseFormatter.failure('Failed to save', { error: e.message }));
+  }
+});
+
+module.exports = router;
+```
+
+Mount it in `backend/server.js` and add the route name to the proxy list in
+`next.config.mjs` so `/api/gift-messages/*` reaches the backend:
+
+```js
+app.use('/api/gift-messages', require('./routes/giftMessageRoutes')); // server.js
+// next.config.mjs: add 'gift-messages' to the `routes` array
+```
+
+Admin-only? Mount with `protect, admin` and require a CSRF token for writes.
+
+## 3. Frontend
+
+Add a page under `src/app/…/page.js`. **Call the API through the proxy** (relative
+`/api/...`, never `http://localhost:6666`), and **style with design tokens**:
+
+```jsx
+'use client';
+import { apiRequest } from '../../lib/api';
+// ...
+await apiRequest('/gift-messages', { method: 'POST', body: JSON.stringify({ order_id, message }) });
+// style: className="noirae-btn-primary" or style={{ color: 'var(--noirae-charcoal)' }}
+```
+
+If the page uses `useSearchParams`, wrap it in `<Suspense>` (Next 15 requirement).
+
+## 4. Real example data
+
+Add rows to `backend/scripts/seed-example-data.js` so the feature shows real data
+(no mocks). Keep the script idempotent.
+
+## 5. Verify
+
+```bash
+npm run test    # ESLint + next build
+npm run smoke   # stack health
+```
+
+Then exercise it in the browser (Docker: `docker compose up`), and for anything
+auth-related re-check the security posture (unauth blocked, no IDOR).
+
+## Checklist
+
+- [ ] Migration added + in `docker/mysql/init.sql`
+- [ ] Route mounted in `server.js` + name added to `next.config.mjs` proxy list
+- [ ] Prepared statements; `get_next_id` prefix registered
+- [ ] Frontend calls `/api/*` (proxy) and styles via `--noirae-*` tokens
+- [ ] Example rows in the seed; no mock/hardcoded data
+- [ ] `npm run test` + `npm run smoke` green

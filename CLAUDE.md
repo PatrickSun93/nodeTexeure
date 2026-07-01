@@ -1,109 +1,120 @@
-# CLAUDE.md
+# CLAUDE.md — agent guide for NodeTexeure
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+Guidance for AI agents (Claude Code, Codex, etc.) working in this repo. Humans:
+start with [README.md](README.md). Codex/other agents: this file is the source of
+truth — [AGENTS.md](AGENTS.md) points here.
 
-## Project Overview
+## What this is
 
-NodeTexeure is a luxury bed texture e-commerce platform (silk/cashmere bedding). It's a JavaScript monorepo with three independent apps:
+NodeTexeure is a luxury silk & cashmere bedding e-commerce platform. Pure
+JavaScript (no TypeScript in the app), MySQL, three independent apps in one repo.
+Design direction: **"Champagne & Charcoal"** (see [docs/DESIGN.md](docs/DESIGN.md)).
 
-- **Frontend** (`src/`) - Next.js 15 App Router + React 19 + TailwindCSS 4 on port 3000
-- **Backend** (`backend/`) - Express.js REST API on port 6666
-- **Admin Dashboard** (`admin-dashboard/`) - Next.js 14 + React 18 on port 3005
+| App | Path | Stack | Port |
+|-----|------|-------|------|
+| Storefront (frontend) | `src/` | Next.js 15, React 19, Tailwind 4 | 3000 |
+| Backend API | `backend/` | Express.js, MySQL (`mysql2`), JWT | 6666 |
+| Admin dashboard | `admin-dashboard/` | Next.js 14, React 18 | 3005 |
 
-Database: MySQL 8.0+ with 44 tables, 66 triggers, and a custom prefixed ID system.
+Database: MySQL 8.0, ~42 tables, custom prefixed IDs (`PROD0000000001`), triggers,
+and a `get_next_id('PREFIX')` SQL function.
 
-## Commands
+## Running it
 
-### Development
+**Docker is the primary dev flow (PM2 is deprecated).**
+
 ```bash
-npm run dev              # Start all 3 apps via PM2
-npm run dev:frontend     # Frontend only
-npm run dev:backend      # Backend only (nodemon)
-npm run pm2:logs         # View PM2 logs
-npm run pm2:status       # Check running processes
-npm run pm2:stop         # Stop all
+docker compose up            # mysql + backend + frontend + admin, hot-reload
+# first run auto-creates the schema and seeds demo + example data
+# open http://localhost:3000   (admin: http://localhost:3005)
 ```
 
-### Database
-```bash
-npm run db:test          # Test MySQL connection
-npm run db:init          # Initialize schema from database/database_schema.sql
-npm run db:reset         # Reset database (dev only)
-```
+Manual (no Docker) fallback: MySQL running locally, then
+`npm install` (root, `backend/`, `admin-dashboard/`), `npm run db:init`,
+`cd backend && npm run seed:rnd && npm run seed:example`, then
+`npm run dev:frontend` + `npm run dev:backend`.
 
-### Backend-specific (run from `backend/`)
-```bash
-npm run dev              # Nodemon watch mode
-npm run seed:rnd         # Seed random test data
-npm run email-daemon     # Start email queue processor
-```
+Verify: `npm run test` (lint + build) and `npm run smoke` (stack health).
 
-### Admin Dashboard (run from `admin-dashboard/`)
-```bash
-npm run dev              # Dev server on port 3005
-```
-
-### Linting
-```bash
-npm run lint             # ESLint (Next.js core web vitals)
-```
-
-No test framework is configured (`npm test` is a no-op).
+### Demo accounts (from the seed)
+`admin@example.com` / `Admin@123` · `alice.customer@example.com` / `Customer@123`
+(staff: `staff@example.com` / `Staff@123`).
 
 ## Architecture
 
-### API Proxy Pattern
-The frontend Next.js app proxies API calls to the backend via `next.config.mjs` rewrites. Routes like `/api/users/*`, `/api/products/*`, etc. are rewritten to the Express backend. The frontend `src/lib/api.js` module handles API client logic.
+- **API proxy.** The browser only talks to `:3000`; `next.config.mjs` rewrites
+  `/api/<route>/*` to the backend. **The rewrite target is baked in at
+  `next build`** — change `BACKEND_URL`/`PRODUCTION_BACKEND_URL` then rebuild.
+- **Auth.** JWT via `Authorization: Bearer` header or an `admin_auth` HttpOnly
+  cookie. Middleware: `protect` (auth), `admin` (admin role), `protectOptional`.
+  Admin write endpoints also require a CSRF token (`X-CSRF-Token`). Customer and
+  admin auth flows are separate.
+- **Response format.** Every endpoint returns
+  `{ status: 'SUCCESS'|'FAIL', message, keyValueTable }` via
+  `backend/utils/responseFormatter.js`. `keyValueTable` shape varies (often an
+  array wrapping named objects, e.g. `[{ users: [...] }]`).
+- **DB access.** All queries go through `backend/utils/database.js`
+  (`DatabaseUtil.executeQuery`, prepared statements). Custom IDs via
+  `SELECT get_next_id('PREFIX')` — the prefix must exist in the `transno` table
+  (register with `INSERT IGNORE INTO transno (prefix,count,details) VALUES (...)`).
 
-### Backend Structure
-- **Routes** (`backend/routes/`) - 18 route files, feature-based (users, products, orders, cart, payments, admin, search, reviews, images, shipping, analytics, returns, wishlist, etc.)
-- **Services** (`backend/services/`) - External integrations: Stripe payments, AWS SES email, AWS S3 images, FedEx shipping
-- **Middleware** (`backend/middleware/`) - Auth (JWT), CSRF, request logging
-- **Utils** (`backend/utils/`) - Database pool, response formatter, logger, CSV tools
+## Design system — Champagne & Charcoal
 
-### Authentication
-- JWT tokens via Authorization header or `admin_auth` HttpOnly cookie
-- Three middleware levels: `protect` (auth required), `admin` (admin only), `protectOptional` (works with or without auth)
-- NextAuth on the frontend side for session management
+All styling flows through CSS custom properties in `src/styles/design-tokens.css`
+(`--noirae-*`). **Never hardcode colors/fonts — use the tokens**, so light + dark
+both work from one source. Fonts: Cormorant Garamond (display), Jost (body),
+EB Garamond (editorial). Dark mode = a `[data-theme='dark']` token block +
+`ThemeToggle` (header) + a no-flash script in `layout.js`. Full reference and the
+palette table: [docs/DESIGN.md](docs/DESIGN.md).
 
-### API Response Format
-All backend endpoints must use `ResponseFormatter` from `backend/utils/responseFormatter.js`:
-```javascript
-ResponseFormatter.success("Message", data)   // { status: "SUCCESS", message: "...", keyValueTable: [...] }
-ResponseFormatter.failure("Message", data)    // { status: "FAIL", message: "...", keyValueTable: [...] }
-```
-The data field is always called `keyValueTable` regardless of content shape.
+## Data is real, not mock
 
-### Database Access
-- Uses `mysql2/promise` with connection pooling (10 connections)
-- All queries go through `DatabaseUtil.executeQuery()` in `backend/utils/database.js`
-- Uses prepared statements (parameterized queries) for all user input
-- Custom ID system: `get_next_id('PREFIX')` SQL function generates IDs like `USER0000000001`, `PROD0000000002` (see `database/database_schema.sql`)
+The DB is seeded with real example data (`backend/scripts/seed-example-data.js`:
+orders, payments, reviews, wishlist, product images). **Do not add mock/hardcoded
+data to code** — wire features to the DB and seed example rows instead. Product
+imagery is served from the `product_images` table (`public/images/bedding/*.jpg`).
 
-### Frontend Structure
-- App Router with file-based routing in `src/app/`
-- Components in `src/components/` (filters, reviews, analytics, admin subdirs)
-- Path alias: `@/*` maps to `src/*`
-- Design tokens in `src/styles/design-tokens.css`
+## Gotchas (hard-won — read before debugging)
 
-### Environment Configuration
-Three separate `.env` files:
-- Root `.env` - Frontend (NEXTAUTH_SECRET, BACKEND_URL)
-- `backend/.env` - Backend (DB_*, JWT_SECRET, AWS_*, STRIPE_*)
-- `admin-dashboard/.env.local` - Admin panel
+- **Port 6666 is a browser-blocked "bad port."** Browsers and Node `fetch`
+  refuse it. Client code must call `/api/*` (relative, via the proxy), never
+  `http://localhost:6666` directly. Server-side, use `http.request` (not fetch).
+- **`executeQuery` return shape is inconsistent across routes** (some expect a
+  rows array, some a `{success, data}` wrapper) — normalize when you touch a
+  route (`Array.isArray(r) ? r : r?.data || []`).
+- **`payments.status` is a strict ENUM** — valid values include `completed`,
+  `refunded`, `pending` (not `succeeded`).
+- **The macOS local MySQL CLI can be flaky here** — query via a small `mysql2`
+  node script instead (see `seed-example-data.js`).
+- **Admin writes need a CSRF token**; a bare `curl` POST returns
+  "CSRF token required" — that's correct, not a bug.
 
-Services degrade gracefully when credentials are missing (e.g., SES falls back to console logging).
+## Adding a feature
 
-## Key Conventions
+See [docs/ADD_A_FEATURE.md](docs/ADD_A_FEATURE.md) — the end-to-end path (DB table
++ migration → backend route mounted in `server.js` → frontend page using the
+proxy + design tokens → seed example data → smoke test).
 
-- **No TypeScript** - Pure JavaScript throughout (ESNext features, JSDoc where present)
-- **No Docker** - Local development runs directly on the host
-- **Multi-language** - Routes and content support English and Simplified Chinese
-- Backend uses CommonJS (`require`/`module.exports`), frontend uses ES modules
+## Testing
 
-## gstack
+- `npm run test` — ESLint + production `next build` (the CI gate).
+- `npm run smoke` — checks the running stack (frontend pages + backend via proxy).
+- Security posture verified: privilege escalation, IDOR, JWT forgery (incl.
+  `alg:none`), and SQL injection are all blocked; unauth hits redirect to login.
+  Keep it that way — new admin routes go under `protect, admin` (+ CSRF for writes).
 
-Use the `/browse` skill from gstack for all web browsing. Never use `mcp__claude-in-chrome__*` tools.
+## Conventions
 
-Available skills:
-`/office-hours`, `/plan-ceo-review`, `/plan-eng-review`, `/plan-design-review`, `/design-consultation`, `/design-shotgun`, `/design-html`, `/review`, `/ship`, `/land-and-deploy`, `/canary`, `/benchmark`, `/browse`, `/connect-chrome`, `/qa`, `/qa-only`, `/design-review`, `/setup-browser-cookies`, `/setup-deploy`, `/retro`, `/investigate`, `/document-release`, `/codex`, `/cso`, `/autoplan`, `/plan-devex-review`, `/devex-review`, `/careful`, `/freeze`, `/guard`, `/unfreeze`, `/gstack-upgrade`, `/learn`
+- **No TypeScript** in the app (plain JS, ESNext; the admin has one `middleware.ts`).
+- Backend is CommonJS (`require`); frontend is ES modules; `@/*` → `src/*`.
+- Prepared statements for all user input. Services degrade gracefully when
+  integration credentials (Stripe/AWS/FedEx) are absent.
+- i18n (multi-language) is **deferred to a `feature/i18n` branch** — it broke the
+  app before, so keep it off `main` until verified end-to-end.
+
+## gstack skills (Claude Code)
+
+When a request matches a skill, invoke it first: bugs/errors → `investigate`;
+ship/PR → `ship`; QA/test → `qa`; review diff → `review`; design audit →
+`design-review`; web browsing/screenshots → `browse` (never the
+`mcp__claude-in-chrome__*` tools).
