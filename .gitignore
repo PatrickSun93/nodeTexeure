@@ -166,3 +166,13 @@ nodeTexeure/
 # package-lock.json
 # yarn.lock
 .gstack/
+
+# --- Secrets & local artifacts (added during public-readiness) ---
+.env.production
+.env*.local
+backend/.env
+admin-dashboard/.env
+cookies.txt
+*.cookies
+*.pem
+*.key
