@@ -93,7 +93,7 @@ export default function ProductDetails() {
   );
 
   // Prepare images for ImageZoom component
-  const productImages = product.images?.map(img => img.original_url || img.thumbnail_small_url) || ['/api/placeholder/600/600'];
+  const productImages = product.images?.map(img => img.original_url || img.thumbnail_small_url) || [`/api/placeholder/600/600?seed=${product.id || product.slug || 'p'}`];
 
   const stockQty = product.stock_quantity ?? product.quantity ?? null;
   const isOutOfStock = stockQty !== null && stockQty <= 0;

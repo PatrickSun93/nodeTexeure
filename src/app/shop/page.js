@@ -25,7 +25,7 @@ export function ProductCard({ product, onAddToCart }) {
     <Link href={`/products/${product.id}`} className="noirae-shop-product-card">
       <div className="noirae-shop-product-image">
         <img 
-          src={product.image || '/api/placeholder/400/400'} 
+          src={product.image || `/api/placeholder/400/400?seed=${product.id || product.slug || product.name || 'p'}`}
           alt={product.name}
         />
       </div>

@@ -49,14 +49,14 @@ function FeaturedCollections() {
     {
       title: 'Silk Collection',
       description: 'Experience the ultimate luxury with our mulberry silk bedding',
-      image: '/api/placeholder/800/600',
+      image: '/api/placeholder/800/600?seed=silk',
       href: '/collections/silk',
       accent: 'Timeless elegance'
     },
     {
       title: 'Cashmere Collection',
       description: 'Wrap yourself in the softest cashmere for unparalleled warmth',
-      image: '/api/placeholder/800/600',
+      image: '/api/placeholder/800/600?seed=cashmere',
       href: '/collections/cashmere',
       accent: 'Supreme softness'
     }
@@ -182,8 +182,8 @@ function FeaturedProducts() {
           {products.slice(0, 4).map((product) => (
             <Link key={product.id} href={`/products/${product.id}`} className="noirae-product-card">
               <div className="noirae-product-image-container">
-                <img 
-                  src={product.image || '/api/placeholder/400/400'} 
+                <img
+                  src={product.image || `/api/placeholder/400/400?seed=${product.id || product.name || 'p'}`}
                   alt={product.name}
                   className="noirae-product-image"
                 />
