@@ -233,6 +233,88 @@ async function sendPasswordReset(email, resetLink) {
   }
 }
 
+/**
+ * Send a welcome email to a newly registered user.
+ * @param {string} email - Recipient email
+ * @param {object} data - { name }
+ */
+async function sendWelcomeEmail(email, data = {}) {
+  const name = data.name || 'there';
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+      <h1 style="color: #333;">Welcome to NodeTexeure, ${name}!</h1>
+      <p>Thank you for creating an account. Explore our collection of luxury silk and cashmere bedding.</p>
+      <p><a href="${process.env.FRONTEND_URL || 'http://localhost:3000'}/shop" style="display:inline-block;padding:12px 24px;background:#333;color:#fff;text-decoration:none;border-radius:4px;">Start Shopping</a></p>
+    </div>`;
+  return await sendEmail(email, 'Welcome to NodeTexeure', html);
+}
+
+/**
+ * Notify a customer that their order status changed.
+ * @param {string} email - Recipient email
+ * @param {object} data - { orderNumber, status }
+ */
+async function sendOrderStatusUpdate(email, data = {}) {
+  const orderNumber = data.orderNumber || data.order_number || '';
+  const status = data.status || 'updated';
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+      <h1 style="color: #333;">Order Update</h1>
+      <p>Your order ${orderNumber ? `#${orderNumber}` : ''} status is now: <strong>${status}</strong>.</p>
+    </div>`;
+  return await sendEmail(email, `Order ${orderNumber ? `#${orderNumber} ` : ''}Update`, html);
+}
+
+/**
+ * Send an abandoned-cart reminder email.
+ * @param {string} email - Recipient email
+ * @param {object} data - { items, cartUrl }
+ * @param {number} sequenceStep - Which reminder in the sequence (1..n)
+ */
+async function sendAbandonedCartEmail(email, data = {}, sequenceStep = 1) {
+  const cartUrl = data.cartUrl || `${process.env.FRONTEND_URL || 'http://localhost:3000'}/cart`;
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+      <h1 style="color: #333;">You left something behind</h1>
+      <p>Your cart is waiting for you. Complete your purchase before these luxury pieces sell out.</p>
+      <p><a href="${cartUrl}" style="display:inline-block;padding:12px 24px;background:#333;color:#fff;text-decoration:none;border-radius:4px;">Return to Cart</a></p>
+    </div>`;
+  return await sendEmail(email, 'Your cart is waiting', html);
+}
+
+/**
+ * Alert store operators about low-stock products.
+ * @param {string|string[]} recipients - Operator email(s)
+ * @param {Array} products - [{ name, sku, stock }]
+ */
+async function sendLowStockAlert(recipients, products = []) {
+  const rows = (products || [])
+    .map((p) => `<li>${p.name || p.sku || 'Product'} — ${p.stock ?? p.quantity ?? 0} left</li>`)
+    .join('');
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+      <h1 style="color: #b91c1c;">Low Stock Alert</h1>
+      <ul>${rows || '<li>No product details provided.</li>'}</ul>
+    </div>`;
+  return await sendEmail(recipients, 'Low Stock Alert', html);
+}
+
+/**
+ * Alert operators that an email delivery failed.
+ * @param {string} email - Operator email
+ * @param {object} data - { type, recipient, error }
+ */
+async function sendEmailFailureAlert(email, data = {}) {
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+      <h1 style="color: #b91c1c;">Email Delivery Failed</h1>
+      <p>Type: ${data.type || 'unknown'}</p>
+      <p>Intended recipient: ${data.recipient || 'unknown'}</p>
+      <p>Error: ${data.error || 'unspecified'}</p>
+    </div>`;
+  return await sendEmail(email, 'Email Delivery Failure Alert', html);
+}
+
 module.exports = {
   isConfigured,
   sendEmail,
@@ -240,4 +322,9 @@ module.exports = {
   sendOrderConfirmation,
   sendShippingNotification,
   sendPasswordReset,
+  sendWelcomeEmail,
+  sendOrderStatusUpdate,
+  sendAbandonedCartEmail,
+  sendLowStockAlert,
+  sendEmailFailureAlert,
 };

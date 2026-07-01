@@ -1,13 +1,13 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { signIn, useSession } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Header from '../../components/Header';
 import Footer from '../../components/Footer';
 
-export default function SignInPage() {
+function SignInContent() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -140,5 +140,24 @@ export default function SignInPage() {
 
       <Footer />
     </div>
+  );
+}
+
+export default function SignInPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="noirae-page">
+          <Header />
+          <div className="noirae-loading">
+            <div className="aesop-loading-spinner"></div>
+            <p>Loading...</p>
+          </div>
+          <Footer />
+        </div>
+      }
+    >
+      <SignInContent />
+    </Suspense>
   );
 }

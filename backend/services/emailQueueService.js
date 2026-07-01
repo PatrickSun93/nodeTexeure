@@ -1,11 +1,11 @@
-const EmailService = require('./emailService');
+const emailService = require('./emailService');
 const ErrorUtils = require('../utils/errorUtils');
 const logger = require('../utils/logger');
 const db = require('../utils/database');
 
 class EmailQueueService {
   constructor() {
-    this.emailService = new EmailService();
+    this.emailService = emailService;
     this.isProcessing = false;
     this.maxRetries = 3;
     this.retryDelays = [1000, 5000, 15000]; // 1s, 5s, 15s

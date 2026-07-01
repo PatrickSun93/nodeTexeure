@@ -363,6 +363,28 @@ class Logger {
   }
 
   /**
+   * Leveled console logging used by services, routes, and middleware.
+   * DEBUG is suppressed unless LOG_LEVEL=debug, keeping normal output clean.
+   */
+  debug(...args) {
+    if ((process.env.LOG_LEVEL || 'info').toLowerCase() === 'debug') {
+      console.log(`[${new Date().toISOString()}] DEBUG |`, ...args);
+    }
+  }
+
+  info(...args) {
+    console.log(`[${new Date().toISOString()}] INFO |`, ...args);
+  }
+
+  warn(...args) {
+    console.warn(`[${new Date().toISOString()}] WARN |`, ...args);
+  }
+
+  error(...args) {
+    console.error(`[${new Date().toISOString()}] ERROR |`, ...args);
+  }
+
+  /**
    * Get severity level for security violations
    */
   getViolationSeverity(violationType) {

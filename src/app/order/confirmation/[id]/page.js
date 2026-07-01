@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useParams, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Header from '../../../../components/Header';
@@ -15,6 +15,14 @@ function getStatusIndex(status) {
 }
 
 export default function OrderConfirmationPage() {
+  return (
+    <Suspense fallback={<div style={{ minHeight: '60vh' }} />}>
+      <OrderConfirmationContent />
+    </Suspense>
+  );
+}
+
+function OrderConfirmationContent() {
   const params = useParams();
   const searchParams = useSearchParams();
   const orderId = params.id;

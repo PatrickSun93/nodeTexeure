@@ -16,27 +16,22 @@ const dbConfig = {
   database: process.env.DB_NAME || 'bed_texture_ecommerce',
   // MySQL2 connection options
   connectTimeout: 60000,
-  acquireTimeout: 60000,
-  timeout: 60000,
   charset: 'utf8mb4',
   timezone: '+00:00',
-  // Performance optimizations
   ssl: false,
   multipleStatements: false,
-  // Pool-specific options for better performance
+  // Pool-specific options
   waitForConnections: true,
   connectionLimit: process.env.NODE_ENV === 'production' ? 20 : 10,
   queueLimit: 0,
-  acquireTimeout: 60000,
-  reconnect: true,
-  // Connection pool optimization
   idleTimeout: 300000, // 5 minutes
   maxIdle: 10,
-  // Query optimization
+  // Query/number handling
   supportBigNumbers: true,
   bigNumberStrings: true,
   dateStrings: false,
-  debug: process.env.NODE_ENV === 'development' ? ['ComQueryPacket'] : false
+  // Verbose packet tracing only when explicitly requested
+  debug: process.env.DB_DEBUG === 'true' ? ['ComQueryPacket'] : false
 };
 
 // Global connection pool

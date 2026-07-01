@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Header from '../../components/Header';
@@ -8,6 +8,14 @@ import Footer from '../../components/Footer';
 import { apiRequest } from '../../lib/api';
 
 export default function CheckoutPage() {
+  return (
+    <Suspense fallback={<div style={{ minHeight: '60vh' }} />}>
+      <CheckoutContent />
+    </Suspense>
+  );
+}
+
+function CheckoutContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const paymentCancelled = searchParams.get('cancelled') === 'true';

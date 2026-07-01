@@ -1,13 +1,13 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Header from '../../components/Header';
 import Footer from '../../components/Footer';
 import { apiRequest } from '../../lib/api';
 
-export default function VerifyEmailPage() {
+function VerifyEmailContent() {
   const searchParams = useSearchParams();
   const token = searchParams.get('token');
   const [status, setStatus] = useState('verifying'); // verifying, success, error
@@ -69,5 +69,28 @@ export default function VerifyEmailPage() {
       </main>
       <Footer />
     </div>
+  );
+}
+
+export default function VerifyEmailPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="aesop-page">
+          <Header />
+          <main>
+            <section style={{ textAlign: 'center', padding: '6rem 1.5rem' }}>
+              <div className="aesop-container">
+                <div className="aesop-loading-spinner" style={{ margin: '0 auto 1.5rem' }}></div>
+                <p className="noirae-body-text">Loading...</p>
+              </div>
+            </section>
+          </main>
+          <Footer />
+        </div>
+      }
+    >
+      <VerifyEmailContent />
+    </Suspense>
   );
 }
