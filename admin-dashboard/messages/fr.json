@@ -1736,5 +1736,14 @@
     "contactSupport": "Contactez le support informatique si le problème persiste",
     "dashboard": "Tableau de bord",
     "refresh": "Actualiser"
+  },
+  "RecentOrders": {
+    "title": "Commandes récentes",
+    "orderId": "N° de commande",
+    "customer": "Nom du client",
+    "date": "Date",
+    "totalAmount": "Montant total",
+    "status": "Statut",
+    "noOrders": "Aucune commande récente."
   }
 }

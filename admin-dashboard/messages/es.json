@@ -1736,5 +1736,14 @@
     "contactSupport": "Contacta con el soporte de TI si el problema persiste",
     "dashboard": "Panel",
     "refresh": "Actualizar"
+  },
+  "RecentOrders": {
+    "title": "Pedidos recientes",
+    "orderId": "ID del pedido",
+    "customer": "Nombre del cliente",
+    "date": "Fecha",
+    "totalAmount": "Importe total",
+    "status": "Estado",
+    "noOrders": "No se encontraron pedidos recientes."
   }
 }

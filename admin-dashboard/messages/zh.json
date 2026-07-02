@@ -1736,5 +1736,14 @@
     "contactSupport": "如果问题仍然存在，请联系 IT 支持",
     "dashboard": "仪表板",
     "refresh": "刷新"
+  },
+  "RecentOrders": {
+    "title": "近期订单",
+    "orderId": "订单编号",
+    "customer": "客户姓名",
+    "date": "日期",
+    "totalAmount": "订单金额",
+    "status": "状态",
+    "noOrders": "暂无近期订单。"
   }
 }

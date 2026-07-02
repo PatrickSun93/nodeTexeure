@@ -1736,5 +1736,14 @@
     "contactSupport": "Contact IT support if the problem persists",
     "dashboard": "Dashboard",
     "refresh": "Refresh"
+  },
+  "RecentOrders": {
+    "title": "Recent Orders",
+    "orderId": "Order ID",
+    "customer": "Customer Name",
+    "date": "Date",
+    "totalAmount": "Total Amount",
+    "status": "Status",
+    "noOrders": "No recent orders found."
   }
 }
