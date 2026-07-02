@@ -83,8 +83,8 @@ export function AuthProvider({ children }) {
       dispatch({ type: AUTH_ACTIONS.SET_LOADING, payload: true });
       
       const response = await adminAuth.verify();
-      
-      if (response.success && response.keyValueTable) {
+
+      if (response.status === 'SUCCESS' && response.keyValueTable) {
         dispatch({
           type: AUTH_ACTIONS.LOGIN_SUCCESS,
           payload: response.keyValueTable,
@@ -104,8 +104,12 @@ export function AuthProvider({ children }) {
       dispatch({ type: AUTH_ACTIONS.CLEAR_ERROR });
 
       const response = await adminAuth.login(email, password);
-      
-      if (response.success && response.keyValueTable) {
+
+      // Backend envelope uses status: 'SUCCESS' (not success: true).
+      if (response.status === 'SUCCESS' && response.keyValueTable) {
+        if (!response.keyValueTable.isAdmin) {
+          throw new Error('Access denied. Admin privileges required.');
+        }
         dispatch({
           type: AUTH_ACTIONS.LOGIN_SUCCESS,
           payload: response.keyValueTable,
