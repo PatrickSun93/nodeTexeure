@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
+import { useTranslations } from 'next-intl';
 
 export default function ProductDetailView({ product, onBack }) {
+    const t = useTranslations('ProductDetailView');
     const isEditing = !!product;
 
     const [formData, setFormData] = useState({
@@ -114,12 +116,12 @@ export default function ProductDetailView({ product, onBack }) {
             if (response.status === 'SUCCESS') {
                 onBack();
             } else {
-                alert('Failed to save product: ' + (response.message || 'Unknown error'));
+                alert(t('saveFailed', { error: response.message || t('unknownError') }));
             }
 
         } catch (e) {
             console.error('Save failed', e);
-            alert('Error saving product');
+            alert(t('saveError'));
         } finally {
             setIsSaving(false);
         }
@@ -133,18 +135,18 @@ export default function ProductDetailView({ product, onBack }) {
                     <button onClick={onBack} className="text-gray-400 hover:text-gray-600">
                         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7 7-7m8 14l-7-7 7-7" /></svg>
                     </button>
-                    <h2 className="text-3xl font-bold text-gray-900">{isEditing ? 'Edit Product' : 'Add New Product'}</h2>
+                    <h2 className="text-3xl font-bold text-gray-900">{isEditing ? t('titleEdit') : t('titleAdd')}</h2>
                 </div>
                 <div className="flex gap-3">
                     <button onClick={onBack} className="px-4 py-2 bg-white border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-50 font-medium">
-                        Cancel
+                        {t('cancel')}
                     </button>
                     <button
                         onClick={handleSave}
                         disabled={isSaving}
                         className="px-4 py-2 bg-[#C5A572] text-white rounded-lg hover:bg-[#b09060] font-medium shadow-sm disabled:opacity-50"
                     >
-                        {isSaving ? 'Saving...' : (isEditing ? 'Save Changes' : 'Save Product')}
+                        {isSaving ? t('saving') : (isEditing ? t('saveChanges') : t('saveProduct'))}
                     </button>
                 </div>
             </div>
@@ -155,27 +157,27 @@ export default function ProductDetailView({ product, onBack }) {
 
                     {/* Product Information */}
                     <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-                        <h3 className="text-lg font-semibold text-gray-900 mb-6">Product Information</h3>
+                        <h3 className="text-lg font-semibold text-gray-900 mb-6">{t('productInformation')}</h3>
                         <div className="space-y-6">
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">Product Name</label>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">{t('productName')}</label>
                                 <input
                                     type="text"
                                     name="name"
                                     value={formData.name}
                                     onChange={handleChange}
-                                    placeholder="e.g. Silk Pillowcase Set"
+                                    placeholder={t('productNamePlaceholder')}
                                     className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C5A572] focus:border-transparent"
                                 />
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">{t('description')}</label>
                                 <textarea
                                     name="description"
                                     value={formData.description}
                                     onChange={handleChange}
                                     rows={4}
-                                    placeholder="Product description..."
+                                    placeholder={t('descriptionPlaceholder')}
                                     className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C5A572] focus:border-transparent"
                                 />
                             </div>
@@ -184,22 +186,22 @@ export default function ProductDetailView({ product, onBack }) {
 
                     {/* Media */}
                     <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-                        <h3 className="text-lg font-semibold text-gray-900 mb-6">Media</h3>
+                        <h3 className="text-lg font-semibold text-gray-900 mb-6">{t('media')}</h3>
                         <div className="border-2 border-dashed border-gray-300 rounded-lg p-12 text-center hover:bg-gray-50 transition-colors cursor-pointer">
                             <div className="flex flex-col items-center">
                                 <svg className="w-12 h-12 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" /></svg>
-                                <p className="text-sm text-gray-600 mb-1">Drag & drop images here, or <span className="text-[#C5A572] font-medium">browse</span></p>
-                                <p className="text-xs text-gray-400">1200x1200 resolution recommended. Max file size 5MB.</p>
+                                <p className="text-sm text-gray-600 mb-1">{t('dragDropText')} <span className="text-[#C5A572] font-medium">{t('browse')}</span></p>
+                                <p className="text-xs text-gray-400">{t('mediaHint')}</p>
                             </div>
                         </div>
                     </div>
 
                     {/* Pricing & Inventory */}
                     <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-                        <h3 className="text-lg font-semibold text-gray-900 mb-6">Pricing & Inventory</h3>
+                        <h3 className="text-lg font-semibold text-gray-900 mb-6">{t('pricingInventory')}</h3>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">Price</label>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">{t('price')}</label>
                                 <div className="relative">
                                     <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-500">$</span>
                                     <input
@@ -213,18 +215,18 @@ export default function ProductDetailView({ product, onBack }) {
                                 </div>
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">SKU</label>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">{t('sku')}</label>
                                 <input
                                     type="text"
                                     name="sku"
                                     value={formData.sku}
                                     onChange={handleChange}
-                                    placeholder="e.g. SILK-PC-IVY-01"
+                                    placeholder={t('skuPlaceholder')}
                                     className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C5A572] focus:border-transparent"
                                 />
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">Stock Quantity</label>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">{t('stockQuantity')}</label>
                                 <input
                                     type="number"
                                     name="stock"
@@ -240,34 +242,34 @@ export default function ProductDetailView({ product, onBack }) {
                     {/* Variants */}
                     <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
                         <div className="flex justify-between items-center mb-6">
-                            <h3 className="text-lg font-semibold text-gray-900">Product Variants</h3>
-                            <span className="text-xs text-gray-500">Manage size, color, and stock variations</span>
+                            <h3 className="text-lg font-semibold text-gray-900">{t('productVariants')}</h3>
+                            <span className="text-xs text-gray-500">{t('variantsSubtitle')}</span>
                         </div>
 
                         {/* Add Variant Form */}
                         <div className="grid grid-cols-2 md:grid-cols-6 gap-3 mb-6 p-4 bg-gray-50 rounded-lg border border-gray-100">
                             <div className="col-span-1">
-                                <label className="block text-xs font-medium text-gray-500 mb-1">Size</label>
-                                <input name="size" value={newVariant.size} onChange={handleVariantChange} placeholder="e.g. Queen" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#C5A572]" />
+                                <label className="block text-xs font-medium text-gray-500 mb-1">{t('size')}</label>
+                                <input name="size" value={newVariant.size} onChange={handleVariantChange} placeholder={t('variantSizePlaceholder')} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#C5A572]" />
                             </div>
                             <div className="col-span-1">
-                                <label className="block text-xs font-medium text-gray-500 mb-1">Color</label>
-                                <input name="color" value={newVariant.color} onChange={handleVariantChange} placeholder="e.g. White" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#C5A572]" />
+                                <label className="block text-xs font-medium text-gray-500 mb-1">{t('color')}</label>
+                                <input name="color" value={newVariant.color} onChange={handleVariantChange} placeholder={t('variantColorPlaceholder')} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#C5A572]" />
                             </div>
                             <div className="col-span-1">
-                                <label className="block text-xs font-medium text-gray-500 mb-1">SKU</label>
-                                <input name="sku" value={newVariant.sku} onChange={handleVariantChange} placeholder="Unique SKU" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#C5A572]" />
+                                <label className="block text-xs font-medium text-gray-500 mb-1">{t('sku')}</label>
+                                <input name="sku" value={newVariant.sku} onChange={handleVariantChange} placeholder={t('variantSkuPlaceholder')} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#C5A572]" />
                             </div>
                             <div className="col-span-1">
-                                <label className="block text-xs font-medium text-gray-500 mb-1">Price (+/-)</label>
+                                <label className="block text-xs font-medium text-gray-500 mb-1">{t('pricePlusMinus')}</label>
                                 <input name="price_adjustment" type="number" value={newVariant.price_adjustment} onChange={handleVariantChange} placeholder="0.00" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#C5A572]" />
                             </div>
                             <div className="col-span-1">
-                                <label className="block text-xs font-medium text-gray-500 mb-1">Stock</label>
+                                <label className="block text-xs font-medium text-gray-500 mb-1">{t('stock')}</label>
                                 <input name="stock" type="number" value={newVariant.stock} onChange={handleVariantChange} placeholder="0" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#C5A572]" />
                             </div>
                             <div className="col-span-1 flex items-end">
-                                <button onClick={addVariant} className="w-full px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 text-sm font-medium transition-colors shadow-sm">Add</button>
+                                <button onClick={addVariant} className="w-full px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 text-sm font-medium transition-colors shadow-sm">{t('add')}</button>
                             </div>
                         </div>
 
@@ -277,11 +279,11 @@ export default function ProductDetailView({ product, onBack }) {
                                 <table className="w-full text-sm text-left border border-gray-100 rounded-lg">
                                     <thead className="text-xs text-gray-500 uppercase bg-gray-50">
                                         <tr>
-                                            <th className="px-4 py-3 font-medium">Size</th>
-                                            <th className="px-4 py-3 font-medium">Color</th>
-                                            <th className="px-4 py-3 font-medium">SKU</th>
-                                            <th className="px-4 py-3 font-medium">Price</th>
-                                            <th className="px-4 py-3 font-medium">Stock</th>
+                                            <th className="px-4 py-3 font-medium">{t('size')}</th>
+                                            <th className="px-4 py-3 font-medium">{t('color')}</th>
+                                            <th className="px-4 py-3 font-medium">{t('sku')}</th>
+                                            <th className="px-4 py-3 font-medium">{t('price')}</th>
+                                            <th className="px-4 py-3 font-medium">{t('stock')}</th>
                                             <th className="px-4 py-3 font-medium w-10"></th>
                                         </tr>
                                     </thead>
@@ -312,8 +314,8 @@ export default function ProductDetailView({ product, onBack }) {
                         ) : (
                             <div className="text-center py-8 bg-gray-50 rounded-lg border border-dashed border-gray-200">
                                 <svg className="w-10 h-10 text-gray-400 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
-                                <p className="text-sm text-gray-500">No variants added yet.</p>
-                                <p className="text-xs text-gray-400 mt-1">Use the form above to add size/color variations.</p>
+                                <p className="text-sm text-gray-500">{t('noVariantsYet')}</p>
+                                <p className="text-xs text-gray-400 mt-1">{t('noVariantsHint')}</p>
                             </div>
                         )}
                     </div>
@@ -325,32 +327,32 @@ export default function ProductDetailView({ product, onBack }) {
 
                     {/* Organization */}
                     <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-                        <h3 className="text-lg font-semibold text-gray-900 mb-6">Organization</h3>
+                        <h3 className="text-lg font-semibold text-gray-900 mb-6">{t('organization')}</h3>
 
                         <div className="space-y-6">
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">Product Status</label>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">{t('productStatus')}</label>
                                 <select
                                     name="status"
                                     value={formData.status}
                                     onChange={handleChange}
                                     className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C5A572] bg-white"
                                 >
-                                    <option value="Draft">Draft</option>
-                                    <option value="Active">Active</option>
-                                    <option value="Out of Stock">Out of Stock</option>
+                                    <option value="Draft">{t('statusDraft')}</option>
+                                    <option value="Active">{t('statusActive')}</option>
+                                    <option value="Out of Stock">{t('statusOutOfStock')}</option>
                                 </select>
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">Category</label>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">{t('category')}</label>
                                 <select
                                     name="category"
                                     value={formData.category}
                                     onChange={handleChange}
                                     className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C5A572] bg-white"
                                 >
-                                    <option value="">Select Category</option>
+                                    <option value="">{t('selectCategory')}</option>
                                     {categories.map(cat => (
                                         <option key={cat.id} value={cat.id}>{cat.name}</option>
                                     ))}
@@ -358,18 +360,18 @@ export default function ProductDetailView({ product, onBack }) {
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">Tags</label>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">{t('tags')}</label>
                                 <input
                                     type="text"
-                                    placeholder="Add a tag..."
+                                    placeholder={t('addTagPlaceholder')}
                                     className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C5A572] focus:border-transparent"
                                 />
                                 <div className="flex flex-wrap gap-2 mt-3">
                                     <span className="px-2 py-1 bg-[#F3EAD8] text-[#8C6B3D] text-xs rounded-md flex items-center gap-1">
-                                        Silk <button className="hover:text-red-500">×</button>
+                                        {t('tagSilk')} <button className="hover:text-red-500">×</button>
                                     </span>
                                     <span className="px-2 py-1 bg-[#F3EAD8] text-[#8C6B3D] text-xs rounded-md flex items-center gap-1">
-                                        Luxury <button className="hover:text-red-500">×</button>
+                                        {t('tagLuxury')} <button className="hover:text-red-500">×</button>
                                     </span>
                                 </div>
                             </div>
