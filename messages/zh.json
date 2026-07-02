@@ -89,5 +89,26 @@
     "valueSustainableDesc": "道德生产的材料，既尊重人类也保护地球",
     "valueDelightTitle": "客户满意",
     "valueDelightDesc": "您的满意度是我们的优先事项，从选择到交付"
+  },
+  "Product": {
+    "loading": "加载中...",
+    "notFound": "未找到该产品",
+    "home": "首页",
+    "shop": "购物",
+    "outOfStock": "缺货",
+    "onlyNLeft": "仅剩 {count} 件",
+    "inStock": "有货",
+    "material": "材质",
+    "threadCount": "支数",
+    "brand": "品牌",
+    "selectOptions": "选择选项",
+    "addingToCart": "正在添加至购物车...",
+    "addToCart": "加入购物车",
+    "freeShipping": "订单满 $100 免运费",
+    "returnPolicy": "30天退货政策",
+    "warranty": "1年保修",
+    "customerReviews": "客户评价",
+    "cancel": "取消",
+    "writeReview": "撰写评价"
   }
 }

@@ -38,6 +38,27 @@
     "en": "English",
     "zh": "中文"
   },
+  "Product": {
+    "loading": "Loading...",
+    "notFound": "Product not found",
+    "home": "Home",
+    "shop": "Shop",
+    "outOfStock": "Out of Stock",
+    "onlyNLeft": "Only {count} left",
+    "inStock": "In Stock",
+    "material": "Material",
+    "threadCount": "Thread Count",
+    "brand": "Brand",
+    "selectOptions": "Select Options",
+    "addingToCart": "Adding to Cart...",
+    "addToCart": "Add to Cart",
+    "freeShipping": "Free shipping on orders over $100",
+    "returnPolicy": "30-day return policy",
+    "warranty": "1-year warranty",
+    "customerReviews": "Customer Reviews",
+    "cancel": "Cancel",
+    "writeReview": "Write a Review"
+  },
   "Home": {
     "heroTitle": "The Art of Comfort",
     "heroDescription": "Discover our collection of luxury bedding crafted from the world's finest silk and cashmere",

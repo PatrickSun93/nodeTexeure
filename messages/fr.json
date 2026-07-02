@@ -89,5 +89,26 @@
     "valueSustainableDesc": "Matériaux produits éthiquement qui respectent à la fois les personnes et la planète",
     "valueDelightTitle": "Satisfaction Client",
     "valueDelightDesc": "Votre satisfaction est notre priorité, de la sélection à la livraison"
+  },
+  "Product": {
+    "loading": "Chargement...",
+    "notFound": "Produit non trouvé",
+    "home": "Accueil",
+    "shop": "Boutique",
+    "outOfStock": "Rupture de stock",
+    "onlyNLeft": "Plus que {count} en stock",
+    "inStock": "En stock",
+    "material": "Matière",
+    "threadCount": "Densité du tissu",
+    "brand": "Marque",
+    "selectOptions": "Sélectionner les options",
+    "addingToCart": "Ajout au panier...",
+    "addToCart": "Ajouter au panier",
+    "freeShipping": "Livraison gratuite sur les commandes supérieures à $100",
+    "returnPolicy": "Politique de retour de 30 jours",
+    "warranty": "Garantie 1 an",
+    "customerReviews": "Avis clients",
+    "cancel": "Annuler",
+    "writeReview": "Écrire un avis"
   }
 }

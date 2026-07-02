@@ -89,5 +89,26 @@
     "valueSustainableDesc": "Materiales producidos éticamente que respetan tanto a las personas como al planeta",
     "valueDelightTitle": "Satisfacción del Cliente",
     "valueDelightDesc": "Su satisfacción es nuestra prioridad, desde la selección hasta la entrega"
+  },
+  "Product": {
+    "loading": "Cargando...",
+    "notFound": "Producto no encontrado",
+    "home": "Inicio",
+    "shop": "Tienda",
+    "outOfStock": "Agotado",
+    "onlyNLeft": "Solo quedan {count}",
+    "inStock": "En stock",
+    "material": "Material",
+    "threadCount": "Densidad de hilo",
+    "brand": "Marca",
+    "selectOptions": "Seleccionar opciones",
+    "addingToCart": "Añadiendo al carrito...",
+    "addToCart": "Añadir al carrito",
+    "freeShipping": "Envío gratis en pedidos superiores a $100",
+    "returnPolicy": "Política de devolución de 30 días",
+    "warranty": "Garantía de 1 año",
+    "customerReviews": "Opiniones de clientes",
+    "cancel": "Cancelar",
+    "writeReview": "Escribir una opinión"
   }
 }
