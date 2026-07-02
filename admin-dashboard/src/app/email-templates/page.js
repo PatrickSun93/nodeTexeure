@@ -4,20 +4,23 @@ import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { apiRequest, getErrorMessage } from '@/lib/api';
+import { useTranslations } from 'next-intl';
 
 // Template Status Badge Component
 function TemplateStatusBadge({ isActive }) {
+  const t = useTranslations('EmailTemplates');
   return (
     <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
       isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
     }`}>
-      {isActive ? 'Active' : 'Inactive'}
+      {isActive ? t('statusActive') : t('statusInactive')}
     </span>
   );
 }
 
 // Template Editor Modal Component
 function TemplateEditorModal({ isOpen, onClose, onSave, template = null }) {
+  const t = useTranslations('EmailTemplates');
   const [formData, setFormData] = useState({
     name: '',
     subject: '',
@@ -69,10 +72,10 @@ function TemplateEditorModal({ isOpen, onClose, onSave, template = null }) {
   const validateForm = () => {
     const newErrors = {};
     
-    if (!formData.name) newErrors.name = 'Template name is required';
-    if (!formData.subject) newErrors.subject = 'Subject is required';
+    if (!formData.name) newErrors.name = t('templateNameRequired');
+    if (!formData.subject) newErrors.subject = t('subjectRequired');
     if (!formData.template_content.html_content && !formData.template_content.text_content) {
-      newErrors.content = 'Either HTML content or text content is required';
+      newErrors.content = t('contentRequired');
     }
     
     setErrors(newErrors);
@@ -113,7 +116,7 @@ function TemplateEditorModal({ isOpen, onClose, onSave, template = null }) {
       <div className="bg-white rounded-lg w-full max-w-4xl max-h-[90vh] overflow-hidden">
         <div className="p-6 border-b">
           <h3 className="text-lg font-semibold">
-            {template ? 'Edit Email Template' : 'Create Email Template'}
+            {template ? t('editTitle') : t('createTitle')}
           </h3>
         </div>
         
@@ -122,7 +125,7 @@ function TemplateEditorModal({ isOpen, onClose, onSave, template = null }) {
             <div className="grid grid-cols-2 gap-4 mb-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Template Name *
+                  {t('templateNameLabel')}
                 </label>
                 <input
                   type="text"
@@ -138,7 +141,7 @@ function TemplateEditorModal({ isOpen, onClose, onSave, template = null }) {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Subject *
+                  {t('subjectLabel')}
                 </label>
                 <input
                   type="text"
@@ -147,7 +150,7 @@ function TemplateEditorModal({ isOpen, onClose, onSave, template = null }) {
                   className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                     errors.subject ? 'border-red-300' : 'border-gray-300'
                   }`}
-                  placeholder="Use {{variable}} for dynamic content"
+                  placeholder={t('subjectPlaceholder')}
                   required
                 />
                 {errors.subject && <p className="text-xs text-red-600 mt-1">{errors.subject}</p>}
@@ -164,7 +167,7 @@ function TemplateEditorModal({ isOpen, onClose, onSave, template = null }) {
                   className="mr-2"
                 />
                 <label htmlFor="is_active" className="text-sm text-gray-700">
-                  Active template
+                  {t('activeTemplate')}
                 </label>
               </div>
             </div>
@@ -182,7 +185,7 @@ function TemplateEditorModal({ isOpen, onClose, onSave, template = null }) {
                         : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                     }`}
                   >
-                    HTML Content
+                    {t('tabHtml')}
                   </button>
                   <button
                     type="button"
@@ -193,7 +196,7 @@ function TemplateEditorModal({ isOpen, onClose, onSave, template = null }) {
                         : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                     }`}
                   >
-                    Text Content
+                    {t('tabText')}
                   </button>
                   <button
                     type="button"
@@ -204,7 +207,7 @@ function TemplateEditorModal({ isOpen, onClose, onSave, template = null }) {
                         : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                     }`}
                   >
-                    Variables
+                    {t('tabVariables')}
                   </button>
                 </nav>
               </div>
@@ -213,14 +216,14 @@ function TemplateEditorModal({ isOpen, onClose, onSave, template = null }) {
                 {activeTab === 'html' && (
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      HTML Content
+                      {t('htmlContentLabel')}
                     </label>
                     <textarea
                       value={formData.template_content.html_content}
                       onChange={(e) => updateTemplateContent('html_content', e.target.value)}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm"
                       rows={12}
-                      placeholder="Enter HTML content with {{variable}} placeholders"
+                      placeholder={t('htmlContentPlaceholder')}
                     />
                   </div>
                 )}
@@ -228,14 +231,14 @@ function TemplateEditorModal({ isOpen, onClose, onSave, template = null }) {
                 {activeTab === 'text' && (
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Text Content (Fallback)
+                      {t('textContentLabel')}
                     </label>
                     <textarea
                       value={formData.template_content.text_content}
                       onChange={(e) => updateTemplateContent('text_content', e.target.value)}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                       rows={12}
-                      placeholder="Enter plain text content with {{variable}} placeholders"
+                      placeholder={t('textContentPlaceholder')}
                     />
                   </div>
                 )}
@@ -243,11 +246,11 @@ function TemplateEditorModal({ isOpen, onClose, onSave, template = null }) {
                 {activeTab === 'variables' && (
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Available Variables
+                      {t('availableVariables')}
                     </label>
                     <div className="bg-gray-50 p-4 rounded-md">
                       <p className="text-sm text-gray-600 mb-2">
-                        Common variables you can use in your templates:
+                        {t('commonVariables')}
                       </p>
                       <div className="grid grid-cols-2 gap-2 text-sm">
                         <div><code className="bg-white px-2 py-1 rounded">{'{{customer_name}}'}</code></div>
@@ -280,14 +283,14 @@ function TemplateEditorModal({ isOpen, onClose, onSave, template = null }) {
               disabled={isLoading}
               className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 disabled:opacity-50"
             >
-              {isLoading ? 'Saving...' : (template ? 'Update Template' : 'Create Template')}
+              {isLoading ? t('saving') : (template ? t('updateTemplate') : t('createTemplate'))}
             </button>
             <button
               type="button"
               onClick={onClose}
               className="flex-1 bg-gray-600 text-white py-2 px-4 rounded-md hover:bg-gray-700"
             >
-              Cancel
+              {t('cancel')}
             </button>
           </div>
         </form>
@@ -298,6 +301,7 @@ function TemplateEditorModal({ isOpen, onClose, onSave, template = null }) {
 
 // Test Email Modal Component
 function TestEmailModal({ isOpen, onClose, template, onSendTest }) {
+  const t = useTranslations('EmailTemplates');
   const [testEmail, setTestEmail] = useState('');
   const [testData, setTestData] = useState('{}');
   const [isLoading, setIsLoading] = useState(false);
@@ -307,7 +311,7 @@ function TestEmailModal({ isOpen, onClose, template, onSendTest }) {
     e.preventDefault();
     
     if (!testEmail) {
-      setError('Test email is required');
+      setError(t('testEmailRequired'));
       return;
     }
 
@@ -315,7 +319,7 @@ function TestEmailModal({ isOpen, onClose, template, onSendTest }) {
     try {
       parsedTestData = JSON.parse(testData);
     } catch (err) {
-      setError('Invalid JSON in test data');
+      setError(t('invalidJson'));
       return;
     }
     
@@ -339,19 +343,19 @@ function TestEmailModal({ isOpen, onClose, template, onSendTest }) {
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg p-6 w-full max-w-md">
-        <h3 className="text-lg font-semibold mb-4">Send Test Email</h3>
-        
+        <h3 className="text-lg font-semibold mb-4">{t('sendTestEmail')}</h3>
+
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Template: {template.name}
+              {t('templateLabelValue', { name: template.name })}
             </label>
             <p className="text-sm text-gray-500">{template.subject}</p>
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Test Email Address *
+              {t('testEmailAddressLabel')}
             </label>
             <input
               type="email"
@@ -364,14 +368,14 @@ function TestEmailModal({ isOpen, onClose, template, onSendTest }) {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Test Data (JSON)
+              {t('testDataLabel')}
             </label>
             <textarea
               value={testData}
               onChange={(e) => setTestData(e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm"
               rows={4}
-              placeholder='{"customer_name": "John Doe", "order_number": "ORD001"}'
+              placeholder={t('testDataPlaceholder')}
             />
           </div>
 
@@ -387,14 +391,14 @@ function TestEmailModal({ isOpen, onClose, template, onSendTest }) {
               disabled={isLoading}
               className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 disabled:opacity-50"
             >
-              {isLoading ? 'Sending...' : 'Send Test'}
+              {isLoading ? t('sending') : t('sendTest')}
             </button>
             <button
               type="button"
               onClick={onClose}
               className="flex-1 bg-gray-600 text-white py-2 px-4 rounded-md hover:bg-gray-700"
             >
-              Cancel
+              {t('cancel')}
             </button>
           </div>
         </form>
@@ -404,6 +408,7 @@ function TestEmailModal({ isOpen, onClose, template, onSendTest }) {
 }
 
 export default function EmailTemplates() {
+  const t = useTranslations('EmailTemplates');
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   const router = useRouter();
   
@@ -441,7 +446,7 @@ export default function EmailTemplates() {
       if (response.status === 'SUCCESS') {
         setTemplates(response.keyValueTable.templates || []);
       } else {
-        throw new Error(response.message || 'Failed to fetch templates');
+        throw new Error(response.message || t('failedToFetch'));
       }
     } catch (err) {
       console.error('Templates fetch error:', err);
@@ -449,7 +454,7 @@ export default function EmailTemplates() {
     } finally {
       setIsLoading(false);
     }
-  }, [searchTerm, activeFilter]);
+  }, [searchTerm, activeFilter, t]);
 
   // Save template (create or update)
   const saveTemplate = async (templateData, templateId = null) => {
@@ -474,7 +479,7 @@ export default function EmailTemplates() {
         setShowEditorModal(false);
         setEditingTemplate(null);
       } else {
-        throw new Error(response.message || 'Failed to save template');
+        throw new Error(response.message || t('failedToSave'));
       }
     } catch (err) {
       console.error('Template save error:', err);
@@ -484,7 +489,7 @@ export default function EmailTemplates() {
 
   // Delete template
   const deleteTemplate = async (templateId) => {
-    if (!confirm('Are you sure you want to delete this template?')) return;
+    if (!confirm(t('confirmDelete'))) return;
 
     try {
       const response = await apiRequest(`admin/email-templates/${templateId}`, {
@@ -494,7 +499,7 @@ export default function EmailTemplates() {
       if (response.status === 'SUCCESS') {
         await fetchTemplates(); // Refresh templates
       } else {
-        throw new Error(response.message || 'Failed to delete template');
+        throw new Error(response.message || t('failedToDelete'));
       }
     } catch (err) {
       console.error('Template delete error:', err);
@@ -511,9 +516,9 @@ export default function EmailTemplates() {
       });
 
       if (response.status === 'SUCCESS') {
-        alert('Test email queued successfully!');
+        alert(t('testEmailQueued'));
       } else {
-        throw new Error(response.message || 'Failed to send test email');
+        throw new Error(response.message || t('failedToSendTest'));
       }
     } catch (err) {
       console.error('Test email error:', err);
@@ -542,7 +547,7 @@ export default function EmailTemplates() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="admin-spinner"></div>
-        <span className="ml-2">Loading...</span>
+        <span className="ml-2">{t('loading')}</span>
       </div>
     );
   }
@@ -557,23 +562,23 @@ export default function EmailTemplates() {
         <div className="admin-container">
           <div className="flex items-center justify-between h-16">
             <h1 className="text-xl font-semibold text-gray-900">
-              Email Templates
+              {t('title')}
             </h1>
             <nav className="flex items-center space-x-4">
-              <a 
+              <a
                 href="/"
                 className="text-sm text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md hover:bg-gray-100"
               >
-                Dashboard
+                {t('dashboard')}
               </a>
-              <a 
+              <a
                 href="/settings"
                 className="text-sm text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md hover:bg-gray-100"
               >
-                Settings
+                {t('settings')}
               </a>
               <span className="text-sm text-gray-600">
-                Welcome, {user?.firstName || 'Admin'}
+                {t('welcome', { name: user?.firstName || t('adminFallback') })}
               </span>
             </nav>
           </div>
@@ -586,7 +591,7 @@ export default function EmailTemplates() {
           <div className="flex items-center space-x-4">
             <input
               type="text"
-              placeholder="Search templates..."
+              placeholder={t('searchPlaceholder')}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -596,9 +601,9 @@ export default function EmailTemplates() {
               onChange={(e) => setActiveFilter(e.target.value)}
               className="px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-              <option value="">All Templates</option>
-              <option value="true">Active Only</option>
-              <option value="false">Inactive Only</option>
+              <option value="">{t('filterAll')}</option>
+              <option value="true">{t('filterActiveOnly')}</option>
+              <option value="false">{t('filterInactiveOnly')}</option>
             </select>
           </div>
           {user?.role === 'admin' && (
@@ -609,7 +614,7 @@ export default function EmailTemplates() {
               }}
               className="admin-button admin-button-primary"
             >
-              Create Template
+              {t('createTemplate')}
             </button>
           )}
         </div>
@@ -625,7 +630,7 @@ export default function EmailTemplates() {
         {isLoading ? (
           <div className="flex items-center justify-center py-12">
             <div className="admin-spinner"></div>
-            <span className="ml-2">Loading templates...</span>
+            <span className="ml-2">{t('loadingTemplates')}</span>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -645,10 +650,10 @@ export default function EmailTemplates() {
                   </div>
 
                   <div className="text-xs text-gray-500 mb-4">
-                    Created: {new Date(template.created_at).toLocaleDateString()}
+                    {t('createdLabel')} {new Date(template.created_at).toLocaleDateString()}
                     {template.updated_at !== template.created_at && (
                       <span className="block">
-                        Updated: {new Date(template.updated_at).toLocaleDateString()}
+                        {t('updatedLabel')} {new Date(template.updated_at).toLocaleDateString()}
                       </span>
                     )}
                   </div>
@@ -658,20 +663,20 @@ export default function EmailTemplates() {
                       onClick={() => handleEditTemplate(template)}
                       className="flex-1 text-xs px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
                     >
-                      Edit
+                      {t('edit')}
                     </button>
                     <button
                       onClick={() => handleTestTemplate(template)}
                       className="flex-1 text-xs px-3 py-2 bg-green-600 text-white rounded hover:bg-green-700"
                     >
-                      Test
+                      {t('test')}
                     </button>
                     {user?.role === 'admin' && (
                       <button
                         onClick={() => deleteTemplate(template.id)}
                         className="text-xs px-3 py-2 bg-red-600 text-white rounded hover:bg-red-700"
                       >
-                        Delete
+                        {t('delete')}
                       </button>
                     )}
                   </div>
@@ -680,7 +685,7 @@ export default function EmailTemplates() {
             ) : (
               <div className="col-span-full">
                 <div className="admin-card text-center py-12">
-                  <p className="text-gray-500">No email templates found</p>
+                  <p className="text-gray-500">{t('noTemplatesFound')}</p>
                   {(searchTerm || activeFilter) && (
                     <button
                       onClick={() => {
@@ -689,7 +694,7 @@ export default function EmailTemplates() {
                       }}
                       className="mt-2 text-blue-600 hover:text-blue-800"
                     >
-                      Clear filters
+                      {t('clearFilters')}
                     </button>
                   )}
                 </div>

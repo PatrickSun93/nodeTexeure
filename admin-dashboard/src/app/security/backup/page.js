@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { BarChart, GaugeChart } from '@/components/charts';
+import { useTranslations } from 'next-intl';
 
 // Backup API functions
 const backupAPI = {
@@ -107,6 +108,7 @@ function BackupStatusWidget({ title, value, status, isLoading, description }) {
 
 // Create Backup Modal
 function CreateBackupModal({ isOpen, onClose, onCreateBackup, isCreating }) {
+  const t = useTranslations('SecurityBackup');
   const [backupType, setBackupType] = useState('full');
   const [description, setDescription] = useState('');
 
@@ -120,33 +122,33 @@ function CreateBackupModal({ isOpen, onClose, onCreateBackup, isCreating }) {
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg p-6 w-full max-w-md">
-        <h2 className="text-lg font-semibold mb-4">Create New Backup</h2>
-        
+        <h2 className="text-lg font-semibold mb-4">{t('createNewBackup')}</h2>
+
         <form onSubmit={handleSubmit}>
           <div className="mb-4">
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Backup Type
+              {t('backupType')}
             </label>
             <select
               value={backupType}
               onChange={(e) => setBackupType(e.target.value)}
               className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-              <option value="full">Full Backup</option>
-              <option value="incremental">Incremental Backup</option>
-              <option value="database">Database Only</option>
-              <option value="files">Files Only</option>
+              <option value="full">{t('backupTypeFull')}</option>
+              <option value="incremental">{t('backupTypeIncremental')}</option>
+              <option value="database">{t('backupTypeDatabase')}</option>
+              <option value="files">{t('backupTypeFiles')}</option>
             </select>
           </div>
 
           <div className="mb-4">
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Description (Optional)
+              {t('descriptionOptional')}
             </label>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Enter backup description..."
+              placeholder={t('descriptionPlaceholder')}
               className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
               rows="3"
             />
@@ -159,14 +161,14 @@ function CreateBackupModal({ isOpen, onClose, onCreateBackup, isCreating }) {
               className="admin-button admin-button-secondary"
               disabled={isCreating}
             >
-              Cancel
+              {t('cancel')}
             </button>
             <button
               type="submit"
               className="admin-button admin-button-primary"
               disabled={isCreating}
             >
-              {isCreating ? 'Creating...' : 'Create Backup'}
+              {isCreating ? t('creating') : t('createBackup')}
             </button>
           </div>
         </form>
@@ -177,6 +179,7 @@ function CreateBackupModal({ isOpen, onClose, onCreateBackup, isCreating }) {
 
 // Restore Confirmation Modal
 function RestoreConfirmationModal({ isOpen, onClose, onConfirmRestore, backup, isRestoring }) {
+  const t = useTranslations('SecurityBackup');
   const [restoreType, setRestoreType] = useState('full');
   const [confirmText, setConfirmText] = useState('');
 
@@ -192,48 +195,47 @@ function RestoreConfirmationModal({ isOpen, onClose, onConfirmRestore, backup, i
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg p-6 w-full max-w-md">
-        <h2 className="text-lg font-semibold mb-4 text-red-600">Confirm Restore Operation</h2>
-        
+        <h2 className="text-lg font-semibold mb-4 text-red-600">{t('confirmRestoreOperation')}</h2>
+
         <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-md">
           <p className="text-sm text-red-800">
-            <strong>Warning:</strong> This operation will overwrite existing data. 
-            This action cannot be undone.
+            <strong>{t('warning')}</strong> {t('warningMessage')}
           </p>
         </div>
 
         <div className="mb-4">
           <p className="text-sm text-gray-600">
-            <strong>Backup ID:</strong> {backup.id}<br />
-            <strong>Backup Date:</strong> {new Date(backup.startTime).toLocaleString()}<br />
-            <strong>Backup Size:</strong> {backup.size}
+            <strong>{t('backupIdLabel')}</strong> {backup.id}<br />
+            <strong>{t('backupDateLabel')}</strong> {new Date(backup.startTime).toLocaleString()}<br />
+            <strong>{t('backupSizeLabel')}</strong> {backup.size}
           </p>
         </div>
-        
+
         <form onSubmit={handleSubmit}>
           <div className="mb-4">
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Restore Type
+              {t('restoreType')}
             </label>
             <select
               value={restoreType}
               onChange={(e) => setRestoreType(e.target.value)}
               className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-              <option value="full">Full Restore</option>
-              <option value="database">Database Only</option>
-              <option value="files">Files Only</option>
+              <option value="full">{t('restoreTypeFull')}</option>
+              <option value="database">{t('restoreTypeDatabase')}</option>
+              <option value="files">{t('restoreTypeFiles')}</option>
             </select>
           </div>
 
           <div className="mb-4">
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Type "RESTORE" to confirm
+              {t('typeRestoreToConfirm')}
             </label>
             <input
               type="text"
               value={confirmText}
               onChange={(e) => setConfirmText(e.target.value)}
-              placeholder="Type RESTORE to confirm"
+              placeholder={t('restoreConfirmPlaceholder')}
               className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
@@ -245,14 +247,14 @@ function RestoreConfirmationModal({ isOpen, onClose, onConfirmRestore, backup, i
               className="admin-button admin-button-secondary"
               disabled={isRestoring}
             >
-              Cancel
+              {t('cancel')}
             </button>
             <button
               type="submit"
               className="admin-button bg-red-600 hover:bg-red-700 text-white"
               disabled={isRestoring || confirmText !== 'RESTORE'}
             >
-              {isRestoring ? 'Restoring...' : 'Confirm Restore'}
+              {isRestoring ? t('restoring') : t('confirmRestore')}
             </button>
           </div>
         </form>
@@ -263,6 +265,7 @@ function RestoreConfirmationModal({ isOpen, onClose, onConfirmRestore, backup, i
 
 // Backup History Table
 function BackupHistoryTable({ backups, isLoading, onRestore }) {
+  const t = useTranslations('SecurityBackup');
   if (isLoading) {
     return (
       <div className="animate-pulse space-y-3">
@@ -292,25 +295,25 @@ function BackupHistoryTable({ backups, isLoading, onRestore }) {
         <thead className="bg-gray-50">
           <tr>
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Backup ID
+              {t('tableBackupId')}
             </th>
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Type
+              {t('tableType')}
             </th>
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Status
+              {t('tableStatus')}
             </th>
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Start Time
+              {t('tableStartTime')}
             </th>
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Size
+              {t('tableSize')}
             </th>
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Initiated By
+              {t('tableInitiatedBy')}
             </th>
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Actions
+              {t('tableActions')}
             </th>
           </tr>
         </thead>
@@ -344,7 +347,7 @@ function BackupHistoryTable({ backups, isLoading, onRestore }) {
                       onClick={() => onRestore(backup)}
                       className="text-blue-600 hover:text-blue-900"
                     >
-                      Restore
+                      {t('restore')}
                     </button>
                   )}
                 </td>
@@ -353,7 +356,7 @@ function BackupHistoryTable({ backups, isLoading, onRestore }) {
           ) : (
             <tr>
               <td colSpan="7" className="px-6 py-4 text-center text-sm text-gray-500">
-                No backups found
+                {t('noBackupsFound')}
               </td>
             </tr>
           )}
@@ -364,6 +367,7 @@ function BackupHistoryTable({ backups, isLoading, onRestore }) {
 }
 
 export default function BackupManagementPage() {
+  const t = useTranslations('SecurityBackup');
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   const router = useRouter();
   
@@ -411,7 +415,7 @@ export default function BackupManagementPage() {
       }
     } catch (err) {
       console.error('Backup data fetch error:', err);
-      setError(err.message || 'Failed to fetch backup data');
+      setError(err.message || t('failedToFetchBackupData'));
     } finally {
       setIsLoading(false);
     }
@@ -433,10 +437,10 @@ export default function BackupManagementPage() {
         setShowCreateModal(false);
         fetchBackupData(); // Refresh data
       } else {
-        setError(response.message || 'Failed to create backup');
+        setError(response.message || t('failedToCreateBackup'));
       }
     } catch (err) {
-      setError(err.message || 'Failed to create backup');
+      setError(err.message || t('failedToCreateBackup'));
     } finally {
       setIsCreating(false);
     }
@@ -452,10 +456,10 @@ export default function BackupManagementPage() {
         setSelectedBackup(null);
         fetchBackupData(); // Refresh data
       } else {
-        setError(response.message || 'Failed to initiate restore');
+        setError(response.message || t('failedToInitiateRestore'));
       }
     } catch (err) {
-      setError(err.message || 'Failed to initiate restore');
+      setError(err.message || t('failedToInitiateRestore'));
     } finally {
       setIsRestoring(false);
     }
@@ -470,7 +474,7 @@ export default function BackupManagementPage() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="admin-spinner"></div>
-        <span className="ml-2">Loading...</span>
+        <span className="ml-2">{t('loading')}</span>
       </div>
     );
   }
@@ -489,10 +493,10 @@ export default function BackupManagementPage() {
                 onClick={() => router.push('/security')}
                 className="text-gray-600 hover:text-gray-900"
               >
-                ← Back to Security
+                ← {t('backToSecurity')}
               </button>
               <h1 className="text-xl font-semibold text-gray-900">
-                Backup & Recovery Management
+                {t('pageTitle')}
               </h1>
             </div>
             <div className="flex items-center space-x-4">
@@ -500,14 +504,14 @@ export default function BackupManagementPage() {
                 onClick={() => setShowCreateModal(true)}
                 className="admin-button admin-button-primary text-sm"
               >
-                Create Backup
+                {t('createBackup')}
               </button>
               <button
                 onClick={fetchBackupData}
                 disabled={isLoading}
                 className="admin-button admin-button-secondary text-sm"
               >
-                {isLoading ? 'Refreshing...' : 'Refresh'}
+                {isLoading ? t('refreshing') : t('refresh')}
               </button>
             </div>
           </div>
@@ -525,53 +529,53 @@ export default function BackupManagementPage() {
         {/* Backup Status Overview */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <BackupStatusWidget
-            title="Backup System"
-            value={backupStatus?.backupSystem?.enabled ? 'Enabled' : 'Disabled'}
+            title={t('backupSystem')}
+            value={backupStatus?.backupSystem?.enabled ? t('enabled') : t('disabled')}
             status={backupStatus?.backupHealth}
             isLoading={isLoading}
-            description="System status"
+            description={t('systemStatus')}
           />
-          
+
           <BackupStatusWidget
-            title="Last Backup"
-            value={backupStatus?.backupSystem?.lastBackup 
+            title={t('lastBackup')}
+            value={backupStatus?.backupSystem?.lastBackup
               ? new Date(backupStatus.backupSystem.lastBackup).toLocaleDateString()
-              : 'Never'
+              : t('never')
             }
             status="completed"
             isLoading={isLoading}
-            description="Most recent backup"
+            description={t('mostRecentBackup')}
           />
-          
+
           <BackupStatusWidget
-            title="Next Scheduled"
-            value={backupStatus?.backupSystem?.nextScheduledBackup 
+            title={t('nextScheduled')}
+            value={backupStatus?.backupSystem?.nextScheduledBackup
               ? new Date(backupStatus.backupSystem.nextScheduledBackup).toLocaleDateString()
-              : 'Not scheduled'
+              : t('notScheduled')
             }
             status="ready"
             isLoading={isLoading}
-            description="Automatic backup"
+            description={t('automaticBackup')}
           />
-          
+
           <BackupStatusWidget
-            title="Storage Usage"
-            value={backupStatus?.storageUsage?.used || 'N/A'}
+            title={t('storageUsage')}
+            value={backupStatus?.storageUsage?.used || t('notAvailable')}
             status="healthy"
             isLoading={isLoading}
-            description={`of ${backupStatus?.storageUsage?.total || 'N/A'} total`}
+            description={t('ofTotal', { total: backupStatus?.storageUsage?.total || t('notAvailable') })}
           />
         </div>
 
         {/* Storage Usage Chart */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
           <div className="admin-card">
-            <h2 className="text-lg font-semibold mb-4">Storage Usage</h2>
+            <h2 className="text-lg font-semibold mb-4">{t('storageUsage')}</h2>
             <GaugeChart
               data={[{
                 value: backupStatus?.storageUsage ? 
                   (parseFloat(backupStatus.storageUsage.used) / parseFloat(backupStatus.storageUsage.total)) * 100 : 0,
-                name: 'Storage'
+                name: t('storage')
               }]}
               loading={isLoading}
               height={300}
@@ -581,30 +585,30 @@ export default function BackupManagementPage() {
           </div>
 
           <div className="admin-card">
-            <h2 className="text-lg font-semibold mb-4">Disaster Recovery Status</h2>
+            <h2 className="text-lg font-semibold mb-4">{t('disasterRecoveryStatus')}</h2>
             <div className="space-y-4">
               <div className="flex justify-between">
-                <span className="text-sm text-gray-600">DR Plan Status:</span>
+                <span className="text-sm text-gray-600">{t('drPlanStatus')}</span>
                 <span className={`text-sm font-medium ${
                   drStatus?.disasterRecoveryPlan?.status === 'READY' ? 'text-green-600' : 'text-red-600'
                 }`}>
-                  {drStatus?.disasterRecoveryPlan?.status || 'Unknown'}
+                  {drStatus?.disasterRecoveryPlan?.status || t('unknown')}
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-sm text-gray-600">RTO Target:</span>
-                <span className="text-sm font-medium">{drStatus?.disasterRecoveryPlan?.rtoTarget || 'N/A'}</span>
+                <span className="text-sm text-gray-600">{t('rtoTarget')}</span>
+                <span className="text-sm font-medium">{drStatus?.disasterRecoveryPlan?.rtoTarget || t('notAvailable')}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-sm text-gray-600">RPO Target:</span>
-                <span className="text-sm font-medium">{drStatus?.disasterRecoveryPlan?.rpoTarget || 'N/A'}</span>
+                <span className="text-sm text-gray-600">{t('rpoTarget')}</span>
+                <span className="text-sm font-medium">{drStatus?.disasterRecoveryPlan?.rpoTarget || t('notAvailable')}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-sm text-gray-600">Last Tested:</span>
+                <span className="text-sm text-gray-600">{t('lastTested')}</span>
                 <span className="text-sm font-medium">
-                  {drStatus?.disasterRecoveryPlan?.lastTested 
+                  {drStatus?.disasterRecoveryPlan?.lastTested
                     ? new Date(drStatus.disasterRecoveryPlan.lastTested).toLocaleDateString()
-                    : 'Never'
+                    : t('never')
                   }
                 </span>
               </div>
@@ -614,7 +618,7 @@ export default function BackupManagementPage() {
 
         {/* Recent Backups */}
         <div className="admin-card mb-8">
-          <h2 className="text-lg font-semibold mb-4">Recent Backups</h2>
+          <h2 className="text-lg font-semibold mb-4">{t('recentBackups')}</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
             {backupStatus?.recentBackups?.map((backup, index) => (
               <div key={index} className="p-4 border border-gray-200 rounded-lg">
@@ -627,9 +631,9 @@ export default function BackupManagementPage() {
                   </span>
                 </div>
                 <div className="text-xs text-gray-600">
-                  <div>Type: {backup.type}</div>
-                  <div>Size: {backup.size}</div>
-                  <div>Date: {new Date(backup.startTime).toLocaleDateString()}</div>
+                  <div>{t('recentType', { type: backup.type })}</div>
+                  <div>{t('recentSize', { size: backup.size })}</div>
+                  <div>{t('recentDate', { date: new Date(backup.startTime).toLocaleDateString() })}</div>
                 </div>
               </div>
             ))}
@@ -638,7 +642,7 @@ export default function BackupManagementPage() {
 
         {/* Backup History */}
         <div className="admin-card">
-          <h2 className="text-lg font-semibold mb-4">Backup History</h2>
+          <h2 className="text-lg font-semibold mb-4">{t('backupHistory')}</h2>
           <BackupHistoryTable
             backups={backupHistory}
             isLoading={isLoading}

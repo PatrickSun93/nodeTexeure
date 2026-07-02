@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { LineChart, PieChart, BarChart, GaugeChart } from '@/components/charts';
+import { useTranslations } from 'next-intl';
 
 // Security API functions
 const securityAPI = {
@@ -148,16 +149,17 @@ function SecurityAlert({ alert, onDismiss }) {
 
 // Time Range Selector
 function TimeRangeSelector({ selectedRange, onRangeChange }) {
+  const t = useTranslations('Security');
   const ranges = [
-    { value: '1h', label: 'Last Hour' },
-    { value: '24h', label: 'Last 24 Hours' },
-    { value: '7d', label: 'Last 7 Days' },
-    { value: '30d', label: 'Last 30 Days' }
+    { value: '1h', label: t('lastHour') },
+    { value: '24h', label: t('last24Hours') },
+    { value: '7d', label: t('last7Days') },
+    { value: '30d', label: t('last30Days') }
   ];
 
   return (
     <div className="flex items-center space-x-2">
-      <label className="text-sm font-medium text-gray-700">Time Range:</label>
+      <label className="text-sm font-medium text-gray-700">{t('timeRangeLabel')}</label>
       <select
         value={selectedRange}
         onChange={(e) => onRangeChange(e.target.value)}
@@ -175,6 +177,7 @@ function TimeRangeSelector({ selectedRange, onRangeChange }) {
 
 // Login Attempts Table
 function LoginAttemptsTable({ attempts, isLoading }) {
+  const t = useTranslations('Security');
   if (isLoading) {
     return (
       <div className="animate-pulse space-y-3">
@@ -191,19 +194,19 @@ function LoginAttemptsTable({ attempts, isLoading }) {
         <thead className="bg-gray-50">
           <tr>
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Time
+              {t('time')}
             </th>
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              User ID
+              {t('userId')}
             </th>
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              IP Address
+              {t('ipAddress')}
             </th>
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Status
+              {t('status')}
             </th>
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              User Agent
+              {t('userAgent')}
             </th>
           </tr>
         </thead>
@@ -215,7 +218,7 @@ function LoginAttemptsTable({ attempts, isLoading }) {
                   {new Date(attempt.timestamp).toLocaleString()}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                  {attempt.userId || 'Anonymous'}
+                  {attempt.userId || t('anonymous')}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                   {attempt.ipAddress}
@@ -226,7 +229,7 @@ function LoginAttemptsTable({ attempts, isLoading }) {
                       ? 'bg-green-100 text-green-800' 
                       : 'bg-red-100 text-red-800'
                   }`}>
-                    {attempt.success ? 'Success' : 'Failed'}
+                    {attempt.success ? t('statusSuccess') : t('statusFailed')}
                   </span>
                 </td>
                 <td className="px-6 py-4 text-sm text-gray-900 max-w-xs truncate">
@@ -237,7 +240,7 @@ function LoginAttemptsTable({ attempts, isLoading }) {
           ) : (
             <tr>
               <td colSpan="5" className="px-6 py-4 text-center text-sm text-gray-500">
-                No login attempts found
+                {t('noLoginAttempts')}
               </td>
             </tr>
           )}
@@ -248,6 +251,7 @@ function LoginAttemptsTable({ attempts, isLoading }) {
 }
 
 export default function SecurityDashboard() {
+  const t = useTranslations('Security');
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   const router = useRouter();
   
@@ -308,11 +312,11 @@ export default function SecurityDashboard() {
       setLastUpdated(new Date());
     } catch (err) {
       console.error('Security data fetch error:', err);
-      setError(err.message || 'Failed to fetch security data');
+      setError(err.message || t('failedToFetchSecurityData'));
     } finally {
       setIsLoading(false);
     }
-  }, [selectedTimeRange]);
+  }, [selectedTimeRange, t]);
 
   // Initial data fetch
   useEffect(() => {
@@ -340,7 +344,7 @@ export default function SecurityDashboard() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="admin-spinner"></div>
-        <span className="ml-2">Loading...</span>
+        <span className="ml-2">{t('loading')}</span>
       </div>
     );
   }
@@ -359,22 +363,22 @@ export default function SecurityDashboard() {
                 onClick={() => router.push('/')}
                 className="text-gray-600 hover:text-gray-900"
               >
-                ← Back to Dashboard
+                ← {t('backToDashboard')}
               </button>
               <h1 className="text-xl font-semibold text-gray-900">
-                Security Monitoring
+                {t('securityMonitoring')}
               </h1>
               <button
                 onClick={() => router.push('/security/audit')}
                 className="admin-button admin-button-secondary text-sm"
               >
-                View Audit Trail
+                {t('viewAuditTrail')}
               </button>
               <button
                 onClick={() => router.push('/security/backup')}
                 className="admin-button admin-button-secondary text-sm"
               >
-                Backup Management
+                {t('backupManagement')}
               </button>
             </div>
             <div className="flex items-center space-x-4">
@@ -384,7 +388,7 @@ export default function SecurityDashboard() {
               />
               {lastUpdated && (
                 <span className="text-sm text-gray-500">
-                  Last updated: {lastUpdated.toLocaleTimeString()}
+                  {t('lastUpdated', { time: lastUpdated.toLocaleTimeString() })}
                 </span>
               )}
               <button
@@ -392,7 +396,7 @@ export default function SecurityDashboard() {
                 disabled={isLoading}
                 className="admin-button admin-button-primary text-sm"
               >
-                {isLoading ? 'Refreshing...' : 'Refresh'}
+                {isLoading ? t('refreshing') : t('refresh')}
               </button>
             </div>
           </div>
@@ -410,35 +414,35 @@ export default function SecurityDashboard() {
         {/* Security Metrics */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <SecurityMetricWidget
-            title="Login Attempts"
+            title={t('loginAttempts')}
             value={dashboardData?.loginMetrics?.total_attempts || 0}
             status={dashboardData?.loginMetrics?.failed_logins > dashboardData?.loginMetrics?.successful_logins ? 'warning' : 'good'}
             isLoading={isLoading}
-            description={`${dashboardData?.loginMetrics?.successful_logins || 0} successful, ${dashboardData?.loginMetrics?.failed_logins || 0} failed`}
+            description={t('loginSummary', { successful: dashboardData?.loginMetrics?.successful_logins || 0, failed: dashboardData?.loginMetrics?.failed_logins || 0 })}
           />
           
           <SecurityMetricWidget
-            title="Security Violations"
+            title={t('securityViolations')}
             value={dashboardData?.securityViolations?.length || 0}
             status={dashboardData?.securityViolations?.length > 5 ? 'critical' : dashboardData?.securityViolations?.length > 0 ? 'warning' : 'good'}
             isLoading={isLoading}
-            description="Detected threats"
+            description={t('detectedThreats')}
           />
           
           <SecurityMetricWidget
-            title="System Health"
-            value={systemHealth?.healthScores?.overall ? `${systemHealth.healthScores.overall}%` : 'N/A'}
+            title={t('systemHealth')}
+            value={systemHealth?.healthScores?.overall ? `${systemHealth.healthScores.overall}%` : t('na')}
             status={systemHealth?.healthScores?.overall > 90 ? 'good' : systemHealth?.healthScores?.overall > 70 ? 'warning' : 'critical'}
             isLoading={isLoading}
-            description="Overall system health"
+            description={t('overallSystemHealth')}
           />
           
           <SecurityMetricWidget
-            title="Active Alerts"
+            title={t('activeAlerts')}
             value={dashboardData?.alertsCount || 0}
             status={dashboardData?.alertsCount > 3 ? 'critical' : dashboardData?.alertsCount > 0 ? 'warning' : 'good'}
             isLoading={isLoading}
-            description="Requires attention"
+            description={t('requiresAttention')}
           />
         </div>
 
@@ -446,7 +450,7 @@ export default function SecurityDashboard() {
         {dashboardData?.alerts && dashboardData.alerts.length > 0 && (
           <div className="mb-8">
             <div className="admin-card">
-              <h2 className="text-lg font-semibold mb-4 text-red-600">Active Security Alerts</h2>
+              <h2 className="text-lg font-semibold mb-4 text-red-600">{t('activeSecurityAlerts')}</h2>
               <div className="space-y-3">
                 {dashboardData.alerts.map((alert, index) => (
                   <SecurityAlert key={index} alert={alert} />
@@ -460,14 +464,14 @@ export default function SecurityDashboard() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
           {/* System Health Gauges */}
           <div className="admin-card">
-            <h2 className="text-lg font-semibold mb-4">System Health Metrics</h2>
+            <h2 className="text-lg font-semibold mb-4">{t('systemHealthMetrics')}</h2>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <h3 className="text-sm font-medium text-gray-600 mb-2">Memory Usage</h3>
+                <h3 className="text-sm font-medium text-gray-600 mb-2">{t('memoryUsage')}</h3>
                 <GaugeChart
                   data={[{
                     value: systemHealth?.systemMetrics?.memory?.system?.usagePercent || 0,
-                    name: 'Memory'
+                    name: t('memory')
                   }]}
                   loading={isLoading}
                   height={200}
@@ -476,11 +480,11 @@ export default function SecurityDashboard() {
                 />
               </div>
               <div>
-                <h3 className="text-sm font-medium text-gray-600 mb-2">Database Health</h3>
+                <h3 className="text-sm font-medium text-gray-600 mb-2">{t('databaseHealth')}</h3>
                 <GaugeChart
                   data={[{
                     value: systemHealth?.healthScores?.database || 0,
-                    name: 'Database'
+                    name: t('database')
                   }]}
                   loading={isLoading}
                   height={200}
@@ -493,16 +497,16 @@ export default function SecurityDashboard() {
 
           {/* Login Success Rate */}
           <div className="admin-card">
-            <h2 className="text-lg font-semibold mb-4">Login Success Rate</h2>
+            <h2 className="text-lg font-semibold mb-4">{t('loginSuccessRate')}</h2>
             <PieChart
               data={[
                 { 
-                  name: 'Successful', 
+                  name: t('successful'),
                   value: dashboardData?.loginMetrics?.successful_logins || 0,
                   itemStyle: { color: '#10b981' }
                 },
                 { 
-                  name: 'Failed', 
+                  name: t('failed'),
                   value: dashboardData?.loginMetrics?.failed_logins || 0,
                   itemStyle: { color: '#ef4444' }
                 }
@@ -517,7 +521,7 @@ export default function SecurityDashboard() {
         {/* Recent Login Attempts */}
         <div className="mb-8">
           <div className="admin-card">
-            <h2 className="text-lg font-semibold mb-4">Recent Login Attempts</h2>
+            <h2 className="text-lg font-semibold mb-4">{t('recentLoginAttempts')}</h2>
             <LoginAttemptsTable attempts={loginAttempts} isLoading={isLoading} />
           </div>
         </div>
@@ -526,25 +530,25 @@ export default function SecurityDashboard() {
         {threats && threats.length > 0 && (
           <div className="mb-8">
             <div className="admin-card">
-              <h2 className="text-lg font-semibold mb-4">Recent Security Threats</h2>
+              <h2 className="text-lg font-semibold mb-4">{t('recentSecurityThreats')}</h2>
               <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
                     <tr>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Time
+                        {t('time')}
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Type
+                        {t('type')}
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Severity
+                        {t('severity')}
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        IP Address
+                        {t('ipAddress')}
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Details
+                        {t('details')}
                       </th>
                     </tr>
                   </thead>
@@ -585,27 +589,27 @@ export default function SecurityDashboard() {
         {/* System Information */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="admin-card">
-            <h2 className="text-lg font-semibold mb-4">System Information</h2>
+            <h2 className="text-lg font-semibold mb-4">{t('systemInformation')}</h2>
             <div className="space-y-3">
               <div className="flex justify-between">
-                <span className="text-sm text-gray-600">Platform:</span>
+                <span className="text-sm text-gray-600">{t('platformLabel')}</span>
                 <span className="text-sm font-medium">{systemHealth?.systemMetrics?.platform?.os}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-sm text-gray-600">Node Version:</span>
+                <span className="text-sm text-gray-600">{t('nodeVersionLabel')}</span>
                 <span className="text-sm font-medium">{systemHealth?.systemMetrics?.platform?.nodeVersion}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-sm text-gray-600">Uptime:</span>
+                <span className="text-sm text-gray-600">{t('uptimeLabel')}</span>
                 <span className="text-sm font-medium">
-                  {systemHealth?.systemMetrics?.uptime?.process 
+                  {systemHealth?.systemMetrics?.uptime?.process
                     ? Math.floor(systemHealth.systemMetrics.uptime.process / 3600) + 'h'
-                    : 'N/A'
+                    : t('na')
                   }
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-sm text-gray-600">Memory Usage:</span>
+                <span className="text-sm text-gray-600">{t('memoryUsageLabel')}</span>
                 <span className="text-sm font-medium">
                   {systemHealth?.systemMetrics?.memory?.system?.usagePercent}%
                 </span>
@@ -614,32 +618,32 @@ export default function SecurityDashboard() {
           </div>
 
           <div className="admin-card">
-            <h2 className="text-lg font-semibold mb-4">Database Status</h2>
+            <h2 className="text-lg font-semibold mb-4">{t('databaseStatus')}</h2>
             <div className="space-y-3">
               <div className="flex justify-between">
-                <span className="text-sm text-gray-600">Connection:</span>
+                <span className="text-sm text-gray-600">{t('connectionLabel')}</span>
                 <span className={`text-sm font-medium ${
                   systemHealth?.databaseHealth?.connected ? 'text-green-600' : 'text-red-600'
                 }`}>
-                  {systemHealth?.databaseHealth?.connected ? 'Connected' : 'Disconnected'}
+                  {systemHealth?.databaseHealth?.connected ? t('connected') : t('disconnected')}
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-sm text-gray-600">Pool Connections:</span>
+                <span className="text-sm text-gray-600">{t('poolConnectionsLabel')}</span>
                 <span className="text-sm font-medium">
                   {systemHealth?.databaseHealth?.connectionPool?.totalConnections || 0}
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-sm text-gray-600">Free Connections:</span>
+                <span className="text-sm text-gray-600">{t('freeConnectionsLabel')}</span>
                 <span className="text-sm font-medium">
                   {systemHealth?.databaseHealth?.connectionPool?.freeConnections || 0}
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-sm text-gray-600">Database:</span>
+                <span className="text-sm text-gray-600">{t('databaseLabel')}</span>
                 <span className="text-sm font-medium">
-                  {systemHealth?.databaseHealth?.database || 'N/A'}
+                  {systemHealth?.databaseHealth?.database || t('na')}
                 </span>
               </div>
             </div>
