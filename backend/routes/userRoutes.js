@@ -15,22 +15,31 @@ const router = express.Router();
 // Rate limiters
 const ADMIN_ROLES = ['admin', 'staff', 'superadmin', 'owner'];
 
+// Auth rate limits are enforced only in production. Outside production (local dev,
+// automated tests, screenshot capture) they are skipped so repeated logins aren't
+// throttled; set DISABLE_RATE_LIMIT=true to skip them explicitly in any environment.
+const skipRateLimit = () =>
+  process.env.NODE_ENV !== 'production' || process.env.DISABLE_RATE_LIMIT === 'true';
+
 const registerLimiter = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hour
   max: 5, // 5 registrations per hour per IP
   message: { status: 'FAIL', message: 'Too many registration attempts, please try again later' },
+  skip: skipRateLimit,
 });
 
 const refreshLimiter = rateLimit({
   windowMs: 60 * 1000, // 1 minute
   max: 10, // 10 refresh requests per minute per IP
   message: { status: 'FAIL', message: 'Too many refresh attempts' },
+  skip: skipRateLimit,
 });
 
 const verifyEmailLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 10, // 10 verification attempts per 15 min per IP
   message: { status: 'FAIL', message: 'Too many verification attempts' },
+  skip: skipRateLimit,
 });
 
 /**
@@ -152,18 +161,20 @@ router.post('/register', registerLimiter, async (req, res) => {
   }
 });
 
-// Login rate limiter
+// Login rate limiter (window/max tunable via env for production)
 const loginLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5, // limit each IP to 5 requests per windowMs
-  message: 'Too many login attempts from this IP, please try again after 15 minutes'
+  windowMs: parseInt(process.env.LOGIN_RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000, // 15 minutes
+  max: parseInt(process.env.LOGIN_RATE_LIMIT_MAX) || 5, // limit each IP to 5 requests per windowMs
+  message: 'Too many login attempts from this IP, please try again after 15 minutes',
+  skip: skipRateLimit,
 });
 
 // Forgot password rate limiter
 const forgotLimiter = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hour
   max: 3, // limit each IP to 3 requests per windowMs
-  message: 'Too many password reset attempts from this IP, please try again after an hour'
+  message: 'Too many password reset attempts from this IP, please try again after an hour',
+  skip: skipRateLimit,
 });
 
 // Email transporter configuration (use env vars in production)

@@ -17,13 +17,16 @@ app.use(helmet({
   crossOriginEmbedderPolicy: false, // Allow cross-origin for image serving
 }));
 
-// Global rate limiter for all API routes (configurable via RATE_LIMIT_* env vars)
+// Global rate limiter for all API routes (configurable via RATE_LIMIT_* env vars).
+// Enforced only in production; skipped in dev/test (or when DISABLE_RATE_LIMIT=true)
+// so local dev, automated tests, and screenshot capture aren't throttled.
 const globalLimiter = rateLimit({
   windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 60 * 1000,
   max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 100,
   standardHeaders: true,
   legacyHeaders: false,
   message: { status: 'FAIL', message: 'Too many requests, please try again later' },
+  skip: () => process.env.NODE_ENV !== 'production' || process.env.DISABLE_RATE_LIMIT === 'true',
 });
 app.use('/api', globalLimiter);
 
