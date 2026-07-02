@@ -1,0 +1,41 @@
+{
+  "Nav": {
+    "shop": "Shop",
+    "ourStory": "Our Story",
+    "journal": "Journal",
+    "signIn": "Sign In",
+    "account": "Account",
+    "cart": "Cart",
+    "search": "Search",
+    "silk": "Silk",
+    "cashmere": "Cashmere",
+    "allProducts": "All Products",
+    "profile": "Profile",
+    "wishlist": "Wishlist",
+    "signOut": "Sign Out"
+  },
+  "Footer": {
+    "tagline": "Luxury bedding in silk & cashmere, crafted for the deepest rest and made to last a lifetime.",
+    "shop": "Shop",
+    "company": "Company",
+    "support": "Support",
+    "allBedding": "All Bedding",
+    "silk": "Silk",
+    "cashmere": "Cashmere",
+    "newArrivals": "New Arrivals",
+    "ourStory": "Our Story",
+    "journal": "Journal",
+    "contactUs": "Contact Us",
+    "faq": "FAQ",
+    "shippingReturns": "Shipping & Returns",
+    "myOrders": "My Orders",
+    "trackOrder": "Track Order",
+    "termsOfService": "Terms of Service",
+    "rights": "All rights reserved."
+  },
+  "LanguageSwitcher": {
+    "label": "Language",
+    "en": "English",
+    "zh": "中文"
+  }
+}

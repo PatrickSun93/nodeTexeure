@@ -4,12 +4,15 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useSession, signIn, signOut } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useCartCount } from '../lib';
 import CartDrawer from './CartDrawer';
 import SearchBar from './SearchBar';
 import ThemeToggle from './ThemeToggle';
+import LanguageSwitcher from './LanguageSwitcher';
 
   export default function Header({ siteName = 'Noiraé' }) {
+  const t = useTranslations('Nav');
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isShopMenuOpen, setIsShopMenuOpen] = useState(false);
@@ -68,41 +71,41 @@ import ThemeToggle from './ThemeToggle';
               onMouseLeave={() => setIsShopMenuOpen(false)}
             >
               <Link href="/shop" className="aesop-nav-link">
-                Shop
+                {t('shop')}
               </Link>
               {isShopMenuOpen && (
                 <div className="aesop-dropdown-menu">
-                  <Link 
-                    href="/collections/silk" 
+                  <Link
+                    href="/collections/silk"
                     className="aesop-dropdown-link"
                     onClick={() => setIsShopMenuOpen(false)}
                   >
-                    Silk
+                    {t('silk')}
                   </Link>
-                  <Link 
-                    href="/collections/cashmere" 
+                  <Link
+                    href="/collections/cashmere"
                     className="aesop-dropdown-link"
                     onClick={() => setIsShopMenuOpen(false)}
                   >
-                    Cashmere
+                    {t('cashmere')}
                   </Link>
-                  <Link 
-                    href="/shop" 
+                  <Link
+                    href="/shop"
                     className="aesop-dropdown-link"
                     onClick={() => setIsShopMenuOpen(false)}
                   >
-                    All Products
+                    {t('allProducts')}
                   </Link>
                 </div>
               )}
             </div>
-            
+
             <Link href="/about" className="aesop-nav-link">
-              Our Story
+              {t('ourStory')}
             </Link>
-            
+
             <Link href="/journal" className="aesop-nav-link">
-              Journal
+              {t('journal')}
             </Link>
           </nav>
           
@@ -133,6 +136,8 @@ import ThemeToggle from './ThemeToggle';
                 </button>
               )}
             </div>
+
+            <LanguageSwitcher />
 
             <ThemeToggle />
 
@@ -173,20 +178,20 @@ import ThemeToggle from './ThemeToggle';
                         className="aesop-dropdown-item"
                         onClick={() => setIsUserMenuOpen(false)}
                       >
-                        Profile
+                        {t('profile')}
                       </Link>
                       <Link
                         href="/wishlist"
                         className="aesop-dropdown-item"
                         onClick={() => setIsUserMenuOpen(false)}
                       >
-                        Wishlist
+                        {t('wishlist')}
                       </Link>
                       <button
                         onClick={handleSignOut}
                         className="aesop-dropdown-item aesop-dropdown-button"
                       >
-                        Sign Out
+                        {t('signOut')}
                       </button>
                     </div>
                   )}
@@ -196,7 +201,7 @@ import ThemeToggle from './ThemeToggle';
                   href="/signin"
                   className="aesop-sign-in-link"
                 >
-                  Sign In
+                  {t('signIn')}
                 </Link>
               )}
             </div>

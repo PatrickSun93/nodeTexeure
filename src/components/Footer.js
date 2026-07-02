@@ -1,40 +1,43 @@
 'use client';
 
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 
 // Four-column footer matching the "Champagne & Charcoal" design (design/Noirae - Home.dc.html):
-// a wide brand column + three link columns on a dark espresso ground.
+// a wide brand column + three link columns on a dark espresso ground. Labels are keyed
+// into the Footer message namespace so the whole footer localizes.
 const FOOTER_COLUMNS = [
   {
-    heading: 'Shop',
+    headingKey: 'shop',
     links: [
-      { label: 'All Bedding', href: '/shop' },
-      { label: 'Silk', href: '/shop?material=silk' },
-      { label: 'Cashmere', href: '/shop?material=cashmere' },
-      { label: 'New Arrivals', href: '/new-arrive' },
+      { key: 'allBedding', href: '/shop' },
+      { key: 'silk', href: '/shop?material=silk' },
+      { key: 'cashmere', href: '/shop?material=cashmere' },
+      { key: 'newArrivals', href: '/new-arrive' },
     ],
   },
   {
-    heading: 'Company',
+    headingKey: 'company',
     links: [
-      { label: 'Our Story', href: '/about' },
-      { label: 'Journal', href: '/journal' },
-      { label: 'Contact Us', href: '/contact' },
-      { label: 'FAQ', href: '/faq' },
+      { key: 'ourStory', href: '/about' },
+      { key: 'journal', href: '/journal' },
+      { key: 'contactUs', href: '/contact' },
+      { key: 'faq', href: '/faq' },
     ],
   },
   {
-    heading: 'Support',
+    headingKey: 'support',
     links: [
-      { label: 'Shipping & Returns', href: '/shipping-returns' },
-      { label: 'My Orders', href: '/orders' },
-      { label: 'Track Order', href: '/track-order' },
-      { label: 'Terms of Service', href: '/terms' },
+      { key: 'shippingReturns', href: '/shipping-returns' },
+      { key: 'myOrders', href: '/orders' },
+      { key: 'trackOrder', href: '/track-order' },
+      { key: 'termsOfService', href: '/terms' },
     ],
   },
 ];
 
 export default function Footer() {
+  const t = useTranslations('Footer');
   return (
     <footer className="noirae-footer">
       <div className="noirae-footer-inner">
@@ -42,20 +45,17 @@ export default function Footer() {
           {/* Brand column */}
           <div className="noirae-footer-brand">
             <div className="noirae-footer-wordmark">Noiraé</div>
-            <p className="noirae-footer-tagline">
-              Luxury bedding in silk &amp; cashmere, crafted for the deepest rest
-              and made to last a lifetime.
-            </p>
+            <p className="noirae-footer-tagline">{t('tagline')}</p>
           </div>
 
           {/* Link columns */}
           {FOOTER_COLUMNS.map((col) => (
-            <div key={col.heading} className="noirae-footer-col">
-              <div className="noirae-footer-col-heading">{col.heading}</div>
+            <div key={col.headingKey} className="noirae-footer-col">
+              <div className="noirae-footer-col-heading">{t(col.headingKey)}</div>
               <nav className="noirae-footer-col-links">
                 {col.links.map((l) => (
-                  <Link key={l.label} href={l.href} className="noirae-footer-link">
-                    {l.label}
+                  <Link key={l.key} href={l.href} className="noirae-footer-link">
+                    {t(l.key)}
                   </Link>
                 ))}
               </nav>
@@ -66,7 +66,7 @@ export default function Footer() {
         {/* Bottom bar */}
         <div className="noirae-footer-bottom">
           <div className="noirae-footer-copyright">
-            © 2026 Noiraé. All rights reserved.
+            © 2026 Noiraé. {t('rights')}
           </div>
           <div className="noirae-footer-social">
             <a

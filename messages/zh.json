@@ -1,0 +1,41 @@
+{
+  "Nav": {
+    "shop": "商店",
+    "ourStory": "品牌故事",
+    "journal": "手记",
+    "signIn": "登录",
+    "account": "账户",
+    "cart": "购物车",
+    "search": "搜索",
+    "silk": "真丝",
+    "cashmere": "羊绒",
+    "allProducts": "全部商品",
+    "profile": "个人资料",
+    "wishlist": "心愿单",
+    "signOut": "退出登录"
+  },
+  "Footer": {
+    "tagline": "丝绸与羊绒制成的奢华寝具，为最深沉的休憩而制，历久弥新。",
+    "shop": "商店",
+    "company": "关于我们",
+    "support": "客户支持",
+    "allBedding": "全部寝具",
+    "silk": "真丝",
+    "cashmere": "羊绒",
+    "newArrivals": "新品上架",
+    "ourStory": "品牌故事",
+    "journal": "手记",
+    "contactUs": "联系我们",
+    "faq": "常见问题",
+    "shippingReturns": "配送与退货",
+    "myOrders": "我的订单",
+    "trackOrder": "订单查询",
+    "termsOfService": "服务条款",
+    "rights": "版权所有。"
+  },
+  "LanguageSwitcher": {
+    "label": "语言",
+    "en": "English",
+    "zh": "中文"
+  }
+}
