@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { ensureCsrfToken } from '../../utils/api';
 import MetricsCard from '../../components/MetricsCard';
 // import RevenueChart from '../../components/RevenueChart';
@@ -20,6 +21,7 @@ import AnalyticsDashboard from '../../components/AnalyticsDashboard';
 import BulkUploadView from '../../components/BulkUploadView';
 
 export default function Dashboard() {
+  const t = useTranslations('Dashboard');
   const [activeTab, setActiveTab] = useState('dashboard');
   const [timePeriod, setTimePeriod] = useState('last-30-days');
   const router = useRouter();
@@ -92,75 +94,75 @@ export default function Dashboard() {
       {/* Sidebar */}
       <div className="w-64 bg-white shadow-md flex flex-col">
         <div className="p-6 border-b">
-          <h1 className="text-2xl font-bold">Admin Dashboard</h1>
-          <p className="text-sm text-gray-500 mt-1">Noirae Admin</p>
+          <h1 className="text-2xl font-bold">{t('title')}</h1>
+          <p className="text-sm text-gray-500 mt-1">{t('brandSubtitle')}</p>
         </div>
         <nav className="flex-1 py-4">
           <button
             onClick={() => setActiveTab('dashboard')}
             className={`block w-full text-left px-6 py-3 hover:bg-blue-50 transition ${activeTab === 'dashboard' ? 'bg-blue-50 text-blue-600 border-r-2 border-blue-600' : ''}`}
           >
-            📊 Dashboard
+            📊 {t('navDashboard')}
           </button>
           <button
             onClick={() => setActiveTab('orders')}
             className={`block w-full text-left px-6 py-3 hover:bg-blue-50 transition ${activeTab === 'orders' ? 'bg-blue-50 text-blue-600 border-r-2 border-blue-600' : ''}`}
           >
-            📦 Orders
+            📦 {t('navOrders')}
           </button>
           <button
             onClick={() => setActiveTab('products')}
             className={`block w-full text-left px-6 py-3 hover:bg-blue-50 transition ${activeTab === 'products' ? 'bg-blue-50 text-blue-600 border-r-2 border-blue-600' : ''}`}
           >
-            🏷️ Products
+            🏷️ {t('navProducts')}
           </button>
           <button
             onClick={() => setActiveTab('email-templates')}
             className={`block w-full text-left px-6 py-3 hover:bg-blue-50 transition ${activeTab === 'email-templates' ? 'bg-blue-50 text-blue-600 border-r-2 border-blue-600' : ''}`}
           >
-            📧 Email Templates
+            📧 {t('navEmailTemplates')}
           </button>
           <button
             onClick={() => setActiveTab('customers')}
             className={`block w-full text-left px-6 py-3 hover:bg-blue-50 transition ${activeTab === 'customers' ? 'bg-blue-50 text-blue-600 border-r-2 border-blue-600' : ''}`}
           >
-            👥 Customers
+            👥 {t('navCustomers')}
           </button>
           <button
             onClick={() => setActiveTab('staff')}
             className={`block w-full text-left px-6 py-3 hover:bg-blue-50 transition ${activeTab === 'staff' ? 'bg-blue-50 text-blue-600 border-r-2 border-blue-600' : ''}`}
           >
-            🛡️ Staff
+            🛡️ {t('navStaff')}
           </button>
           <button
             onClick={() => setActiveTab('settings')}
             className={`block w-full text-left px-6 py-3 hover:bg-blue-50 transition ${activeTab === 'settings' ? 'bg-blue-50 text-blue-600 border-r-2 border-blue-600' : ''}`}
           >
-            ⚙️ Settings
+            ⚙️ {t('navSettings')}
           </button>
           <button
             onClick={() => setActiveTab('promotions')}
             className={`block w-full text-left px-6 py-3 hover:bg-blue-50 transition ${activeTab === 'promotions' ? 'bg-blue-50 text-blue-600 border-r-2 border-blue-600' : ''}`}
           >
-            🎟️ Promotions
+            🎟️ {t('navPromotions')}
           </button>
 
           <button
             onClick={() => setActiveTab('analytics')}
             className={`block w-full text-left px-6 py-3 hover:bg-blue-50 transition ${activeTab === 'analytics' ? 'bg-blue-50 text-blue-600 border-r-2 border-blue-600' : ''}`}
           >
-            📈 Analytics
+            📈 {t('navAnalytics')}
           </button>
           <button
             onClick={() => setActiveTab('bulk-upload')}
             className={`block w-full text-left px-6 py-3 hover:bg-blue-50 transition ${activeTab === 'bulk-upload' ? 'bg-blue-50 text-blue-600 border-r-2 border-blue-600' : ''}`}
           >
-            📤 Bulk Upload
+            📤 {t('navBulkUpload')}
           </button>
         </nav>
         <div className="p-6 border-t">
           <button onClick={handleLogout} className="w-full px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition">
-            Logout
+            {t('logout')}
           </button>
         </div>
       </div>
@@ -184,42 +186,43 @@ export default function Dashboard() {
 }
 
 function DashboardView({ timePeriod, setTimePeriod, metrics, recentOrders }) {
+  const t = useTranslations('Dashboard');
   return (
     <div className="p-8">
       {/* Header */}
       <div className="flex justify-between items-center mb-8">
         <div>
-          <h2 className="text-3xl font-bold">Admin Sales Dashboard</h2>
-          <p className="text-gray-500 mt-1">Welcome back, Noirae Admin</p>
+          <h2 className="text-3xl font-bold">{t('salesDashboardTitle')}</h2>
+          <p className="text-gray-500 mt-1">{t('welcomeBack')}</p>
         </div>
         <div className="flex gap-2">
           <button
             onClick={() => setTimePeriod('last-30-days')}
             className={`px-4 py-2 rounded transition ${timePeriod === 'last-30-days' ? 'bg-amber-100 text-amber-700 font-medium' : 'bg-white hover:bg-gray-50'}`}
           >
-            Last 30 Days
+            {t('last30Days')}
           </button>
           <button
             onClick={() => setTimePeriod('last-90-days')}
             className={`px-4 py-2 rounded transition ${timePeriod === 'last-90-days' ? 'bg-amber-100 text-amber-700 font-medium' : 'bg-white hover:bg-gray-50'}`}
           >
-            Last 90 Days
+            {t('last90Days')}
           </button>
           <button
             onClick={() => setTimePeriod('custom')}
             className={`px-4 py-2 rounded transition ${timePeriod === 'custom' ? 'bg-amber-100 text-amber-700 font-medium' : 'bg-white hover:bg-gray-50'}`}
           >
-            Custom Range
+            {t('customRange')}
           </button>
         </div>
       </div>
 
       {/* Metrics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <MetricsCard title="Total Revenue" value={new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(metrics.totalRevenue)} change="--%" trend="up" />
-        <MetricsCard title="Total Orders" value={metrics.activeOrders} change="--%" trend="up" />
-        <MetricsCard title="Average Order Value" value={new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(metrics.avgOrderValue)} change="--%" trend="up" />
-        <MetricsCard title="Conversion Rate" value={`${metrics.conversionRate}%`} change="--%" trend="down" />
+        <MetricsCard title={t('totalRevenue')} value={new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(metrics.totalRevenue)} change="--%" trend="up" />
+        <MetricsCard title={t('totalOrders')} value={metrics.activeOrders} change="--%" trend="up" />
+        <MetricsCard title={t('avgOrderValue')} value={new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(metrics.avgOrderValue)} change="--%" trend="up" />
+        <MetricsCard title={t('conversionRate')} value={`${metrics.conversionRate}%`} change="--%" trend="down" />
       </div>
 
 
@@ -244,6 +247,7 @@ function DashboardView({ timePeriod, setTimePeriod, metrics, recentOrders }) {
 import OrderDetailView from '../../components/OrderDetailView';
 
 function OrdersView() {
+  const t = useTranslations('Dashboard');
   const [orders, setOrders] = useState([]);
   const [selectedStatus, setSelectedStatus] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
@@ -261,11 +265,11 @@ function OrdersView() {
           const data = response.keyValueTable.find(item => item.orders)?.orders || [];
           setOrders(data);
         } else {
-          setError('Failed to load orders');
+          setError(t('ordersLoadFailed'));
         }
       } catch (err) {
         console.error('Error loading orders:', err);
-        setError('Error loading orders.');
+        setError(t('ordersLoadError'));
       } finally {
         setIsLoading(false);
       }
@@ -289,9 +293,9 @@ function OrdersView() {
     <div className="p-8 bg-gray-50 min-h-full">
       {/* Header */}
       <div className="flex justify-between items-center mb-8">
-        <h2 className="text-3xl font-bold text-gray-900">Order Queue</h2>
+        <h2 className="text-3xl font-bold text-gray-900">{t('orderQueueTitle')}</h2>
         <button className="px-4 py-2 bg-[#C5A572] text-white rounded-md hover:bg-[#b09060] transition shadow-sm font-medium">
-          Export Orders
+          {t('exportOrders')}
         </button>
       </div>
 
@@ -305,7 +309,7 @@ function OrdersView() {
           </span>
           <input
             type="text"
-            placeholder="Search by Order ID, Customer Name..."
+            placeholder={t('searchOrdersPlaceholder')}
             className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C5A572] focus:border-transparent bg-white"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -317,7 +321,7 @@ function OrdersView() {
           </div>
           <button className="px-4 py-2 bg-white border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-50 flex items-center gap-2 font-medium">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" /></svg>
-            Filters
+            {t('filters')}
           </button>
         </div>
       </div>
@@ -333,7 +337,7 @@ function OrdersView() {
               : 'bg-white text-gray-500 hover:bg-gray-50 border border-gray-100'
               }`}
           >
-            {status}
+            {t(`status${status}`)}
           </button>
         ))}
       </div>
@@ -347,22 +351,22 @@ function OrdersView() {
                 <th className="px-6 py-4 text-left w-10">
                   <input type="checkbox" className="rounded border-gray-300 text-[#C5A572] focus:ring-[#C5A572]" />
                 </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Order ID</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Date</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Customer Name</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Total Amount</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Destination</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{t('colOrderId')}</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{t('colDate')}</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{t('colCustomerName')}</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{t('colTotalAmount')}</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{t('colDestination')}</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{t('colStatus')}</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{t('colActions')}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
               {isLoading ? (
-                <tr><td colSpan="8" className="px-6 py-10 text-center text-gray-500">Loading orders...</td></tr>
+                <tr><td colSpan="8" className="px-6 py-10 text-center text-gray-500">{t('loadingOrders')}</td></tr>
               ) : error ? (
                 <tr><td colSpan="8" className="px-6 py-10 text-center text-red-500">{error}</td></tr>
               ) : filteredOrders.length === 0 ? (
-                <tr><td colSpan="8" className="px-6 py-10 text-center text-gray-500">No orders found.</td></tr>
+                <tr><td colSpan="8" className="px-6 py-10 text-center text-gray-500">{t('noOrdersFound')}</td></tr>
               ) : (
                 filteredOrders.map((order) => (
                   <tr key={order.id} className="hover:bg-gray-50 transition-colors">
@@ -389,7 +393,7 @@ function OrdersView() {
                         onClick={() => setSelectedOrder(order)}
                         className="text-[#C5A572] hover:text-[#a08050] font-medium"
                       >
-                        Edit Details
+                        {t('editDetails')}
                       </button>
                     </td>
                   </tr>
@@ -399,7 +403,7 @@ function OrdersView() {
         </div>
         {/* Pagination */}
         <div className="px-6 py-4 border-t border-gray-100 flex items-center justify-between bg-white">
-          <span className="text-sm text-gray-500">Showing 1 to {filteredOrders.length} of 42 results</span>
+          <span className="text-sm text-gray-500">{t('showingOrdersResults', { to: filteredOrders.length })}</span>
           <div className="flex gap-1">
             <button className="p-2 rounded hover:bg-gray-100 text-gray-500 border border-gray-200">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
@@ -417,6 +421,7 @@ function OrdersView() {
 
 
 function ProductsView() {
+  const t = useTranslations('Dashboard');
   const [viewMode, setViewMode] = useState('list'); // 'list', 'add', 'edit'
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -442,11 +447,11 @@ function ProductsView() {
           const data = response.keyValueTable.find(item => item.products)?.products || [];
           setProducts(data);
         } else {
-          setError('Failed to load products');
+          setError(t('productsLoadFailed'));
         }
       } catch (err) {
         console.error('Error loading products:', err);
-        setError('Error loading products.');
+        setError(t('productsLoadError'));
       } finally {
         setIsLoading(false);
       }
@@ -516,15 +521,15 @@ function ProductsView() {
       {/* Header */}
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h2 className="text-3xl font-bold text-gray-900">Products</h2>
-          <p className="text-gray-500 mt-1">Manage your product inventory, details, and status.</p>
+          <h2 className="text-3xl font-bold text-gray-900">{t('productsTitle')}</h2>
+          <p className="text-gray-500 mt-1">{t('productsSubtitle')}</p>
         </div>
         <button
           onClick={handleAddProduct}
           className="px-4 py-2 bg-[#C5A572] text-white rounded-md hover:bg-[#b09060] transition shadow-sm font-medium flex items-center gap-2"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
-          Add New Product
+          {t('addNewProduct')}
         </button>
       </div>
 
@@ -538,7 +543,7 @@ function ProductsView() {
           </span>
           <input
             type="text"
-            placeholder="Search by Product Name, SKU..."
+            placeholder={t('searchProductsPlaceholder')}
             className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C5A572] focus:border-transparent"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -550,19 +555,19 @@ function ProductsView() {
             value={categoryFilter}
             onChange={(e) => setCategoryFilter(e.target.value)}
           >
-            <option value="All">Category: All</option>
-            <option value="Silk Bedding">Silk Bedding</option>
-            <option value="Cashmere Throws">Cashmere Throws</option>
+            <option value="All">{t('categoryAll')}</option>
+            <option value="Silk Bedding">{t('categorySilkBedding')}</option>
+            <option value="Cashmere Throws">{t('categoryCashmereThrows')}</option>
           </select>
           <select
             className="px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C5A572] bg-white text-gray-600"
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
           >
-            <option value="All">Status: All</option>
-            <option value="Active">Active</option>
-            <option value="Draft">Draft</option>
-            <option value="Out of Stock">Out of Stock</option>
+            <option value="All">{t('statusFilterAll')}</option>
+            <option value="Active">{t('statusActive')}</option>
+            <option value="Draft">{t('statusDraft')}</option>
+            <option value="Out of Stock">{t('statusOutOfStock')}</option>
           </select>
         </div>
       </div>
@@ -576,22 +581,22 @@ function ProductsView() {
                 <th className="px-6 py-4 text-left w-10">
                   <input type="checkbox" className="rounded border-gray-300 text-[#C5A572] focus:ring-[#C5A572]" />
                 </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Product Name</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">SKU</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Category</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Price</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Stock</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{t('colProductName')}</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{t('colSku')}</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{t('colCategory')}</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{t('colPrice')}</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{t('colStock')}</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{t('colStatus')}</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{t('colActions')}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
               {isLoading ? (
-                <tr><td colSpan="8" className="px-6 py-10 text-center text-gray-500">Loading products...</td></tr>
+                <tr><td colSpan="8" className="px-6 py-10 text-center text-gray-500">{t('loadingProducts')}</td></tr>
               ) : error ? (
                 <tr><td colSpan="8" className="px-6 py-10 text-center text-red-500">{error}</td></tr>
               ) : filteredProducts.length === 0 ? (
-                <tr><td colSpan="8" className="px-6 py-10 text-center text-gray-500">No products found.</td></tr>
+                <tr><td colSpan="8" className="px-6 py-10 text-center text-gray-500">{t('noProductsFound')}</td></tr>
               ) : (
                 paginatedProducts.map((product) => (
                   <tr key={product.id} className="hover:bg-gray-50 transition-colors">
@@ -613,7 +618,7 @@ function ProductsView() {
                         product.status === 'Draft' ? 'bg-yellow-100 text-yellow-800' :
                           'bg-red-100 text-red-800'
                         }`}>
-                        {product.status === 'Active' ? '● Active' : product.status === 'Draft' ? '● Draft' : 'Out of Stock'}
+                        {product.status === 'Active' ? `● ${t('statusActive')}` : product.status === 'Draft' ? `● ${t('statusDraft')}` : t('statusOutOfStock')}
                       </span>
                     </td>
                     <td className="px-6 py-4 text-sm">
@@ -635,7 +640,7 @@ function ProductsView() {
         {filteredProducts.length > 0 && (
           <div className="px-6 py-4 border-t border-gray-100 flex items-center justify-between bg-white">
             <span className="text-sm text-gray-500">
-              Showing {Math.min((currentPage - 1) * itemsPerPage + 1, filteredProducts.length)} to {Math.min(currentPage * itemsPerPage, filteredProducts.length)} of {filteredProducts.length} results
+              {t('showingResults', { from: Math.min((currentPage - 1) * itemsPerPage + 1, filteredProducts.length), to: Math.min(currentPage * itemsPerPage, filteredProducts.length), total: filteredProducts.length })}
             </span>
             <div className="flex gap-1">
               <button
@@ -643,7 +648,7 @@ function ProductsView() {
                 disabled={currentPage === 1}
                 className="px-3 py-1 rounded border border-gray-200 text-gray-500 hover:bg-gray-50 text-sm disabled:opacity-50"
               >
-                Previous
+                {t('previous')}
               </button>
 
               {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
@@ -664,7 +669,7 @@ function ProductsView() {
                 disabled={currentPage === totalPages}
                 className="px-3 py-1 rounded border border-gray-200 text-gray-500 hover:bg-gray-50 text-sm disabled:opacity-50"
               >
-                Next
+                {t('next')}
               </button>
             </div>
           </div>
@@ -676,6 +681,7 @@ function ProductsView() {
 
 
 function CustomersView() {
+  const t = useTranslations('Dashboard');
   const [customers, setCustomers] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCustomer, setSelectedCustomer] = useState(null);
@@ -694,11 +700,11 @@ function CustomersView() {
           const data = response.keyValueTable.find(item => item.users)?.users || [];
           setCustomers(data);
         } else {
-          setError('Failed to load customers');
+          setError(t('customersLoadFailed'));
         }
       } catch (err) {
         console.error('Error loading customers:', err);
-        setError('Error loading customers.');
+        setError(t('customersLoadError'));
       } finally {
         setIsLoading(false);
       }
@@ -733,11 +739,11 @@ function CustomersView() {
       {/* Header */}
       <div className="flex justify-between items-center mb-8">
         <div className="flex items-center gap-4">
-          <h2 className="text-3xl font-bold text-gray-900">Customers</h2>
+          <h2 className="text-3xl font-bold text-gray-900">{t('customersTitle')}</h2>
         </div>
         <button className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition shadow-sm font-medium flex items-center gap-2">
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
-          Add New Customer
+          {t('addNewCustomer')}
         </button>
       </div>
 
@@ -751,7 +757,7 @@ function CustomersView() {
           </span>
           <input
             type="text"
-            placeholder="Search by name, email, or ID..."
+            placeholder={t('searchCustomersPlaceholder')}
             className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -759,19 +765,19 @@ function CustomersView() {
         </div>
         <div className="flex gap-3">
           <select className="px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-600">
-            <option>Customer Segments</option>
-            <option>VIP</option>
-            <option>New</option>
+            <option>{t('customerSegments')}</option>
+            <option>{t('segmentVip')}</option>
+            <option>{t('segmentNew')}</option>
           </select>
           <select className="px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-600">
-            <option>Order History</option>
-            <option>High to Low</option>
-            <option>Low to High</option>
+            <option>{t('orderHistory')}</option>
+            <option>{t('highToLow')}</option>
+            <option>{t('lowToHigh')}</option>
           </select>
           <select className="px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-600">
-            <option>Last Order Date</option>
-            <option>Newest First</option>
-            <option>Oldest First</option>
+            <option>{t('colLastOrderDate')}</option>
+            <option>{t('newestFirst')}</option>
+            <option>{t('oldestFirst')}</option>
           </select>
         </div>
       </div>
@@ -782,22 +788,22 @@ function CustomersView() {
           <table className="w-full">
             <thead>
               <tr className="border-b border-gray-100 bg-gray-50/50">
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Customer ID</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Name</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Email</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Orders</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Total Spent</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Last Order Date</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{t('colCustomerId')}</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{t('colName')}</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{t('colEmail')}</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{t('colOrders')}</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{t('colTotalSpent')}</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{t('colLastOrderDate')}</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{t('colActions')}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
               {isLoading ? (
-                <tr><td colSpan="7" className="px-6 py-10 text-center text-gray-500">Loading customers...</td></tr>
+                <tr><td colSpan="7" className="px-6 py-10 text-center text-gray-500">{t('loadingCustomers')}</td></tr>
               ) : error ? (
                 <tr><td colSpan="7" className="px-6 py-10 text-center text-red-500">{error}</td></tr>
               ) : filteredCustomers.length === 0 ? (
-                <tr><td colSpan="7" className="px-6 py-10 text-center text-gray-500">No customers found.</td></tr>
+                <tr><td colSpan="7" className="px-6 py-10 text-center text-gray-500">{t('noCustomersFound')}</td></tr>
               ) : (
                 paginatedCustomers.map((customer) => (
                   <tr key={customer.id} className="hover:bg-gray-50 transition-colors">
@@ -806,7 +812,7 @@ function CustomersView() {
                     <td className="px-6 py-4 text-sm text-gray-500">{customer.email}</td>
                     <td className="px-6 py-4 text-sm text-gray-500">{customer.orders}</td>
                     <td className="px-6 py-4 text-sm text-gray-900 font-medium">${Number(customer.spent || 0).toFixed(2)}</td>
-                    <td className="px-6 py-4 text-sm text-gray-500">{customer.lastOrder ? new Date(customer.lastOrder).toLocaleDateString() : 'Never'}</td>
+                    <td className="px-6 py-4 text-sm text-gray-500">{customer.lastOrder ? new Date(customer.lastOrder).toLocaleDateString() : t('never')}</td>
                     <td className="px-6 py-4 text-sm">
                       <button onClick={() => setSelectedCustomer(customer)} className="text-gray-400 hover:text-gray-600">
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
@@ -821,7 +827,7 @@ function CustomersView() {
         {filteredCustomers.length > 0 && (
           <div className="px-6 py-4 border-t border-gray-100 flex items-center justify-between bg-white">
             <span className="text-sm text-gray-500">
-              Showing {Math.min((currentPage - 1) * itemsPerPage + 1, filteredCustomers.length)} to {Math.min(currentPage * itemsPerPage, filteredCustomers.length)} of {filteredCustomers.length} results
+              {t('showingResults', { from: Math.min((currentPage - 1) * itemsPerPage + 1, filteredCustomers.length), to: Math.min(currentPage * itemsPerPage, filteredCustomers.length), total: filteredCustomers.length })}
             </span>
             <div className="flex gap-1">
               <button
@@ -861,6 +867,7 @@ function CustomersView() {
 }
 
 function PromotionsView() {
+  const t = useTranslations('Dashboard');
   const [viewMode, setViewMode] = useState('list'); // 'list', 'edit'
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedPromotion, setSelectedPromotion] = useState(null);
@@ -877,11 +884,11 @@ function PromotionsView() {
           const data = response.keyValueTable.find(item => item.coupons)?.coupons || [];
           setPromotions(data);
         } else {
-          setError('Failed to load promotions');
+          setError(t('promotionsLoadFailed'));
         }
       } catch (err) {
         console.error('Error loading promotions:', err);
-        setError('Error loading promotions.');
+        setError(t('promotionsLoadError'));
       } finally {
         setIsLoading(false);
       }
@@ -912,13 +919,13 @@ function PromotionsView() {
     <div className="p-8 bg-gray-50 min-h-full">
       {/* Header */}
       <div className="flex justify-between items-center mb-8">
-        <h2 className="text-3xl font-bold text-gray-900">Promotions & Discounts</h2>
+        <h2 className="text-3xl font-bold text-gray-900">{t('promotionsTitle')}</h2>
         <button
           onClick={handleCreate}
           className="px-4 py-2 bg-[#C5A572] text-white rounded-md hover:bg-[#b09060] transition shadow-sm font-medium flex items-center gap-2"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
-          Create New Promotion
+          {t('createNewPromotion')}
         </button>
       </div>
 
@@ -934,22 +941,22 @@ function PromotionsView() {
             </span>
             <input
               type="text"
-              placeholder="Search promotions by name or code..."
+              placeholder={t('searchPromotionsPlaceholder')}
               className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C5A572] focus:border-transparent text-gray-700"
             />
           </div>
           <div className="flex gap-4">
             <select className="px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C5A572] text-gray-600 min-w-[160px]">
-              <option>All Types</option>
-              <option>Percentage</option>
-              <option>Fixed Amount</option>
-              <option>Free Shipping</option>
+              <option>{t('allTypes')}</option>
+              <option>{t('typePercentage')}</option>
+              <option>{t('typeFixedAmount')}</option>
+              <option>{t('typeFreeShipping')}</option>
             </select>
             <select className="px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C5A572] text-gray-600 min-w-[160px]">
-              <option>All Statuses</option>
-              <option>Active</option>
-              <option>Draft</option>
-              <option>Expired</option>
+              <option>{t('allStatuses')}</option>
+              <option>{t('statusActive')}</option>
+              <option>{t('statusDraft')}</option>
+              <option>{t('statusExpired')}</option>
             </select>
           </div>
         </div>
@@ -959,23 +966,23 @@ function PromotionsView() {
           <table className="w-full">
             <thead>
               <tr className="border-b border-gray-100">
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Name</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Code</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Type</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Discount Value</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Start Date</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">End Date</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Status</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Actions</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">{t('colName')}</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">{t('colCode')}</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">{t('colType')}</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">{t('colDiscountValue')}</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">{t('colStartDate')}</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">{t('colEndDate')}</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">{t('colStatus')}</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">{t('colActions')}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
               {isLoading ? (
-                <tr><td colSpan="8" className="px-6 py-10 text-center text-gray-500">Loading promotions...</td></tr>
+                <tr><td colSpan="8" className="px-6 py-10 text-center text-gray-500">{t('loadingPromotions')}</td></tr>
               ) : error ? (
                 <tr><td colSpan="8" className="px-6 py-10 text-center text-red-500">{error}</td></tr>
               ) : promotions.length === 0 ? (
-                <tr><td colSpan="8" className="px-6 py-10 text-center text-gray-500">No promotions found.</td></tr>
+                <tr><td colSpan="8" className="px-6 py-10 text-center text-gray-500">{t('noPromotionsFound')}</td></tr>
               ) : (
                 promotions.map((promo) => (
                   <tr key={promo.id} className="hover:bg-gray-50 transition-colors group">
@@ -984,7 +991,7 @@ function PromotionsView() {
                     <td className="px-6 py-6 text-sm text-gray-600 capitalize">{promo.type.replace('_', ' ')}</td>
                     <td className="px-6 py-6 text-sm font-bold text-gray-900">{promo.type === 'percentage' ? `${Number(promo.value)}%` : promo.type === 'fixed_amount' ? `$${Number(promo.value)}` : '-'}</td>
                     <td className="px-6 py-6 text-sm text-gray-500">{promo.startDate ? new Date(promo.startDate).toLocaleDateString() : '-'}</td>
-                    <td className="px-6 py-6 text-sm text-gray-500">{promo.endDate ? new Date(promo.endDate).toLocaleDateString() : 'No Expiry'}</td>
+                    <td className="px-6 py-6 text-sm text-gray-500">{promo.endDate ? new Date(promo.endDate).toLocaleDateString() : t('noExpiry')}</td>
                     <td className="px-6 py-6">
                       <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${promo.status === 'Active' ? 'bg-green-100 text-green-700' :
                         promo.status === 'Draft' ? 'bg-yellow-100 text-yellow-700' :
@@ -1025,6 +1032,7 @@ function PromotionsView() {
 
 
 function StaffView() {
+  const t = useTranslations('Dashboard');
   const [selectedStaff, setSelectedStaff] = useState(null);
   const [staff, setStaff] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -1039,11 +1047,11 @@ function StaffView() {
           const data = response.keyValueTable.find(item => item.staff)?.staff || [];
           setStaff(data);
         } else {
-          setError('Failed to load staff');
+          setError(t('staffLoadFailed'));
         }
       } catch (err) {
         console.error('Error loading staff:', err);
-        setError('Error loading staff.');
+        setError(t('staffLoadError'));
       } finally {
         setIsLoading(false);
       }
@@ -1058,13 +1066,13 @@ function StaffView() {
   return (
     <div className="p-8 bg-gray-50 min-h-full">
       <div className="flex justify-between items-center mb-8">
-        <h2 className="text-3xl font-bold text-gray-900">Staff Members</h2>
+        <h2 className="text-3xl font-bold text-gray-900">{t('staffTitle')}</h2>
         <button
           onClick={() => setSelectedStaff({})}
           className="px-4 py-2 bg-[#C5A572] text-white rounded-md hover:bg-[#b09060] transition shadow-sm font-medium flex items-center gap-2"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
-          Add New Staff
+          {t('addNewStaff')}
         </button>
       </div>
 
@@ -1072,21 +1080,21 @@ function StaffView() {
         <table className="w-full">
           <thead>
             <tr className="border-b border-gray-100 bg-gray-50/50">
-              <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Name</th>
-              <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Email</th>
-              <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Role</th>
-              <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
-              <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Last Active</th>
-              <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</th>
+              <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{t('colName')}</th>
+              <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{t('colEmail')}</th>
+              <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{t('colRole')}</th>
+              <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{t('colStatus')}</th>
+              <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{t('colLastActive')}</th>
+              <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{t('colActions')}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-50">
             {isLoading ? (
-              <tr><td colSpan="6" className="px-6 py-10 text-center text-gray-500">Loading staff...</td></tr>
+              <tr><td colSpan="6" className="px-6 py-10 text-center text-gray-500">{t('loadingStaff')}</td></tr>
             ) : error ? (
               <tr><td colSpan="6" className="px-6 py-10 text-center text-red-500">{error}</td></tr>
             ) : staff.length === 0 ? (
-              <tr><td colSpan="6" className="px-6 py-10 text-center text-gray-500">No staff found (except you?).</td></tr>
+              <tr><td colSpan="6" className="px-6 py-10 text-center text-gray-500">{t('noStaffFound')}</td></tr>
             ) : (
               staff.map((member) => (
                 <tr key={member.id} className="hover:bg-gray-50 transition-colors">
@@ -1098,10 +1106,10 @@ function StaffView() {
                       {member.status}
                     </span>
                   </td>
-                  <td className="px-6 py-4 text-sm text-gray-500">{member.lastActive !== 'Never' ? new Date(member.lastActive).toLocaleString() : 'Never'}</td>
+                  <td className="px-6 py-4 text-sm text-gray-500">{member.lastActive !== 'Never' ? new Date(member.lastActive).toLocaleString() : t('never')}</td>
                   <td className="px-6 py-4 text-sm">
                     <button onClick={() => setSelectedStaff(member)} className="text-gray-400 hover:text-blue-600">
-                      Edit
+                      {t('edit')}
                     </button>
                   </td>
                 </tr>

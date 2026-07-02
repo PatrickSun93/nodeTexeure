@@ -2,8 +2,10 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 
 export default function Login() {
+  const t = useTranslations('AdminHome');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -31,13 +33,13 @@ export default function Login() {
         // Auth cookies are set; no localStorage anymore
         router.push('/dashboard');
       } else if (data.status === 'SUCCESS' && !data.keyValueTable.isAdmin) {
-        setError('Access denied. Admin privileges required.');
+        setError(t('accessDenied'));
       } else {
-        setError(data.message || 'Invalid credentials');
+        setError(data.message || t('invalidCredentials'));
       }
     } catch (err) {
       console.error('Login error:', err);
-      setError('Login failed. Please try again.');
+      setError(t('loginFailed'));
     } finally {
       setIsLoading(false);
     }
@@ -46,11 +48,11 @@ export default function Login() {
   return (
     <div className="flex items-center justify-center h-screen bg-gray-100">
       <div className="card w-96">
-        <h2 className="text-2xl font-bold mb-6">Admin Login</h2>
+        <h2 className="text-2xl font-bold mb-6">{t('adminLogin')}</h2>
         <form onSubmit={handleSubmit}>
           <input
             type="email"
-            placeholder="Email"
+            placeholder={t('emailPlaceholder')}
             className="input w-full mb-4"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
@@ -59,7 +61,7 @@ export default function Login() {
           />
           <input
             type="password"
-            placeholder="Password"
+            placeholder={t('passwordPlaceholder')}
             className="input w-full mb-4"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
@@ -72,7 +74,7 @@ export default function Login() {
             className="button w-full"
             disabled={isLoading}
           >
-            {isLoading ? 'Logging in...' : 'Login'}
+            {isLoading ? t('loggingIn') : t('login')}
           </button>
         </form>
       </div>

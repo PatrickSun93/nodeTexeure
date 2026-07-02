@@ -4,8 +4,10 @@ import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { adminCustomers, getErrorMessage } from '../../lib/api';
 import * as echarts from 'echarts';
+import { useTranslations } from 'next-intl';
 
 export default function CustomersPage() {
+  const t = useTranslations('Customers');
   const router = useRouter();
   const [customers, setCustomers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -40,7 +42,7 @@ export default function CustomersPage() {
         setCustomers(response.keyValueTable.customers || []);
         setPagination(response.keyValueTable.pagination || {});
       } else {
-        throw new Error(response.message || 'Failed to fetch customers');
+        throw new Error(response.message || t('fetchError'));
       }
     } catch (err) {
       setError(getErrorMessage(err));
@@ -48,7 +50,7 @@ export default function CustomersPage() {
     } finally {
       setLoading(false);
     }
-  }, [filters]);
+  }, [filters, t]);
 
   // Fetch customer analytics
   const fetchAnalytics = useCallback(async () => {
@@ -93,7 +95,7 @@ export default function CustomersPage() {
 
     segmentationChart.setOption({
       title: {
-        text: 'Customer Segmentation',
+        text: t('segmentationChartTitle'),
         left: 'center',
         textStyle: { fontSize: 16, fontWeight: 'bold' }
       },
@@ -106,7 +108,7 @@ export default function CustomersPage() {
         left: 'left'
       },
       series: [{
-        name: 'Customers',
+        name: t('customersSeries'),
         type: 'pie',
         radius: '50%',
         data: segmentationData,
@@ -126,7 +128,7 @@ export default function CustomersPage() {
     
     trendsChart.setOption({
       title: {
-        text: 'Customer Registration Trends',
+        text: t('trendsChartTitle'),
         left: 'center',
         textStyle: { fontSize: 16, fontWeight: 'bold' }
       },
@@ -139,10 +141,10 @@ export default function CustomersPage() {
       },
       yAxis: {
         type: 'value',
-        name: 'New Customers'
+        name: t('newCustomers')
       },
       series: [{
-        name: 'New Customers',
+        name: t('newCustomers'),
         type: 'line',
         data: trendsData.map(item => item.new_customers),
         smooth: true,
@@ -157,7 +159,7 @@ export default function CustomersPage() {
     
     topCustomersChart.setOption({
       title: {
-        text: 'Top Customers by Spending',
+        text: t('topCustomersChartTitle'),
         left: 'center',
         textStyle: { fontSize: 16, fontWeight: 'bold' }
       },
@@ -165,7 +167,7 @@ export default function CustomersPage() {
         trigger: 'axis',
         formatter: function(params) {
           const data = params[0];
-          return `${data.name}<br/>Total Spent: $${data.value.toFixed(2)}`;
+          return `${data.name}<br/>${t('totalSpentTooltip', { amount: data.value.toFixed(2) })}`;
         }
       },
       xAxis: {
@@ -178,10 +180,10 @@ export default function CustomersPage() {
       },
       yAxis: {
         type: 'value',
-        name: 'Total Spent ($)'
+        name: t('totalSpentAxis')
       },
       series: [{
-        name: 'Total Spent',
+        name: t('totalSpent'),
         type: 'bar',
         data: topCustomersData.map(customer => customer.total_spent),
         itemStyle: { color: '#10B981' }
@@ -267,20 +269,20 @@ export default function CustomersPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <h1 className="text-xl font-semibold text-gray-900">
-              Customer Management
+              {t('title')}
             </h1>
             <nav className="flex items-center space-x-4">
-              <a 
+              <a
                 href="/"
                 className="text-sm text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md hover:bg-gray-100"
               >
-                Dashboard
+                {t('navDashboard')}
               </a>
-              <a 
+              <a
                 href="/customers"
                 className="text-sm text-blue-600 px-3 py-2 rounded-md bg-blue-50"
               >
-                Customers
+                {t('navCustomers')}
               </a>
             </nav>
           </div>
@@ -289,8 +291,8 @@ export default function CustomersPage() {
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-6">
-          <h2 className="text-2xl font-bold text-gray-900">Customer Management</h2>
-          <p className="text-gray-600">Manage customer accounts, view analytics, and provide support</p>
+          <h2 className="text-2xl font-bold text-gray-900">{t('title')}</h2>
+          <p className="text-gray-600">{t('subtitle')}</p>
         </div>
 
         {/* Analytics Dashboard */}
@@ -298,26 +300,26 @@ export default function CustomersPage() {
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-8">
             {/* Activity Summary Cards */}
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Customer Overview</h3>
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">{t('customerOverview')}</h3>
               <div className="space-y-3">
                 <div className="flex justify-between">
-                  <span className="text-sm text-gray-600">Total Customers</span>
+                  <span className="text-sm text-gray-600">{t('totalCustomers')}</span>
                   <span className="text-sm font-medium">{analytics.activitySummary?.total_customers || 0}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-sm text-gray-600">Active</span>
+                  <span className="text-sm text-gray-600">{t('active')}</span>
                   <span className="text-sm font-medium text-green-600">{analytics.activitySummary?.active_customers || 0}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-sm text-gray-600">Active (30 days)</span>
+                  <span className="text-sm text-gray-600">{t('active30Days')}</span>
                   <span className="text-sm font-medium">{analytics.activitySummary?.active_last_30_days || 0}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-sm text-gray-600">New (30 days)</span>
+                  <span className="text-sm text-gray-600">{t('new30Days')}</span>
                   <span className="text-sm font-medium text-blue-600">{analytics.activitySummary?.new_last_30_days || 0}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-sm text-gray-600">Verified</span>
+                  <span className="text-sm text-gray-600">{t('verified')}</span>
                   <span className="text-sm font-medium">{analytics.activitySummary?.verified_customers || 0}</span>
                 </div>
               </div>
@@ -343,52 +345,52 @@ export default function CustomersPage() {
           <form onSubmit={handleSearch} className="grid grid-cols-1 md:grid-cols-5 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Search Customers
+                {t('searchCustomers')}
               </label>
               <input
                 type="text"
                 value={filters.search}
                 onChange={(e) => handleFilterChange('search', e.target.value)}
-                placeholder="Search by name or email..."
+                placeholder={t('searchPlaceholder')}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Role
+                {t('role')}
               </label>
               <select
                 value={filters.role}
                 onChange={(e) => handleFilterChange('role', e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
-                <option value="">All Roles</option>
-                <option value="customer">Customer</option>
-                <option value="admin">Admin</option>
-                <option value="staff">Staff</option>
+                <option value="">{t('allRoles')}</option>
+                <option value="customer">{t('roleCustomer')}</option>
+                <option value="admin">{t('roleAdmin')}</option>
+                <option value="staff">{t('roleStaff')}</option>
               </select>
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Status
+                {t('status')}
               </label>
               <select
                 value={filters.status}
                 onChange={(e) => handleFilterChange('status', e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
-                <option value="">All Statuses</option>
-                <option value="active">Active</option>
-                <option value="inactive">Inactive</option>
-                <option value="suspended">Suspended</option>
+                <option value="">{t('allStatuses')}</option>
+                <option value="active">{t('statusActive')}</option>
+                <option value="inactive">{t('statusInactive')}</option>
+                <option value="suspended">{t('statusSuspended')}</option>
               </select>
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Sort By
+                {t('sortBy')}
               </label>
               <select
                 value={`${filters.sortBy}_${filters.sortOrder}`}
@@ -399,11 +401,11 @@ export default function CustomersPage() {
                 }}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
-                <option value="created_at_desc">Newest First</option>
-                <option value="created_at_asc">Oldest First</option>
-                <option value="first_name_asc">Name A-Z</option>
-                <option value="first_name_desc">Name Z-A</option>
-                <option value="last_login_desc">Last Login</option>
+                <option value="created_at_desc">{t('sortNewest')}</option>
+                <option value="created_at_asc">{t('sortOldest')}</option>
+                <option value="first_name_asc">{t('sortNameAsc')}</option>
+                <option value="first_name_desc">{t('sortNameDesc')}</option>
+                <option value="last_login_desc">{t('lastLogin')}</option>
               </select>
             </div>
 
@@ -412,7 +414,7 @@ export default function CustomersPage() {
                 type="submit"
                 className="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
-                Search
+                {t('searchButton')}
               </button>
             </div>
           </form>
@@ -432,28 +434,28 @@ export default function CustomersPage() {
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Customer
+                    {t('columnCustomer')}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Role
+                    {t('role')}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Status
+                    {t('status')}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Segment
+                    {t('columnSegment')}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Orders
+                    {t('columnOrders')}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Total Spent
+                    {t('totalSpent')}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Last Login
+                    {t('lastLogin')}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Actions
+                    {t('columnActions')}
                   </th>
                 </tr>
               </thead>
@@ -461,13 +463,13 @@ export default function CustomersPage() {
                 {loading ? (
                   <tr>
                     <td colSpan="8" className="px-6 py-12 text-center text-gray-500">
-                      Loading customers...
+                      {t('loading')}
                     </td>
                   </tr>
                 ) : customers.length === 0 ? (
                   <tr>
                     <td colSpan="8" className="px-6 py-12 text-center text-gray-500">
-                      No customers found
+                      {t('noCustomers')}
                     </td>
                   </tr>
                 ) : (
@@ -519,7 +521,7 @@ export default function CustomersPage() {
                         {formatCurrency(customer.total_spent)}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {customer.last_login ? formatDate(customer.last_login) : 'Never'}
+                        {customer.last_login ? formatDate(customer.last_login) : t('never')}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         <div className="flex space-x-2">
@@ -527,14 +529,14 @@ export default function CustomersPage() {
                             onClick={() => router.push(`/customers/${customer.id}`)}
                             className="text-blue-600 hover:text-blue-900"
                           >
-                            View
+                            {t('view')}
                           </button>
                           {customer.status === 'active' && (
                             <button
                               onClick={() => handleStatusUpdate(customer.id, 'suspended', 'Admin action')}
                               className="text-red-600 hover:text-red-900"
                             >
-                              Suspend
+                              {t('suspend')}
                             </button>
                           )}
                           {customer.status === 'suspended' && (
@@ -542,7 +544,7 @@ export default function CustomersPage() {
                               onClick={() => handleStatusUpdate(customer.id, 'active', 'Admin action')}
                               className="text-green-600 hover:text-green-900"
                             >
-                              Activate
+                              {t('activate')}
                             </button>
                           )}
                         </div>
@@ -563,40 +565,35 @@ export default function CustomersPage() {
                   disabled={pagination.page <= 1}
                   className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Previous
+                  {t('previous')}
                 </button>
                 <button
                   onClick={() => handleFilterChange('page', Math.min(pagination.totalPages, pagination.page + 1))}
                   disabled={pagination.page >= pagination.totalPages}
                   className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Next
+                  {t('next')}
                 </button>
               </div>
               <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
                 <div>
                   <p className="text-sm text-gray-700">
-                    Showing{' '}
-                    <span className="font-medium">
-                      {((pagination.page - 1) * pagination.limit) + 1}
-                    </span>{' '}
-                    to{' '}
-                    <span className="font-medium">
-                      {Math.min(pagination.page * pagination.limit, pagination.total)}
-                    </span>{' '}
-                    of{' '}
-                    <span className="font-medium">{pagination.total}</span>{' '}
-                    results
+                    {t.rich('showingResults', {
+                      from: ((pagination.page - 1) * pagination.limit) + 1,
+                      to: Math.min(pagination.page * pagination.limit, pagination.total),
+                      total: pagination.total,
+                      medium: (chunks) => <span className="font-medium">{chunks}</span>
+                    })}
                   </p>
                 </div>
                 <div>
-                  <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                  <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label={t('paginationAriaLabel')}>
                     <button
                       onClick={() => handleFilterChange('page', Math.max(1, pagination.page - 1))}
                       disabled={pagination.page <= 1}
                       className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      Previous
+                      {t('previous')}
                     </button>
                     
                     {/* Page numbers */}
@@ -622,7 +619,7 @@ export default function CustomersPage() {
                       disabled={pagination.page >= pagination.totalPages}
                       className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      Next
+                      {t('next')}
                     </button>
                   </nav>
                 </div>

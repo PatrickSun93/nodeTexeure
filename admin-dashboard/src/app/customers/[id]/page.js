@@ -2,10 +2,12 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter, useParams } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { adminCustomers, getErrorMessage } from '../../../lib/api';
 import * as echarts from 'echarts';
 
 export default function CustomerProfilePage() {
+  const t = useTranslations('CustomerDetail');
   const router = useRouter();
   const params = useParams();
   const customerId = params.id;
@@ -31,7 +33,7 @@ export default function CustomerProfilePage() {
       if (response.status === 'SUCCESS') {
         setCustomer(response.keyValueTable);
       } else {
-        throw new Error(response.message || 'Failed to fetch customer');
+        throw new Error(response.message || t('failedToFetchCustomer'));
       }
     } catch (err) {
       setError(getErrorMessage(err));
@@ -39,7 +41,7 @@ export default function CustomerProfilePage() {
     } finally {
       setLoading(false);
     }
-  }, [customerId]);
+  }, [customerId, t]);
 
   // Fetch customer notes
   const fetchNotes = useCallback(async () => {
@@ -80,7 +82,7 @@ export default function CustomerProfilePage() {
       
       spendingChart.setOption({
         title: {
-          text: 'Monthly Spending Trend',
+          text: t('spendingChartTitle'),
           left: 'center',
           textStyle: { fontSize: 16, fontWeight: 'bold' }
         },
@@ -88,7 +90,7 @@ export default function CustomerProfilePage() {
           trigger: 'axis',
           formatter: function(params) {
             const data = params[0];
-            return `${data.name}<br/>Orders: ${data.data.order_count}<br/>Spent: $${data.data.total_spent.toFixed(2)}`;
+            return `${data.name}<br/>${t('orders')}: ${data.data.order_count}<br/>${t('spent')}: $${data.data.total_spent.toFixed(2)}`;
           }
         },
         xAxis: {
@@ -98,18 +100,18 @@ export default function CustomerProfilePage() {
         yAxis: [
           {
             type: 'value',
-            name: 'Amount Spent ($)',
+            name: t('amountSpentAxis'),
             position: 'left'
           },
           {
             type: 'value',
-            name: 'Orders',
+            name: t('orders'),
             position: 'right'
           }
         ],
         series: [
           {
-            name: 'Amount Spent',
+            name: t('amountSpent'),
             type: 'bar',
             yAxisIndex: 0,
             data: customer.monthlySpending.map(item => ({
@@ -120,7 +122,7 @@ export default function CustomerProfilePage() {
             itemStyle: { color: '#3B82F6' }
           },
           {
-            name: 'Orders',
+            name: t('orders'),
             type: 'line',
             yAxisIndex: 1,
             data: customer.monthlySpending.map(item => item.order_count),
@@ -135,17 +137,17 @@ export default function CustomerProfilePage() {
     if (customer.orderStats) {
       const statusChart = echarts.init(document.getElementById('status-chart'));
       const statusData = [
-        { value: customer.orderStats.pending_orders, name: 'Pending' },
-        { value: customer.orderStats.confirmed_orders, name: 'Confirmed' },
-        { value: customer.orderStats.shipped_orders, name: 'Shipped' },
-        { value: customer.orderStats.delivered_orders, name: 'Delivered' },
-        { value: customer.orderStats.cancelled_orders, name: 'Cancelled' },
-        { value: customer.orderStats.refunded_orders, name: 'Refunded' }
+        { value: customer.orderStats.pending_orders, name: t('statusPending') },
+        { value: customer.orderStats.confirmed_orders, name: t('statusConfirmed') },
+        { value: customer.orderStats.shipped_orders, name: t('statusShipped') },
+        { value: customer.orderStats.delivered_orders, name: t('statusDelivered') },
+        { value: customer.orderStats.cancelled_orders, name: t('statusCancelled') },
+        { value: customer.orderStats.refunded_orders, name: t('statusRefunded') }
       ].filter(item => item.value > 0);
 
       statusChart.setOption({
         title: {
-          text: 'Order Status Distribution',
+          text: t('statusChartTitle'),
           left: 'center',
           textStyle: { fontSize: 16, fontWeight: 'bold' }
         },
@@ -158,7 +160,7 @@ export default function CustomerProfilePage() {
           left: 'left'
         },
         series: [{
-          name: 'Orders',
+          name: t('orders'),
           type: 'pie',
           radius: '50%',
           data: statusData,
@@ -263,7 +265,7 @@ export default function CustomerProfilePage() {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading customer profile...</p>
+          <p className="mt-4 text-gray-600">{t('loadingProfile')}</p>
         </div>
       </div>
     );
@@ -278,7 +280,7 @@ export default function CustomerProfilePage() {
             onClick={() => router.push('/customers')}
             className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
           >
-            Back to Customers
+            {t('backToCustomers')}
           </button>
         </div>
       </div>
@@ -289,12 +291,12 @@ export default function CustomerProfilePage() {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <p className="text-gray-600 mb-4">Customer not found</p>
+          <p className="text-gray-600 mb-4">{t('customerNotFound')}</p>
           <button
             onClick={() => router.push('/customers')}
             className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
           >
-            Back to Customers
+            {t('backToCustomers')}
           </button>
         </div>
       </div>
@@ -311,10 +313,10 @@ export default function CustomerProfilePage() {
                 onClick={() => router.push('/customers')}
                 className="text-gray-600 hover:text-gray-900 mr-4"
               >
-                ← Back to Customers
+                ← {t('backToCustomers')}
               </button>
               <h1 className="text-xl font-semibold text-gray-900">
-                Customer Profile
+                {t('customerProfile')}
               </h1>
             </div>
             <nav className="flex items-center space-x-4">
@@ -322,13 +324,13 @@ export default function CustomerProfilePage() {
                 href="/"
                 className="text-sm text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md hover:bg-gray-100"
               >
-                Dashboard
+                {t('dashboard')}
               </a>
               <a 
                 href="/customers"
                 className="text-sm text-blue-600 px-3 py-2 rounded-md bg-blue-50"
               >
-                Customers
+                {t('customers')}
               </a>
             </nav>
           </div>
@@ -373,7 +375,7 @@ export default function CustomerProfilePage() {
                   disabled={statusUpdating}
                   className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50"
                 >
-                  {statusUpdating ? 'Updating...' : 'Suspend'}
+                  {statusUpdating ? t('updating') : t('suspend')}
                 </button>
               )}
               {customer.customer?.status === 'suspended' && (
@@ -382,7 +384,7 @@ export default function CustomerProfilePage() {
                   disabled={statusUpdating}
                   className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50"
                 >
-                  {statusUpdating ? 'Updating...' : 'Activate'}
+                  {statusUpdating ? t('updating') : t('activate')}
                 </button>
               )}
             </div>
@@ -394,25 +396,25 @@ export default function CustomerProfilePage() {
           <div className="lg:col-span-2 space-y-6">
             {/* Customer Statistics */}
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Customer Statistics</h3>
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">{t('customerStatistics')}</h3>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div className="text-center">
                   <div className="text-2xl font-bold text-blue-600">{customer.orderStats?.total_orders || 0}</div>
-                  <div className="text-sm text-gray-600">Total Orders</div>
+                  <div className="text-sm text-gray-600">{t('totalOrders')}</div>
                 </div>
                 <div className="text-center">
                   <div className="text-2xl font-bold text-green-600">{formatCurrency(customer.orderStats?.total_spent || 0)}</div>
-                  <div className="text-sm text-gray-600">Total Spent</div>
+                  <div className="text-sm text-gray-600">{t('totalSpent')}</div>
                 </div>
                 <div className="text-center">
                   <div className="text-2xl font-bold text-purple-600">{formatCurrency(customer.orderStats?.avg_order_value || 0)}</div>
-                  <div className="text-sm text-gray-600">Avg Order Value</div>
+                  <div className="text-sm text-gray-600">{t('avgOrderValue')}</div>
                 </div>
                 <div className="text-center">
                   <div className="text-2xl font-bold text-orange-600">
-                    {customer.orderStats?.last_order_date ? formatDate(customer.orderStats.last_order_date).split(',')[0] : 'Never'}
+                    {customer.orderStats?.last_order_date ? formatDate(customer.orderStats.last_order_date).split(',')[0] : t('never')}
                   </div>
-                  <div className="text-sm text-gray-600">Last Order</div>
+                  <div className="text-sm text-gray-600">{t('lastOrder')}</div>
                 </div>
               </div>
             </div>
@@ -429,17 +431,17 @@ export default function CustomerProfilePage() {
 
             {/* Recent Orders */}
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent Orders</h3>
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">{t('recentOrders')}</h3>
               {customer.recentOrders && customer.recentOrders.length > 0 ? (
                 <div className="overflow-x-auto">
                   <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gray-50">
                       <tr>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Order</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Items</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Total</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('columnOrder')}</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('columnStatus')}</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('columnItems')}</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('columnTotal')}</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('columnDate')}</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200">
@@ -470,13 +472,13 @@ export default function CustomerProfilePage() {
                   </table>
                 </div>
               ) : (
-                <p className="text-gray-500 text-center py-4">No orders found</p>
+                <p className="text-gray-500 text-center py-4">{t('noOrdersFound')}</p>
               )}
             </div>
 
             {/* Addresses */}
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Addresses</h3>
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">{t('addresses')}</h3>
               {customer.addresses && customer.addresses.length > 0 ? (
                 <div className="space-y-4">
                   {customer.addresses.map((address) => {
@@ -485,11 +487,11 @@ export default function CustomerProfilePage() {
                       <div key={address.id} className="border border-gray-200 rounded-lg p-4">
                         <div className="flex items-center justify-between mb-2">
                           <span className="text-sm font-medium text-gray-900 capitalize">
-                            {address.type} Address
+                            {t('addressTypeLabel', { type: address.type })}
                           </span>
                           {address.is_default && (
                             <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
-                              Default
+                              {t('default')}
                             </span>
                           )}
                         </div>
@@ -500,14 +502,14 @@ export default function CustomerProfilePage() {
                           {addressData.address_line_2 && <p>{addressData.address_line_2}</p>}
                           <p>{addressData.city}, {addressData.state} {addressData.postal_code}</p>
                           <p>{addressData.country}</p>
-                          {address.phone && <p>Phone: {address.phone}</p>}
+                          {address.phone && <p>{t('phone', { phone: address.phone })}</p>}
                         </div>
                       </div>
                     );
                   })}
                 </div>
               ) : (
-                <p className="text-gray-500 text-center py-4">No addresses found</p>
+                <p className="text-gray-500 text-center py-4">{t('noAddressesFound')}</p>
               )}
             </div>
           </div>
@@ -516,31 +518,31 @@ export default function CustomerProfilePage() {
           <div className="space-y-6">
             {/* Add Note */}
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Add Customer Note</h3>
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">{t('addCustomerNote')}</h3>
               <form onSubmit={handleAddNote} className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Note Type
+                    {t('noteType')}
                   </label>
                   <select
                     value={noteType}
                     onChange={(e) => setNoteType(e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
-                    <option value="general">General</option>
-                    <option value="support">Support</option>
-                    <option value="billing">Billing</option>
+                    <option value="general">{t('noteTypeGeneral')}</option>
+                    <option value="support">{t('noteTypeSupport')}</option>
+                    <option value="billing">{t('noteTypeBilling')}</option>
                   </select>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Note
+                    {t('noteLabel')}
                   </label>
                   <textarea
                     value={newNote}
                     onChange={(e) => setNewNote(e.target.value)}
                     rows={3}
-                    placeholder="Enter customer service note..."
+                    placeholder={t('notePlaceholder')}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
@@ -549,16 +551,16 @@ export default function CustomerProfilePage() {
                   disabled={!newNote.trim() || addingNote}
                   className="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {addingNote ? 'Adding...' : 'Add Note'}
+                  {addingNote ? t('adding') : t('addNote')}
                 </button>
               </form>
             </div>
 
             {/* Customer Notes and Activity */}
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Notes & Activity</h3>
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">{t('notesActivity')}</h3>
               {notesLoading ? (
-                <p className="text-gray-500 text-center py-4">Loading notes...</p>
+                <p className="text-gray-500 text-center py-4">{t('loadingNotes')}</p>
               ) : notes.length > 0 ? (
                 <div className="space-y-4 max-h-96 overflow-y-auto">
                   {notes.map((note) => (
@@ -575,17 +577,17 @@ export default function CustomerProfilePage() {
                         <p className="text-sm text-gray-700 mb-2">{note.note}</p>
                       )}
                       {note.reason && (
-                        <p className="text-sm text-gray-600 mb-2">Reason: {note.reason}</p>
+                        <p className="text-sm text-gray-600 mb-2">{t('reason', { reason: note.reason })}</p>
                       )}
                       <div className="text-xs text-gray-500">
-                        by {note.createdBy?.firstName} {note.createdBy?.lastName}
-                        {note.ipAddress && ` from ${note.ipAddress}`}
+                        {t('by')} {note.createdBy?.firstName} {note.createdBy?.lastName}
+                        {note.ipAddress && ` ${t('from')} ${note.ipAddress}`}
                       </div>
                     </div>
                   ))}
                 </div>
               ) : (
-                <p className="text-gray-500 text-center py-4">No notes or activity found</p>
+                <p className="text-gray-500 text-center py-4">{t('noNotesFound')}</p>
               )}
             </div>
           </div>

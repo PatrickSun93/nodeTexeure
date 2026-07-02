@@ -1,14 +1,16 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useTranslations } from 'next-intl';
 import { LineChart, BarChart, PieChart, GaugeChart } from '../../../components/charts';
 import ExportButton from '../../../components/ExportButton';
 import api from '../../../lib/api';
 
 export default function PaymentAnalyticsPage() {
+  const t = useTranslations('PaymentAnalytics');
   const [loading, setLoading] = useState(true);
   const [period, setPeriod] = useState('month');
-  
+
   // Payment data states
   const [paymentAnalytics, setPaymentAnalytics] = useState(null);
   const [successRates, setSuccessRates] = useState([]);
@@ -61,10 +63,10 @@ export default function PaymentAnalyticsPage() {
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Payment Analytics</h1>
-          <p className="text-gray-600 mt-1">Payment method performance and processing cost analysis</p>
+          <h1 className="text-3xl font-bold text-gray-900">{t('title')}</h1>
+          <p className="text-gray-600 mt-1">{t('subtitle')}</p>
         </div>
-        
+
         {/* Controls */}
         <div className="flex items-center space-x-4">
           <select
@@ -72,19 +74,19 @@ export default function PaymentAnalyticsPage() {
             onChange={(e) => setPeriod(e.target.value)}
             className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           >
-            <option value="week">This Week</option>
-            <option value="month">This Month</option>
-            <option value="quarter">This Quarter</option>
-            <option value="year">This Year</option>
+            <option value="week">{t('periodWeek')}</option>
+            <option value="month">{t('periodMonth')}</option>
+            <option value="quarter">{t('periodQuarter')}</option>
+            <option value="year">{t('periodYear')}</option>
           </select>
-          
+
           <ExportButton
             endpoint="/admin/reports/export/payment-analytics"
             filename={`payment-analytics-${period}-${new Date().toISOString().split('T')[0]}.csv`}
             params={{ period }}
             variant="secondary"
           >
-            Export Payment Data
+            {t('exportPaymentData')}
           </ExportButton>
         </div>
       </div>
@@ -94,7 +96,7 @@ export default function PaymentAnalyticsPage() {
         <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Total Transactions</p>
+              <p className="text-sm font-medium text-gray-600">{t('totalTransactions')}</p>
               <p className="text-2xl font-bold text-gray-900">{totalTransactions.toLocaleString()}</p>
             </div>
             <div className="p-3 bg-blue-100 rounded-full">
@@ -108,7 +110,7 @@ export default function PaymentAnalyticsPage() {
         <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Payment Volume</p>
+              <p className="text-sm font-medium text-gray-600">{t('paymentVolume')}</p>
               <p className="text-2xl font-bold text-gray-900">{formatCurrency(totalVolume)}</p>
             </div>
             <div className="p-3 bg-green-100 rounded-full">
@@ -122,7 +124,7 @@ export default function PaymentAnalyticsPage() {
         <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Processing Fees</p>
+              <p className="text-sm font-medium text-gray-600">{t('processingFees')}</p>
               <p className="text-2xl font-bold text-gray-900">{formatCurrency(totalFees)}</p>
             </div>
             <div className="p-3 bg-red-100 rounded-full">
@@ -136,7 +138,7 @@ export default function PaymentAnalyticsPage() {
         <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Success Rate</p>
+              <p className="text-sm font-medium text-gray-600">{t('successRate')}</p>
               <p className="text-2xl font-bold text-gray-900">{formatPercentage(overallSuccessRate)}</p>
             </div>
             <div className="p-3 bg-yellow-100 rounded-full">
@@ -163,7 +165,7 @@ export default function PaymentAnalyticsPage() {
             }
             return acc;
           }, [])}
-          title="Payment Success Rate Trends"
+          title={t('successRateTrends')}
           loading={loading}
           height={400}
           colors={['#3b82f6', '#10b981', '#f59e0b', '#ef4444']}
@@ -180,7 +182,7 @@ export default function PaymentAnalyticsPage() {
                 name: method.method,
                 value: method.totalAmount
               }))}
-              title="Payment Volume by Method"
+              title={t('volumeByMethod')}
               loading={loading}
               height={350}
             />
@@ -195,7 +197,7 @@ export default function PaymentAnalyticsPage() {
               totalFees: cost.totalFees,
               effectiveFeeRate: cost.effectiveFeeRate
             }))}
-            title="Processing Costs by Method"
+            title={t('costsByMethod')}
             loading={loading}
             height={350}
             colors={['#ef4444', '#f59e0b']}
@@ -207,29 +209,29 @@ export default function PaymentAnalyticsPage() {
       {paymentAnalytics && (
         <div className="bg-white rounded-lg shadow-sm border border-gray-200">
           <div className="px-6 py-4 border-b border-gray-200">
-            <h3 className="text-lg font-semibold text-gray-900">Payment Method Performance</h3>
+            <h3 className="text-lg font-semibold text-gray-900">{t('methodPerformance')}</h3>
           </div>
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Payment Method
+                    {t('colPaymentMethod')}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Transactions
+                    {t('colTransactions')}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Total Volume
+                    {t('colTotalVolume')}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Success Rate
+                    {t('colSuccessRate')}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Failed Count
+                    {t('colFailedCount')}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Avg Amount
+                    {t('colAvgAmount')}
                   </th>
                 </tr>
               </thead>
@@ -278,29 +280,29 @@ export default function PaymentAnalyticsPage() {
       {/* Processing Costs Analysis */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200">
         <div className="px-6 py-4 border-b border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-900">Processing Costs Analysis</h3>
+          <h3 className="text-lg font-semibold text-gray-900">{t('costsAnalysis')}</h3>
         </div>
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Payment Method
+                  {t('colPaymentMethod')}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Total Volume
+                  {t('colTotalVolume')}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Total Fees
+                  {t('colTotalFees')}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Effective Rate
+                  {t('colEffectiveRate')}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Percentage Fees
+                  {t('colPercentageFees')}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Fixed Fees
+                  {t('colFixedFees')}
                 </th>
               </tr>
             </thead>

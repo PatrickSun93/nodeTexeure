@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { apiRequest, getErrorMessage } from '@/lib/api';
 import { GaugeChart, BarChart, LineChart } from '@/components/charts';
+import { useTranslations } from 'next-intl';
 
 // Inventory API functions
 const inventoryAPI = {
@@ -66,6 +67,7 @@ const inventoryAPI = {
 
 // Stock Level Gauge Component
 function StockLevelGauge({ title, current, total, threshold, isLoading }) {
+  const t = useTranslations('Inventory');
   const percentage = total > 0 ? (current / total) * 100 : 0;
   const thresholdPercentage = total > 0 ? (threshold / total) * 100 : 0;
 
@@ -109,7 +111,7 @@ function StockLevelGauge({ title, current, total, threshold, isLoading }) {
       )}
       <div className="mt-2 text-center">
         <p className="text-xs text-gray-500">
-          Threshold: {threshold} units
+          {t('thresholdUnits', { threshold })}
         </p>
       </div>
     </div>
@@ -118,6 +120,12 @@ function StockLevelGauge({ title, current, total, threshold, isLoading }) {
 
 // Low Stock Alert Component
 function LowStockAlert({ item, onReorder }) {
+  const t = useTranslations('Inventory');
+  const priorityLabels = {
+    critical: t('priorityCritical'),
+    high: t('priorityHigh'),
+    medium: t('priorityMedium'),
+  };
   const getPriorityColor = (priority) => {
     switch (priority) {
       case 'critical': return 'border-red-500 bg-red-50';
@@ -136,19 +144,19 @@ function LowStockAlert({ item, onReorder }) {
       <div className="flex items-start justify-between">
         <div className="flex-1">
           <h4 className="font-medium text-gray-900">{item.product_name}</h4>
-          <p className="text-sm text-gray-600">SKU: {item.product_sku}</p>
+          <p className="text-sm text-gray-600">{t('sku', { sku: item.product_sku })}</p>
           {variant !== 'Base Product' && (
-            <p className="text-sm text-gray-600">Variant: {variant}</p>
+            <p className="text-sm text-gray-600">{t('variant', { variant })}</p>
           )}
           <div className="mt-2 flex items-center space-x-4 text-sm">
             <span className="text-red-600 font-medium">
-              Stock: {item.quantity_available}
+              {t('stock', { count: item.quantity_available })}
             </span>
             <span className="text-gray-500">
-              Reorder at: {item.reorder_point}
+              {t('reorderAt', { point: item.reorder_point })}
             </span>
             <span className="text-blue-600">
-              Suggested: {item.reorder_suggestion?.suggested_quantity}
+              {t('suggested', { quantity: item.reorder_suggestion?.suggested_quantity ?? '' })}
             </span>
           </div>
         </div>
@@ -158,13 +166,13 @@ function LowStockAlert({ item, onReorder }) {
             item.reorder_suggestion?.priority === 'high' ? 'bg-orange-100 text-orange-800' :
             'bg-yellow-100 text-yellow-800'
           }`}>
-            {item.reorder_suggestion?.priority?.toUpperCase()}
+            {priorityLabels[item.reorder_suggestion?.priority] ?? item.reorder_suggestion?.priority?.toUpperCase()}
           </span>
           <button
             onClick={() => onReorder(item)}
             className="text-sm text-blue-600 hover:text-blue-800 font-medium"
           >
-            Reorder
+            {t('reorder')}
           </button>
         </div>
       </div>
@@ -174,32 +182,33 @@ function LowStockAlert({ item, onReorder }) {
 
 // Inventory Summary Cards
 function InventorySummaryCards({ analytics, isLoading }) {
+  const t = useTranslations('Inventory');
   const cards = [
     {
-      title: 'Total Products',
+      title: t('totalProducts'),
       value: analytics?.summary?.total_products || 0,
       icon: '📦',
       color: 'blue'
     },
     {
-      title: 'Out of Stock',
+      title: t('outOfStock'),
       value: analytics?.summary?.out_of_stock_count || 0,
       icon: '🚫',
       color: 'red'
     },
     {
-      title: 'Low Stock',
+      title: t('lowStock'),
       value: analytics?.summary?.low_stock_count || 0,
       icon: '⚠️',
       color: 'yellow'
     },
     {
-      title: 'Total Stock Value',
+      title: t('totalStockValue'),
       value: analytics?.summary?.total_available_stock || 0,
       icon: '💰',
       color: 'green',
       prefix: '',
-      suffix: ' units'
+      suffix: t('unitsSuffix')
     }
   ];
 
@@ -231,6 +240,7 @@ function InventorySummaryCards({ analytics, isLoading }) {
 }
 
 export default function InventoryDashboard() {
+  const t = useTranslations('Inventory');
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   const router = useRouter();
 
@@ -266,7 +276,7 @@ export default function InventoryDashboard() {
         setTopSelling(analyticsResponse.data.topSelling || []);
         setMovements(analyticsResponse.data.movements || []);
       } else {
-        throw new Error(analyticsResponse.message || 'Failed to fetch analytics');
+        throw new Error(analyticsResponse.message || t('failedToFetchAnalytics'));
       }
 
       if (lowStockResponse.success) {
@@ -278,7 +288,7 @@ export default function InventoryDashboard() {
     } finally {
       setIsLoading(false);
     }
-  }, [selectedPeriod]);
+  }, [selectedPeriod, t]);
 
   // Initial data fetch
   useEffect(() => {
@@ -298,13 +308,13 @@ export default function InventoryDashboard() {
     try {
       const response = await inventoryAPI.triggerAlerts();
       if (response.success) {
-        alert(`Alerts sent successfully! ${response.data.alerts_sent} alerts were sent.`);
+        alert(t('alertsSentSuccess', { count: response.data.alerts_sent }));
       } else {
         throw new Error(response.message);
       }
     } catch (err) {
       console.error('Error triggering alerts:', err);
-      alert(`Error triggering alerts: ${getErrorMessage(err)}`);
+      alert(t('errorTriggeringAlerts', { error: getErrorMessage(err) }));
     }
   };
 
@@ -312,7 +322,7 @@ export default function InventoryDashboard() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="admin-spinner"></div>
-        <span className="ml-2">Loading...</span>
+        <span className="ml-2">{t('loading')}</span>
       </div>
     );
   }
@@ -342,17 +352,17 @@ export default function InventoryDashboard() {
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center space-x-4">
               <h1 className="text-xl font-semibold text-gray-900">
-                Inventory Management
+                {t('inventoryManagement')}
               </h1>
               <nav className="flex items-center space-x-2">
                 <a 
                   href="/"
                   className="text-sm text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md hover:bg-gray-100"
                 >
-                  Dashboard
+                  {t('dashboard')}
                 </a>
                 <span className="text-gray-400">/</span>
-                <span className="text-sm text-gray-900">Inventory</span>
+                <span className="text-sm text-gray-900">{t('inventory')}</span>
               </nav>
             </div>
             <div className="flex items-center space-x-4">
@@ -361,22 +371,22 @@ export default function InventoryDashboard() {
                 onChange={(e) => setSelectedPeriod(e.target.value)}
                 className="text-sm border border-gray-300 rounded-md px-3 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
-                <option value="7">Last 7 days</option>
-                <option value="30">Last 30 days</option>
-                <option value="90">Last 90 days</option>
+                <option value="7">{t('last7Days')}</option>
+                <option value="30">{t('last30Days')}</option>
+                <option value="90">{t('last90Days')}</option>
               </select>
               <button
                 onClick={handleTriggerAlerts}
                 className="admin-button admin-button-secondary text-sm"
               >
-                Send Alerts
+                {t('sendAlerts')}
               </button>
               <button
                 onClick={fetchAnalytics}
                 disabled={isLoading}
                 className="admin-button admin-button-primary text-sm"
               >
-                {isLoading ? 'Refreshing...' : 'Refresh'}
+                {isLoading ? t('refreshing') : t('refresh')}
               </button>
             </div>
           </div>
@@ -397,21 +407,21 @@ export default function InventoryDashboard() {
         {/* Stock Level Gauges */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
           <StockLevelGauge
-            title="Available Stock"
+            title={t('availableStock')}
             current={analytics?.summary?.total_available_stock || 0}
             total={(analytics?.summary?.total_available_stock || 0) + (analytics?.summary?.total_reserved_stock || 0)}
             threshold={analytics?.summary?.low_stock_count || 0}
             isLoading={isLoading}
           />
           <StockLevelGauge
-            title="Reserved Stock"
+            title={t('reservedStock')}
             current={analytics?.summary?.total_reserved_stock || 0}
             total={(analytics?.summary?.total_available_stock || 0) + (analytics?.summary?.total_reserved_stock || 0)}
             threshold={0}
             isLoading={isLoading}
           />
           <StockLevelGauge
-            title="Sold Stock"
+            title={t('soldStock')}
             current={analytics?.summary?.total_sold_stock || 0}
             total={(analytics?.summary?.total_sold_stock || 0) + (analytics?.summary?.total_available_stock || 0)}
             threshold={0}
@@ -423,7 +433,7 @@ export default function InventoryDashboard() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8">
           {/* Inventory Movements Chart */}
           <div className="admin-card">
-            <h2 className="text-lg font-semibold mb-4">Inventory Movements</h2>
+            <h2 className="text-lg font-semibold mb-4">{t('inventoryMovements')}</h2>
             <LineChart
               data={movementChartData}
               title=""
@@ -436,7 +446,7 @@ export default function InventoryDashboard() {
 
           {/* Top Selling Products */}
           <div className="admin-card">
-            <h2 className="text-lg font-semibold mb-4">Top Selling Products</h2>
+            <h2 className="text-lg font-semibold mb-4">{t('topSellingProducts')}</h2>
             <BarChart
               data={topSellingChartData}
               title=""
@@ -451,9 +461,9 @@ export default function InventoryDashboard() {
         <div className="mt-8">
           <div className="admin-card">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-lg font-semibold">Low Stock Alerts</h2>
+              <h2 className="text-lg font-semibold">{t('lowStockAlerts')}</h2>
               <span className="text-sm text-gray-500">
-                {lowStockItems.length} items need attention
+                {t('itemsNeedAttention', { count: lowStockItems.length })}
               </span>
             </div>
             
@@ -476,7 +486,7 @@ export default function InventoryDashboard() {
             ) : (
               <div className="text-center py-8 text-gray-500">
                 <span className="text-4xl mb-4 block">✅</span>
-                <p>No low stock alerts at this time</p>
+                <p>{t('noLowStockAlerts')}</p>
               </div>
             )}
           </div>
@@ -485,35 +495,35 @@ export default function InventoryDashboard() {
         {/* Quick Actions */}
         <div className="mt-8">
           <div className="admin-card">
-            <h2 className="text-lg font-semibold mb-4">Quick Actions</h2>
+            <h2 className="text-lg font-semibold mb-4">{t('quickActions')}</h2>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <button 
                 onClick={() => router.push('/inventory/stock-management')}
                 className="admin-button admin-button-primary p-4 text-left hover:bg-blue-600 transition-colors"
               >
-                <div className="text-sm font-medium">Stock Management</div>
-                <div className="text-xs opacity-75">Adjust inventory levels</div>
+                <div className="text-sm font-medium">{t('stockManagement')}</div>
+                <div className="text-xs opacity-75">{t('adjustInventoryLevels')}</div>
               </button>
               <button 
                 onClick={() => router.push('/inventory/suppliers')}
                 className="admin-button admin-button-primary p-4 text-left hover:bg-blue-600 transition-colors"
               >
-                <div className="text-sm font-medium">Suppliers</div>
-                <div className="text-xs opacity-75">Manage suppliers</div>
+                <div className="text-sm font-medium">{t('suppliers')}</div>
+                <div className="text-xs opacity-75">{t('manageSuppliers')}</div>
               </button>
               <button 
                 onClick={() => router.push('/inventory/purchase-orders')}
                 className="admin-button admin-button-primary p-4 text-left hover:bg-blue-600 transition-colors"
               >
-                <div className="text-sm font-medium">Purchase Orders</div>
-                <div className="text-xs opacity-75">Create POs</div>
+                <div className="text-sm font-medium">{t('purchaseOrders')}</div>
+                <div className="text-xs opacity-75">{t('createPos')}</div>
               </button>
               <button 
                 onClick={() => router.push('/inventory/reports')}
                 className="admin-button admin-button-primary p-4 text-left hover:bg-blue-600 transition-colors"
               >
-                <div className="text-sm font-medium">Reports</div>
-                <div className="text-xs opacity-75">Inventory reports</div>
+                <div className="text-sm font-medium">{t('reports')}</div>
+                <div className="text-xs opacity-75">{t('inventoryReports')}</div>
               </button>
             </div>
           </div>
