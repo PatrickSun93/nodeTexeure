@@ -1461,114 +1461,116 @@ p {
 /* ===== FOOTER (Noiraé Design) ===== */
 
 .aesop-footer,
+/* Four-column footer on a dark espresso ground (Champagne & Charcoal design) */
 .noirae-footer {
-  background-color: var(--noirae-color-background);
-  border-top: 1px solid var(--color-gray-lighter);
-  padding: var(--space-12) 0 var(--space-8);
+  background-color: #221F1A;
+  color: #B6AC99;
   margin-top: var(--space-20);
 }
 
-.noirae-footer .aesop-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--space-6);
-  width: 100%;
-  max-width: 100%;
-  padding: 0 var(--space-6);
+.noirae-footer-inner {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 72px 40px 40px;
 }
 
-/* Footer Navigation Links */
-.noirae-footer-links {
+.noirae-footer-grid {
+  display: grid;
+  grid-template-columns: 1.6fr 1fr 1fr 1fr;
+  gap: 40px;
+}
+
+.noirae-footer-wordmark {
+  font-family: var(--noirae-font-serif);
+  font-size: 30px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  color: #F3EBDD;
+}
+
+.noirae-footer-tagline {
+  font-size: 13.5px;
+  line-height: 1.7;
+  margin-top: 16px;
+  max-width: 280px;
+  color: #B6AC99;
+}
+
+.noirae-footer-col-heading {
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: #8C8371;
+  margin-bottom: 16px;
+}
+
+.noirae-footer-col-links {
   display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-6);
-  align-items: center;
-  justify-content: center;
+  flex-direction: column;
+  gap: 11px;
+  font-size: 13.5px;
 }
 
 .noirae-footer-link {
-  color: var(--color-gray-dark);
+  color: #B6AC99;
   text-decoration: none;
-  font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-normal);
-  transition: color var(--transition-fast);
+  transition: color 0.2s ease;
 }
 
 .noirae-footer-link:hover {
-  color: var(--color-black);
+  color: #F3EBDD;
 }
 
-/* Social Media Icons */
+.noirae-footer-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-top: 52px;
+  padding-top: 24px;
+  border-top: 1px solid #3A352E;
+}
+
+.noirae-footer-copyright {
+  font-size: 12px;
+  color: #8C8371;
+  letter-spacing: 0.04em;
+}
+
 .noirae-footer-social {
   display: flex;
-  gap: var(--space-4);
-  align-items: center;
-  justify-content: center;
+  gap: 16px;
 }
 
-.noirae-social-icon {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background: var(--noirae-color-secondary);
-  color: var(--color-white);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  text-decoration: none;
-  transition: all var(--transition-fast);
+.noirae-footer-social-icon {
+  display: inline-flex;
+  color: #B6AC99;
+  transition: color 0.2s ease;
 }
 
-.noirae-social-icon:hover {
-  background: var(--color-black);
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-md);
+.noirae-footer-social-icon:hover {
+  color: #F3EBDD;
 }
 
-.noirae-social-icon svg {
-  width: 20px;
-  height: 20px;
-}
-
-/* Copyright */
-.noirae-footer-copyright {
-  width: 100%;
-  text-align: center;
-  padding-top: var(--space-6);
-  border-top: 1px solid var(--color-gray-lighter);
-  margin-top: var(--space-4);
-}
-
-.noirae-footer-copyright p {
-  color: var(--color-gray-medium);
-  font-size: var(--font-size-sm);
-  margin: 0;
-}
-
-/* Responsive Footer */
-@media (max-width: 768px) {
-  .noirae-footer .aesop-container {
-    padding: 0 var(--space-4);
+/* Responsive footer */
+@media (max-width: 900px) {
+  .noirae-footer-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 36px 24px;
   }
-  
-  .noirae-footer-links {
-    gap: var(--space-4);
-    flex-wrap: wrap;
+  .noirae-footer-brand {
+    grid-column: 1 / -1;
   }
-  
-  .noirae-footer-link {
-    font-size: var(--font-size-xs);
+}
+
+@media (max-width: 560px) {
+  .noirae-footer-inner {
+    padding: 48px 24px 32px;
   }
-  
-  .noirae-social-icon {
-    width: 36px;
-    height: 36px;
-  }
-  
-  .noirae-social-icon svg {
-    width: 18px;
-    height: 18px;
+  .noirae-footer-bottom {
+    justify-content: center;
+    text-align: center;
   }
 }
 

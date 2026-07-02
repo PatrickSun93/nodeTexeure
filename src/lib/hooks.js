@@ -15,7 +15,9 @@ import { MESSAGES } from './constants';
 export const useBackendHealth = () => {
   const [status, setStatus] = useState('checking...');
   const [isConnected, setIsConnected] = useState(false);
-  const [loading, setLoading] = useState(false);
+  // Start in the loading state so the dev status badge shows "Checking backend..."
+  // on mount instead of flashing "Backend disconnected" before the first check runs.
+  const [loading, setLoading] = useState(true);
 
   const checkHealth = useCallback(async () => {
     setLoading(true);

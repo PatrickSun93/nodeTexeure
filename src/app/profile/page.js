@@ -560,7 +560,7 @@ export default function Profile() {
                         {address.type}
                       </span>
                       <div className="flex items-center gap-2">
-                        {address.is_default && (
+                        {!!address.is_default && (
                           <span className="pf-pill-default">Default</span>
                         )}
                       </div>
