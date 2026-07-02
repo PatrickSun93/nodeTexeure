@@ -125,5 +125,48 @@
     "subtotal": "Sous-total",
     "taxNote": "Les frais de livraison et taxes sont calculés à la caisse",
     "proceedToCheckout": "Procéder à la caisse"
+  },
+  "Orders": {
+    "home": "Accueil",
+    "myOrders": "Mes Commandes",
+    "loading": "Chargement de vos commandes...",
+    "continueShopping": "Continuer vos achats",
+    "empty": "Aucune commande pour le moment",
+    "emptyDesc": "Lorsque vous passerez une commande, elle apparaîtra ici.",
+    "startShopping": "Commencer à acheter",
+    "total": "Total",
+    "tracking": "Suivi",
+    "requestReturn": "Demander un retour",
+    "viewDetails": "Voir les détails",
+    "statuses": {
+      "pending": "En attente",
+      "confirmed": "Confirmée",
+      "processing": "En cours de traitement",
+      "shipped": "Expédiée",
+      "delivered": "Livrée",
+      "cancelled": "Annulée",
+      "refunded": "Remboursée"
+    }
+  },
+  "Wishlist": {
+    "loading": "Chargement de votre liste de souhaits...",
+    "home": "Accueil",
+    "wishlist": "Liste de souhaits",
+    "title": "Ma Liste de Souhaits",
+    "empty": "Votre liste de souhaits est vide.",
+    "browseProducts": "Parcourir les produits",
+    "noImage": "Pas d'image",
+    "addToCart": "Ajouter au panier",
+    "remove": "Supprimer"
+  },
+  "Returns": {
+    "home": "Accueil",
+    "myReturns": "Mes Retours",
+    "subtitle": "Suivez et gérez vos demandes de retour.",
+    "empty": "Vous n'avez pas de demande de retour.",
+    "viewOrders": "Voir les commandes",
+    "returnLabel": "Retour {number}",
+    "orderLabel": "Commande : {number}",
+    "reasonLabel": "Raison : {reason}"
   }
 }

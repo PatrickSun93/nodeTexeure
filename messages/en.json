@@ -38,6 +38,49 @@
     "en": "English",
     "zh": "中文"
   },
+  "Orders": {
+    "home": "Home",
+    "myOrders": "My Orders",
+    "loading": "Loading your orders...",
+    "continueShopping": "Continue Shopping",
+    "empty": "No orders yet",
+    "emptyDesc": "When you place an order, it will appear here.",
+    "startShopping": "Start Shopping",
+    "total": "Total",
+    "tracking": "Tracking",
+    "requestReturn": "Request Return",
+    "viewDetails": "View Details",
+    "statuses": {
+      "pending": "Pending",
+      "confirmed": "Confirmed",
+      "processing": "Processing",
+      "shipped": "Shipped",
+      "delivered": "Delivered",
+      "cancelled": "Cancelled",
+      "refunded": "Refunded"
+    }
+  },
+  "Wishlist": {
+    "loading": "Loading wishlist...",
+    "home": "Home",
+    "wishlist": "Wishlist",
+    "title": "My Wishlist",
+    "empty": "Your wishlist is empty.",
+    "browseProducts": "Browse Products",
+    "noImage": "No image",
+    "addToCart": "Add to Cart",
+    "remove": "Remove"
+  },
+  "Returns": {
+    "home": "Home",
+    "myReturns": "My Returns",
+    "subtitle": "Track and manage your return requests.",
+    "empty": "You have no return requests.",
+    "viewOrders": "View Orders",
+    "returnLabel": "Return {number}",
+    "orderLabel": "Order: {number}",
+    "reasonLabel": "Reason: {reason}"
+  },
   "Cart": {
     "loading": "Loading your cart...",
     "tryAgain": "Try Again",

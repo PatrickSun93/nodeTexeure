@@ -3,12 +3,14 @@
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import Header from '../../components/Header';
 import Footer from '../../components/Footer';
 import { apiRequest } from '../../lib/api';
 
 export default function WishlistPage() {
+  const t = useTranslations('Wishlist');
   const { data: session, status } = useSession();
   const router = useRouter();
   const [items, setItems] = useState([]);
@@ -76,7 +78,7 @@ export default function WishlistPage() {
         <Header />
         <main style={{ padding: '4rem 1.5rem', textAlign: 'center' }}>
           <div className="aesop-loading-spinner" style={{ margin: '0 auto' }}></div>
-          <p className="noirae-body-text" style={{ marginTop: '1rem' }}>Loading wishlist...</p>
+          <p className="noirae-body-text" style={{ marginTop: '1rem' }}>{t('loading')}</p>
         </main>
         <Footer />
       </div>
@@ -89,19 +91,19 @@ export default function WishlistPage() {
       <main style={{ padding: '2rem 0 4rem' }}>
         <div className="aesop-container">
           <nav className="nt-breadcrumb">
-            <Link href="/">Home</Link>
+            <Link href="/">{t('home')}</Link>
             <span className="nt-breadcrumb-sep">/</span>
-            <span>Wishlist</span>
+            <span>{t('wishlist')}</span>
           </nav>
 
-          <h1 className="noirae-heading-hero" style={{ margin: '1.5rem 0' }}>My Wishlist</h1>
+          <h1 className="noirae-heading-hero" style={{ margin: '1.5rem 0' }}>{t('title')}</h1>
 
           {items.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '4rem 0' }}>
               <p className="noirae-body-text" style={{ color: 'var(--color-text-secondary)', marginBottom: '2rem' }}>
-                Your wishlist is empty.
+                {t('empty')}
               </p>
-              <Link href="/shop" className="nt-btn nt-btn-primary">Browse Products</Link>
+              <Link href="/shop" className="nt-btn nt-btn-primary">{t('browseProducts')}</Link>
             </div>
           ) : (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1.5rem' }}>
@@ -112,7 +114,7 @@ export default function WishlistPage() {
                       {item.image_url ? (
                         <img src={item.image_url} alt={item.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                       ) : (
-                        <span style={{ color: '#999', fontSize: '0.875rem' }}>No image</span>
+                        <span style={{ color: '#999', fontSize: '0.875rem' }}>{t('noImage')}</span>
                       )}
                     </div>
                   </Link>
@@ -134,7 +136,7 @@ export default function WishlistPage() {
                         className="nt-btn nt-btn-primary"
                         style={{ flex: 1, fontSize: '0.8rem', padding: '0.5rem' }}
                       >
-                        Add to Cart
+                        {t('addToCart')}
                       </button>
                       <button
                         onClick={() => handleRemove(item.product_id)}
@@ -142,7 +144,7 @@ export default function WishlistPage() {
                         className="nt-btn nt-btn-secondary"
                         style={{ fontSize: '0.8rem', padding: '0.5rem' }}
                       >
-                        {removing[item.product_id] ? '...' : 'Remove'}
+                        {removing[item.product_id] ? '...' : t('remove')}
                       </button>
                     </div>
                   </div>

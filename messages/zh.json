@@ -125,5 +125,48 @@
     "subtotal": "小计",
     "taxNote": "运费和税款将在结账时计算",
     "proceedToCheckout": "前往结账"
+  },
+  "Orders": {
+    "home": "首页",
+    "myOrders": "我的订单",
+    "loading": "加载您的订单中...",
+    "continueShopping": "继续购物",
+    "empty": "暂无订单",
+    "emptyDesc": "下单后，订单将在此显示。",
+    "startShopping": "开始购物",
+    "total": "总计",
+    "tracking": "追踪",
+    "requestReturn": "申请退货",
+    "viewDetails": "查看详情",
+    "statuses": {
+      "pending": "待处理",
+      "confirmed": "已确认",
+      "processing": "处理中",
+      "shipped": "已发货",
+      "delivered": "已送达",
+      "cancelled": "已取消",
+      "refunded": "已退款"
+    }
+  },
+  "Wishlist": {
+    "loading": "加载愿望清单中...",
+    "home": "首页",
+    "wishlist": "愿望清单",
+    "title": "我的愿望清单",
+    "empty": "您的愿望清单为空。",
+    "browseProducts": "浏览产品",
+    "noImage": "无图片",
+    "addToCart": "添加到购物车",
+    "remove": "移除"
+  },
+  "Returns": {
+    "home": "首页",
+    "myReturns": "我的退货",
+    "subtitle": "追踪和管理您的退货申请。",
+    "empty": "您没有退货申请。",
+    "viewOrders": "查看订单",
+    "returnLabel": "退货 {number}",
+    "orderLabel": "订单：{number}",
+    "reasonLabel": "原因：{reason}"
   }
 }

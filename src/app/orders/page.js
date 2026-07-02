@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import Header from '../../components/Header';
 import Footer from '../../components/Footer';
 import { apiRequest } from '../../lib/api';
@@ -21,6 +22,7 @@ const STATUS_COLORS = {
 };
 
 export default function OrdersPage() {
+  const t = useTranslations('Orders');
   const { data: session, status } = useSession();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -94,29 +96,29 @@ export default function OrdersPage() {
         <div className="aesop-container">
           {/* Breadcrumb */}
           <nav className="nt-breadcrumb">
-            <Link href="/">Home</Link>
+            <Link href="/">{t('home')}</Link>
             <span className="nt-breadcrumb-sep">/</span>
-            <span>My Orders</span>
+            <span>{t('myOrders')}</span>
           </nav>
 
-          <h1 className="nt-page-title">My Orders</h1>
+          <h1 className="nt-page-title">{t('myOrders')}</h1>
 
           {loading ? (
             <div className="nt-loading-state">
               <div className="aesop-loading-spinner"></div>
-              <p>Loading your orders...</p>
+              <p>{t('loading')}</p>
             </div>
           ) : error ? (
             <div className="nt-error-state">
               <p>{error}</p>
-              <Link href="/shop" className="nt-btn nt-btn-primary">Continue Shopping</Link>
+              <Link href="/shop" className="nt-btn nt-btn-primary">{t('continueShopping')}</Link>
             </div>
           ) : orders.length === 0 ? (
             <div className="nt-empty-state">
               <div className="nt-empty-icon">📦</div>
-              <h2>No orders yet</h2>
-              <p>When you place an order, it will appear here.</p>
-              <Link href="/shop" className="nt-btn nt-btn-primary">Start Shopping</Link>
+              <h2>{t('empty')}</h2>
+              <p>{t('emptyDesc')}</p>
+              <Link href="/shop" className="nt-btn nt-btn-primary">{t('startShopping')}</Link>
             </div>
           ) : (
             <div className="nt-orders-list">
@@ -144,17 +146,17 @@ export default function OrdersPage() {
                         className="nt-status-dot"
                         style={{ backgroundColor: STATUS_COLORS[order.status] || '#9C9284' }}
                       />
-                      {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                      {t.has(`statuses.${order.status}`) ? t(`statuses.${order.status}`) : (order.status.charAt(0).toUpperCase() + order.status.slice(1))}
                     </span>
                   </div>
                   <div className="nt-order-card-body">
                     <div className="nt-order-card-total">
-                      <span className="nt-order-card-label">Total</span>
+                      <span className="nt-order-card-label">{t('total')}</span>
                       <span className="nt-order-card-amount">${Number(order.total_amount).toFixed(2)}</span>
                     </div>
                     {order.tracking_number && (
                       <div className="nt-order-card-tracking">
-                        <span className="nt-order-card-label">Tracking</span>
+                        <span className="nt-order-card-label">{t('tracking')}</span>
                         <span>{order.tracking_number}</span>
                       </div>
                     )}
@@ -166,10 +168,10 @@ export default function OrdersPage() {
                         onClick={e => e.stopPropagation()}
                         className="nt-return-link"
                       >
-                        Request Return
+                        {t('requestReturn')}
                       </Link>
                     )}
-                    <span className="nt-view-details">View Details →</span>
+                    <span className="nt-view-details">{t('viewDetails')} →</span>
                   </div>
                 </Link>
               ))}

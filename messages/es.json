@@ -125,5 +125,48 @@
     "subtotal": "Subtotal",
     "taxNote": "El envío y los impuestos se calculan en el checkout",
     "proceedToCheckout": "Ir al checkout"
+  },
+  "Orders": {
+    "home": "Inicio",
+    "myOrders": "Mis Pedidos",
+    "loading": "Cargando tus pedidos...",
+    "continueShopping": "Continuar Compras",
+    "empty": "Sin pedidos aún",
+    "emptyDesc": "Cuando realices un pedido, aparecerá aquí.",
+    "startShopping": "Comenzar a Comprar",
+    "total": "Total",
+    "tracking": "Seguimiento",
+    "requestReturn": "Solicitar Devolución",
+    "viewDetails": "Ver Detalles",
+    "statuses": {
+      "pending": "Pendiente",
+      "confirmed": "Confirmado",
+      "processing": "En Proceso",
+      "shipped": "Enviado",
+      "delivered": "Entregado",
+      "cancelled": "Cancelado",
+      "refunded": "Reembolsado"
+    }
+  },
+  "Wishlist": {
+    "loading": "Cargando lista de deseos...",
+    "home": "Inicio",
+    "wishlist": "Lista de Deseos",
+    "title": "Mi Lista de Deseos",
+    "empty": "Tu lista de deseos está vacía.",
+    "browseProducts": "Explorar Productos",
+    "noImage": "Sin imagen",
+    "addToCart": "Agregar al Carrito",
+    "remove": "Eliminar"
+  },
+  "Returns": {
+    "home": "Inicio",
+    "myReturns": "Mis Devoluciones",
+    "subtitle": "Rastrear y gestionar tus solicitudes de devolución.",
+    "empty": "No tienes solicitudes de devolución.",
+    "viewOrders": "Ver Pedidos",
+    "returnLabel": "Devolución {number}",
+    "orderLabel": "Pedido: {number}",
+    "reasonLabel": "Motivo: {reason}"
   }
 }
