@@ -2,10 +2,12 @@
 
 import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { apiRequest, isSuccessResponse } from '../../lib/api';
 
 function ResetPasswordForm() {
+  const t = useTranslations('ResetPassword');
   const [formData, setFormData] = useState({
     password: '',
     confirmPassword: ''
@@ -27,18 +29,18 @@ function ResetPasswordForm() {
     if (resetToken) {
       setToken(resetToken);
     } else {
-      setError('Invalid reset link. Please request a new password reset.');
+      setError(t('invalidResetLink'));
     }
   }, [searchParams]);
 
   // Password strength validation
   const validatePasswordStrength = (password) => {
     const requirements = [
-      { test: password.length >= 8, message: 'At least 8 characters' },
-      { test: /[A-Z]/.test(password), message: 'One uppercase letter' },
-      { test: /[a-z]/.test(password), message: 'One lowercase letter' },
-      { test: /\d/.test(password), message: 'One number' },
-      { test: /[!@#$%^&*(),.?":{}|<>]/.test(password), message: 'One special character' }
+      { test: password.length >= 8, message: t('reqMinLength') },
+      { test: /[A-Z]/.test(password), message: t('reqUppercase') },
+      { test: /[a-z]/.test(password), message: t('reqLowercase') },
+      { test: /\d/.test(password), message: t('reqNumber') },
+      { test: /[!@#$%^&*(),.?":{}|<>]/.test(password), message: t('reqSpecialChar') }
     ];
 
     const passedRequirements = requirements.filter(req => req.test);
@@ -49,23 +51,23 @@ function ResetPasswordForm() {
 
     if (passedRequirements.length >= 5) {
       score = 4;
-      strengthText = 'Very Strong';
+      strengthText = t('strengthVeryStrong');
       strengthColor = 'text-green-600';
     } else if (passedRequirements.length >= 4) {
       score = 3;
-      strengthText = 'Strong';
+      strengthText = t('strengthStrong');
       strengthColor = 'text-green-500';
     } else if (passedRequirements.length >= 3) {
       score = 2;
-      strengthText = 'Medium';
+      strengthText = t('strengthMedium');
       strengthColor = 'text-yellow-500';
     } else if (passedRequirements.length >= 2) {
       score = 1;
-      strengthText = 'Weak';
+      strengthText = t('strengthWeak');
       strengthColor = 'text-orange-500';
     } else {
       score = 0;
-      strengthText = 'Very Weak';
+      strengthText = t('strengthVeryWeak');
       strengthColor = 'text-red-500';
     }
 
@@ -98,19 +100,19 @@ function ResetPasswordForm() {
 
     // Validation
     if (!formData.password || !formData.confirmPassword) {
-      setError('Both password fields are required');
+      setError(t('errorBothRequired'));
       setLoading(false);
       return;
     }
 
     if (!passwordStrength.isValid) {
-      setError('Password does not meet security requirements');
+      setError(t('errorWeakPassword'));
       setLoading(false);
       return;
     }
 
     if (formData.password !== formData.confirmPassword) {
-      setError('Passwords do not match');
+      setError(t('errorMismatch'));
       setLoading(false);
       return;
     }
@@ -131,11 +133,11 @@ function ResetPasswordForm() {
           router.push('/login?message=Password reset successful! Please log in with your new password.');
         }, 3000);
       } else {
-        setError(response.message || 'Password reset failed. Please try again.');
+        setError(response.message || t('errorResetFailed'));
       }
     } catch (error) {
       console.error('Password reset error:', error);
-      setError('Network error. Please check your connection and try again.');
+      setError(t('errorNetwork'));
     } finally {
       setLoading(false);
     }
@@ -156,11 +158,11 @@ function ResetPasswordForm() {
               <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
             </svg>
           </div>
-          <div className="rps-eyebrow">Success</div>
-          <h1 className="rps-title">Password reset</h1>
-          <p className="rps-text">Your password has been updated successfully.</p>
-          <p className="rps-note">Redirecting you to sign in…</p>
-          <Link href="/login" className="rps-button">Go to sign in</Link>
+          <div className="rps-eyebrow">{t('successEyebrow')}</div>
+          <h1 className="rps-title">{t('successTitle')}</h1>
+          <p className="rps-text">{t('successText')}</p>
+          <p className="rps-note">{t('successNote')}</p>
+          <Link href="/login" className="rps-button">{t('goToSignIn')}</Link>
         </div>
 
         <style>{`
@@ -252,8 +254,8 @@ function ResetPasswordForm() {
         <div className="rp-scrim" />
         <Link href="/" className="rp-wordmark">Noiraé</Link>
         <div className="rp-caption">
-          <div className="rp-caption-quote">Rest easy — we&apos;ll help you back in.</div>
-          <div className="rp-caption-kicker">Silk &amp; Cashmere</div>
+          <div className="rp-caption-quote">{t('captionQuote')}</div>
+          <div className="rp-caption-kicker">{t('captionKicker')}</div>
         </div>
       </div>
 
@@ -264,18 +266,18 @@ function ResetPasswordForm() {
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
               <polyline points="14 6 8 12 14 18" />
             </svg>
-            Back to sign in
+            {t('backToSignIn')}
           </Link>
         </div>
 
         <div className="rp-form-inner">
-          <div className="rp-eyebrow">Reset</div>
-          <h1 className="rp-title">Set a new password</h1>
-          <p className="rp-subtitle">Choose a strong new password to keep your account secure.</p>
+          <div className="rp-eyebrow">{t('eyebrow')}</div>
+          <h1 className="rp-title">{t('title')}</h1>
+          <p className="rp-subtitle">{t('subtitle')}</p>
 
           <form className="rp-form" onSubmit={handleSubmit}>
             <div className="rp-field">
-              <label htmlFor="password" className="rp-label">New password</label>
+              <label htmlFor="password" className="rp-label">{t('newPasswordLabel')}</label>
               <input
                 id="password"
                 name="password"
@@ -284,14 +286,14 @@ function ResetPasswordForm() {
                 className="rp-input"
                 value={formData.password}
                 onChange={handleChange}
-                placeholder="Enter your new password"
+                placeholder={t('newPasswordPlaceholder')}
               />
 
               {/* Password Strength Indicator */}
               {formData.password && (
                 <div className="rp-strength">
                   <div className="rp-strength-row">
-                    <span className="rp-strength-caption">Password strength</span>
+                    <span className="rp-strength-caption">{t('passwordStrengthCaption')}</span>
                     <span className="rp-strength-label" style={{ color: strengthColor }}>
                       {passwordStrength.strengthText}
                     </span>
@@ -308,7 +310,7 @@ function ResetPasswordForm() {
 
                   {/* Password Requirements */}
                   <div className="rp-reqs">
-                    <p className="rp-reqs-title">Password requirements</p>
+                    <p className="rp-reqs-title">{t('requirementsTitle')}</p>
                     <ul className="rp-reqs-list">
                       {passwordStrength.requirements?.map((req, index) => (
                         <li
@@ -327,7 +329,7 @@ function ResetPasswordForm() {
             </div>
 
             <div className="rp-field">
-              <label htmlFor="confirmPassword" className="rp-label">Confirm new password</label>
+              <label htmlFor="confirmPassword" className="rp-label">{t('confirmPasswordLabel')}</label>
               <input
                 id="confirmPassword"
                 name="confirmPassword"
@@ -340,14 +342,14 @@ function ResetPasswordForm() {
                 }`}
                 value={formData.confirmPassword}
                 onChange={handleChange}
-                placeholder="Confirm your new password"
+                placeholder={t('confirmPasswordPlaceholder')}
               />
               {formData.confirmPassword && formData.password !== formData.confirmPassword && (
-                <p className="rp-hint" style={{ color: 'var(--noirae-error)' }}>Passwords do not match</p>
+                <p className="rp-hint" style={{ color: 'var(--noirae-error)' }}>{t('errorMismatch')}</p>
               )}
               {formData.confirmPassword && formData.password === formData.confirmPassword && formData.password && (
                 <p className="rp-hint" style={{ color: 'var(--noirae-success)' }}>
-                  <span className="rp-req-mark">✓</span>Passwords match
+                  <span className="rp-req-mark">✓</span>{t('passwordsMatch')}
                 </p>
               )}
             </div>
@@ -357,13 +359,13 @@ function ResetPasswordForm() {
             )}
 
             <button type="submit" disabled={loading || !token} className="rp-submit">
-              {loading ? 'Resetting password…' : 'Reset password'}
+              {loading ? t('resetting') : t('resetButton')}
             </button>
           </form>
 
           <div className="rp-footer">
-            Remember your password?{' '}
-            <Link href="/login" className="rp-inline-link">Sign in</Link>
+            {t('rememberPassword')}{' '}
+            <Link href="/login" className="rp-inline-link">{t('signIn')}</Link>
           </div>
         </div>
       </div>
@@ -635,8 +637,9 @@ function ResetPasswordForm() {
 }
 
 export default function ResetPasswordPage() {
+  const t = useTranslations('ResetPassword');
   return (
-    <Suspense fallback={<div>Loading...</div>}>
+    <Suspense fallback={<div>{t('loading')}</div>}>
       <ResetPasswordForm />
     </Suspense>
   );

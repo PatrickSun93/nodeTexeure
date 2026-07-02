@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, Suspense } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import Header from '../../components/Header';
 import Footer from '../../components/Footer';
 import { apiRequest } from '../../lib/api';
@@ -108,6 +109,7 @@ export default function CheckoutPage() {
 }
 
 function CheckoutContent() {
+  const t = useTranslations('Checkout');
   const router = useRouter();
   const searchParams = useSearchParams();
   const { data: session } = useSession();
@@ -254,9 +256,9 @@ function CheckoutContent() {
     } catch (err) {
       // Fall back to default rates
       const defaultRates = [
-        { serviceType: 'STANDARD', serviceName: 'Standard Shipping', rate: 9.99, estimatedDays: '5-7 business days' },
-        { serviceType: 'EXPRESS', serviceName: 'Express Shipping', rate: 19.99, estimatedDays: '2-3 business days' },
-        { serviceType: 'OVERNIGHT', serviceName: 'Overnight Shipping', rate: 34.99, estimatedDays: '1 business day' },
+        { serviceType: 'STANDARD', serviceName: t('shipStandard'), rate: 9.99, estimatedDays: t('shipStandardEst') },
+        { serviceType: 'EXPRESS', serviceName: t('shipExpress'), rate: 19.99, estimatedDays: t('shipExpressEst') },
+        { serviceType: 'OVERNIGHT', serviceName: t('shipOvernight'), rate: 34.99, estimatedDays: t('shipOvernightEst') },
       ];
       setShippingRates(defaultRates);
       if (!selectedShipping) {
@@ -266,35 +268,35 @@ function CheckoutContent() {
     } finally {
       setLoadingRates(false);
     }
-  }, [shippingAddress.postal_code, shippingAddress.country, shippingAddress.state, selectedShipping]);
+  }, [shippingAddress.postal_code, shippingAddress.country, shippingAddress.state, selectedShipping, t]);
 
   // Validate step
   const validateStep = (stepNum) => {
     const newErrors = {};
 
     if (stepNum === 1) {
-      if (!isLoggedIn && !guestEmail) newErrors.guestEmail = 'Email is required';
-      if (!isLoggedIn && guestEmail && !/\S+@\S+\.\S+/.test(guestEmail)) newErrors.guestEmail = 'Invalid email';
-      if (!shippingAddress.first_name) newErrors.first_name = 'First name is required';
-      if (!shippingAddress.last_name) newErrors.last_name = 'Last name is required';
-      if (!shippingAddress.address_line_1) newErrors.address_line_1 = 'Address is required';
-      if (!shippingAddress.city) newErrors.city = 'City is required';
-      if (!shippingAddress.state) newErrors.state = 'State is required';
-      if (!shippingAddress.postal_code) newErrors.postal_code = 'Postal code is required';
-      if (!shippingAddress.country) newErrors.country = 'Country is required';
+      if (!isLoggedIn && !guestEmail) newErrors.guestEmail = t('errEmailRequired');
+      if (!isLoggedIn && guestEmail && !/\S+@\S+\.\S+/.test(guestEmail)) newErrors.guestEmail = t('errEmailInvalid');
+      if (!shippingAddress.first_name) newErrors.first_name = t('errFirstNameRequired');
+      if (!shippingAddress.last_name) newErrors.last_name = t('errLastNameRequired');
+      if (!shippingAddress.address_line_1) newErrors.address_line_1 = t('errAddressRequired');
+      if (!shippingAddress.city) newErrors.city = t('errCityRequired');
+      if (!shippingAddress.state) newErrors.state = t('errStateRequired');
+      if (!shippingAddress.postal_code) newErrors.postal_code = t('errPostalCodeRequired');
+      if (!shippingAddress.country) newErrors.country = t('errCountryRequired');
 
       if (!sameAsShipping) {
-        if (!billingAddress.first_name) newErrors.billing_first_name = 'First name is required';
-        if (!billingAddress.last_name) newErrors.billing_last_name = 'Last name is required';
-        if (!billingAddress.address_line_1) newErrors.billing_address = 'Address is required';
-        if (!billingAddress.city) newErrors.billing_city = 'City is required';
-        if (!billingAddress.state) newErrors.billing_state = 'State is required';
-        if (!billingAddress.postal_code) newErrors.billing_postal_code = 'Postal code is required';
+        if (!billingAddress.first_name) newErrors.billing_first_name = t('errFirstNameRequired');
+        if (!billingAddress.last_name) newErrors.billing_last_name = t('errLastNameRequired');
+        if (!billingAddress.address_line_1) newErrors.billing_address = t('errAddressRequired');
+        if (!billingAddress.city) newErrors.billing_city = t('errCityRequired');
+        if (!billingAddress.state) newErrors.billing_state = t('errStateRequired');
+        if (!billingAddress.postal_code) newErrors.billing_postal_code = t('errPostalCodeRequired');
       }
     }
 
     if (stepNum === 2) {
-      if (!selectedShipping) newErrors.shipping = 'Please select a shipping method';
+      if (!selectedShipping) newErrors.shipping = t('errShippingRequired');
     }
 
     setErrors(newErrors);
@@ -374,10 +376,10 @@ function CheckoutContent() {
         // Fallback: go directly to confirmation (for when Stripe is not configured)
         router.push(`/order/confirmation/${orderId}`);
       } else {
-        setErrors({ submit: data?.message || 'Order creation failed' });
+        setErrors({ submit: data?.message || t('errOrderCreationFailed') });
       }
     } catch (err) {
-      setErrors({ submit: err.message || 'Something went wrong' });
+      setErrors({ submit: err.message || t('errSomethingWrong') });
     } finally {
       setSubmitting(false);
     }
@@ -397,7 +399,7 @@ function CheckoutContent() {
       <div className="aesop-page"><Header />
         <style>{CHECKOUT_STYLES}</style>
         <main className="nt-checkout-page"><div className="aesop-container">
-          <div className="nt-loading-state"><div className="aesop-loading-spinner"></div><p>Loading checkout...</p></div>
+          <div className="nt-loading-state"><div className="aesop-loading-spinner"></div><p>{t('loading')}</p></div>
         </div></main><Footer />
       </div>
     );
@@ -409,9 +411,9 @@ function CheckoutContent() {
         <style>{CHECKOUT_STYLES}</style>
         <main className="nt-checkout-page"><div className="aesop-container">
           <div className="nt-empty-state">
-            <div className="nt-empty-icon">🛒</div><h2>Your cart is empty</h2>
-            <p>Add items to your cart before checking out.</p>
-            <Link href="/shop" className="nt-btn nt-btn-primary">Browse Products</Link>
+            <div className="nt-empty-icon">🛒</div><h2>{t('emptyTitle')}</h2>
+            <p>{t('emptyDesc')}</p>
+            <Link href="/shop" className="nt-btn nt-btn-primary">{t('browseProducts')}</Link>
           </div>
         </div></main><Footer />
       </div>
@@ -428,24 +430,24 @@ function CheckoutContent() {
         <div className="aesop-container">
           {/* Breadcrumb */}
           <nav className="nt-breadcrumb">
-            <Link href="/">Home</Link><span className="nt-breadcrumb-sep">/</span>
-            <Link href="/cart">Cart</Link><span className="nt-breadcrumb-sep">/</span>
-            <span>Checkout</span>
+            <Link href="/">{t('breadcrumbHome')}</Link><span className="nt-breadcrumb-sep">/</span>
+            <Link href="/cart">{t('breadcrumbCart')}</Link><span className="nt-breadcrumb-sep">/</span>
+            <span>{t('breadcrumbCheckout')}</span>
           </nav>
 
-          <h1 className="nt-page-title">Checkout</h1>
+          <h1 className="nt-page-title">{t('title')}</h1>
 
           {/* Progress Steps */}
           <div className="nt-checkout-steps">
-            {['Information', 'Shipping', 'Payment'].map((label, idx) => (
-              <div key={label} className={`nt-checkout-step ${step > idx ? 'nt-step-done' : ''} ${step === idx + 1 ? 'nt-step-active' : ''}`}>
+            {['stepInformation', 'stepShipping', 'stepPayment'].map((stepKey, idx) => (
+              <div key={stepKey} className={`nt-checkout-step ${step > idx ? 'nt-step-done' : ''} ${step === idx + 1 ? 'nt-step-active' : ''}`}>
                 <div className="nt-step-number">{step > idx + 1 ? '✓' : idx + 1}</div>
-                <span>{label}</span>
+                <span>{t(stepKey)}</span>
               </div>
             ))}
           </div>
 
-          {paymentCancelled && <div className="nt-error-banner" style={{ backgroundColor: 'var(--noirae-warning-bg)', borderColor: 'var(--noirae-warning)', color: 'var(--noirae-warning)' }}>Payment was cancelled. You can try again when ready.</div>}
+          {paymentCancelled && <div className="nt-error-banner" style={{ backgroundColor: 'var(--noirae-warning-bg)', borderColor: 'var(--noirae-warning)', color: 'var(--noirae-warning)' }}>{t('paymentCancelled')}</div>}
           {errors.submit && <div className="nt-error-banner">{errors.submit}</div>}
 
           <div className="nt-checkout-grid">
@@ -456,58 +458,58 @@ function CheckoutContent() {
                 <div className="nt-checkout-section">
                   {!isLoggedIn && (
                     <div className="nt-form-section">
-                      <h2>Contact Information</h2>
-                      <p className="nt-form-hint">Already have an account? <Link href="/signin?redirect=/checkout">Log in</Link></p>
+                      <h2>{t('contactInfo')}</h2>
+                      <p className="nt-form-hint">{t('alreadyHaveAccount')} <Link href="/signin?redirect=/checkout">{t('logIn')}</Link></p>
                       <div className="nt-form-group">
-                        <label>Email *</label>
+                        <label>{t('email')} *</label>
                         <input type="email" value={guestEmail} onChange={e => setGuestEmail(e.target.value)}
-                          placeholder="your@email.com" className={errors.guestEmail ? 'nt-input-error' : ''} />
+                          placeholder={t('emailPlaceholder')} className={errors.guestEmail ? 'nt-input-error' : ''} />
                         {errors.guestEmail && <span className="nt-field-error">{errors.guestEmail}</span>}
                       </div>
                     </div>
                   )}
 
                   <div className="nt-form-section">
-                    <h2>Shipping Address</h2>
+                    <h2>{t('shippingAddress')}</h2>
                     <div className="nt-form-row">
                       <div className="nt-form-group">
-                        <label>First Name *</label>
+                        <label>{t('firstName')} *</label>
                         <input type="text" value={shippingAddress.first_name} onChange={e => updateShippingField('first_name', e.target.value)}
                           className={errors.first_name ? 'nt-input-error' : ''} />
                         {errors.first_name && <span className="nt-field-error">{errors.first_name}</span>}
                       </div>
                       <div className="nt-form-group">
-                        <label>Last Name *</label>
+                        <label>{t('lastName')} *</label>
                         <input type="text" value={shippingAddress.last_name} onChange={e => updateShippingField('last_name', e.target.value)}
                           className={errors.last_name ? 'nt-input-error' : ''} />
                         {errors.last_name && <span className="nt-field-error">{errors.last_name}</span>}
                       </div>
                     </div>
                     <div className="nt-form-group">
-                      <label>Address *</label>
+                      <label>{t('address')} *</label>
                       <input type="text" value={shippingAddress.address_line_1} onChange={e => updateShippingField('address_line_1', e.target.value)}
                         className={errors.address_line_1 ? 'nt-input-error' : ''} />
                       {errors.address_line_1 && <span className="nt-field-error">{errors.address_line_1}</span>}
                     </div>
                     <div className="nt-form-group">
-                      <label>Apartment, suite, etc.</label>
+                      <label>{t('apartment')}</label>
                       <input type="text" value={shippingAddress.address_line_2} onChange={e => updateShippingField('address_line_2', e.target.value)} />
                     </div>
                     <div className="nt-form-row nt-form-row-3">
                       <div className="nt-form-group">
-                        <label>City *</label>
+                        <label>{t('city')} *</label>
                         <input type="text" value={shippingAddress.city} onChange={e => updateShippingField('city', e.target.value)}
                           className={errors.city ? 'nt-input-error' : ''} />
                         {errors.city && <span className="nt-field-error">{errors.city}</span>}
                       </div>
                       <div className="nt-form-group">
-                        <label>State *</label>
+                        <label>{t('state')} *</label>
                         <input type="text" value={shippingAddress.state} onChange={e => updateShippingField('state', e.target.value)}
                           className={errors.state ? 'nt-input-error' : ''} />
                         {errors.state && <span className="nt-field-error">{errors.state}</span>}
                       </div>
                       <div className="nt-form-group">
-                        <label>Zip Code *</label>
+                        <label>{t('zipCode')} *</label>
                         <input type="text" value={shippingAddress.postal_code} onChange={e => updateShippingField('postal_code', e.target.value)}
                           className={errors.postal_code ? 'nt-input-error' : ''} />
                         {errors.postal_code && <span className="nt-field-error">{errors.postal_code}</span>}
@@ -515,15 +517,15 @@ function CheckoutContent() {
                     </div>
                     <div className="nt-form-row">
                       <div className="nt-form-group">
-                        <label>Country *</label>
+                        <label>{t('country')} *</label>
                         <select value={shippingAddress.country} onChange={e => updateShippingField('country', e.target.value)}>
-                          <option value="US">United States</option>
-                          <option value="CA">Canada</option>
-                          <option value="GB">United Kingdom</option>
+                          <option value="US">{t('countryUS')}</option>
+                          <option value="CA">{t('countryCA')}</option>
+                          <option value="GB">{t('countryGB')}</option>
                         </select>
                       </div>
                       <div className="nt-form-group">
-                        <label>Phone</label>
+                        <label>{t('phone')}</label>
                         <input type="tel" value={shippingAddress.phone} onChange={e => updateShippingField('phone', e.target.value)} />
                       </div>
                     </div>
@@ -533,42 +535,42 @@ function CheckoutContent() {
                   <div className="nt-form-section">
                     <label className="nt-checkbox-label">
                       <input type="checkbox" checked={sameAsShipping} onChange={e => setSameAsShipping(e.target.checked)} />
-                      <span>Billing address same as shipping</span>
+                      <span>{t('billingSameAsShipping')}</span>
                     </label>
                   </div>
 
                   {/* Billing Address (if different) */}
                   {!sameAsShipping && (
                     <div className="nt-form-section">
-                      <h2>Billing Address</h2>
+                      <h2>{t('billingAddress')}</h2>
                       <div className="nt-form-row">
                         <div className="nt-form-group">
-                          <label>First Name *</label>
+                          <label>{t('firstName')} *</label>
                           <input type="text" value={billingAddress.first_name} onChange={e => updateBillingField('first_name', e.target.value)}
                             className={errors.billing_first_name ? 'nt-input-error' : ''} />
                         </div>
                         <div className="nt-form-group">
-                          <label>Last Name *</label>
+                          <label>{t('lastName')} *</label>
                           <input type="text" value={billingAddress.last_name} onChange={e => updateBillingField('last_name', e.target.value)}
                             className={errors.billing_last_name ? 'nt-input-error' : ''} />
                         </div>
                       </div>
                       <div className="nt-form-group">
-                        <label>Address *</label>
+                        <label>{t('address')} *</label>
                         <input type="text" value={billingAddress.address_line_1} onChange={e => updateBillingField('address_line_1', e.target.value)}
                           className={errors.billing_address ? 'nt-input-error' : ''} />
                       </div>
                       <div className="nt-form-row nt-form-row-3">
                         <div className="nt-form-group">
-                          <label>City *</label>
+                          <label>{t('city')} *</label>
                           <input type="text" value={billingAddress.city} onChange={e => updateBillingField('city', e.target.value)} />
                         </div>
                         <div className="nt-form-group">
-                          <label>State *</label>
+                          <label>{t('state')} *</label>
                           <input type="text" value={billingAddress.state} onChange={e => updateBillingField('state', e.target.value)} />
                         </div>
                         <div className="nt-form-group">
-                          <label>Zip Code *</label>
+                          <label>{t('zipCode')} *</label>
                           <input type="text" value={billingAddress.postal_code} onChange={e => updateBillingField('postal_code', e.target.value)} />
                         </div>
                       </div>
@@ -576,7 +578,7 @@ function CheckoutContent() {
                   )}
 
                   <button className="nt-btn nt-btn-primary nt-btn-full" onClick={handleNextStep}>
-                    Continue to Shipping
+                    {t('continueToShipping')}
                   </button>
                 </div>
               )}
@@ -585,9 +587,9 @@ function CheckoutContent() {
               {step === 2 && (
                 <div className="nt-checkout-section">
                   <div className="nt-form-section">
-                    <h2>Shipping Method</h2>
+                    <h2>{t('shippingMethod')}</h2>
                     {freeShipping && (
-                      <div className="nt-free-shipping-banner">🎉 You qualify for free shipping!</div>
+                      <div className="nt-free-shipping-banner">🎉 {t('freeShippingQualify')}</div>
                     )}
                     {loadingRates ? (
                       <div className="nt-loading-state"><div className="aesop-loading-spinner"></div></div>
@@ -603,7 +605,7 @@ function CheckoutContent() {
                               <span className="nt-option-name">{rate.serviceName}</span>
                               <span className="nt-option-est">{rate.estimatedDays || rate.estimatedDelivery}</span>
                             </div>
-                            <span className="nt-option-price">{freeShipping ? 'Free' : `$${rate.rate.toFixed(2)}`}</span>
+                            <span className="nt-option-price">{freeShipping ? t('free') : `$${rate.rate.toFixed(2)}`}</span>
                           </label>
                         ))}
                       </div>
@@ -612,8 +614,8 @@ function CheckoutContent() {
                   </div>
 
                   <div className="nt-step-nav">
-                    <button className="nt-btn nt-btn-secondary" onClick={() => setStep(1)}>← Back</button>
-                    <button className="nt-btn nt-btn-primary" onClick={handleNextStep}>Continue to Payment</button>
+                    <button className="nt-btn nt-btn-secondary" onClick={() => setStep(1)}>← {t('back')}</button>
+                    <button className="nt-btn nt-btn-primary" onClick={handleNextStep}>{t('continueToPayment')}</button>
                   </div>
                 </div>
               )}
@@ -622,30 +624,30 @@ function CheckoutContent() {
               {step === 3 && (
                 <div className="nt-checkout-section">
                   <div className="nt-form-section">
-                    <h2>Review & Pay</h2>
+                    <h2>{t('reviewAndPay')}</h2>
 
                     <div className="nt-review-summary">
                       <div className="nt-review-row">
-                        <span className="nt-review-label">Ship to</span>
+                        <span className="nt-review-label">{t('shipTo')}</span>
                         <span>{shippingAddress.first_name} {shippingAddress.last_name}, {shippingAddress.address_line_1}, {shippingAddress.city} {shippingAddress.state} {shippingAddress.postal_code}</span>
-                        <button className="nt-change-btn" onClick={() => setStep(1)}>Change</button>
+                        <button className="nt-change-btn" onClick={() => setStep(1)}>{t('change')}</button>
                       </div>
                       <div className="nt-review-row">
-                        <span className="nt-review-label">Method</span>
+                        <span className="nt-review-label">{t('method')}</span>
                         <span>{shippingRates.find(r => r.serviceType === selectedShipping)?.serviceName || selectedShipping}</span>
-                        <button className="nt-change-btn" onClick={() => setStep(2)}>Change</button>
+                        <button className="nt-change-btn" onClick={() => setStep(2)}>{t('change')}</button>
                       </div>
                     </div>
                   </div>
 
                   {/* Coupon */}
                   <div className="nt-form-section">
-                    <h3>Discount Code</h3>
+                    <h3>{t('discountCode')}</h3>
                     <div className="nt-coupon-row">
                       <input type="text" value={couponCode} onChange={e => setCouponCode(e.target.value)}
-                        placeholder="Enter coupon code" disabled={couponApplied} />
+                        placeholder={t('couponPlaceholder')} disabled={couponApplied} />
                       <button className="nt-btn nt-btn-secondary" onClick={handleApplyCoupon} disabled={couponApplied}>
-                        {couponApplied ? 'Applied ✓' : 'Apply'}
+                        {couponApplied ? t('applied') : t('apply')}
                       </button>
                     </div>
                     {errors.coupon && <span className="nt-field-error">{errors.coupon}</span>}
@@ -653,14 +655,14 @@ function CheckoutContent() {
 
                   <div className="nt-form-section">
                     <p className="nt-payment-note">
-                      💳 Payment will be processed securely. Your order will be created and you will receive a confirmation email.
+                      💳 {t('paymentNote')}
                     </p>
                   </div>
 
                   <div className="nt-step-nav">
-                    <button className="nt-btn nt-btn-secondary" onClick={() => setStep(2)}>← Back</button>
+                    <button className="nt-btn nt-btn-secondary" onClick={() => setStep(2)}>← {t('back')}</button>
                     <button className="nt-btn nt-btn-primary nt-btn-lg" onClick={handlePlaceOrder} disabled={submitting}>
-                      {submitting ? 'Processing...' : `Place Order — $${total.toFixed(2)}`}
+                      {submitting ? t('processing') : t('placeOrder', { amount: total.toFixed(2) })}
                     </button>
                   </div>
                 </div>
@@ -669,7 +671,7 @@ function CheckoutContent() {
 
             {/* Right: Order Summary */}
             <aside className="nt-checkout-summary">
-              <h2>Order Summary</h2>
+              <h2>{t('orderSummary')}</h2>
               <div className="nt-summary-items">
                 {cartItems.map((item, idx) => (
                   <div key={idx} className="nt-summary-item">
@@ -687,23 +689,23 @@ function CheckoutContent() {
               </div>
 
               <div className="nt-summary-totals">
-                <div className="nt-summary-row"><span>Subtotal</span><span>${subtotal.toFixed(2)}</span></div>
-                <div className="nt-summary-row"><span>Tax</span><span>${tax.toFixed(2)}</span></div>
+                <div className="nt-summary-row"><span>{t('subtotal')}</span><span>${subtotal.toFixed(2)}</span></div>
+                <div className="nt-summary-row"><span>{t('tax')}</span><span>${tax.toFixed(2)}</span></div>
                 <div className="nt-summary-row">
-                  <span>Shipping</span>
-                  <span>{freeShipping ? 'Free' : shipping > 0 ? `$${shipping.toFixed(2)}` : '—'}</span>
+                  <span>{t('shipping')}</span>
+                  <span>{freeShipping ? t('free') : shipping > 0 ? `$${shipping.toFixed(2)}` : '—'}</span>
                 </div>
                 {discount > 0 && (
-                  <div className="nt-summary-row nt-discount"><span>Discount</span><span>-${discount.toFixed(2)}</span></div>
+                  <div className="nt-summary-row nt-discount"><span>{t('discount')}</span><span>-${discount.toFixed(2)}</span></div>
                 )}
                 <div className="nt-summary-row nt-summary-total">
-                  <span>Total</span><span>${total.toFixed(2)}</span>
+                  <span>{t('total')}</span><span>${total.toFixed(2)}</span>
                 </div>
               </div>
 
               {subtotal < 100 && (
                 <div className="nt-free-shipping-hint">
-                  Add ${(100 - subtotal).toFixed(2)} more for free shipping!
+                  {t('freeShippingHint', { amount: (100 - subtotal).toFixed(2) })}
                 </div>
               )}
             </aside>
