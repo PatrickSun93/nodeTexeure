@@ -61,5 +61,33 @@
     "sortName": "Nombre: A a Z",
     "loading": "Cargando productos...",
     "noProducts": "No se encontraron productos que coincidan con sus criterios."
+  },
+  "Home": {
+    "heroTitle": "El Arte del Confort",
+    "heroDescription": "Descubra nuestra colección de ropa de cama de lujo elaborada con la seda y cachemira más finas del mundo",
+    "exploreSilk": "Explorar la Colección de Seda",
+    "viewCashmere": "Ver Cachemira",
+    "scrollToDiscover": "Desplácese para descubrir",
+    "ourCollections": "Nuestras Colecciones",
+    "collectionsSubtitle": "Selecciones cuidadosamente curadas de los mejores materiales de ropa de cama del mundo",
+    "silkCollection": "Colección de Seda",
+    "silkCollectionDesc": "Experimente el lujo definitivo con nuestra ropa de cama de seda de morera",
+    "silkAccent": "Elegancia intemporal",
+    "cashmereCollection": "Colección de Cachemira",
+    "cashmereCollectionDesc": "Envuélvase en la cachemira más suave para un calor sin igual",
+    "cashmereAccent": "Suavidad suprema",
+    "discoverCollection": "Descubrir la Colección",
+    "aboutTitle": "Elaborado para el Confort, Diseñado para la Vida",
+    "aboutP1": "En Noiraé, creemos que la calidad del sueño comienza con una ropa de cama excepcional. Nuestra pasión por crear los mejores textiles de cama nos ha llevado a obtener los materiales más lujosos del mundo y transformarlos en productos que convierten su habitación en un santuario de confort.",
+    "aboutP2": "Cada pieza de nuestra colección está meticulosamente diseñada y elaborada por artesanos que comprenden la importancia de la calidad, la sostenibilidad y la elegancia intemporal.",
+    "readOurStory": "Leer Nuestra Historia",
+    "featuredProducts": "Productos Destacados",
+    "loadingFeatured": "Cargando productos destacados...",
+    "valueQualityTitle": "Calidad Excepcional",
+    "valueQualityDesc": "Cada producto cumple con nuestros rigurosos estándares de lujo y durabilidad",
+    "valueSustainableTitle": "Abastecimiento Sostenible",
+    "valueSustainableDesc": "Materiales producidos éticamente que respetan tanto a las personas como al planeta",
+    "valueDelightTitle": "Satisfacción del Cliente",
+    "valueDelightDesc": "Su satisfacción es nuestra prioridad, desde la selección hasta la entrega"
   }
 }

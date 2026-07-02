@@ -61,5 +61,33 @@
     "sortName": "名称：A 至 Z",
     "loading": "加载产品中...",
     "noProducts": "未找到符合条件的产品。"
+  },
+  "Home": {
+    "heroTitle": "舒适的艺术",
+    "heroDescription": "探索我们采用世界顶级丝绸和羊绒精心打造的奢华寝具系列",
+    "exploreSilk": "探索丝绸系列",
+    "viewCashmere": "查看羊绒",
+    "scrollToDiscover": "滚动浏览了解更多",
+    "ourCollections": "我们的系列",
+    "collectionsSubtitle": "精心策划的世界顶级寝具材料精选",
+    "silkCollection": "丝绸系列",
+    "silkCollectionDesc": "体验我们桑蚕丝寝具带来的终极奢华",
+    "silkAccent": "永恒优雅",
+    "cashmereCollection": "羊绒系列",
+    "cashmereCollectionDesc": "用最柔软的羊绒包裹自己，体验无与伦比的温暖",
+    "cashmereAccent": "至高柔软",
+    "discoverCollection": "探索系列",
+    "aboutTitle": "为舒适而精心打造，为生活而精心设计",
+    "aboutP1": "在Noiraé，我们相信高质量的睡眠始于卓越的寝具。我们对打造最优质床上用品的热情驱使我们采购世界上最奢华的材料，并将其精心打造成产品，将您的卧室变成舒适的避难所。",
+    "aboutP2": "我们收藏中的每一件都由精通质量、可持续性和永恒优雅重要性的工匠精心设计和打造。",
+    "readOurStory": "阅读我们的故事",
+    "featuredProducts": "特色产品",
+    "loadingFeatured": "正在加载特色产品...",
+    "valueQualityTitle": "卓越质量",
+    "valueQualityDesc": "每件产品都符合我们对奢华和耐久性的严格标准",
+    "valueSustainableTitle": "可持续采购",
+    "valueSustainableDesc": "道德生产的材料，既尊重人类也保护地球",
+    "valueDelightTitle": "客户满意",
+    "valueDelightDesc": "您的满意度是我们的优先事项，从选择到交付"
   }
 }

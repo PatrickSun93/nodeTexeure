@@ -61,5 +61,33 @@
     "sortName": "Nom : A à Z",
     "loading": "Chargement des produits...",
     "noProducts": "Aucun produit ne correspond à vos critères."
+  },
+  "Home": {
+    "heroTitle": "L'Art du Confort",
+    "heroDescription": "Découvrez notre collection de literie de luxe confectionnée avec la soie et le cachemire les plus fins du monde",
+    "exploreSilk": "Explorer la Collection Soie",
+    "viewCashmere": "Voir le Cachemire",
+    "scrollToDiscover": "Faites défiler pour découvrir",
+    "ourCollections": "Nos Collections",
+    "collectionsSubtitle": "Sélections soigneusement curées des plus beaux matériaux de literie du monde",
+    "silkCollection": "Collection Soie",
+    "silkCollectionDesc": "Découvrez le luxe ultime avec notre literie en soie de mûrier",
+    "silkAccent": "Élégance intemporelle",
+    "cashmereCollection": "Collection Cachemire",
+    "cashmereCollectionDesc": "Enveloppez-vous du cachemire le plus doux pour une chaleur incomparable",
+    "cashmereAccent": "Douceur suprême",
+    "discoverCollection": "Découvrir la Collection",
+    "aboutTitle": "Confectionné pour le Confort, Conçu pour la Vie",
+    "aboutP1": "Chez Noiraé, nous croyons que la qualité du sommeil commence par une literie exceptionnelle. Notre passion pour créer les plus beaux textiles de lit nous a poussés à sourcer les matériaux les plus luxueux du monde et à les transformer en produits qui changent votre chambre en un sanctuaire de confort.",
+    "aboutP2": "Chaque pièce de notre collection est méticuleusement conçue et confectionnée par des artisans qui comprennent l'importance de la qualité, de la durabilité et de l'élégance intemporelle.",
+    "readOurStory": "Lire Notre Histoire",
+    "featuredProducts": "Produits en Vedette",
+    "loadingFeatured": "Chargement des produits en vedette...",
+    "valueQualityTitle": "Qualité Exceptionnelle",
+    "valueQualityDesc": "Chaque produit répond à nos normes rigoureuses de luxe et de durabilité",
+    "valueSustainableTitle": "Approvisionnement Durable",
+    "valueSustainableDesc": "Matériaux produits éthiquement qui respectent à la fois les personnes et la planète",
+    "valueDelightTitle": "Satisfaction Client",
+    "valueDelightDesc": "Votre satisfaction est notre priorité, de la sélection à la livraison"
   }
 }
