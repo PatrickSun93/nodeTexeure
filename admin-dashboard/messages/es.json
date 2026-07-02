@@ -2144,11 +2144,17 @@
     "salesByRegion": "Ventas por región (mapa de EE. UU.)",
     "loadingMap": "Cargando mapa…",
     "high": "Alto",
-    "low": "Bajo"
+    "low": "Bajo",
+    "loading": "Cargando…"
   },
   "ExportButton": {
     "exportCsv": "Exportar CSV",
     "exporting": "Exportando…",
     "exportFailed": "Error al exportar. Inténtelo de nuevo."
+  },
+  "SessionManager": {
+    "validationFailed": "Error de validación de la sesión. Vuelva a iniciar sesión.",
+    "expiryWarning": "Su sesión caducará en 5 minutos por inactividad. Haga clic en cualquier lugar para prolongarla.",
+    "expired": "Su sesión ha caducado por inactividad."
   }
 }

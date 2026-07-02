@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
+import { useTranslations } from 'next-intl';
 import { useCache } from '@/hooks/useCache';
 import { usePerformance } from '@/hooks/usePerformance';
 
@@ -30,6 +31,7 @@ export default function BaseChart({
   debounceResize = 300,
   lazyLoad = true
 }) {
+  const t = useTranslations('Charts');
   const chartRef = useRef(null);
   const chartInstance = useRef(null);
   const resizeTimeoutRef = useRef(null);
@@ -149,7 +151,7 @@ export default function BaseChart({
     if (chartInstance.current) {
       if (loading) {
         chartInstance.current.showLoading('default', {
-          text: 'Loading...',
+          text: t('loading'),
           color: '#3b82f6',
           textColor: '#374151',
           maskColor: 'rgba(255, 255, 255, 0.8)',

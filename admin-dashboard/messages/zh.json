@@ -2144,11 +2144,17 @@
     "salesByRegion": "各地区销售（美国地图）",
     "loadingMap": "地图加载中…",
     "high": "高",
-    "low": "低"
+    "low": "低",
+    "loading": "加载中…"
   },
   "ExportButton": {
     "exportCsv": "导出 CSV",
     "exporting": "导出中…",
     "exportFailed": "导出失败，请重试。"
+  },
+  "SessionManager": {
+    "validationFailed": "会话验证失败，请重新登录。",
+    "expiryWarning": "由于长时间未操作，您的会话将在 5 分钟后过期。点击任意位置以延长会话。",
+    "expired": "由于长时间未操作，您的会话已过期。"
   }
 }
