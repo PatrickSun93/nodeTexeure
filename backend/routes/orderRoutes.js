@@ -1,12 +1,13 @@
 const express = require('express');
 const router = express.Router();
+const crypto = require('crypto');
 const { v4: uuidv4 } = require('uuid');
 const DatabaseUtil = require('../utils/database');
 const ResponseFormatter = require('../utils/responseFormatter');
 const { protect, protectOptional } = require('../middleware/authMiddleware');
 const emailService = require('../services/emailService');
 const shippingService = require('../services/shippingService');
-const db = new DatabaseUtil();
+const db = DatabaseUtil; // executeQuery et al. are static — reference the class, not an instance
 
 // Default tax rate fallback (NY rate)
 const DEFAULT_TAX_RATE = parseFloat(process.env.TAX_RATE) || 0.08875;
@@ -43,15 +44,40 @@ async function getTaxRate(stateCode, countryCode) {
   return DEFAULT_TAX_RATE;
 }
 
-// Helper function to get cart details
+// Crockford base32 (drops I, L, O, U so codes are unambiguous when read aloud/printed).
+const ORDER_ALPHABET = '0123456789ABCDEFGHJKMNPQRSTVWXYZ';
+
+// Generate a human-facing order number that is NOT sequential. Sequential numbers
+// (get_next_id) are enumerable — they leak order volume and enable order-lookup IDOR.
+// This draws ~50 bits of CSPRNG entropy, formatted NOR-XXXXX-XXXXX, and retries on the
+// astronomically unlikely collision against the UNIQUE order_number column.
+async function generateOrderNumber() {
+  for (let attempt = 0; attempt < 6; attempt++) {
+    const bytes = crypto.randomBytes(10);
+    let code = '';
+    for (let i = 0; i < 10; i++) code += ORDER_ALPHABET[bytes[i] & 31];
+    const candidate = `NOR-${code.slice(0, 5)}-${code.slice(5)}`;
+    const existing = await db.executeQuery(
+      'SELECT 1 FROM orders WHERE order_number = ? LIMIT 1',
+      [candidate]
+    );
+    if (!Array.isArray(existing?.data) || existing.data.length === 0) return candidate;
+  }
+  // Fallback with extra entropy — effectively never reached.
+  return `NOR-${crypto.randomBytes(6).toString('hex').toUpperCase()}`;
+}
+
+// Helper function to get cart details. executeQuery returns { success, data };
+// callers iterate the rows, so return the data array (price comes from cart_items).
 async function getCartDetails(cartId) {
   const cartItemsQuery = `
-    SELECT ci.*, p.price, p.name
+    SELECT ci.*, p.name
     FROM cart_items ci
     JOIN products p ON ci.product_id = p.id
     WHERE ci.cart_id = ?
   `;
-  return await db.executeQuery(cartItemsQuery, [cartId]);
+  const result = await db.executeQuery(cartItemsQuery, [cartId]);
+  return Array.isArray(result?.data) ? result.data : [];
 }
 
 // Helper function to validate coupon
@@ -60,7 +86,8 @@ async function validateCoupon(code, subtotal) {
     SELECT * FROM discount_codes
     WHERE code = ? AND is_active = 1 AND (starts_at <= NOW() OR starts_at IS NULL) AND (expires_at >= NOW() OR expires_at IS NULL)
   `;
-  const [coupon] = await db.executeQuery(couponQuery, [code]);
+  const couponResult = await db.executeQuery(couponQuery, [code]);
+  const coupon = Array.isArray(couponResult?.data) ? couponResult.data[0] : undefined;
 
   if (!coupon) {
     return { valid: false, message: 'Invalid or expired coupon' };
@@ -128,17 +155,18 @@ router.post('/create', protectOptional, async (req, res) => {
       return res.status(400).json(ResponseFormatter.failure('Cart is empty'));
     }
 
-    // Stock check — verify all items are in stock
+    // Stock check — verify all items are still in stock (inventory is tracked per variant)
     for (const item of cartItems) {
       const stockResult = await DatabaseUtil.executeQuery(
-        'SELECT stock_quantity, name FROM products WHERE id = ?',
-        [item.product_id]
+        `SELECT COALESCE(SUM(quantity_available), 0) AS available
+         FROM inventory WHERE product_id = ? AND (variant_id = ? OR ? IS NULL)`,
+        [item.product_id, item.variant_id, item.variant_id]
       );
       if (stockResult.success && stockResult.data.length > 0) {
-        const p = stockResult.data[0];
-        if (p.stock_quantity !== null && p.stock_quantity < item.quantity) {
+        const available = Number(stockResult.data[0].available);
+        if (available < item.quantity) {
           return res.status(400).json(ResponseFormatter.failure(
-            `Insufficient stock for "${p.name}". Available: ${p.stock_quantity}, Requested: ${item.quantity}`
+            `Insufficient stock for "${item.name}". Available: ${available}, Requested: ${item.quantity}`
           ));
         }
       }
@@ -188,8 +216,8 @@ router.post('/create', protectOptional, async (req, res) => {
 
     const totalAmount = subtotal + taxAmount + shippingAmount - discountAmount;
 
-    // Generate order number
-    const orderNumber = await db.getNextId('ORDER');
+    // Generate a non-sequential, unguessable order number (see generateOrderNumber).
+    const orderNumber = await generateOrderNumber();
 
     // Create order
     const orderId = uuidv4();
@@ -268,9 +296,13 @@ router.get('/:id', protectOptional, async (req, res) => {
     }
     const order = orderResult.data[0];
 
-    // Check ownership (if logged in, must own order or be admin)
-    if (req.user && order.user_id && req.user.id !== order.user_id && !req.user.isAdmin) {
-      return res.status(403).json(ResponseFormatter.failure('Access denied'));
+    // Ownership: orders that belong to a registered account require that account
+    // (or an admin). Guest orders (no user_id) stay viewable via their unguessable
+    // id/order_number so guest-checkout confirmation works without an account.
+    if (order.user_id) {
+      if (!req.user || (req.user.id !== order.user_id && !req.user.isAdmin)) {
+        return res.status(403).json(ResponseFormatter.failure('Access denied'));
+      }
     }
 
     // Fetch order items

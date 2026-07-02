@@ -40,7 +40,9 @@ INSERT INTO transno (prefix, count, details) VALUES
 ('SYS', 0, 'System ID counter'),
 ('AUDIT', 0, 'Audit log ID counter'),
 ('API', 0, 'API rate limit ID counter'),
-('STOCK', 0, 'Stock reservation ID counter');
+('STOCK', 0, 'Stock reservation ID counter'),
+('CARTITEM', 0, 'Cart item ID counter'),
+('INVMOV', 0, 'Inventory movement ID counter');
 
 -- Function to get next ID with prefix
 DELIMITER //

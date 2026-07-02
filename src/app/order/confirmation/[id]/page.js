@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, Suspense } from 'react';
+import { useSession } from 'next-auth/react';
 import { useParams, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Header from '../../../../components/Header';
@@ -23,6 +24,7 @@ export default function OrderConfirmationPage() {
 }
 
 function OrderConfirmationContent() {
+  const { data: session, status } = useSession();
   const params = useParams();
   const searchParams = useSearchParams();
   const orderId = params.id;
@@ -33,12 +35,20 @@ function OrderConfirmationContent() {
   const [paymentVerified, setPaymentVerified] = useState(false);
 
   useEffect(() => {
+    if (!orderId) return;
+    // Wait for the session to resolve so account orders are fetched with the owner's
+    // token; guest orders resolve with no token via their unguessable link.
+    if (status === 'loading') return;
+    const authHeaders = session?.accessToken
+      ? { Authorization: `Bearer ${session.accessToken}` }
+      : {};
+
     const fetchOrder = async () => {
       try {
         // If returning from Stripe, verify the payment session
         if (sessionId) {
           try {
-            const paymentData = await apiRequest(`/payments/session/${sessionId}`);
+            const paymentData = await apiRequest(`/payments/session/${sessionId}`, { headers: authHeaders });
             if (paymentData?.status === 'SUCCESS') {
               setPaymentVerified(true);
             }
@@ -47,7 +57,7 @@ function OrderConfirmationContent() {
           }
         }
 
-        const data = await apiRequest(`/orders/${orderId}`);
+        const data = await apiRequest(`/orders/${orderId}`, { headers: authHeaders });
         if (data?.status === 'SUCCESS') {
           const extracted = data.keyValueTable?.order || data.keyValueTable;
           setOrder(extracted);
@@ -60,8 +70,8 @@ function OrderConfirmationContent() {
         setLoading(false);
       }
     };
-    if (orderId) fetchOrder();
-  }, [orderId]);
+    fetchOrder();
+  }, [orderId, status, session]);
 
   if (loading) {
     return (

@@ -144,9 +144,13 @@ async function delIn(table, col, ids, tail = '') {
 // Step 1: register OITEM + IMG transno prefixes if missing
 // ---------------------------------------------------------------------------
 async function registerPrefixes() {
-  console.log('Registering transno prefixes (OITEM, IMG)...');
+  console.log('Registering transno prefixes (OITEM, IMG, CARTITEM, INVMOV)...');
   await q("INSERT IGNORE INTO transno (prefix, count, details) VALUES ('OITEM', 0, 'order item id')");
   await q("INSERT IGNORE INTO transno (prefix, count, details) VALUES ('IMG', 0, 'product image id')");
+  // CARTITEM/INVMOV are used by cart-add and inventory movements but were missing
+  // from the base schema — without them get_next_id() returns NULL and those insert.
+  await q("INSERT IGNORE INTO transno (prefix, count, details) VALUES ('CARTITEM', 0, 'cart item id')");
+  await q("INSERT IGNORE INTO transno (prefix, count, details) VALUES ('INVMOV', 0, 'inventory movement id')");
 }
 
 // ---------------------------------------------------------------------------
