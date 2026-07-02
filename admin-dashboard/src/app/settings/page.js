@@ -4,9 +4,11 @@ import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { apiRequest, getErrorMessage } from '@/lib/api';
+import { useTranslations } from 'next-intl';
 
 // Setting Category Component
 function SettingCategory({ category, settings, onSettingUpdate, isLoading }) {
+  const t = useTranslations('Settings');
   const [expandedSettings, setExpandedSettings] = useState({});
   const [editingSettings, setEditingSettings] = useState({});
   const [localValues, setLocalValues] = useState({});
@@ -57,8 +59,8 @@ function SettingCategory({ category, settings, onSettingUpdate, isLoading }) {
               }))}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-              <option value="true">Enabled</option>
-              <option value="false">Disabled</option>
+              <option value="true">{t('enabled')}</option>
+              <option value="false">{t('disabled')}</option>
             </select>
           );
         case 'integer':
@@ -96,7 +98,7 @@ function SettingCategory({ category, settings, onSettingUpdate, isLoading }) {
               }))}
               rows={4}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm"
-              placeholder="Enter valid JSON"
+              placeholder={t('enterValidJson')}
             />
           );
         default:
@@ -121,7 +123,7 @@ function SettingCategory({ category, settings, onSettingUpdate, isLoading }) {
           <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
             currentValue ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
           }`}>
-            {currentValue ? 'Enabled' : 'Disabled'}
+            {currentValue ? t('enabled') : t('disabled')}
           </span>
         );
       case 'json':
@@ -136,7 +138,7 @@ function SettingCategory({ category, settings, onSettingUpdate, isLoading }) {
       default:
         return (
           <span className="text-gray-900">
-            {currentValue !== null && currentValue !== undefined ? String(currentValue) : 'Not set'}
+            {currentValue !== null && currentValue !== undefined ? String(currentValue) : t('notSet')}
           </span>
         );
     }
@@ -161,7 +163,7 @@ function SettingCategory({ category, settings, onSettingUpdate, isLoading }) {
                 </span>
                 {setting.is_public && (
                   <span className="text-xs px-2 py-1 bg-blue-100 text-blue-600 rounded">
-                    Public
+                    {t('public')}
                   </span>
                 )}
                 <button
@@ -177,7 +179,7 @@ function SettingCategory({ category, settings, onSettingUpdate, isLoading }) {
               <div className="mt-4 space-y-3">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Value
+                    {t('value')}
                   </label>
                   {renderSettingValue(setting)}
                 </div>
@@ -185,7 +187,7 @@ function SettingCategory({ category, settings, onSettingUpdate, isLoading }) {
                 <div className="flex items-center justify-between">
                   <div className="text-xs text-gray-500">
                     {setting.updated_at && (
-                      <>Last updated: {new Date(setting.updated_at).toLocaleString()}</>
+                      <>{t('lastUpdated', { date: new Date(setting.updated_at).toLocaleString() })}</>
                     )}
                   </div>
                   <div className="flex space-x-2">
@@ -196,14 +198,14 @@ function SettingCategory({ category, settings, onSettingUpdate, isLoading }) {
                           disabled={isLoading}
                           className="text-xs px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50"
                         >
-                          Save
+                          {t('save')}
                         </button>
                         <button
                           onClick={() => cancelEditing(setting.setting_key)}
                           disabled={isLoading}
                           className="text-xs px-3 py-1 bg-gray-600 text-white rounded hover:bg-gray-700 disabled:opacity-50"
                         >
-                          Cancel
+                          {t('cancel')}
                         </button>
                       </>
                     ) : (
@@ -212,7 +214,7 @@ function SettingCategory({ category, settings, onSettingUpdate, isLoading }) {
                         disabled={isLoading}
                         className="text-xs px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
                       >
-                        Edit
+                        {t('edit')}
                       </button>
                     )}
                   </div>
@@ -228,6 +230,7 @@ function SettingCategory({ category, settings, onSettingUpdate, isLoading }) {
 
 // New Setting Modal Component
 function NewSettingModal({ isOpen, onClose, onSave, categories }) {
+  const t = useTranslations('Settings');
   const [formData, setFormData] = useState({
     setting_key: '',
     setting_value: '',
@@ -269,12 +272,12 @@ function NewSettingModal({ isOpen, onClose, onSave, categories }) {
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg p-6 w-full max-w-md">
-        <h3 className="text-lg font-semibold mb-4">Add New Setting</h3>
+        <h3 className="text-lg font-semibold mb-4">{t('addNewSetting')}</h3>
         
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Setting Key
+              {t('settingKey')}
             </label>
             <input
               type="text"
@@ -287,24 +290,24 @@ function NewSettingModal({ isOpen, onClose, onSave, categories }) {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Type
+              {t('type')}
             </label>
             <select
               value={formData.setting_type}
               onChange={(e) => setFormData(prev => ({ ...prev, setting_type: e.target.value }))}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-              <option value="string">String</option>
-              <option value="integer">Integer</option>
-              <option value="decimal">Decimal</option>
-              <option value="boolean">Boolean</option>
-              <option value="json">JSON</option>
+              <option value="string">{t('typeString')}</option>
+              <option value="integer">{t('typeInteger')}</option>
+              <option value="decimal">{t('typeDecimal')}</option>
+              <option value="boolean">{t('typeBoolean')}</option>
+              <option value="json">{t('typeJson')}</option>
             </select>
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Value
+              {t('value')}
             </label>
             <input
               type="text"
@@ -317,7 +320,7 @@ function NewSettingModal({ isOpen, onClose, onSave, categories }) {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Category
+              {t('category')}
             </label>
             <select
               value={formData.setting_details.category}
@@ -330,13 +333,13 @@ function NewSettingModal({ isOpen, onClose, onSave, categories }) {
               {categories.map(cat => (
                 <option key={cat.name} value={cat.name}>{cat.name}</option>
               ))}
-              <option value="General">General</option>
+              <option value="General">{t('categoryGeneral')}</option>
             </select>
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Description
+              {t('description')}
             </label>
             <textarea
               value={formData.setting_details.description}
@@ -358,7 +361,7 @@ function NewSettingModal({ isOpen, onClose, onSave, categories }) {
               className="mr-2"
             />
             <label htmlFor="is_public" className="text-sm text-gray-700">
-              Public (accessible by frontend)
+              {t('publicAccessible')}
             </label>
           </div>
 
@@ -368,14 +371,14 @@ function NewSettingModal({ isOpen, onClose, onSave, categories }) {
               disabled={isLoading}
               className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 disabled:opacity-50"
             >
-              {isLoading ? 'Creating...' : 'Create Setting'}
+              {isLoading ? t('creating') : t('createSetting')}
             </button>
             <button
               type="button"
               onClick={onClose}
               className="flex-1 bg-gray-600 text-white py-2 px-4 rounded-md hover:bg-gray-700"
             >
-              Cancel
+              {t('cancel')}
             </button>
           </div>
         </form>
@@ -385,6 +388,7 @@ function NewSettingModal({ isOpen, onClose, onSave, categories }) {
 }
 
 export default function SystemSettings() {
+  const t = useTranslations('Settings');
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   const router = useRouter();
   
@@ -422,7 +426,7 @@ export default function SystemSettings() {
         setSettings(response.keyValueTable.settings || []);
         setSettingsByCategory(response.keyValueTable.settingsByCategory || {});
       } else {
-        throw new Error(response.message || 'Failed to fetch settings');
+        throw new Error(response.message || t('fetchError'));
       }
     } catch (err) {
       console.error('Settings fetch error:', err);
@@ -459,7 +463,7 @@ export default function SystemSettings() {
       if (response.status === 'SUCCESS') {
         await fetchSettings(); // Refresh settings
       } else {
-        throw new Error(response.message || 'Failed to update setting');
+        throw new Error(response.message || t('updateError'));
       }
     } catch (err) {
       console.error('Setting update error:', err);
@@ -479,7 +483,7 @@ export default function SystemSettings() {
         await fetchSettings(); // Refresh settings
         await fetchCategories(); // Refresh categories
       } else {
-        throw new Error(response.message || 'Failed to create setting');
+        throw new Error(response.message || t('createError'));
       }
     } catch (err) {
       console.error('Setting creation error:', err);
@@ -499,7 +503,7 @@ export default function SystemSettings() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="admin-spinner"></div>
-        <span className="ml-2">Loading...</span>
+        <span className="ml-2">{t('loading')}</span>
       </div>
     );
   }
@@ -514,17 +518,17 @@ export default function SystemSettings() {
         <div className="admin-container">
           <div className="flex items-center justify-between h-16">
             <h1 className="text-xl font-semibold text-gray-900">
-              System Settings
+              {t('title')}
             </h1>
             <nav className="flex items-center space-x-4">
-              <a 
+              <a
                 href="/"
                 className="text-sm text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md hover:bg-gray-100"
               >
-                Dashboard
+                {t('dashboard')}
               </a>
               <span className="text-sm text-gray-600">
-                Welcome, {user?.firstName || 'Admin'}
+                {t('welcome', { name: user?.firstName || t('adminFallback') })}
               </span>
             </nav>
           </div>
@@ -537,7 +541,7 @@ export default function SystemSettings() {
           <div className="flex items-center space-x-4">
             <input
               type="text"
-              placeholder="Search settings..."
+              placeholder={t('searchPlaceholder')}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -547,7 +551,7 @@ export default function SystemSettings() {
               onChange={(e) => setSelectedCategory(e.target.value)}
               className="px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-              <option value="">All Categories</option>
+              <option value="">{t('allCategories')}</option>
               {categories.map(category => (
                 <option key={category.name} value={category.name}>
                   {category.name} ({category.settingCount})
@@ -559,7 +563,7 @@ export default function SystemSettings() {
             onClick={() => setShowNewSettingModal(true)}
             className="admin-button admin-button-primary"
           >
-            Add Setting
+            {t('addSetting')}
           </button>
         </div>
 
@@ -574,7 +578,7 @@ export default function SystemSettings() {
         {isLoading ? (
           <div className="flex items-center justify-center py-12">
             <div className="admin-spinner"></div>
-            <span className="ml-2">Loading settings...</span>
+            <span className="ml-2">{t('loadingSettings')}</span>
           </div>
         ) : (
           <div className="space-y-6">
@@ -590,7 +594,7 @@ export default function SystemSettings() {
               ))
             ) : (
               <div className="admin-card text-center py-12">
-                <p className="text-gray-500">No settings found</p>
+                <p className="text-gray-500">{t('noSettingsFound')}</p>
                 {(searchTerm || selectedCategory) && (
                   <button
                     onClick={() => {
@@ -599,7 +603,7 @@ export default function SystemSettings() {
                     }}
                     className="mt-2 text-blue-600 hover:text-blue-800"
                   >
-                    Clear filters
+                    {t('clearFilters')}
                   </button>
                 )}
               </div>

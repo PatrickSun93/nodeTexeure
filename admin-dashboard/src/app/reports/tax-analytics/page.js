@@ -1,11 +1,13 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useTranslations } from 'next-intl';
 import { BarChart, PieChart, LineChart } from '../../../components/charts';
 import ExportButton from '../../../components/ExportButton';
 import api from '../../../lib/api';
 
 export default function TaxAnalyticsPage() {
+  const t = useTranslations('TaxAnalytics');
   const [loading, setLoading] = useState(true);
   const [period, setPeriod] = useState('month');
   const [selectedJurisdiction, setSelectedJurisdiction] = useState('');
@@ -63,8 +65,8 @@ export default function TaxAnalyticsPage() {
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Tax Analytics</h1>
-          <p className="text-gray-600 mt-1">Detailed tax collection and jurisdiction analysis</p>
+          <h1 className="text-3xl font-bold text-gray-900">{t('title')}</h1>
+          <p className="text-gray-600 mt-1">{t('subtitle')}</p>
         </div>
         
         {/* Controls */}
@@ -74,9 +76,9 @@ export default function TaxAnalyticsPage() {
             onChange={(e) => setPeriod(e.target.value)}
             className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           >
-            <option value="month">This Month</option>
-            <option value="quarter">This Quarter</option>
-            <option value="year">This Year</option>
+            <option value="month">{t('periodMonth')}</option>
+            <option value="quarter">{t('periodQuarter')}</option>
+            <option value="year">{t('periodYear')}</option>
           </select>
           
           <select
@@ -84,7 +86,7 @@ export default function TaxAnalyticsPage() {
             onChange={(e) => setSelectedJurisdiction(e.target.value)}
             className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           >
-            <option value="">All Jurisdictions</option>
+            <option value="">{t('allJurisdictions')}</option>
             {taxCollection.map((item, index) => (
               <option key={index} value={item.country}>
                 {item.state ? `${item.state}, ${item.country}` : item.country}
@@ -101,7 +103,7 @@ export default function TaxAnalyticsPage() {
             }}
             variant="secondary"
           >
-            Export Tax Data
+            {t('exportTaxData')}
           </ExportButton>
         </div>
       </div>
@@ -111,7 +113,7 @@ export default function TaxAnalyticsPage() {
         <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Total Tax Collected</p>
+              <p className="text-sm font-medium text-gray-600">{t('totalTaxCollected')}</p>
               <p className="text-2xl font-bold text-gray-900">{formatCurrency(totalTaxCollected)}</p>
             </div>
             <div className="p-3 bg-green-100 rounded-full">
@@ -125,7 +127,7 @@ export default function TaxAnalyticsPage() {
         <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Taxable Orders</p>
+              <p className="text-sm font-medium text-gray-600">{t('taxableOrders')}</p>
               <p className="text-2xl font-bold text-gray-900">{totalOrders.toLocaleString()}</p>
             </div>
             <div className="p-3 bg-blue-100 rounded-full">
@@ -139,7 +141,7 @@ export default function TaxAnalyticsPage() {
         <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Average Tax Rate</p>
+              <p className="text-sm font-medium text-gray-600">{t('averageTaxRate')}</p>
               <p className="text-2xl font-bold text-gray-900">{formatPercentage(avgTaxRate)}</p>
             </div>
             <div className="p-3 bg-yellow-100 rounded-full">
@@ -153,7 +155,7 @@ export default function TaxAnalyticsPage() {
         <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Jurisdictions</p>
+              <p className="text-sm font-medium text-gray-600">{t('jurisdictions')}</p>
               <p className="text-2xl font-bold text-gray-900">{taxCollection.length}</p>
             </div>
             <div className="p-3 bg-purple-100 rounded-full">
@@ -176,7 +178,7 @@ export default function TaxAnalyticsPage() {
               totalTaxCollected: item.totalTaxCollected,
               orderCount: item.orderCount
             }))}
-            title="Tax Collection by Jurisdiction"
+            title={t('chartCollectionByJurisdiction')}
             loading={loading}
             height={400}
             colors={['#3b82f6', '#10b981']}
@@ -190,7 +192,7 @@ export default function TaxAnalyticsPage() {
               name: item.state ? `${item.state}, ${item.country}` : item.country,
               value: item.totalTaxCollected
             }))}
-            title="Tax Collection Distribution"
+            title={t('chartCollectionDistribution')}
             loading={loading}
             height={400}
           />
@@ -200,29 +202,29 @@ export default function TaxAnalyticsPage() {
       {/* Detailed Tax Table */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200">
         <div className="px-6 py-4 border-b border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-900">Tax Collection Details</h3>
+          <h3 className="text-lg font-semibold text-gray-900">{t('collectionDetails')}</h3>
         </div>
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Jurisdiction
+                  {t('colJurisdiction')}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Orders
+                  {t('colOrders')}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Tax Collected
+                  {t('colTaxCollected')}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Taxable Amount
+                  {t('colTaxableAmount')}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Effective Rate
+                  {t('colEffectiveRate')}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Avg Tax/Order
+                  {t('colAvgTaxPerOrder')}
                 </th>
               </tr>
             </thead>
@@ -263,19 +265,19 @@ export default function TaxAnalyticsPage() {
       {/* Tax Exemptions and Zero-Tax Orders */}
       {jurisdictionDetails && jurisdictionDetails.exemptions && (
         <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Tax Exemptions</h3>
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">{t('taxExemptions')}</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="p-4 bg-gray-50 rounded-lg">
-              <p className="text-sm font-medium text-gray-600">Zero-Tax Orders</p>
+              <p className="text-sm font-medium text-gray-600">{t('zeroTaxOrders')}</p>
               <p className="text-2xl font-bold text-gray-900">
                 {jurisdictionDetails.exemptions.zeroTaxOrders.toLocaleString()}
               </p>
               <p className="text-sm text-gray-500 mt-1">
-                Total Value: {formatCurrency(jurisdictionDetails.exemptions.zeroTaxSubtotal)}
+                {t('totalValue', { value: formatCurrency(jurisdictionDetails.exemptions.zeroTaxSubtotal) })}
               </p>
             </div>
             <div className="p-4 bg-gray-50 rounded-lg">
-              <p className="text-sm font-medium text-gray-600">Exemption Rate</p>
+              <p className="text-sm font-medium text-gray-600">{t('exemptionRate')}</p>
               <p className="text-2xl font-bold text-gray-900">
                 {totalOrders > 0 
                   ? formatPercentage((jurisdictionDetails.exemptions.zeroTaxOrders / (totalOrders + jurisdictionDetails.exemptions.zeroTaxOrders)) * 100)
@@ -283,7 +285,7 @@ export default function TaxAnalyticsPage() {
                 }
               </p>
               <p className="text-sm text-gray-500 mt-1">
-                Of all orders processed
+                {t('ofAllOrdersProcessed')}
               </p>
             </div>
           </div>

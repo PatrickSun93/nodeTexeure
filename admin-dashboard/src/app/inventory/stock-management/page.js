@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { apiRequest, getErrorMessage } from '@/lib/api';
+import { useTranslations } from 'next-intl';
 
 // Stock Management API functions
 const stockAPI = {
@@ -43,6 +44,7 @@ const stockAPI = {
 
 // Stock Adjustment Modal Component
 function StockAdjustmentModal({ isOpen, onClose, item, onSubmit }) {
+  const t = useTranslations('StockManagement');
   const [adjustmentData, setAdjustmentData] = useState({
     quantity_change: '',
     reason: '',
@@ -59,6 +61,15 @@ function StockAdjustmentModal({ isOpen, onClose, item, onSubmit }) {
     'other'
   ];
 
+  const reasonLabels = {
+    restock: t('reasonRestock'),
+    damage: t('reasonDamage'),
+    theft: t('reasonTheft'),
+    correction: t('reasonCorrection'),
+    return: t('reasonReturn'),
+    other: t('reasonOther')
+  };
+
   useEffect(() => {
     if (isOpen) {
       setAdjustmentData({
@@ -72,7 +83,7 @@ function StockAdjustmentModal({ isOpen, onClose, item, onSubmit }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!adjustmentData.quantity_change || !adjustmentData.reason) {
-      alert('Please fill in all required fields');
+      alert(t('fillRequiredFields'));
       return;
     }
 
@@ -101,38 +112,38 @@ function StockAdjustmentModal({ isOpen, onClose, item, onSubmit }) {
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg p-6 w-full max-w-md">
-        <h3 className="text-lg font-semibold mb-4">Adjust Stock</h3>
+        <h3 className="text-lg font-semibold mb-4">{t('adjustStock')}</h3>
         
         <div className="mb-4 p-3 bg-gray-50 rounded">
           <p className="font-medium">{item?.product_name}</p>
-          <p className="text-sm text-gray-600">SKU: {item?.product_sku}</p>
+          <p className="text-sm text-gray-600">{t('sku', { sku: item?.product_sku })}</p>
           {variant !== 'Base Product' && (
-            <p className="text-sm text-gray-600">Variant: {variant}</p>
+            <p className="text-sm text-gray-600">{t('variant', { variant })}</p>
           )}
-          <p className="text-sm text-gray-600">Current Stock: {item?.quantity_available}</p>
+          <p className="text-sm text-gray-600">{t('currentStock', { quantity: item?.quantity_available })}</p>
         </div>
 
         <form onSubmit={handleSubmit}>
           <div className="mb-4">
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Quantity Change *
+              {t('quantityChange')}
             </label>
             <input
               type="number"
               value={adjustmentData.quantity_change}
               onChange={(e) => setAdjustmentData(prev => ({ ...prev, quantity_change: e.target.value }))}
               className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Enter positive or negative number"
+              placeholder={t('enterPosNegNumber')}
               required
             />
             <p className="text-xs text-gray-500 mt-1">
-              Use positive numbers to increase stock, negative to decrease
+              {t('posNegHelp')}
             </p>
           </div>
 
           <div className="mb-4">
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Reason *
+              {t('reasonRequired')}
             </label>
             <select
               value={adjustmentData.reason}
@@ -140,10 +151,10 @@ function StockAdjustmentModal({ isOpen, onClose, item, onSubmit }) {
               className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
               required
             >
-              <option value="">Select reason</option>
+              <option value="">{t('selectReason')}</option>
               {reasons.map(reason => (
                 <option key={reason} value={reason}>
-                  {reason.charAt(0).toUpperCase() + reason.slice(1)}
+                  {reasonLabels[reason] ?? (reason.charAt(0).toUpperCase() + reason.slice(1))}
                 </option>
               ))}
             </select>
@@ -151,14 +162,14 @@ function StockAdjustmentModal({ isOpen, onClose, item, onSubmit }) {
 
           <div className="mb-6">
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Notes
+              {t('notes')}
             </label>
             <textarea
               value={adjustmentData.notes}
               onChange={(e) => setAdjustmentData(prev => ({ ...prev, notes: e.target.value }))}
               className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
               rows="3"
-              placeholder="Additional notes (optional)"
+              placeholder={t('additionalNotesOptional')}
             />
           </div>
 
@@ -169,14 +180,14 @@ function StockAdjustmentModal({ isOpen, onClose, item, onSubmit }) {
               className="px-4 py-2 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50"
               disabled={isSubmitting}
             >
-              Cancel
+              {t('cancel')}
             </button>
             <button
               type="submit"
               className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
               disabled={isSubmitting}
             >
-              {isSubmitting ? 'Adjusting...' : 'Adjust Stock'}
+              {isSubmitting ? t('adjusting') : t('adjustStock')}
             </button>
           </div>
         </form>
@@ -187,6 +198,7 @@ function StockAdjustmentModal({ isOpen, onClose, item, onSubmit }) {
 
 // Reorder Points Modal Component
 function ReorderPointsModal({ isOpen, onClose, item, onSubmit }) {
+  const t = useTranslations('StockManagement');
   const [reorderData, setReorderData] = useState({
     reorder_point: '',
     reorder_quantity: ''
@@ -205,7 +217,7 @@ function ReorderPointsModal({ isOpen, onClose, item, onSubmit }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!reorderData.reorder_point || !reorderData.reorder_quantity) {
-      alert('Please fill in all fields');
+      alert(t('fillAllFields'));
       return;
     }
 
@@ -233,21 +245,21 @@ function ReorderPointsModal({ isOpen, onClose, item, onSubmit }) {
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg p-6 w-full max-w-md">
-        <h3 className="text-lg font-semibold mb-4">Update Reorder Points</h3>
+        <h3 className="text-lg font-semibold mb-4">{t('updateReorderPoints')}</h3>
         
         <div className="mb-4 p-3 bg-gray-50 rounded">
           <p className="font-medium">{item?.product_name}</p>
-          <p className="text-sm text-gray-600">SKU: {item?.product_sku}</p>
+          <p className="text-sm text-gray-600">{t('sku', { sku: item?.product_sku })}</p>
           {variant !== 'Base Product' && (
-            <p className="text-sm text-gray-600">Variant: {variant}</p>
+            <p className="text-sm text-gray-600">{t('variant', { variant })}</p>
           )}
-          <p className="text-sm text-gray-600">Current Stock: {item?.quantity_available}</p>
+          <p className="text-sm text-gray-600">{t('currentStock', { quantity: item?.quantity_available })}</p>
         </div>
 
         <form onSubmit={handleSubmit}>
           <div className="mb-4">
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Reorder Point *
+              {t('reorderPointRequired')}
             </label>
             <input
               type="number"
@@ -255,17 +267,17 @@ function ReorderPointsModal({ isOpen, onClose, item, onSubmit }) {
               value={reorderData.reorder_point}
               onChange={(e) => setReorderData(prev => ({ ...prev, reorder_point: e.target.value }))}
               className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Minimum stock level"
+              placeholder={t('minimumStockLevel')}
               required
             />
             <p className="text-xs text-gray-500 mt-1">
-              Alert when stock falls to this level
+              {t('alertWhenStockFalls')}
             </p>
           </div>
 
           <div className="mb-6">
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Reorder Quantity *
+              {t('reorderQuantityRequired')}
             </label>
             <input
               type="number"
@@ -273,11 +285,11 @@ function ReorderPointsModal({ isOpen, onClose, item, onSubmit }) {
               value={reorderData.reorder_quantity}
               onChange={(e) => setReorderData(prev => ({ ...prev, reorder_quantity: e.target.value }))}
               className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Suggested reorder quantity"
+              placeholder={t('suggestedReorderQuantity')}
               required
             />
             <p className="text-xs text-gray-500 mt-1">
-              Suggested quantity to reorder
+              {t('suggestedQuantityToReorder')}
             </p>
           </div>
 
@@ -288,14 +300,14 @@ function ReorderPointsModal({ isOpen, onClose, item, onSubmit }) {
               className="px-4 py-2 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50"
               disabled={isSubmitting}
             >
-              Cancel
+              {t('cancel')}
             </button>
             <button
               type="submit"
               className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
               disabled={isSubmitting}
             >
-              {isSubmitting ? 'Updating...' : 'Update Points'}
+              {isSubmitting ? t('updating') : t('updatePoints')}
             </button>
           </div>
         </form>
@@ -306,6 +318,7 @@ function ReorderPointsModal({ isOpen, onClose, item, onSubmit }) {
 
 // Bulk Adjustment Modal Component
 function BulkAdjustmentModal({ isOpen, onClose, selectedItems, onSubmit }) {
+  const t = useTranslations('StockManagement');
   const [bulkData, setBulkData] = useState({
     quantity_change: '',
     reason: '',
@@ -322,6 +335,15 @@ function BulkAdjustmentModal({ isOpen, onClose, selectedItems, onSubmit }) {
     'other'
   ];
 
+  const reasonLabels = {
+    restock: t('reasonRestock'),
+    damage: t('reasonDamage'),
+    theft: t('reasonTheft'),
+    correction: t('reasonCorrection'),
+    return: t('reasonReturn'),
+    other: t('reasonOther')
+  };
+
   useEffect(() => {
     if (isOpen) {
       setBulkData({
@@ -335,7 +357,7 @@ function BulkAdjustmentModal({ isOpen, onClose, selectedItems, onSubmit }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!bulkData.quantity_change || !bulkData.reason) {
-      alert('Please fill in all required fields');
+      alert(t('fillRequiredFields'));
       return;
     }
 
@@ -361,11 +383,11 @@ function BulkAdjustmentModal({ isOpen, onClose, selectedItems, onSubmit }) {
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg p-6 w-full max-w-md">
-        <h3 className="text-lg font-semibold mb-4">Bulk Stock Adjustment</h3>
+        <h3 className="text-lg font-semibold mb-4">{t('bulkStockAdjustment')}</h3>
         
         <div className="mb-4 p-3 bg-gray-50 rounded">
           <p className="text-sm text-gray-600">
-            Adjusting {selectedItems.length} items
+            {t('adjustingItems', { count: selectedItems.length })}
           </p>
           <div className="mt-2 max-h-32 overflow-y-auto">
             {selectedItems.slice(0, 5).map((item, index) => (
@@ -375,7 +397,7 @@ function BulkAdjustmentModal({ isOpen, onClose, selectedItems, onSubmit }) {
             ))}
             {selectedItems.length > 5 && (
               <p className="text-xs text-gray-500">
-                ... and {selectedItems.length - 5} more items
+                {t('andMoreItems', { count: selectedItems.length - 5 })}
               </p>
             )}
           </div>
@@ -384,24 +406,24 @@ function BulkAdjustmentModal({ isOpen, onClose, selectedItems, onSubmit }) {
         <form onSubmit={handleSubmit}>
           <div className="mb-4">
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Quantity Change *
+              {t('quantityChange')}
             </label>
             <input
               type="number"
               value={bulkData.quantity_change}
               onChange={(e) => setBulkData(prev => ({ ...prev, quantity_change: e.target.value }))}
               className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Enter positive or negative number"
+              placeholder={t('enterPosNegNumber')}
               required
             />
             <p className="text-xs text-gray-500 mt-1">
-              This change will be applied to all selected items
+              {t('changeAppliedToAll')}
             </p>
           </div>
 
           <div className="mb-4">
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Reason *
+              {t('reasonRequired')}
             </label>
             <select
               value={bulkData.reason}
@@ -409,10 +431,10 @@ function BulkAdjustmentModal({ isOpen, onClose, selectedItems, onSubmit }) {
               className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
               required
             >
-              <option value="">Select reason</option>
+              <option value="">{t('selectReason')}</option>
               {reasons.map(reason => (
                 <option key={reason} value={reason}>
-                  {reason.charAt(0).toUpperCase() + reason.slice(1)}
+                  {reasonLabels[reason] ?? (reason.charAt(0).toUpperCase() + reason.slice(1))}
                 </option>
               ))}
             </select>
@@ -420,14 +442,14 @@ function BulkAdjustmentModal({ isOpen, onClose, selectedItems, onSubmit }) {
 
           <div className="mb-6">
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Notes
+              {t('notes')}
             </label>
             <textarea
               value={bulkData.notes}
               onChange={(e) => setBulkData(prev => ({ ...prev, notes: e.target.value }))}
               className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
               rows="3"
-              placeholder="Additional notes (optional)"
+              placeholder={t('additionalNotesOptional')}
             />
           </div>
 
@@ -438,14 +460,14 @@ function BulkAdjustmentModal({ isOpen, onClose, selectedItems, onSubmit }) {
               className="px-4 py-2 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50"
               disabled={isSubmitting}
             >
-              Cancel
+              {t('cancel')}
             </button>
             <button
               type="submit"
               className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
               disabled={isSubmitting}
             >
-              {isSubmitting ? 'Adjusting...' : 'Adjust All'}
+              {isSubmitting ? t('adjusting') : t('adjustAll')}
             </button>
           </div>
         </form>
@@ -455,14 +477,21 @@ function BulkAdjustmentModal({ isOpen, onClose, selectedItems, onSubmit }) {
 }
 
 export default function StockManagement() {
+  const t = useTranslations('StockManagement');
   return (
-    <Suspense fallback={<div style={{ padding: '2rem' }}>Loading…</div>}>
+    <Suspense fallback={<div style={{ padding: '2rem' }}>{t('loading')}</div>}>
       <StockManagementContent />
     </Suspense>
   );
 }
 
 function StockManagementContent() {
+  const t = useTranslations('StockManagement');
+  const stockStatusLabels = {
+    in_stock: t('statusInStock'),
+    low_stock: t('statusLowStock'),
+    out_of_stock: t('statusOutOfStock')
+  };
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -524,7 +553,7 @@ function StockManagementContent() {
         setInventory(response.data.inventory || []);
         setPagination(response.data.pagination || {});
       } else {
-        throw new Error(response.message || 'Failed to fetch inventory');
+        throw new Error(response.message || t('failedToFetchInventory'));
       }
     } catch (err) {
       console.error('Error fetching inventory:', err);
@@ -532,7 +561,7 @@ function StockManagementContent() {
     } finally {
       setIsLoading(false);
     }
-  }, [filters]);
+  }, [filters, t]);
 
   // Fetch movement history
   const fetchMovements = useCallback(async () => {
@@ -561,12 +590,12 @@ function StockManagementContent() {
       if (response.success) {
         await fetchInventory();
         await fetchMovements();
-        alert('Stock adjusted successfully!');
+        alert(t('stockAdjustedSuccess'));
       } else {
         throw new Error(response.message);
       }
     } catch (err) {
-      alert(`Error adjusting stock: ${getErrorMessage(err)}`);
+      alert(t('errorAdjustingStock', { error: getErrorMessage(err) }));
       throw err;
     }
   };
@@ -579,12 +608,12 @@ function StockManagementContent() {
         await fetchInventory();
         await fetchMovements();
         setSelectedItems([]);
-        alert(`Bulk adjustment completed! ${response.data.successful} items updated successfully.`);
+        alert(t('bulkAdjustmentCompleted', { count: response.data.successful }));
       } else {
         throw new Error(response.message);
       }
     } catch (err) {
-      alert(`Error performing bulk adjustment: ${getErrorMessage(err)}`);
+      alert(t('errorBulkAdjustment', { error: getErrorMessage(err) }));
       throw err;
     }
   };
@@ -595,12 +624,12 @@ function StockManagementContent() {
       const response = await stockAPI.updateReorderPoints(inventoryId, reorderPoint, reorderQuantity);
       if (response.success) {
         await fetchInventory();
-        alert('Reorder points updated successfully!');
+        alert(t('reorderPointsUpdatedSuccess'));
       } else {
         throw new Error(response.message);
       }
     } catch (err) {
-      alert(`Error updating reorder points: ${getErrorMessage(err)}`);
+      alert(t('errorUpdatingReorderPoints', { error: getErrorMessage(err) }));
       throw err;
     }
   };
@@ -637,7 +666,7 @@ function StockManagementContent() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="admin-spinner"></div>
-        <span className="ml-2">Loading...</span>
+        <span className="ml-2">{t('loading')}</span>
       </div>
     );
   }
@@ -653,24 +682,24 @@ function StockManagementContent() {
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center space-x-4">
               <h1 className="text-xl font-semibold text-gray-900">
-                Stock Management
+                {t('stockManagement')}
               </h1>
               <nav className="flex items-center space-x-2">
                 <a 
                   href="/"
                   className="text-sm text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md hover:bg-gray-100"
                 >
-                  Dashboard
+                  {t('dashboard')}
                 </a>
                 <span className="text-gray-400">/</span>
                 <a 
                   href="/inventory"
                   className="text-sm text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md hover:bg-gray-100"
                 >
-                  Inventory
+                  {t('inventory')}
                 </a>
                 <span className="text-gray-400">/</span>
-                <span className="text-sm text-gray-900">Stock Management</span>
+                <span className="text-sm text-gray-900">{t('stockManagement')}</span>
               </nav>
             </div>
             <div className="flex items-center space-x-4">
@@ -679,21 +708,21 @@ function StockManagementContent() {
                   onClick={() => setBulkModal({ isOpen: true })}
                   className="admin-button admin-button-secondary text-sm"
                 >
-                  Bulk Adjust ({selectedItems.length})
+                  {t('bulkAdjust', { count: selectedItems.length })}
                 </button>
               )}
               <button
                 onClick={() => setShowMovements(!showMovements)}
                 className="admin-button admin-button-secondary text-sm"
               >
-                {showMovements ? 'Hide' : 'Show'} History
+                {showMovements ? t('hideHistory') : t('showHistory')}
               </button>
               <button
                 onClick={fetchInventory}
                 disabled={isLoading}
                 className="admin-button admin-button-primary text-sm"
               >
-                {isLoading ? 'Refreshing...' : 'Refresh'}
+                {isLoading ? t('refreshing') : t('refresh')}
               </button>
             </div>
           </div>
@@ -713,45 +742,45 @@ function StockManagementContent() {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Search Products
+                {t('searchProducts')}
               </label>
               <input
                 type="text"
                 value={filters.search}
                 onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value, page: 1 }))}
                 className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Search by name or SKU"
+                placeholder={t('searchByNameOrSku')}
               />
             </div>
             
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Stock Level
+                {t('stockLevel')}
               </label>
               <select
                 value={filters.stock_level}
                 onChange={(e) => setFilters(prev => ({ ...prev, stock_level: e.target.value, page: 1 }))}
                 className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
-                <option value="all">All Stock Levels</option>
-                <option value="in_stock">In Stock</option>
-                <option value="low">Low Stock</option>
-                <option value="out_of_stock">Out of Stock</option>
+                <option value="all">{t('allStockLevels')}</option>
+                <option value="in_stock">{t('inStock')}</option>
+                <option value="low">{t('lowStock')}</option>
+                <option value="out_of_stock">{t('outOfStock')}</option>
               </select>
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Items per Page
+                {t('itemsPerPage')}
               </label>
               <select
                 value={filters.limit}
                 onChange={(e) => setFilters(prev => ({ ...prev, limit: parseInt(e.target.value), page: 1 }))}
                 className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
-                <option value="25">25 per page</option>
-                <option value="50">50 per page</option>
-                <option value="100">100 per page</option>
+                <option value="25">{t('perPage', { count: 25 })}</option>
+                <option value="50">{t('perPage', { count: 50 })}</option>
+                <option value="100">{t('perPage', { count: 100 })}</option>
               </select>
             </div>
 
@@ -760,7 +789,7 @@ function StockManagementContent() {
                 onClick={() => setFilters(prev => ({ ...prev, page: 1 }))}
                 className="admin-button admin-button-primary w-full"
               >
-                Apply Filters
+                {t('applyFilters')}
               </button>
             </div>
           </div>
@@ -770,7 +799,7 @@ function StockManagementContent() {
         <div className="bg-white rounded-lg shadow-sm border overflow-hidden">
           <div className="px-6 py-4 border-b border-gray-200">
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold">Inventory Items</h2>
+              <h2 className="text-lg font-semibold">{t('inventoryItems')}</h2>
               <div className="flex items-center space-x-4">
                 <label className="flex items-center">
                   <input
@@ -779,11 +808,11 @@ function StockManagementContent() {
                     onChange={(e) => handleSelectAll(e.target.checked)}
                     className="mr-2"
                   />
-                  Select All
+                  {t('selectAll')}
                 </label>
                 {pagination.total && (
                   <span className="text-sm text-gray-500">
-                    {pagination.total} total items
+                    {t('totalItems', { total: pagination.total })}
                   </span>
                 )}
               </div>
@@ -793,11 +822,11 @@ function StockManagementContent() {
           {isLoading ? (
             <div className="p-8 text-center">
               <div className="admin-spinner mx-auto mb-4"></div>
-              <p>Loading inventory...</p>
+              <p>{t('loadingInventory')}</p>
             </div>
           ) : inventory.length === 0 ? (
             <div className="p-8 text-center text-gray-500">
-              No inventory items found
+              {t('noInventoryItems')}
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -805,25 +834,25 @@ function StockManagementContent() {
                 <thead className="bg-gray-50">
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Select
+                      {t('select')}
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Product
+                      {t('product')}
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Stock Status
+                      {t('stockStatus')}
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Available
+                      {t('available')}
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Reserved
+                      {t('reserved')}
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Reorder Point
+                      {t('reorderPoint')}
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Actions
+                      {t('actions')}
                     </th>
                   </tr>
                 </thead>
@@ -846,15 +875,15 @@ function StockManagementContent() {
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div>
                             <p className="font-medium text-gray-900">{item.product_name}</p>
-                            <p className="text-sm text-gray-500">SKU: {item.product_sku}</p>
+                            <p className="text-sm text-gray-500">{t('sku', { sku: item.product_sku })}</p>
                             {variant && (
-                              <p className="text-sm text-gray-500">Variant: {variant}</p>
+                              <p className="text-sm text-gray-500">{t('variant', { variant })}</p>
                             )}
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStockStatusColor(item.stock_status)}`}>
-                            {item.stock_status?.replace('_', ' ').toUpperCase()}
+                            {stockStatusLabels[item.stock_status] ?? item.stock_status?.replace('_', ' ').toUpperCase()}
                           </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
@@ -871,13 +900,13 @@ function StockManagementContent() {
                             onClick={() => setAdjustmentModal({ isOpen: true, item })}
                             className="text-blue-600 hover:text-blue-800 font-medium"
                           >
-                            Adjust
+                            {t('adjust')}
                           </button>
                           <button
                             onClick={() => setReorderModal({ isOpen: true, item })}
                             className="text-green-600 hover:text-green-800 font-medium"
                           >
-                            Reorder Points
+                            {t('reorderPoints')}
                           </button>
                         </td>
                       </tr>
@@ -892,7 +921,7 @@ function StockManagementContent() {
           {pagination.pages > 1 && (
             <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
               <div className="text-sm text-gray-500">
-                Page {pagination.page} of {pagination.pages}
+                {t('pageOf', { page: pagination.page, pages: pagination.pages })}
               </div>
               <div className="flex space-x-2">
                 <button
@@ -900,14 +929,14 @@ function StockManagementContent() {
                   disabled={pagination.page <= 1}
                   className="px-3 py-1 text-sm border border-gray-300 rounded disabled:opacity-50"
                 >
-                  Previous
+                  {t('previous')}
                 </button>
                 <button
                   onClick={() => setFilters(prev => ({ ...prev, page: prev.page + 1 }))}
                   disabled={pagination.page >= pagination.pages}
                   className="px-3 py-1 text-sm border border-gray-300 rounded disabled:opacity-50"
                 >
-                  Next
+                  {t('next')}
                 </button>
               </div>
             </div>
@@ -918,26 +947,26 @@ function StockManagementContent() {
         {showMovements && (
           <div className="mt-8 bg-white rounded-lg shadow-sm border">
             <div className="px-6 py-4 border-b border-gray-200">
-              <h2 className="text-lg font-semibold">Recent Inventory Movements</h2>
+              <h2 className="text-lg font-semibold">{t('recentInventoryMovements')}</h2>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead className="bg-gray-50">
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Date
+                      {t('date')}
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Product
+                      {t('product')}
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Type
+                      {t('type')}
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Quantity
+                      {t('quantity')}
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      By
+                      {t('by')}
                     </th>
                   </tr>
                 </thead>
@@ -950,7 +979,7 @@ function StockManagementContent() {
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div>
                           <p className="text-sm font-medium text-gray-900">{movement.product_name}</p>
-                          <p className="text-sm text-gray-500">SKU: {movement.product_sku}</p>
+                          <p className="text-sm text-gray-500">{t('sku', { sku: movement.product_sku })}</p>
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
@@ -962,7 +991,7 @@ function StockManagementContent() {
                         {movement.quantity_change > 0 ? '+' : ''}{movement.quantity_change}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {movement.created_by_name || 'System'}
+                        {movement.created_by_name || t('system')}
                       </td>
                     </tr>
                   ))}

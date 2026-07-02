@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { apiRequest, getErrorMessage } from '@/lib/api';
+import { useTranslations } from 'next-intl';
 
 // Supplier API functions
 const supplierAPI = {
@@ -30,6 +31,7 @@ const supplierAPI = {
 
 // Supplier Form Modal Component
 function SupplierFormModal({ isOpen, onClose, supplier, onSubmit }) {
+  const t = useTranslations('Suppliers');
   const [formData, setFormData] = useState({
     name: '',
     contact_email: '',
@@ -99,7 +101,7 @@ function SupplierFormModal({ isOpen, onClose, supplier, onSubmit }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.name || !formData.contact_email) {
-      alert('Name and contact email are required');
+      alert(t('nameEmailRequired'));
       return;
     }
 
@@ -130,14 +132,14 @@ function SupplierFormModal({ isOpen, onClose, supplier, onSubmit }) {
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
         <h3 className="text-lg font-semibold mb-4">
-          {supplier ? 'Edit Supplier' : 'Add New Supplier'}
+          {supplier ? t('editSupplier') : t('addNewSupplier')}
         </h3>
-        
+
         <form onSubmit={handleSubmit}>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Supplier Name *
+                {t('supplierNameLabel')}
               </label>
               <input
                 type="text"
@@ -150,7 +152,7 @@ function SupplierFormModal({ isOpen, onClose, supplier, onSubmit }) {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Contact Email *
+                {t('contactEmailLabel')}
               </label>
               <input
                 type="email"
@@ -163,7 +165,7 @@ function SupplierFormModal({ isOpen, onClose, supplier, onSubmit }) {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Contact Phone
+                {t('contactPhoneLabel')}
               </label>
               <input
                 type="tel"
@@ -175,27 +177,27 @@ function SupplierFormModal({ isOpen, onClose, supplier, onSubmit }) {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Status
+                {t('status')}
               </label>
               <select
                 value={formData.status}
                 onChange={(e) => setFormData(prev => ({ ...prev, status: e.target.value }))}
                 className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
-                <option value="active">Active</option>
-                <option value="inactive">Inactive</option>
-                <option value="suspended">Suspended</option>
+                <option value="active">{t('statusActive')}</option>
+                <option value="inactive">{t('statusInactive')}</option>
+                <option value="suspended">{t('statusSuspended')}</option>
               </select>
             </div>
           </div>
 
           {/* Address Section */}
           <div className="mb-4">
-            <h4 className="text-md font-medium text-gray-700 mb-3">Address Information</h4>
+            <h4 className="text-md font-medium text-gray-700 mb-3">{t('addressInformation')}</h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Company
+                  {t('company')}
                 </label>
                 <input
                   type="text"
@@ -207,7 +209,7 @@ function SupplierFormModal({ isOpen, onClose, supplier, onSubmit }) {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Address Line 1
+                  {t('addressLine1')}
                 </label>
                 <input
                   type="text"
@@ -219,7 +221,7 @@ function SupplierFormModal({ isOpen, onClose, supplier, onSubmit }) {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Address Line 2
+                  {t('addressLine2')}
                 </label>
                 <input
                   type="text"
@@ -231,7 +233,7 @@ function SupplierFormModal({ isOpen, onClose, supplier, onSubmit }) {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  City
+                  {t('city')}
                 </label>
                 <input
                   type="text"
@@ -243,7 +245,7 @@ function SupplierFormModal({ isOpen, onClose, supplier, onSubmit }) {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  State
+                  {t('state')}
                 </label>
                 <input
                   type="text"
@@ -255,7 +257,7 @@ function SupplierFormModal({ isOpen, onClose, supplier, onSubmit }) {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Postal Code
+                  {t('postalCode')}
                 </label>
                 <input
                   type="text"
@@ -271,24 +273,24 @@ function SupplierFormModal({ isOpen, onClose, supplier, onSubmit }) {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Payment Terms
+                {t('paymentTerms')}
               </label>
               <select
                 value={formData.payment_terms}
                 onChange={(e) => setFormData(prev => ({ ...prev, payment_terms: e.target.value }))}
                 className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
-                <option value="Net 15">Net 15</option>
-                <option value="Net 30">Net 30</option>
-                <option value="Net 60">Net 60</option>
-                <option value="COD">Cash on Delivery</option>
-                <option value="Prepaid">Prepaid</option>
+                <option value="Net 15">{t('net15')}</option>
+                <option value="Net 30">{t('net30')}</option>
+                <option value="Net 60">{t('net60')}</option>
+                <option value="COD">{t('cashOnDelivery')}</option>
+                <option value="Prepaid">{t('prepaid')}</option>
               </select>
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Lead Time (Days)
+                {t('leadTimeDays')}
               </label>
               <input
                 type="number"
@@ -302,14 +304,14 @@ function SupplierFormModal({ isOpen, onClose, supplier, onSubmit }) {
 
           <div className="mb-6">
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Notes
+              {t('notes')}
             </label>
             <textarea
               value={formData.notes}
               onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
               className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
               rows="3"
-              placeholder="Additional notes about this supplier"
+              placeholder={t('notesPlaceholder')}
             />
           </div>
 
@@ -320,14 +322,14 @@ function SupplierFormModal({ isOpen, onClose, supplier, onSubmit }) {
               className="px-4 py-2 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50"
               disabled={isSubmitting}
             >
-              Cancel
+              {t('cancel')}
             </button>
             <button
               type="submit"
               className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
               disabled={isSubmitting}
             >
-              {isSubmitting ? 'Saving...' : (supplier ? 'Update Supplier' : 'Create Supplier')}
+              {isSubmitting ? t('saving') : (supplier ? t('updateSupplier') : t('createSupplier'))}
             </button>
           </div>
         </form>
@@ -337,6 +339,7 @@ function SupplierFormModal({ isOpen, onClose, supplier, onSubmit }) {
 }
 
 export default function SuppliersPage() {
+  const t = useTranslations('Suppliers');
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   const router = useRouter();
 
@@ -374,7 +377,7 @@ export default function SuppliersPage() {
         setSuppliers(response.data.suppliers || []);
         setPagination(response.data.pagination || {});
       } else {
-        throw new Error(response.message || 'Failed to fetch suppliers');
+        throw new Error(response.message || t('failedToFetchSuppliers'));
       }
     } catch (err) {
       console.error('Error fetching suppliers:', err);
@@ -382,7 +385,7 @@ export default function SuppliersPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [filters]);
+  }, [filters, t]);
 
   // Initial data fetch
   useEffect(() => {
@@ -397,12 +400,12 @@ export default function SuppliersPage() {
       const response = await supplierAPI.createSupplier(supplierData);
       if (response.success) {
         await fetchSuppliers();
-        alert('Supplier created successfully!');
+        alert(t('supplierCreatedSuccess'));
       } else {
         throw new Error(response.message);
       }
     } catch (err) {
-      alert(`Error creating supplier: ${getErrorMessage(err)}`);
+      alert(t('errorCreatingSupplier', { error: getErrorMessage(err) }));
       throw err;
     }
   };
@@ -413,12 +416,12 @@ export default function SuppliersPage() {
       const response = await supplierAPI.updateSupplier(supplierModal.supplier.id, supplierData);
       if (response.success) {
         await fetchSuppliers();
-        alert('Supplier updated successfully!');
+        alert(t('supplierUpdatedSuccess'));
       } else {
         throw new Error(response.message);
       }
     } catch (err) {
-      alert(`Error updating supplier: ${getErrorMessage(err)}`);
+      alert(t('errorUpdatingSupplier', { error: getErrorMessage(err) }));
       throw err;
     }
   };
@@ -433,11 +436,17 @@ export default function SuppliersPage() {
     }
   };
 
+  const statusLabels = {
+    active: t('statusActive'),
+    inactive: t('statusInactive'),
+    suspended: t('statusSuspended'),
+  };
+
   if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="admin-spinner"></div>
-        <span className="ml-2">Loading...</span>
+        <span className="ml-2">{t('loading')}</span>
       </div>
     );
   }
@@ -453,24 +462,24 @@ export default function SuppliersPage() {
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center space-x-4">
               <h1 className="text-xl font-semibold text-gray-900">
-                Supplier Management
+                {t('supplierManagement')}
               </h1>
               <nav className="flex items-center space-x-2">
-                <a 
+                <a
                   href="/"
                   className="text-sm text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md hover:bg-gray-100"
                 >
-                  Dashboard
+                  {t('dashboard')}
                 </a>
                 <span className="text-gray-400">/</span>
-                <a 
+                <a
                   href="/inventory"
                   className="text-sm text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md hover:bg-gray-100"
                 >
-                  Inventory
+                  {t('inventory')}
                 </a>
                 <span className="text-gray-400">/</span>
-                <span className="text-sm text-gray-900">Suppliers</span>
+                <span className="text-sm text-gray-900">{t('suppliers')}</span>
               </nav>
             </div>
             <div className="flex items-center space-x-4">
@@ -478,14 +487,14 @@ export default function SuppliersPage() {
                 onClick={() => setSupplierModal({ isOpen: true, supplier: null })}
                 className="admin-button admin-button-primary text-sm"
               >
-                Add Supplier
+                {t('addSupplier')}
               </button>
               <button
                 onClick={fetchSuppliers}
                 disabled={isLoading}
                 className="admin-button admin-button-secondary text-sm"
               >
-                {isLoading ? 'Refreshing...' : 'Refresh'}
+                {isLoading ? t('refreshing') : t('refresh')}
               </button>
             </div>
           </div>
@@ -505,30 +514,30 @@ export default function SuppliersPage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Search Suppliers
+                {t('searchSuppliers')}
               </label>
               <input
                 type="text"
                 value={filters.search}
                 onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value, page: 1 }))}
                 className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Search by name, email, or phone"
+                placeholder={t('searchPlaceholder')}
               />
             </div>
-            
+
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Status
+                {t('status')}
               </label>
               <select
                 value={filters.status}
                 onChange={(e) => setFilters(prev => ({ ...prev, status: e.target.value, page: 1 }))}
                 className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
-                <option value="all">All Statuses</option>
-                <option value="active">Active</option>
-                <option value="inactive">Inactive</option>
-                <option value="suspended">Suspended</option>
+                <option value="all">{t('statusAll')}</option>
+                <option value="active">{t('statusActive')}</option>
+                <option value="inactive">{t('statusInactive')}</option>
+                <option value="suspended">{t('statusSuspended')}</option>
               </select>
             </div>
 
@@ -537,7 +546,7 @@ export default function SuppliersPage() {
                 onClick={() => setFilters(prev => ({ ...prev, page: 1 }))}
                 className="admin-button admin-button-primary w-full"
               >
-                Apply Filters
+                {t('applyFilters')}
               </button>
             </div>
           </div>
@@ -547,10 +556,10 @@ export default function SuppliersPage() {
         <div className="bg-white rounded-lg shadow-sm border overflow-hidden">
           <div className="px-6 py-4 border-b border-gray-200">
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold">Suppliers</h2>
+              <h2 className="text-lg font-semibold">{t('suppliers')}</h2>
               {pagination.total && (
                 <span className="text-sm text-gray-500">
-                  {pagination.total} total suppliers
+                  {t('totalSuppliers', { total: pagination.total })}
                 </span>
               )}
             </div>
@@ -559,17 +568,17 @@ export default function SuppliersPage() {
           {isLoading ? (
             <div className="p-8 text-center">
               <div className="admin-spinner mx-auto mb-4"></div>
-              <p>Loading suppliers...</p>
+              <p>{t('loadingSuppliers')}</p>
             </div>
           ) : suppliers.length === 0 ? (
             <div className="p-8 text-center text-gray-500">
               <span className="text-4xl mb-4 block">📦</span>
-              <p>No suppliers found</p>
+              <p>{t('noSuppliersFound')}</p>
               <button
                 onClick={() => setSupplierModal({ isOpen: true, supplier: null })}
                 className="mt-4 admin-button admin-button-primary"
               >
-                Add Your First Supplier
+                {t('addFirstSupplier')}
               </button>
             </div>
           ) : (
@@ -578,19 +587,19 @@ export default function SuppliersPage() {
                 <thead className="bg-gray-50">
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Supplier
+                      {t('columnSupplier')}
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Contact
+                      {t('columnContact')}
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Terms
+                      {t('columnTerms')}
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Status
+                      {t('columnStatus')}
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Actions
+                      {t('columnActions')}
                     </th>
                   </tr>
                 </thead>
@@ -603,7 +612,7 @@ export default function SuppliersPage() {
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div>
                             <p className="font-medium text-gray-900">{supplier.name}</p>
-                            <p className="text-sm text-gray-500">ID: {supplier.id}</p>
+                            <p className="text-sm text-gray-500">{t('idLabel', { id: supplier.id })}</p>
                             {address.city && address.state && (
                               <p className="text-sm text-gray-500">
                                 {address.city}, {address.state}
@@ -623,13 +632,13 @@ export default function SuppliersPage() {
                           <div>
                             <p className="text-sm text-gray-900">{supplier.payment_terms}</p>
                             <p className="text-sm text-gray-500">
-                              {supplier.lead_time_days} day lead time
+                              {t('dayLeadTime', { days: supplier.lead_time_days })}
                             </p>
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(supplier.status)}`}>
-                            {supplier.status?.toUpperCase()}
+                            {statusLabels[supplier.status] ?? supplier.status?.toUpperCase()}
                           </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm space-x-2">
@@ -637,13 +646,13 @@ export default function SuppliersPage() {
                             onClick={() => setSupplierModal({ isOpen: true, supplier })}
                             className="text-blue-600 hover:text-blue-800 font-medium"
                           >
-                            Edit
+                            {t('edit')}
                           </button>
                           <button
                             onClick={() => router.push(`/inventory/purchase-orders?supplier=${supplier.id}`)}
                             className="text-green-600 hover:text-green-800 font-medium"
                           >
-                            Orders
+                            {t('orders')}
                           </button>
                         </td>
                       </tr>
@@ -658,7 +667,7 @@ export default function SuppliersPage() {
           {pagination.pages > 1 && (
             <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
               <div className="text-sm text-gray-500">
-                Page {pagination.page} of {pagination.pages}
+                {t('pageOf', { page: pagination.page, pages: pagination.pages })}
               </div>
               <div className="flex space-x-2">
                 <button
@@ -666,14 +675,14 @@ export default function SuppliersPage() {
                   disabled={pagination.page <= 1}
                   className="px-3 py-1 text-sm border border-gray-300 rounded disabled:opacity-50"
                 >
-                  Previous
+                  {t('previous')}
                 </button>
                 <button
                   onClick={() => setFilters(prev => ({ ...prev, page: prev.page + 1 }))}
                   disabled={pagination.page >= pagination.pages}
                   className="px-3 py-1 text-sm border border-gray-300 rounded disabled:opacity-50"
                 >
-                  Next
+                  {t('next')}
                 </button>
               </div>
             </div>

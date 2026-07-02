@@ -2,8 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 
 export default function ContentManagement() {
+  const t = useTranslations('Content');
   const [activeTab, setActiveTab] = useState('pages');
   const [pages, setPages] = useState([]);
   const [menus, setMenus] = useState([]);
@@ -22,7 +24,7 @@ export default function ContentManagement() {
 
       const token = localStorage.getItem('adminToken');
       if (!token) {
-        throw new Error('No authentication token found');
+        throw new Error(t('noAuthToken'));
       }
 
       let endpoint = '';
@@ -48,7 +50,7 @@ export default function ContentManagement() {
       });
 
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        throw new Error(t('httpError', { status: response.status }));
       }
 
       const data = await response.json();
@@ -66,7 +68,7 @@ export default function ContentManagement() {
             break;
         }
       } else {
-        throw new Error(data.message || 'Failed to fetch data');
+        throw new Error(data.message || t('failedToFetchData'));
       }
     } catch (error) {
       console.error('Error fetching content data:', error);
@@ -77,7 +79,7 @@ export default function ContentManagement() {
   };
 
   const handleDelete = async (type, id) => {
-    if (!confirm(`Are you sure you want to delete this ${type}?`)) {
+    if (!confirm(t('confirmDelete', { type }))) {
       return;
     }
 
@@ -92,7 +94,7 @@ export default function ContentManagement() {
       });
 
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        throw new Error(t('httpError', { status: response.status }));
       }
 
       const data = await response.json();
@@ -100,7 +102,7 @@ export default function ContentManagement() {
       if (data.success) {
         fetchContentData(); // Refresh the list
       } else {
-        throw new Error(data.message || 'Failed to delete item');
+        throw new Error(data.message || t('failedToDelete'));
       }
     } catch (error) {
       console.error('Error deleting item:', error);
@@ -111,41 +113,41 @@ export default function ContentManagement() {
   const renderPages = () => (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
-        <h3 className="text-lg font-semibold">Pages & Blog Posts</h3>
+        <h3 className="text-lg font-semibold">{t('pagesBlogPosts')}</h3>
         <Link 
           href="/content/pages/new"
           className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
         >
-          Create New Page
+          {t('createNewPage')}
         </Link>
       </div>
 
       {loading ? (
-        <div className="text-center py-8">Loading pages...</div>
+        <div className="text-center py-8">{t('loadingPages')}</div>
       ) : pages.length === 0 ? (
-        <div className="text-center py-8 text-gray-500">No pages found</div>
+        <div className="text-center py-8 text-gray-500">{t('noPagesFound')}</div>
       ) : (
         <div className="bg-white rounded-lg shadow overflow-hidden">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Title
+                  {t('columnTitle')}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Type
+                  {t('columnType')}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Status
+                  {t('columnStatus')}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Author
+                  {t('columnAuthor')}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Created
+                  {t('columnCreated')}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Actions
+                  {t('columnActions')}
                 </th>
               </tr>
             </thead>
@@ -187,13 +189,13 @@ export default function ContentManagement() {
                       href={`/content/pages/${page.id}/edit`}
                       className="text-blue-600 hover:text-blue-900"
                     >
-                      Edit
+                      {t('edit')}
                     </Link>
                     <button
                       onClick={() => handleDelete('pages', page.id)}
                       className="text-red-600 hover:text-red-900"
                     >
-                      Delete
+                      {t('delete')}
                     </button>
                   </td>
                 </tr>
@@ -208,19 +210,19 @@ export default function ContentManagement() {
   const renderMenus = () => (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
-        <h3 className="text-lg font-semibold">Navigation Menus</h3>
+        <h3 className="text-lg font-semibold">{t('navigationMenus')}</h3>
         <Link 
           href="/content/menus/new"
           className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
         >
-          Create New Menu
+          {t('createNewMenu')}
         </Link>
       </div>
 
       {loading ? (
-        <div className="text-center py-8">Loading menus...</div>
+        <div className="text-center py-8">{t('loadingMenus')}</div>
       ) : menus.length === 0 ? (
-        <div className="text-center py-8 text-gray-500">No menus found</div>
+        <div className="text-center py-8 text-gray-500">{t('noMenusFound')}</div>
       ) : (
         <div className="grid gap-4">
           {menus.map((menu) => (
@@ -228,9 +230,9 @@ export default function ContentManagement() {
               <div className="flex justify-between items-start">
                 <div>
                   <h4 className="text-lg font-semibold text-gray-900">{menu.name}</h4>
-                  <p className="text-sm text-gray-500">Location: {menu.location}</p>
+                  <p className="text-sm text-gray-500">{t('location', { location: menu.location })}</p>
                   <p className="text-sm text-gray-500">
-                    Status: {menu.is_active ? 'Active' : 'Inactive'}
+                    {t('status', { status: menu.is_active ? t('active') : t('inactive') })}
                   </p>
                 </div>
                 <div className="flex space-x-2">
@@ -238,19 +240,19 @@ export default function ContentManagement() {
                     href={`/content/menus/${menu.id}/edit`}
                     className="text-blue-600 hover:text-blue-900 text-sm"
                   >
-                    Edit Menu
+                    {t('editMenu')}
                   </Link>
                   <Link 
                     href={`/content/menus/${menu.id}/items`}
                     className="text-green-600 hover:text-green-900 text-sm"
                   >
-                    Manage Items
+                    {t('manageItems')}
                   </Link>
                   <button
                     onClick={() => handleDelete('menus', menu.id)}
                     className="text-red-600 hover:text-red-900 text-sm"
                   >
-                    Delete
+                    {t('delete')}
                   </button>
                 </div>
               </div>
@@ -264,19 +266,19 @@ export default function ContentManagement() {
   const renderBanners = () => (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
-        <h3 className="text-lg font-semibold">Promotional Banners</h3>
+        <h3 className="text-lg font-semibold">{t('promotionalBanners')}</h3>
         <Link 
           href="/content/banners/new"
           className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
         >
-          Create New Banner
+          {t('createNewBanner')}
         </Link>
       </div>
 
       {loading ? (
-        <div className="text-center py-8">Loading banners...</div>
+        <div className="text-center py-8">{t('loadingBanners')}</div>
       ) : banners.length === 0 ? (
-        <div className="text-center py-8 text-gray-500">No banners found</div>
+        <div className="text-center py-8 text-gray-500">{t('noBannersFound')}</div>
       ) : (
         <div className="grid gap-4">
           {banners.map((banner) => (
@@ -300,7 +302,7 @@ export default function ContentManagement() {
                         ? 'bg-green-100 text-green-800' 
                         : 'bg-red-100 text-red-800'
                     }`}>
-                      {banner.is_active ? 'Active' : 'Inactive'}
+                      {banner.is_active ? t('active') : t('inactive')}
                     </span>
                   </div>
                 </div>
@@ -318,13 +320,13 @@ export default function ContentManagement() {
                     href={`/content/banners/${banner.id}/edit`}
                     className="text-blue-600 hover:text-blue-900 text-sm"
                   >
-                    Edit
+                    {t('edit')}
                   </Link>
                   <button
                     onClick={() => handleDelete('banners', banner.id)}
                     className="text-red-600 hover:text-red-900 text-sm"
                   >
-                    Delete
+                    {t('delete')}
                   </button>
                 </div>
               </div>
@@ -338,8 +340,8 @@ export default function ContentManagement() {
   return (
     <div className="p-6">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Content Management</h1>
-        <p className="text-gray-600">Manage pages, blog posts, menus, and promotional banners</p>
+        <h1 className="text-2xl font-bold text-gray-900">{t('contentManagement')}</h1>
+        <p className="text-gray-600">{t('subtitle')}</p>
       </div>
 
       {error && (
@@ -352,9 +354,9 @@ export default function ContentManagement() {
       <div className="border-b border-gray-200 mb-6">
         <nav className="-mb-px flex space-x-8">
           {[
-            { key: 'pages', label: 'Pages & Blog' },
-            { key: 'menus', label: 'Menus' },
-            { key: 'banners', label: 'Banners' }
+            { key: 'pages', label: t('tabPagesBlog') },
+            { key: 'menus', label: t('tabMenus') },
+            { key: 'banners', label: t('tabBanners') }
           ].map((tab) => (
             <button
               key={tab.key}
