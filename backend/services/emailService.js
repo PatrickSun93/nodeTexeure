@@ -6,7 +6,7 @@
 
 const { SESClient, SendEmailCommand } = require('@aws-sdk/client-ses');
 const DatabaseUtil = require('../utils/database');
-const db = new DatabaseUtil();
+const db = DatabaseUtil; // executeQuery et al. are static — reference the class, not an instance
 
 let sesClient;
 let isConfigured = false;

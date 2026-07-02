@@ -4,7 +4,7 @@ const ResponseFormatter = require('../utils/responseFormatter');
 const { protect } = require('../middleware/authMiddleware');
 
 const router = express.Router();
-const db = new DatabaseUtil();
+// DatabaseUtil.executeQuery is a static method — call it on the class, not an instance.
 
 /**
  * GET /api/wishlist
@@ -12,10 +12,10 @@ const db = new DatabaseUtil();
  */
 router.get('/', protect, async (req, res) => {
   try {
-    const result = await db.executeQuery(
+    const result = await DatabaseUtil.executeQuery(
       `SELECT w.id, w.product_id, w.variant_id, w.created_at,
               p.name, p.base_price, p.slug, p.short_description, p.status,
-              (SELECT pi.image_url FROM product_images pi WHERE pi.product_id = p.id ORDER BY pi.sort_order ASC LIMIT 1) AS image_url,
+              (SELECT pi.thumbnail_medium_url FROM product_images pi WHERE pi.product_id = p.id ORDER BY pi.is_primary DESC, pi.sort_order ASC LIMIT 1) AS image_url,
               pv.size AS variant_size, pv.color AS variant_color, pv.price_adjustment AS variant_price_adjustment
        FROM wishlists w
        JOIN products p ON w.product_id = p.id
@@ -25,7 +25,7 @@ router.get('/', protect, async (req, res) => {
       [req.user.id]
     );
 
-    const items = (result.data || result || []).map(item => ({
+    const items = (Array.isArray(result?.data) ? result.data : []).map(item => ({
       ...item,
       price: item.variant_price_adjustment
         ? parseFloat(item.base_price) + parseFloat(item.variant_price_adjustment)
@@ -52,7 +52,7 @@ router.post('/', protect, async (req, res) => {
     }
 
     // Check if already in wishlist
-    const existing = await db.executeQuery(
+    const existing = await DatabaseUtil.executeQuery(
       'SELECT id FROM wishlists WHERE user_id = ? AND product_id = ? AND (variant_id = ? OR (variant_id IS NULL AND ? IS NULL))',
       [req.user.id, product_id, variant_id || null, variant_id || null]
     );
@@ -64,7 +64,7 @@ router.post('/', protect, async (req, res) => {
     const idResult = await DatabaseUtil.executeQuery('SELECT get_next_id("WISH") as id');
     const wishId = idResult.data[0].id;
 
-    await db.executeQuery(
+    await DatabaseUtil.executeQuery(
       'INSERT INTO wishlists (id, user_id, product_id, variant_id) VALUES (?, ?, ?, ?)',
       [wishId, req.user.id, product_id, variant_id || null]
     );
@@ -83,7 +83,7 @@ router.post('/', protect, async (req, res) => {
 router.delete('/:productId', protect, async (req, res) => {
   try {
     const { productId } = req.params;
-    const result = await db.executeQuery(
+    const result = await DatabaseUtil.executeQuery(
       'DELETE FROM wishlists WHERE user_id = ? AND product_id = ?',
       [req.user.id, productId]
     );
@@ -106,7 +106,7 @@ router.delete('/:productId', protect, async (req, res) => {
 router.get('/check/:productId', protect, async (req, res) => {
   try {
     const { productId } = req.params;
-    const result = await db.executeQuery(
+    const result = await DatabaseUtil.executeQuery(
       'SELECT id FROM wishlists WHERE user_id = ? AND product_id = ?',
       [req.user.id, productId]
     );

@@ -11,7 +11,7 @@ const ResponseFormatter = require('../utils/responseFormatter');
 const DatabaseUtil = require('../utils/database');
 const s3Service = require('../services/s3Service');
 const { protect, admin } = require('../middleware/authMiddleware');
-const db = new DatabaseUtil();
+const db = DatabaseUtil; // executeQuery et al. are static — reference the class, not an instance
 
 // Configure multer for memory storage (buffers)
 const upload = multer({

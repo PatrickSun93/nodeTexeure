@@ -9,7 +9,7 @@ const ResponseFormatter = require('../utils/responseFormatter');
 const DatabaseUtil = require('../utils/database');
 const shippingService = require('../services/shippingService');
 const { protect, admin, protectOptional } = require('../middleware/authMiddleware');
-const db = new DatabaseUtil();
+const db = DatabaseUtil; // executeQuery et al. are static — reference the class, not an instance
 
 /**
  * POST /api/shipping/rates
