@@ -4,10 +4,12 @@ import { useState, useEffect, Suspense } from 'react';
 import { signIn, useSession } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import Header from '../../components/Header';
 import Footer from '../../components/Footer';
 
 function SignInContent() {
+  const t = useTranslations('SignIn');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -37,12 +39,12 @@ function SignInContent() {
     setIsLoading(false);
 
     if (result?.error) {
-      setError('Invalid email or password. Please try again.');
+      setError(t('invalidCredentials'));
     } else if (result?.ok) {
       router.refresh();
       router.push(redirect);
     } else {
-      setError('An unexpected error occurred.');
+      setError(t('unexpectedError'));
     }
   };
 
@@ -52,7 +54,7 @@ function SignInContent() {
         <Header />
         <div className="noirae-loading">
           <div className="aesop-loading-spinner"></div>
-          <p>Loading...</p>
+          <p>{t('loading')}</p>
         </div>
         <Footer />
       </div>
@@ -66,9 +68,9 @@ function SignInContent() {
       <main className="noirae-login-main">
         <div className="noirae-login-container">
           <div className="noirae-login-header">
-            <h1 className="noirae-login-title">Welcome Back</h1>
+            <h1 className="noirae-login-title">{t('title')}</h1>
             <p className="noirae-login-subtitle">
-              Sign in to your account to view orders, manage your wishlist, and more.
+              {t('subtitle')}
             </p>
           </div>
 
@@ -82,7 +84,7 @@ function SignInContent() {
             <form onSubmit={handleSubmit} className="noirae-login-form">
               <div className="noirae-form-group">
                 <label htmlFor="email" className="noirae-form-label">
-                  Email
+                  {t('emailLabel')}
                 </label>
                 <input
                   id="email"
@@ -93,17 +95,17 @@ function SignInContent() {
                   onChange={(e) => setEmail(e.target.value)}
                   disabled={isLoading}
                   className="noirae-form-input"
-                  placeholder="you@example.com"
+                  placeholder={t('emailPlaceholder')}
                 />
               </div>
 
               <div className="noirae-form-group">
                 <div className="noirae-form-label-row">
                   <label htmlFor="password" className="noirae-form-label">
-                    Password
+                    {t('passwordLabel')}
                   </label>
                   <Link href="/forgot-password" className="noirae-forgot-password">
-                    Forgot password?
+                    {t('forgotPassword')}
                   </Link>
                 </div>
                 <input
@@ -115,7 +117,7 @@ function SignInContent() {
                   onChange={(e) => setPassword(e.target.value)}
                   disabled={isLoading}
                   className="noirae-form-input"
-                  placeholder="Enter your password"
+                  placeholder={t('passwordPlaceholder')}
                 />
               </div>
 
@@ -124,14 +126,14 @@ function SignInContent() {
                 disabled={isLoading}
                 className="noirae-login-button"
               >
-                {isLoading ? 'Signing In...' : 'Sign In'}
+                {isLoading ? t('signingIn') : t('signIn')}
               </button>
             </form>
 
             <div style={{ textAlign: 'center', marginTop: '1.5rem', fontSize: '0.9rem', color: '#6b7280' }}>
-              Don&apos;t have an account?{' '}
+              {t('noAccount')}{' '}
               <Link href="/register" style={{ color: '#1a1a1a', fontWeight: 500 }}>
-                Create one
+                {t('createAccount')}
               </Link>
             </div>
           </div>
@@ -144,6 +146,7 @@ function SignInContent() {
 }
 
 export default function SignInPage() {
+  const t = useTranslations('SignIn');
   return (
     <Suspense
       fallback={
@@ -151,7 +154,7 @@ export default function SignInPage() {
           <Header />
           <div className="noirae-loading">
             <div className="aesop-loading-spinner"></div>
-            <p>Loading...</p>
+            <p>{t('loading')}</p>
           </div>
           <Footer />
         </div>

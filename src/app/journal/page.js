@@ -3,8 +3,11 @@
 import Header from '../../components/Header';
 import Footer from '../../components/Footer';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 
 export default function JournalPage() {
+  const t = useTranslations('Journal');
+
   // Mock journal articles
   const articles = [
     {
@@ -56,9 +59,9 @@ export default function JournalPage() {
         {/* Hero Section */}
         <section className="noirae-journal-hero">
           <div className="aesop-container">
-            <h1 className="noirae-heading-hero">The Journal</h1>
+            <h1 className="noirae-heading-hero">{t('heroTitle')}</h1>
             <p className="noirae-journal-hero-subtitle">
-              Stories, insights, and inspiration from the world of luxury bedding
+              {t('heroSubtitle')}
             </p>
           </div>
         </section>
@@ -87,7 +90,7 @@ export default function JournalPage() {
         {/* Recent Articles Grid */}
         <section className="noirae-journal-recent">
           <div className="aesop-container">
-            <h2 className="noirae-heading-2">Recent Stories</h2>
+            <h2 className="noirae-heading-2">{t('recentTitle')}</h2>
             
             <div className="noirae-articles-grid">
               {recentArticles.map((article) => (
@@ -115,20 +118,19 @@ export default function JournalPage() {
         <section className="noirae-journal-newsletter">
           <div className="aesop-container">
             <div className="noirae-journal-newsletter-content">
-              <h2 className="noirae-heading-2">Stay Inspired</h2>
+              <h2 className="noirae-heading-2">{t('newsletterTitle')}</h2>
               <p>
-                Subscribe to our journal for the latest stories, sleep tips, and exclusive insights 
-                delivered directly to your inbox.
+                {t('newsletterText')}
               </p>
               <form className="noirae-newsletter-form">
                 <input
                   type="email"
-                  placeholder="Enter your email address"
+                  placeholder={t('emailPlaceholder')}
                   className="noirae-newsletter-input"
                   required
                 />
                 <button type="submit" className="noirae-btn-primary">
-                  Subscribe
+                  {t('subscribeButton')}
                 </button>
               </form>
             </div>

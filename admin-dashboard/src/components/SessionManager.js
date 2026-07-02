@@ -2,10 +2,12 @@
 
 import { useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAdmin } from '@/contexts/AdminContext';
 
 export default function SessionManager() {
+  const t = useTranslations('SessionManager');
   const { isAuthenticated, checkAuthStatus, logout } = useAuth();
   const { showWarning, showError, updateSettings, settings } = useAdmin();
   const router = useRouter();
@@ -29,7 +31,7 @@ export default function SessionManager() {
       await checkAuthStatus();
     } catch (error) {
       console.error('Session check failed:', error);
-      showError('Session validation failed. Please log in again.');
+      showError(t('validationFailed'));
       await logout();
       router.push('/login?session=expired');
     }
@@ -40,14 +42,14 @@ export default function SessionManager() {
     if (inactivityWarningRef.current) return; // Already showing warning
     
     inactivityWarningRef.current = showWarning(
-      'Your session will expire in 5 minutes due to inactivity. Click anywhere to extend your session.',
+      t('expiryWarning'),
       0 // Don't auto-dismiss
     );
   };
 
   // Handle session timeout
   const handleTimeout = async () => {
-    showError('Your session has expired due to inactivity.');
+    showError(t('expired'));
     await logout();
     router.push('/login?session=timeout');
   };

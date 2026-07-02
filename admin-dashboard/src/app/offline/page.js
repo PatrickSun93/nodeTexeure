@@ -2,8 +2,10 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 
 export default function OfflinePage() {
+  const t = useTranslations('Offline');
   const [isOnline, setIsOnline] = useState(false);
   const router = useRouter();
 
@@ -56,20 +58,20 @@ export default function OfflinePage() {
         {isOnline ? (
           <div>
             <h1 className="text-2xl font-bold text-green-600 mb-4">
-              Connection Restored!
+              {t('connectionRestored')}
             </h1>
             <p className="text-gray-600 mb-6">
-              You're back online. Redirecting to the dashboard...
+              {t('backOnline')}
             </p>
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto"></div>
           </div>
         ) : (
           <div>
             <h1 className="text-2xl font-bold text-gray-900 mb-4">
-              You're Offline
+              {t('youreOffline')}
             </h1>
             <p className="text-gray-600 mb-6">
-              It looks like you've lost your internet connection. Some features may not be available until you're back online.
+              {t('offlineDescription')}
             </p>
 
             {/* Retry Button */}
@@ -77,27 +79,27 @@ export default function OfflinePage() {
               onClick={retryConnection}
               className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors mb-4"
             >
-              Try Again
+              {t('tryAgain')}
             </button>
 
             {/* Available Offline Features */}
             <div className="text-left bg-gray-50 rounded-lg p-4 mb-4">
-              <h3 className="font-semibold text-gray-900 mb-2">Available Offline:</h3>
+              <h3 className="font-semibold text-gray-900 mb-2">{t('availableOffline')}</h3>
               <ul className="text-sm text-gray-600 space-y-1">
-                <li>• View cached dashboard data</li>
-                <li>• Browse previously loaded pages</li>
-                <li>• Access cached reports</li>
-                <li>• View offline documentation</li>
+                <li>• {t('cachedDashboardData')}</li>
+                <li>• {t('browsePreviousPages')}</li>
+                <li>• {t('cachedReports')}</li>
+                <li>• {t('offlineDocumentation')}</li>
               </ul>
             </div>
 
             {/* Tips */}
             <div className="text-left bg-blue-50 rounded-lg p-4">
-              <h3 className="font-semibold text-blue-900 mb-2">Tips:</h3>
+              <h3 className="font-semibold text-blue-900 mb-2">{t('tips')}</h3>
               <ul className="text-sm text-blue-700 space-y-1">
-                <li>• Check your internet connection</li>
-                <li>• Try refreshing the page</li>
-                <li>• Contact IT support if the problem persists</li>
+                <li>• {t('checkConnection')}</li>
+                <li>• {t('refreshPage')}</li>
+                <li>• {t('contactSupport')}</li>
               </ul>
             </div>
           </div>
@@ -110,14 +112,14 @@ export default function OfflinePage() {
               onClick={() => router.push('/')}
               className="text-blue-600 hover:text-blue-700 transition-colors"
             >
-              Dashboard
+              {t('dashboard')}
             </button>
             <span className="text-gray-300">|</span>
             <button
               onClick={() => window.location.reload()}
               className="text-blue-600 hover:text-blue-700 transition-colors"
             >
-              Refresh
+              {t('refresh')}
             </button>
           </div>
         </div>

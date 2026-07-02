@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
+import { useTranslations } from 'next-intl';
 
 export default function PromotionDetailView({ promotion, onBack }) {
+    const t = useTranslations('PromotionDetailView');
     const isEditing = !!promotion;
 
     // Parse initial details
@@ -103,13 +105,13 @@ export default function PromotionDetailView({ promotion, onBack }) {
             });
 
             if (response.status === 'SUCCESS') {
-                alert('Promotion updated successfully');
+                alert(t('updateSuccess'));
             } else {
-                alert('Failed to update promotion');
+                alert(t('updateFailed'));
             }
         } catch (e) {
             console.error('Update promo failed', e);
-            alert('Error updating promotion');
+            alert(t('updateError'));
         } finally {
             setIsSaving(false);
         }
@@ -119,8 +121,8 @@ export default function PromotionDetailView({ promotion, onBack }) {
         <div className="p-8 bg-gray-50 min-h-full">
             {/* Header */}
             <div className="mb-8">
-                <h2 className="text-3xl font-bold text-gray-900 mb-2">{isEditing ? 'Edit Promotion' : 'Create New Promotion'}</h2>
-                <p className="text-gray-500">{isEditing ? `Modify the details for the "${formData.name}" promotion.` : 'Configure the details for your new promotional offer.'}</p>
+                <h2 className="text-3xl font-bold text-gray-900 mb-2">{isEditing ? t('editPromotion') : t('createNewPromotion')}</h2>
+                <p className="text-gray-500">{isEditing ? t('editSubtitle', { name: formData.name }) : t('createSubtitle')}</p>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -130,60 +132,60 @@ export default function PromotionDetailView({ promotion, onBack }) {
 
                     {/* Promotion Details */}
                     <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-8">
-                        <h3 className="text-lg font-semibold text-gray-900 mb-6">Promotion Details</h3>
-                        <p className="text-sm text-gray-500 mb-6 -mt-4">Basic information for the promotion.</p>
+                        <h3 className="text-lg font-semibold text-gray-900 mb-6">{t('promotionDetails')}</h3>
+                        <p className="text-sm text-gray-500 mb-6 -mt-4">{t('promotionDetailsSubtitle')}</p>
 
                         <div className="space-y-6">
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">Promotion Name</label>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">{t('promotionName')}</label>
                                 <input
                                     type="text"
                                     name="name"
                                     value={formData.name}
                                     onChange={handleChange}
-                                    placeholder="e.g., Autumn Sale"
+                                    placeholder={t('promotionNamePlaceholder')}
                                     className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C5A572] focus:border-transparent bg-gray-50"
                                 />
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">Description (optional)</label>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">{t('description')}</label>
                                 <textarea
                                     name="description"
                                     value={formData.description}
                                     onChange={handleChange}
                                     rows={3}
-                                    placeholder="A brief description..."
+                                    placeholder={t('descriptionPlaceholder')}
                                     className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C5A572] focus:border-transparent bg-gray-50"
                                 />
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">Discount Code</label>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">{t('discountCode')}</label>
                                     <input
                                         type="text"
                                         name="code"
                                         value={formData.code}
                                         onChange={handleChange}
-                                        placeholder="e.g., AUTUMN20"
+                                        placeholder={t('discountCodePlaceholder')}
                                         className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C5A572] focus:border-transparent bg-gray-50"
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">Discount Type</label>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">{t('discountType')}</label>
                                     <select
                                         name="type"
                                         value={formData.type}
                                         onChange={handleChange}
                                         className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C5A572] bg-gray-50"
                                     >
-                                        <option value="Percentage">Percentage</option>
-                                        <option value="Fixed Amount">Fixed Amount</option>
-                                        <option value="Free Shipping">Free Shipping</option>
+                                        <option value="Percentage">{t('typePercentage')}</option>
+                                        <option value="Fixed Amount">{t('typeFixedAmount')}</option>
+                                        <option value="Free Shipping">{t('typeFreeShipping')}</option>
                                     </select>
                                 </div>
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">Discount Value</label>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">{t('discountValue')}</label>
                                 <div className="relative">
                                     <span className="absolute inset-y-0 left-0 pl-4 flex items-center text-gray-500">
                                         {formData.type === 'Fixed Amount' ? '$' : '%'}
@@ -203,43 +205,43 @@ export default function PromotionDetailView({ promotion, onBack }) {
 
                     {/* Configuration */}
                     <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-8">
-                        <h3 className="text-lg font-semibold text-gray-900 mb-6">Configuration</h3>
-                        <p className="text-sm text-gray-500 mb-6 -mt-4">Set the rules and applicability for this promotion.</p>
+                        <h3 className="text-lg font-semibold text-gray-900 mb-6">{t('configuration')}</h3>
+                        <p className="text-sm text-gray-500 mb-6 -mt-4">{t('configurationSubtitle')}</p>
 
                         <div className="space-y-6">
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">Minimum Requirements</label>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">{t('minimumRequirements')}</label>
                                 <select
                                     name="minRequirements"
                                     value={formData.minRequirements}
                                     onChange={handleChange}
                                     className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C5A572] bg-gray-50"
                                 >
-                                    <option value="None">None</option>
-                                    <option value="Minimum Purchase Amount">Minimum Purchase Amount</option>
-                                    <option value="Minimum Quantity">Minimum Quantity</option>
+                                    <option value="None">{t('minReqNone')}</option>
+                                    <option value="Minimum Purchase Amount">{t('minReqPurchaseAmount')}</option>
+                                    <option value="Minimum Quantity">{t('minReqQuantity')}</option>
                                 </select>
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">Applicable Products/Collections</label>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">{t('applicableProducts')}</label>
                                 <select
                                     name="appliesTo"
                                     value={formData.appliesTo}
                                     onChange={handleChange}
                                     className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C5A572] bg-gray-50"
                                 >
-                                    <option value="All products">All products</option>
-                                    <option value="Specific collections">Specific collections</option>
-                                    <option value="Specific products">Specific products</option>
+                                    <option value="All products">{t('appliesAllProducts')}</option>
+                                    <option value="Specific collections">{t('appliesSpecificCollections')}</option>
+                                    <option value="Specific products">{t('appliesSpecificProducts')}</option>
                                 </select>
                             </div>
 
                             {/* Limits & Thresholds */}
                             <div className="pt-6 border-t border-gray-100">
-                                <h4 className="text-sm font-semibold text-gray-900 mb-4">Limits & Thresholds</h4>
+                                <h4 className="text-sm font-semibold text-gray-900 mb-4">{t('limitsThresholds')}</h4>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-2">Minimum Order Amount</label>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">{t('minimumOrderAmount')}</label>
                                         <div className="relative">
                                             <span className="absolute inset-y-0 left-0 pl-4 flex items-center text-gray-500">$</span>
                                             <input
@@ -251,10 +253,10 @@ export default function PromotionDetailView({ promotion, onBack }) {
                                                 className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C5A572] focus:border-transparent bg-gray-50"
                                             />
                                         </div>
-                                        <p className="text-xs text-gray-400 mt-1">Leave empty for no minimum</p>
+                                        <p className="text-xs text-gray-400 mt-1">{t('leaveEmptyNoMinimum')}</p>
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-2">Maximum Discount Amount</label>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">{t('maximumDiscountAmount')}</label>
                                         <div className="relative">
                                             <span className="absolute inset-y-0 left-0 pl-4 flex items-center text-gray-500">$</span>
                                             <input
@@ -266,41 +268,41 @@ export default function PromotionDetailView({ promotion, onBack }) {
                                                 className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C5A572] focus:border-transparent bg-gray-50"
                                             />
                                         </div>
-                                        <p className="text-xs text-gray-400 mt-1">Cap for percentage discounts</p>
+                                        <p className="text-xs text-gray-400 mt-1">{t('capForPercentage')}</p>
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-2">Total Usage Limit</label>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">{t('totalUsageLimit')}</label>
                                         <input
                                             type="number"
                                             name="usage_limit"
                                             value={formData.usage_limit}
                                             onChange={handleChange}
-                                            placeholder="Unlimited"
+                                            placeholder={t('unlimited')}
                                             className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C5A572] focus:border-transparent bg-gray-50"
                                         />
-                                        <p className="text-xs text-gray-400 mt-1">Max times this code can be used globally</p>
+                                        <p className="text-xs text-gray-400 mt-1">{t('maxTimesGlobal')}</p>
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-2">Usage Limit Per Customer</label>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">{t('usageLimitPerCustomer')}</label>
                                         <input
                                             type="number"
                                             name="usage_limit_per_customer"
                                             value={formData.usage_limit_per_customer}
                                             onChange={handleChange}
-                                            placeholder="Unlimited"
+                                            placeholder={t('unlimited')}
                                             className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C5A572] focus:border-transparent bg-gray-50"
                                         />
-                                        <p className="text-xs text-gray-400 mt-1">Max times per single customer</p>
+                                        <p className="text-xs text-gray-400 mt-1">{t('maxTimesPerCustomer')}</p>
                                     </div>
                                 </div>
                                 {/* Usage Count (Read-only) */}
                                 {isEditing && (
                                     <div className="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-100">
                                         <div className="flex justify-between items-center">
-                                            <span className="text-sm font-medium text-gray-700">Current Usage Count</span>
+                                            <span className="text-sm font-medium text-gray-700">{t('currentUsageCount')}</span>
                                             <span className="text-lg font-bold text-[#C5A572]">{formData.usage_count}</span>
                                         </div>
-                                        <p className="text-xs text-gray-400 mt-1">Number of times this code has been used</p>
+                                        <p className="text-xs text-gray-400 mt-1">{t('usageCountHelp')}</p>
                                     </div>
                                 )}
                             </div>
@@ -314,11 +316,11 @@ export default function PromotionDetailView({ promotion, onBack }) {
 
                     {/* Status & Schedule */}
                     <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-                        <h3 className="text-lg font-semibold text-gray-900 mb-6">Status & Schedule</h3>
+                        <h3 className="text-lg font-semibold text-gray-900 mb-6">{t('statusAndSchedule')}</h3>
 
                         <div className="space-y-4">
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">Start Date</label>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">{t('startDate')}</label>
                                 <input
                                     type="date"
                                     name="startDate"
@@ -328,7 +330,7 @@ export default function PromotionDetailView({ promotion, onBack }) {
                                 />
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">End Date</label>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">{t('endDate')}</label>
                                 <input
                                     type="date"
                                     name="endDate"
@@ -342,35 +344,35 @@ export default function PromotionDetailView({ promotion, onBack }) {
                                         onClick={() => handleQuickDuration(7)}
                                         className="px-2 py-1 text-xs border border-gray-200 rounded hover:bg-gray-50 text-gray-600 bg-white"
                                     >
-                                        +7 Days
+                                        {t('plus7Days')}
                                     </button>
                                     <button
                                         type="button"
                                         onClick={() => handleQuickDuration(30)}
                                         className="px-2 py-1 text-xs border border-gray-200 rounded hover:bg-gray-50 text-gray-600 bg-white"
                                     >
-                                        +30 Days
+                                        {t('plus30Days')}
                                     </button>
                                     <button
                                         type="button"
                                         onClick={() => handleQuickDuration('EOM')}
                                         className="px-2 py-1 text-xs border border-gray-200 rounded hover:bg-gray-50 text-gray-600 bg-white"
                                     >
-                                        End of Month
+                                        {t('endOfMonth')}
                                     </button>
                                 </div>
                             </div>
 
                             {/* Toggle Status */}
                             <div className="pt-4 border-t border-gray-100">
-                                <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">{t('status')}</label>
                                 <button
                                     onClick={() => setFormData(prev => ({ ...prev, status: prev.status === 'Active' ? 'Draft' : 'Active' }))}
                                     className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${formData.status === 'Active' ? 'bg-[#C5A572]' : 'bg-gray-200'}`}
                                 >
                                     <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${formData.status === 'Active' ? 'translate-x-6' : 'translate-x-1'}`} />
                                 </button>
-                                <span className="ml-3 text-sm text-gray-700">{formData.status}</span>
+                                <span className="ml-3 text-sm text-gray-700">{formData.status === 'Active' ? t('statusActive') : t('statusDraft')}</span>
                             </div>
                         </div>
                     </div>
@@ -379,14 +381,14 @@ export default function PromotionDetailView({ promotion, onBack }) {
                     <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
                         <div className="flex gap-3">
                             <button onClick={onBack} className="flex-1 px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 font-medium transition-colors">
-                                Cancel
+                                {t('cancel')}
                             </button>
                             <button
                                 onClick={handleSave}
                                 disabled={isSaving}
                                 className="flex-1 px-4 py-2 bg-[#C5A572] text-white rounded-lg hover:bg-[#b09060] font-medium transition-colors shadow-sm disabled:opacity-50"
                             >
-                                {isSaving ? 'Saving...' : 'Save Changes'}
+                                {isSaving ? t('saving') : t('saveChanges')}
                             </button>
                         </div>
                     </div>

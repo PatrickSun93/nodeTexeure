@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
+import { useTranslations } from 'next-intl';
 
 // Dynamically import the rich text editor to avoid SSR issues
 const RichTextEditor = dynamic(() => import('@/components/RichTextEditor'), {
@@ -11,6 +12,7 @@ const RichTextEditor = dynamic(() => import('@/components/RichTextEditor'), {
 });
 
 export default function NewPage() {
+  const t = useTranslations('PageNew');
   const router = useRouter();
   const [formData, setFormData] = useState({
     title: '',
@@ -54,7 +56,7 @@ export default function NewPage() {
     e.preventDefault();
     
     if (!formData.title || !formData.slug) {
-      setError('Title and slug are required');
+      setError(t('titleAndSlugRequired'));
       return;
     }
 
@@ -64,7 +66,7 @@ export default function NewPage() {
 
       const token = localStorage.getItem('adminToken');
       if (!token) {
-        throw new Error('No authentication token found');
+        throw new Error(t('noAuthToken'));
       }
 
       const response = await fetch('http://localhost:6666/api/admin/content/pages', {
@@ -77,15 +79,15 @@ export default function NewPage() {
       });
 
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        throw new Error(t('httpError', { status: response.status }));
       }
 
       const data = await response.json();
-      
+
       if (data.success) {
         router.push('/content');
       } else {
-        throw new Error(data.message || 'Failed to create page');
+        throw new Error(data.message || t('failedToCreatePage'));
       }
     } catch (error) {
       console.error('Error creating page:', error);
@@ -116,8 +118,8 @@ export default function NewPage() {
   return (
     <div className="p-6 max-w-6xl mx-auto">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Create New Page</h1>
-        <p className="text-gray-600">Create a new page or blog post</p>
+        <h1 className="text-2xl font-bold text-gray-900">{t('createNewPage')}</h1>
+        <p className="text-gray-600">{t('subtitle')}</p>
       </div>
 
       {error && (
@@ -133,7 +135,7 @@ export default function NewPage() {
             {/* Title */}
             <div>
               <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-2">
-                Title *
+                {t('title')} *
               </label>
               <input
                 type="text"
@@ -142,7 +144,7 @@ export default function NewPage() {
                 value={formData.title}
                 onChange={handleInputChange}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Enter page title"
+                placeholder={t('titlePlaceholder')}
                 required
               />
             </div>
@@ -150,7 +152,7 @@ export default function NewPage() {
             {/* Slug */}
             <div>
               <label htmlFor="slug" className="block text-sm font-medium text-gray-700 mb-2">
-                URL Slug *
+                {t('urlSlug')} *
               </label>
               <div className="flex">
                 <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-gray-300 bg-gray-50 text-gray-500 text-sm">
@@ -163,7 +165,7 @@ export default function NewPage() {
                   value={formData.slug}
                   onChange={handleInputChange}
                   className="flex-1 px-3 py-2 border border-gray-300 rounded-r-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="page-url-slug"
+                  placeholder={t('slugPlaceholder')}
                   required
                 />
               </div>
@@ -172,13 +174,13 @@ export default function NewPage() {
             {/* Content Editor */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Content
+                {t('content')}
               </label>
               <div className="border border-gray-300 rounded-md">
                 <RichTextEditor
                   value={formData.content}
                   onChange={handleContentChange}
-                  placeholder="Write your content here..."
+                  placeholder={t('contentPlaceholder')}
                 />
               </div>
             </div>
@@ -186,7 +188,7 @@ export default function NewPage() {
             {/* Excerpt */}
             <div>
               <label htmlFor="excerpt" className="block text-sm font-medium text-gray-700 mb-2">
-                Excerpt
+                {t('excerpt')}
               </label>
               <textarea
                 id="excerpt"
@@ -195,7 +197,7 @@ export default function NewPage() {
                 onChange={handleInputChange}
                 rows={3}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Brief description or excerpt"
+                placeholder={t('excerptPlaceholder')}
               />
             </div>
           </div>
@@ -204,12 +206,12 @@ export default function NewPage() {
           <div className="space-y-6">
             {/* Publish Actions */}
             <div className="bg-white border border-gray-200 rounded-lg p-4">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">Publish</h3>
-              
+              <h3 className="text-lg font-medium text-gray-900 mb-4">{t('publish')}</h3>
+
               <div className="space-y-4">
                 <div>
                   <label htmlFor="status" className="block text-sm font-medium text-gray-700 mb-2">
-                    Status
+                    {t('status')}
                   </label>
                   <select
                     id="status"
@@ -218,15 +220,15 @@ export default function NewPage() {
                     onChange={handleInputChange}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
-                    <option value="draft">Draft</option>
-                    <option value="published">Published</option>
-                    <option value="archived">Archived</option>
+                    <option value="draft">{t('statusDraft')}</option>
+                    <option value="published">{t('statusPublished')}</option>
+                    <option value="archived">{t('statusArchived')}</option>
                   </select>
                 </div>
 
                 <div>
                   <label htmlFor="page_type" className="block text-sm font-medium text-gray-700 mb-2">
-                    Type
+                    {t('type')}
                   </label>
                   <select
                     id="page_type"
@@ -235,8 +237,8 @@ export default function NewPage() {
                     onChange={handleInputChange}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
-                    <option value="page">Page</option>
-                    <option value="blog">Blog Post</option>
+                    <option value="page">{t('typePage')}</option>
+                    <option value="blog">{t('typeBlog')}</option>
                   </select>
                 </div>
 
@@ -247,7 +249,7 @@ export default function NewPage() {
                     disabled={loading}
                     className="flex-1 bg-gray-600 text-white px-4 py-2 rounded-md hover:bg-gray-700 disabled:opacity-50"
                   >
-                    Save Draft
+                    {t('saveDraft')}
                   </button>
                   <button
                     type="button"
@@ -255,7 +257,7 @@ export default function NewPage() {
                     disabled={loading}
                     className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 disabled:opacity-50"
                   >
-                    Publish
+                    {t('publish')}
                   </button>
                 </div>
               </div>
@@ -263,11 +265,11 @@ export default function NewPage() {
 
             {/* Featured Image */}
             <div className="bg-white border border-gray-200 rounded-lg p-4">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">Featured Image</h3>
-              
+              <h3 className="text-lg font-medium text-gray-900 mb-4">{t('featuredImage')}</h3>
+
               <div>
                 <label htmlFor="featured_image" className="block text-sm font-medium text-gray-700 mb-2">
-                  Image URL
+                  {t('imageUrl')}
                 </label>
                 <input
                   type="url"
@@ -280,9 +282,9 @@ export default function NewPage() {
                 />
                 {formData.featured_image && (
                   <div className="mt-2">
-                    <img 
-                      src={formData.featured_image} 
-                      alt="Featured image preview"
+                    <img
+                      src={formData.featured_image}
+                      alt={t('altFeaturedImagePreview')}
                       className="w-full h-32 object-cover rounded"
                       onError={(e) => {
                         e.target.style.display = 'none';
@@ -295,12 +297,12 @@ export default function NewPage() {
 
             {/* SEO Settings */}
             <div className="bg-white border border-gray-200 rounded-lg p-4">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">SEO Settings</h3>
-              
+              <h3 className="text-lg font-medium text-gray-900 mb-4">{t('seoSettings')}</h3>
+
               <div className="space-y-4">
                 <div>
                   <label htmlFor="meta_title" className="block text-sm font-medium text-gray-700 mb-2">
-                    Meta Title
+                    {t('metaTitle')}
                   </label>
                   <input
                     type="text"
@@ -309,13 +311,13 @@ export default function NewPage() {
                     value={formData.meta_title}
                     onChange={handleInputChange}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="SEO title"
+                    placeholder={t('metaTitlePlaceholder')}
                   />
                 </div>
 
                 <div>
                   <label htmlFor="meta_description" className="block text-sm font-medium text-gray-700 mb-2">
-                    Meta Description
+                    {t('metaDescription')}
                   </label>
                   <textarea
                     id="meta_description"
@@ -324,13 +326,13 @@ export default function NewPage() {
                     onChange={handleInputChange}
                     rows={3}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="SEO description"
+                    placeholder={t('metaDescriptionPlaceholder')}
                   />
                 </div>
 
                 <div>
                   <label htmlFor="meta_keywords" className="block text-sm font-medium text-gray-700 mb-2">
-                    Meta Keywords
+                    {t('metaKeywords')}
                   </label>
                   <input
                     type="text"
@@ -339,7 +341,7 @@ export default function NewPage() {
                     value={formData.meta_keywords}
                     onChange={handleInputChange}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="keyword1, keyword2, keyword3"
+                    placeholder={t('metaKeywordsPlaceholder')}
                   />
                 </div>
               </div>
@@ -354,23 +356,23 @@ export default function NewPage() {
             onClick={() => router.push('/content')}
             className="px-4 py-2 text-gray-600 hover:text-gray-800"
           >
-            Cancel
+            {t('cancel')}
           </button>
-          
+
           <div className="flex space-x-2">
             <button
               type="button"
               onClick={() => setPreview(!preview)}
               className="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50"
             >
-              {preview ? 'Hide Preview' : 'Preview'}
+              {preview ? t('hidePreview') : t('preview')}
             </button>
             <button
               type="submit"
               disabled={loading}
               className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
             >
-              {loading ? 'Creating...' : 'Create Page'}
+              {loading ? t('creating') : t('createPage')}
             </button>
           </div>
         </div>
@@ -382,7 +384,7 @@ export default function NewPage() {
           <div className="bg-white rounded-lg max-w-4xl max-h-[90vh] overflow-auto m-4">
             <div className="p-6">
               <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-bold">Preview</h2>
+                <h2 className="text-xl font-bold">{t('preview')}</h2>
                 <button
                   onClick={() => setPreview(false)}
                   className="text-gray-500 hover:text-gray-700"

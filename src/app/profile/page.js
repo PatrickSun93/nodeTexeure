@@ -3,11 +3,13 @@
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import Header from '../../components/Header';
 import Footer from '../../components/Footer';
 import { extractResponseData, profileAPI, apiRequest } from '../../lib/api';
 
 export default function Profile() {
+  const t = useTranslations('Profile');
   const { data: session, status } = useSession();
   const router = useRouter();
   const [userData, setUserData] = useState(null);
@@ -57,11 +59,11 @@ export default function Profile() {
         });
         setError('');
       } else {
-        setError(parsed.message || 'Failed to fetch profile');
+        setError(parsed.message || t('failedFetchProfile'));
       }
     } catch (err) {
       console.error('Error fetching profile', err);
-      setError('Error fetching profile');
+      setError(t('errorFetchProfile'));
     } finally {
       setLoading(false);
     }
@@ -77,7 +79,7 @@ export default function Profile() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (formData.password && formData.password !== formData.confirmPassword) {
-      setError('Passwords do not match');
+      setError(t('errorPasswordMatch'));
       return;
     }
 
@@ -96,15 +98,15 @@ export default function Profile() {
       if (parsed.status === 'SUCCESS') {
         await fetchProfile();
         setError('');
-        setSuccess('Profile updated successfully!');
+        setSuccess(t('successProfileUpdated'));
         setIsEditing(false);
         setFormData(prev => ({ ...prev, password: '', confirmPassword: '' }));
       } else {
-        setError(parsed.message || 'Failed to update profile');
+        setError(parsed.message || t('failedUpdateProfile'));
       }
     } catch (err) {
       console.error('Error updating profile', err);
-      setError('Error updating profile');
+      setError(t('errorUpdateProfile'));
     }
   };
 
@@ -150,12 +152,12 @@ export default function Profile() {
         setShowAddressForm(false);
         setEditingAddress(null);
         fetchAddresses();
-        setSuccess('Address saved successfully');
+        setSuccess(t('successAddressSaved'));
       } else {
-        setError(data?.message || 'Failed to save address');
+        setError(data?.message || t('failedSaveAddress'));
       }
     } catch (err) {
-      setError('Failed to save address');
+      setError(t('failedSaveAddress'));
     }
   };
 
@@ -178,7 +180,7 @@ export default function Profile() {
   };
 
   const handleDeleteAddress = async (addressId) => {
-    if (!confirm('Delete this address?')) return;
+    if (!confirm(t('confirmDeleteAddress'))) return;
     try {
       const data = await apiRequest(`/users/addresses/${addressId}`, {
         method: 'DELETE',
@@ -186,9 +188,9 @@ export default function Profile() {
       });
       if (data?.status === 'SUCCESS') {
         fetchAddresses();
-        setSuccess('Address deleted');
+        setSuccess(t('successAddressDeleted'));
       }
-    } catch { setError('Failed to delete address'); }
+    } catch { setError(t('failedDeleteAddress')); }
   };
 
   const handleSetDefault = async (addressId) => {
@@ -199,9 +201,9 @@ export default function Profile() {
       });
       if (data?.status === 'SUCCESS') {
         fetchAddresses();
-        setSuccess('Default address updated');
+        setSuccess(t('successDefaultUpdated'));
       }
-    } catch { setError('Failed to set default'); }
+    } catch { setError(t('failedSetDefault')); }
   };
 
   if (loading) {
@@ -263,9 +265,9 @@ export default function Profile() {
       <div className="max-w-4xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
         {/* Page Heading */}
         <div className="mb-8">
-          <h1 className="pf-title">My Account</h1>
+          <h1 className="pf-title">{t('pageTitle')}</h1>
           <p className="pf-subtitle">
-            {userData?.first_name ? `Hello, ${userData.first_name} — welcome back.` : 'Welcome back.'}
+            {userData?.first_name ? t('greetingNamed', { name: userData.first_name }) : t('greeting')}
           </p>
         </div>
 
@@ -286,7 +288,7 @@ export default function Profile() {
                 <div className="flex items-center mt-3">
                   <span className="pf-badge">
                     <span className="pf-badge-dot"></span>
-                    Active
+                    {t('statusActive')}
                   </span>
                 </div>
               </div>
@@ -299,7 +301,7 @@ export default function Profile() {
                     <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                     </svg>
-                    Edit Profile
+                    {t('editProfile')}
                   </button>
                 ) : (
                   <div className="flex gap-2">
@@ -307,7 +309,7 @@ export default function Profile() {
                       onClick={handleCancel}
                       className="pf-btn-outline"
                     >
-                      Cancel
+                      {t('cancel')}
                     </button>
                   </div>
                 )}
@@ -319,7 +321,7 @@ export default function Profile() {
         {/* Profile Form */}
         <div className="pf-card">
           <div className="px-7 py-7">
-            <h2 className="pf-section-title mb-6">Personal Information</h2>
+            <h2 className="pf-section-title mb-6">{t('personalInformation')}</h2>
 
             {error && (
               <div className="pf-alert pf-alert-error mb-4">
@@ -352,7 +354,7 @@ export default function Profile() {
                 {/* First Name */}
                 <div>
                   <label htmlFor="firstName" className="pf-label mb-2">
-                    First Name
+                    {t('firstNameLabel')}
                   </label>
                   <input
                     type="text"
@@ -362,14 +364,14 @@ export default function Profile() {
                     onChange={handleChange}
                     disabled={!isEditing}
                     className="pf-input"
-                    placeholder="Enter your first name"
+                    placeholder={t('firstNamePlaceholder')}
                   />
                 </div>
 
                 {/* Last Name */}
                 <div>
                   <label htmlFor="lastName" className="pf-label mb-2">
-                    Last Name
+                    {t('lastNameLabel')}
                   </label>
                   <input
                     type="text"
@@ -379,7 +381,7 @@ export default function Profile() {
                     onChange={handleChange}
                     disabled={!isEditing}
                     className="pf-input"
-                    placeholder="Enter your last name"
+                    placeholder={t('lastNamePlaceholder')}
                   />
                 </div>
               </div>
@@ -387,7 +389,7 @@ export default function Profile() {
               {/* Email */}
               <div>
                 <label htmlFor="email" className="pf-label mb-2">
-                  Email Address
+                  {t('emailLabel')}
                 </label>
                 <input
                   type="email"
@@ -396,15 +398,15 @@ export default function Profile() {
                   value={formData.email}
                   disabled={true}
                   className="pf-input"
-                  placeholder="your.email@example.com"
+                  placeholder={t('emailPlaceholder')}
                 />
-                <p className="pf-hint">Email cannot be changed</p>
+                <p className="pf-hint">{t('emailHint')}</p>
               </div>
 
               {/* Phone */}
               <div>
                 <label htmlFor="phone" className="pf-label mb-2">
-                  Phone Number
+                  {t('phoneLabel')}
                 </label>
                 <input
                   type="tel"
@@ -414,18 +416,18 @@ export default function Profile() {
                   onChange={handleChange}
                   disabled={!isEditing}
                   className="pf-input"
-                  placeholder="+1 (555) 123-4567"
+                  placeholder={t('phonePlaceholder')}
                 />
               </div>
 
               {/* Password Section - Only show when editing */}
               {isEditing && (
                 <div className="pf-divider pt-6">
-                  <h3 className="pf-sub-title mb-4">Change Password (Optional)</h3>
+                  <h3 className="pf-sub-title mb-4">{t('changePasswordTitle')}</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                       <label htmlFor="password" className="pf-label mb-2">
-                        New Password
+                        {t('newPasswordLabel')}
                       </label>
                       <input
                         type="password"
@@ -434,12 +436,12 @@ export default function Profile() {
                         value={formData.password}
                         onChange={handleChange}
                         className="pf-input"
-                        placeholder="Enter new password"
+                        placeholder={t('newPasswordPlaceholder')}
                       />
                     </div>
                     <div>
                       <label htmlFor="confirmPassword" className="pf-label mb-2">
-                        Confirm New Password
+                        {t('confirmPasswordLabel')}
                       </label>
                       <input
                         type="password"
@@ -448,7 +450,7 @@ export default function Profile() {
                         value={formData.confirmPassword}
                         onChange={handleChange}
                         className="pf-input"
-                        placeholder="Confirm new password"
+                        placeholder={t('confirmPasswordPlaceholder')}
                       />
                     </div>
                   </div>
@@ -465,7 +467,7 @@ export default function Profile() {
                     <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M5 13l4 4L19 7" />
                     </svg>
-                    Save Changes
+                    {t('saveChanges')}
                   </button>
                 </div>
               )}
@@ -477,7 +479,7 @@ export default function Profile() {
         <div className="pf-card mt-6">
           <div className="px-7 py-7">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="pf-section-title">Saved Addresses</h2>
+              <h2 className="pf-section-title">{t('savedAddresses')}</h2>
               <button
                 onClick={() => {
                   setEditingAddress(null);
@@ -486,67 +488,67 @@ export default function Profile() {
                 }}
                 className="pf-btn-outline"
               >
-                + Add Address
+                {t('addAddress')}
               </button>
             </div>
 
             {showAddressForm && (
               <div className="pf-addr-form p-5 mb-4">
-                <h3 className="pf-sub-title mb-4">{editingAddress ? 'Edit Address' : 'New Address'}</h3>
+                <h3 className="pf-sub-title mb-4">{editingAddress ? t('editAddress') : t('newAddress')}</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="pf-label mb-1">Type</label>
+                    <label className="pf-label mb-1">{t('typeLabel')}</label>
                     <select value={addressFormData.type} onChange={e => setAddressFormData(p => ({...p, type: e.target.value}))} className="pf-input">
-                      <option value="shipping">Shipping</option>
-                      <option value="billing">Billing</option>
+                      <option value="shipping">{t('typeShipping')}</option>
+                      <option value="billing">{t('typeBilling')}</option>
                     </select>
                   </div>
                   <div>
-                    <label className="pf-label mb-1">First Name</label>
+                    <label className="pf-label mb-1">{t('firstNameLabel')}</label>
                     <input type="text" value={addressFormData.first_name} onChange={e => setAddressFormData(p => ({...p, first_name: e.target.value}))} className="pf-input" />
                   </div>
                   <div>
-                    <label className="pf-label mb-1">Last Name</label>
+                    <label className="pf-label mb-1">{t('lastNameLabel')}</label>
                     <input type="text" value={addressFormData.last_name} onChange={e => setAddressFormData(p => ({...p, last_name: e.target.value}))} className="pf-input" />
                   </div>
                   <div>
-                    <label className="pf-label mb-1">Phone</label>
+                    <label className="pf-label mb-1">{t('phoneShortLabel')}</label>
                     <input type="tel" value={addressFormData.phone} onChange={e => setAddressFormData(p => ({...p, phone: e.target.value}))} className="pf-input" />
                   </div>
                   <div className="md:col-span-2">
-                    <label className="pf-label mb-1">Address Line 1</label>
+                    <label className="pf-label mb-1">{t('addressLine1Label')}</label>
                     <input type="text" value={addressFormData.address_line_1} onChange={e => setAddressFormData(p => ({...p, address_line_1: e.target.value}))} className="pf-input" />
                   </div>
                   <div className="md:col-span-2">
-                    <label className="pf-label mb-1">Address Line 2</label>
+                    <label className="pf-label mb-1">{t('addressLine2Label')}</label>
                     <input type="text" value={addressFormData.address_line_2} onChange={e => setAddressFormData(p => ({...p, address_line_2: e.target.value}))} className="pf-input" />
                   </div>
                   <div>
-                    <label className="pf-label mb-1">City</label>
+                    <label className="pf-label mb-1">{t('cityLabel')}</label>
                     <input type="text" value={addressFormData.city} onChange={e => setAddressFormData(p => ({...p, city: e.target.value}))} className="pf-input" />
                   </div>
                   <div>
-                    <label className="pf-label mb-1">State</label>
+                    <label className="pf-label mb-1">{t('stateLabel')}</label>
                     <input type="text" value={addressFormData.state} onChange={e => setAddressFormData(p => ({...p, state: e.target.value}))} className="pf-input" />
                   </div>
                   <div>
-                    <label className="pf-label mb-1">Postal Code</label>
+                    <label className="pf-label mb-1">{t('postalCodeLabel')}</label>
                     <input type="text" value={addressFormData.postal_code} onChange={e => setAddressFormData(p => ({...p, postal_code: e.target.value}))} className="pf-input" />
                   </div>
                   <div>
-                    <label className="pf-label mb-1">Country</label>
+                    <label className="pf-label mb-1">{t('countryLabel')}</label>
                     <input type="text" value={addressFormData.country} onChange={e => setAddressFormData(p => ({...p, country: e.target.value}))} className="pf-input" />
                   </div>
                   <div className="md:col-span-2">
                     <label className="flex items-center">
                       <input type="checkbox" checked={addressFormData.is_default} onChange={e => setAddressFormData(p => ({...p, is_default: e.target.checked}))} className="pf-checkbox h-4 w-4" />
-                      <span className="ml-2 text-sm pf-body">Set as default address</span>
+                      <span className="ml-2 text-sm pf-body">{t('setAsDefault')}</span>
                     </label>
                   </div>
                 </div>
                 <div className="flex justify-end gap-2 mt-4">
-                  <button onClick={() => { setShowAddressForm(false); setEditingAddress(null); }} className="pf-btn-outline">Cancel</button>
-                  <button onClick={handleSaveAddress} className="pf-btn-primary">Save Address</button>
+                  <button onClick={() => { setShowAddressForm(false); setEditingAddress(null); }} className="pf-btn-outline">{t('cancel')}</button>
+                  <button onClick={handleSaveAddress} className="pf-btn-primary">{t('saveAddress')}</button>
                 </div>
               </div>
             )}
@@ -561,7 +563,7 @@ export default function Profile() {
                       </span>
                       <div className="flex items-center gap-2">
                         {!!address.is_default && (
-                          <span className="pf-pill-default">Default</span>
+                          <span className="pf-pill-default">{t('defaultPill')}</span>
                         )}
                       </div>
                     </div>
@@ -571,20 +573,20 @@ export default function Profile() {
                       {address.address?.address_line_2 && <p>{address.address.address_line_2}</p>}
                       <p>{address.address?.city}, {address.address?.state} {address.address?.postal_code}</p>
                       <p>{address.address?.country}</p>
-                      {address.phone && <p>Phone: {address.phone}</p>}
+                      {address.phone && <p>{t('phoneValue', { phone: address.phone })}</p>}
                     </div>
                     <div className="flex gap-4 mt-4 pt-4 pf-divider">
-                      <button onClick={() => handleEditAddress(address)} className="pf-link pf-link-primary">Edit</button>
+                      <button onClick={() => handleEditAddress(address)} className="pf-link pf-link-primary">{t('edit')}</button>
                       {!address.is_default && (
-                        <button onClick={() => handleSetDefault(address.id)} className="pf-link pf-link-muted">Set Default</button>
+                        <button onClick={() => handleSetDefault(address.id)} className="pf-link pf-link-muted">{t('setDefault')}</button>
                       )}
-                      <button onClick={() => handleDeleteAddress(address.id)} className="pf-link pf-link-danger">Delete</button>
+                      <button onClick={() => handleDeleteAddress(address.id)} className="pf-link pf-link-danger">{t('delete')}</button>
                     </div>
                   </div>
                 ))}
               </div>
             ) : !showAddressForm && (
-              <p className="text-sm pf-muted">No saved addresses. Click &quot;Add Address&quot; to add one.</p>
+              <p className="text-sm pf-muted">{t('noAddresses')}</p>
             )}
           </div>
         </div>

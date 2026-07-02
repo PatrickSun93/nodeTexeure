@@ -1,12 +1,14 @@
 'use client';
 
 import { useState } from 'react';
+import { useTranslations } from 'next-intl';
 
 /**
  * BulkUploadView Component
  * Handles bulk product upload via CSV
  */
 export default function BulkUploadView() {
+    const t = useTranslations('BulkUpload');
     const [file, setFile] = useState(null);
     const [validation, setValidation] = useState(null);
     const [uploadResult, setUploadResult] = useState(null);
@@ -18,11 +20,11 @@ export default function BulkUploadView() {
         const selectedFile = e.target.files[0];
         if (selectedFile) {
             if (!selectedFile.name.endsWith('.csv')) {
-                setError('Please select a CSV file');
+                setError(t('errSelectCsv'));
                 return;
             }
             if (selectedFile.size > 5 * 1024 * 1024) {
-                setError('File size must be less than 5MB');
+                setError(t('errFileSize'));
                 return;
             }
             setFile(selectedFile);
@@ -50,13 +52,13 @@ export default function BulkUploadView() {
             document.body.removeChild(a);
         } catch (err) {
             console.error('Error downloading template:', err);
-            setError('Failed to download template');
+            setError(t('errDownloadTemplate'));
         }
     };
 
     const handleValidate = async () => {
         if (!file) {
-            setError('Please select a file first');
+            setError(t('errSelectFirst'));
             return;
         }
 
@@ -79,11 +81,11 @@ export default function BulkUploadView() {
             if (data.status === 'SUCCESS') {
                 setValidation(data.keyValueTable);
             } else {
-                setError(data.message || 'Validation failed');
+                setError(data.message || t('errValidationFailed'));
             }
         } catch (err) {
             console.error('Error validating file:', err);
-            setError('Network error during validation');
+            setError(t('errValidationNetwork'));
         } finally {
             setIsValidating(false);
         }
@@ -91,7 +93,7 @@ export default function BulkUploadView() {
 
     const handleUpload = async () => {
         if (!file || !validation || !validation.valid) {
-            setError('Please validate the file first');
+            setError(t('errValidateFirst'));
             return;
         }
 
@@ -120,11 +122,11 @@ export default function BulkUploadView() {
                 setFile(null);
                 setValidation(null);
             } else {
-                setError(data.message || 'Upload failed');
+                setError(data.message || t('errUploadFailed'));
             }
         } catch (err) {
             console.error('Error uploading file:', err);
-            setError('Network error during upload');
+            setError(t('errUploadNetwork'));
         } finally {
             setIsUploading(false);
         }
@@ -133,8 +135,8 @@ export default function BulkUploadView() {
     return (
         <div className="p-8 max-w-5xl mx-auto">
             <div className="mb-8">
-                <h1 className="text-3xl font-bold text-gray-900 mb-2">Bulk Product Upload</h1>
-                <p className="text-gray-600">Upload multiple products at once using a CSV file</p>
+                <h1 className="text-3xl font-bold text-gray-900 mb-2">{t('title')}</h1>
+                <p className="text-gray-600">{t('subtitle')}</p>
             </div>
 
             {/* Download Template Section */}
@@ -146,15 +148,15 @@ export default function BulkUploadView() {
                         </svg>
                     </div>
                     <div className="flex-1">
-                        <h3 className="text-lg font-semibold text-blue-900 mb-2">First time uploading?</h3>
+                        <h3 className="text-lg font-semibold text-blue-900 mb-2">{t('firstTime')}</h3>
                         <p className="text-blue-800 mb-4">
-                            Download our CSV template with example data to see the required format.
+                            {t('firstTimeDesc')}
                         </p>
                         <button
                             onClick={handleDownloadTemplate}
                             className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
                         >
-                            Download CSV Template
+                            {t('downloadTemplate')}
                         </button>
                     </div>
                 </div>
@@ -175,20 +177,20 @@ export default function BulkUploadView() {
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
                         <div>
-                            <h3 className="text-lg font-semibold text-green-900 mb-2">Upload Complete!</h3>
+                            <h3 className="text-lg font-semibold text-green-900 mb-2">{t('uploadComplete')}</h3>
                             <div className="space-y-1 text-green-800">
-                                <p>✓ {uploadResult.successful} products created successfully</p>
+                                <p>✓ {t('productsCreated', { count: uploadResult.successful })}</p>
                                 {uploadResult.failed > 0 && (
-                                    <p className="text-red-600">✗ {uploadResult.failed} products failed</p>
+                                    <p className="text-red-600">✗ {t('productsFailed', { count: uploadResult.failed })}</p>
                                 )}
                             </div>
                             {uploadResult.errors && uploadResult.errors.length > 0 && (
                                 <details className="mt-4">
-                                    <summary className="cursor-pointer font-medium">View Errors</summary>
+                                    <summary className="cursor-pointer font-medium">{t('viewErrors')}</summary>
                                     <ul className="mt-2 space-y-1 text-sm">
                                         {uploadResult.errors.map((err, idx) => (
                                             <li key={idx} className="text-red-700">
-                                                Row {err.row} (SKU: {err.sku}): {err.error}
+                                                {t('rowError', { row: err.row, sku: err.sku, error: err.error })}
                                             </li>
                                         ))}
                                     </ul>
@@ -201,7 +203,7 @@ export default function BulkUploadView() {
 
             {/* File Upload Section */}
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-                <h2 className="text-xl font-semibold mb-4">1. Select CSV File</h2>
+                <h2 className="text-xl font-semibold mb-4">{t('step1')}</h2>
                 
                 <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-blue-400 transition-colors">
                     <input
@@ -216,9 +218,9 @@ export default function BulkUploadView() {
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                         </svg>
                         <p className="text-lg font-medium text-gray-900 mb-1">
-                            {file ? file.name : 'Click to select CSV file'}
+                            {file ? file.name : t('clickToSelect')}
                         </p>
-                        <p className="text-sm text-gray-500">Maximum file size: 5MB</p>
+                        <p className="text-sm text-gray-500">{t('maxFileSize')}</p>
                     </label>
                 </div>
 
@@ -241,7 +243,7 @@ export default function BulkUploadView() {
                             }}
                             className="text-red-600 hover:text-red-700"
                         >
-                            Remove
+                            {t('remove')}
                         </button>
                     </div>
                 )}
@@ -250,14 +252,14 @@ export default function BulkUploadView() {
             {/* Validation Section */}
             {file && (
                 <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-                    <h2 className="text-xl font-semibold mb-4">2. Validate Data</h2>
-                    
+                    <h2 className="text-xl font-semibold mb-4">{t('step2')}</h2>
+
                     <button
                         onClick={handleValidate}
                         disabled={isValidating}
                         className="px-6 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
                     >
-                        {isValidating ? 'Validating...' : 'Validate CSV'}
+                        {isValidating ? t('validating') : t('validateCsv')}
                     </button>
 
                     {validation && (
@@ -269,33 +271,33 @@ export default function BulkUploadView() {
                                             <svg className="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
                                                 <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                                             </svg>
-                                            <span className="text-green-900">Validation Passed</span>
+                                            <span className="text-green-900">{t('validationPassed')}</span>
                                         </>
                                     ) : (
                                         <>
                                             <svg className="w-5 h-5 text-yellow-600" fill="currentColor" viewBox="0 0 20 20">
                                                 <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
                                             </svg>
-                                            <span className="text-yellow-900">Validation Issues Found</span>
+                                            <span className="text-yellow-900">{t('validationIssues')}</span>
                                         </>
                                     )}
                                 </h3>
                                 
                                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
                                     <div>
-                                        <p className="text-sm text-gray-600">Total Rows</p>
+                                        <p className="text-sm text-gray-600">{t('totalRows')}</p>
                                         <p className="text-2xl font-bold">{validation.totalRows}</p>
                                     </div>
                                     <div>
-                                        <p className="text-sm text-gray-600">Valid Rows</p>
+                                        <p className="text-sm text-gray-600">{t('validRows')}</p>
                                         <p className="text-2xl font-bold text-green-600">{validation.validRows}</p>
                                     </div>
                                     <div>
-                                        <p className="text-sm text-gray-600">Errors</p>
+                                        <p className="text-sm text-gray-600">{t('errorsLabel')}</p>
                                         <p className="text-2xl font-bold text-red-600">{validation.errorCount}</p>
                                     </div>
                                     <div>
-                                        <p className="text-sm text-gray-600">Warnings</p>
+                                        <p className="text-sm text-gray-600">{t('warningsLabel')}</p>
                                         <p className="text-2xl font-bold text-yellow-600">{validation.warningCount}</p>
                                     </div>
                                 </div>
@@ -303,7 +305,7 @@ export default function BulkUploadView() {
                                 {validation.errors && validation.errors.length > 0 && (
                                     <details className="mt-4">
                                         <summary className="cursor-pointer font-medium text-red-700">
-                                            View Errors ({validation.errors.length})
+                                            {t('viewErrorsCount', { count: validation.errors.length })}
                                         </summary>
                                         <ul className="mt-2 space-y-1 text-sm text-red-700 max-h-40 overflow-y-auto">
                                             {validation.errors.map((err, idx) => (
@@ -316,7 +318,7 @@ export default function BulkUploadView() {
                                 {validation.warnings && validation.warnings.length > 0 && (
                                     <details className="mt-4">
                                         <summary className="cursor-pointer font-medium text-yellow-700">
-                                            View Warnings ({validation.warnings.length})
+                                            {t('viewWarningsCount', { count: validation.warnings.length })}
                                         </summary>
                                         <ul className="mt-2 space-y-1 text-sm text-yellow-700 max-h-40 overflow-y-auto">
                                             {validation.warnings.map((warn, idx) => (
@@ -334,10 +336,10 @@ export default function BulkUploadView() {
             {/* Upload Section */}
             {validation && validation.valid && (
                 <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                    <h2 className="text-xl font-semibold mb-4">3. Upload Products</h2>
-                    
+                    <h2 className="text-xl font-semibold mb-4">{t('step3')}</h2>
+
                     <p className="text-gray-600 mb-4">
-                        Ready to upload {validation.validRows} products. This action cannot be undone.
+                        {t('readyToUpload', { count: validation.validRows })}
                     </p>
 
                     <button
@@ -351,10 +353,10 @@ export default function BulkUploadView() {
                                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
                                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                                 </svg>
-                                Uploading...
+                                {t('uploading')}
                             </span>
                         ) : (
-                            'Upload Products'
+                            t('uploadProducts')
                         )}
                     </button>
                 </div>

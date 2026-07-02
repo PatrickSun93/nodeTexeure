@@ -1,4 +1,6 @@
 import './globals.css'
+import { NextIntlClientProvider } from 'next-intl'
+import { getLocale, getMessages } from 'next-intl/server'
 import { AuthProvider } from '@/contexts/AuthContext'
 import { AdminProvider } from '@/contexts/AdminContext'
 import NotificationSystem from '@/components/NotificationSystem'
@@ -14,10 +16,13 @@ export const metadata = {
   description: 'Administrative interface for Bed Texture e-commerce platform',
 }
 
-export default function RootLayout({ children }) {
+export default async function RootLayout({ children }) {
+  const locale = await getLocale();
+  const messages = await getMessages();
   return (
-    <html lang="en">
+    <html lang={locale}>
       <body className="bg-gray-50 text-gray-900 antialiased">
+        <NextIntlClientProvider locale={locale} messages={messages}>
         <AuthProvider>
           <AdminProvider>
             {children}
@@ -35,6 +40,7 @@ export default function RootLayout({ children }) {
             />
           </AdminProvider>
         </AuthProvider>
+        </NextIntlClientProvider>
       </body>
     </html>
   )

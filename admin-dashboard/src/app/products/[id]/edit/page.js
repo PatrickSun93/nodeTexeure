@@ -2,9 +2,11 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { adminProducts, getErrorMessage } from '../../../../lib/api';
 
 export default function ProductEditPage() {
+  const t = useTranslations('ProductEdit');
   const router = useRouter();
   const params = useParams();
   const productId = params.id;
@@ -93,7 +95,7 @@ export default function ProductEditPage() {
         setVariants(productData.variants || []);
         setImages(productData.images || []);
       } else {
-        throw new Error(response.message || 'Failed to fetch product');
+        throw new Error(response.message || t('fetchError'));
       }
     } catch (err) {
       setError(getErrorMessage(err));
@@ -182,7 +184,7 @@ export default function ProductEditPage() {
 
       // TODO: Implement product update API call
       // For now, just show success message
-      setSuccess('Product updated successfully!');
+      setSuccess(t('updateSuccess'));
       
       // Redirect back to products list after a delay
       setTimeout(() => {
@@ -202,7 +204,7 @@ export default function ProductEditPage() {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading product...</p>
+          <p className="mt-4 text-gray-600">{t('loadingProduct')}</p>
         </div>
       </div>
     );
@@ -218,10 +220,10 @@ export default function ProductEditPage() {
                 onClick={() => router.back()}
                 className="text-gray-600 hover:text-gray-900"
               >
-                ← Back
+                ← {t('back')}
               </button>
               <h1 className="text-xl font-semibold text-gray-900">
-                Edit Product
+                {t('title')}
               </h1>
             </div>
             <nav className="flex items-center space-x-4">
@@ -229,13 +231,13 @@ export default function ProductEditPage() {
                 href="/"
                 className="text-sm text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md hover:bg-gray-100"
               >
-                Dashboard
+                {t('navDashboard')}
               </a>
               <a 
                 href="/products"
                 className="text-sm text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md hover:bg-gray-100"
               >
-                Products
+                {t('navProducts')}
               </a>
             </nav>
           </div>
@@ -261,12 +263,12 @@ export default function ProductEditPage() {
           <div className="lg:col-span-2 space-y-6">
             {/* Basic Information */}
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Basic Information</h2>
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">{t('basicInformation')}</h2>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Product Name *
+                    {t('productName')} *
                   </label>
                   <input
                     type="text"
@@ -279,7 +281,7 @@ export default function ProductEditPage() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    SKU *
+                    {t('sku')} *
                   </label>
                   <input
                     type="text"
@@ -292,7 +294,7 @@ export default function ProductEditPage() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Base Price *
+                    {t('basePrice')} *
                   </label>
                   <input
                     type="number"
@@ -306,70 +308,70 @@ export default function ProductEditPage() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Status
+                    {t('status')}
                   </label>
                   <select
                     value={formData.status}
                     onChange={(e) => handleInputChange('status', e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
-                    <option value="draft">Draft</option>
-                    <option value="pending_approval">Pending Approval</option>
-                    <option value="approved">Approved</option>
-                    <option value="rejected">Rejected</option>
-                    <option value="discontinued">Discontinued</option>
+                    <option value="draft">{t('statusDraft')}</option>
+                    <option value="pending_approval">{t('statusPendingApproval')}</option>
+                    <option value="approved">{t('statusApproved')}</option>
+                    <option value="rejected">{t('statusRejected')}</option>
+                    <option value="discontinued">{t('statusDiscontinued')}</option>
                   </select>
                 </div>
               </div>
 
               <div className="mt-4">
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Short Description
+                  {t('shortDescription')}
                 </label>
                 <textarea
                   value={formData.short_description}
                   onChange={(e) => handleInputChange('short_description', e.target.value)}
                   rows={2}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Brief product description..."
+                  placeholder={t('shortDescriptionPlaceholder')}
                 />
               </div>
 
               <div className="mt-4">
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Full Description
+                  {t('fullDescription')}
                 </label>
                 <textarea
                   value={formData.description}
                   onChange={(e) => handleInputChange('description', e.target.value)}
                   rows={6}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Detailed product description..."
+                  placeholder={t('fullDescriptionPlaceholder')}
                 />
               </div>
             </div>
 
             {/* Product Details */}
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Product Details</h2>
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">{t('productDetails')}</h2>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Material
+                    {t('material')}
                   </label>
                   <input
                     type="text"
                     value={formData.product_details.material}
                     onChange={(e) => handleInputChange('product_details.material', e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="e.g., Cotton, Polyester"
+                    placeholder={t('materialPlaceholder')}
                   />
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Weight (lbs)
+                    {t('weightLbs')}
                   </label>
                   <input
                     type="number"
@@ -382,7 +384,7 @@ export default function ProductEditPage() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Length (inches)
+                    {t('lengthInches')}
                   </label>
                   <input
                     type="number"
@@ -395,7 +397,7 @@ export default function ProductEditPage() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Width (inches)
+                    {t('widthInches')}
                   </label>
                   <input
                     type="number"
@@ -408,7 +410,7 @@ export default function ProductEditPage() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Height (inches)
+                    {t('heightInches')}
                   </label>
                   <input
                     type="number"
@@ -428,21 +430,21 @@ export default function ProductEditPage() {
                     className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                   />
                   <label htmlFor="is_organic" className="ml-2 text-sm text-gray-700">
-                    Organic Product
+                    {t('organicProduct')}
                   </label>
                 </div>
               </div>
 
               <div className="mt-4">
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Care Instructions
+                  {t('careInstructions')}
                 </label>
                 <textarea
                   value={formData.product_details.care_instructions}
                   onChange={(e) => handleInputChange('product_details.care_instructions', e.target.value)}
                   rows={3}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Care and maintenance instructions..."
+                  placeholder={t('careInstructionsPlaceholder')}
                 />
               </div>
             </div>
@@ -450,12 +452,12 @@ export default function ProductEditPage() {
             {/* Product Variants */}
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold text-gray-900">Product Variants</h2>
+                <h2 className="text-lg font-semibold text-gray-900">{t('productVariants')}</h2>
                 <button
                   onClick={addVariant}
                   className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                 >
-                  Add Variant
+                  {t('addVariant')}
                 </button>
               </div>
 
@@ -464,51 +466,51 @@ export default function ProductEditPage() {
                   <div key={variant.id || index} className="border border-gray-200 rounded-lg p-4">
                     <div className="flex items-center justify-between mb-3">
                       <h3 className="text-sm font-medium text-gray-900">
-                        Variant {index + 1}
+                        {t('variantN', { n: index + 1 })}
                       </h3>
                       <button
                         onClick={() => removeVariant(index)}
                         className="text-red-600 hover:text-red-800 text-sm"
                       >
-                        Remove
+                        {t('remove')}
                       </button>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                       <div>
                         <label className="block text-xs font-medium text-gray-700 mb-1">
-                          Size
+                          {t('size')}
                         </label>
                         <select
                           value={variant.size || ''}
                           onChange={(e) => handleVariantChange(index, 'size', e.target.value)}
                           className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
                         >
-                          <option value="">Select Size</option>
-                          <option value="Twin">Twin</option>
-                          <option value="Full">Full</option>
-                          <option value="Queen">Queen</option>
-                          <option value="King">King</option>
-                          <option value="California King">California King</option>
+                          <option value="">{t('selectSize')}</option>
+                          <option value="Twin">{t('sizeTwin')}</option>
+                          <option value="Full">{t('sizeFull')}</option>
+                          <option value="Queen">{t('sizeQueen')}</option>
+                          <option value="King">{t('sizeKing')}</option>
+                          <option value="California King">{t('sizeCaliforniaKing')}</option>
                         </select>
                       </div>
 
                       <div>
                         <label className="block text-xs font-medium text-gray-700 mb-1">
-                          Color
+                          {t('color')}
                         </label>
                         <input
                           type="text"
                           value={variant.color || ''}
                           onChange={(e) => handleVariantChange(index, 'color', e.target.value)}
                           className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
-                          placeholder="e.g., White, Blue"
+                          placeholder={t('colorPlaceholder')}
                         />
                       </div>
 
                       <div>
                         <label className="block text-xs font-medium text-gray-700 mb-1">
-                          Price Adjustment ($)
+                          {t('priceAdjustment')}
                         </label>
                         <input
                           type="number"
@@ -524,7 +526,7 @@ export default function ProductEditPage() {
 
                 {variants.length === 0 && (
                   <div className="text-center py-8 text-gray-500">
-                    No variants added. Click "Add Variant" to create size/color combinations.
+                    {t('noVariants')}
                   </div>
                 )}
               </div>
@@ -532,45 +534,45 @@ export default function ProductEditPage() {
 
             {/* SEO Settings */}
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">SEO Settings</h2>
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">{t('seoSettings')}</h2>
               
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Meta Title
+                    {t('metaTitle')}
                   </label>
                   <input
                     type="text"
                     value={formData.meta_title}
                     onChange={(e) => handleInputChange('meta_title', e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="SEO title for search engines"
+                    placeholder={t('metaTitlePlaceholder')}
                   />
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Meta Description
+                    {t('metaDescription')}
                   </label>
                   <textarea
                     value={formData.meta_description}
                     onChange={(e) => handleInputChange('meta_description', e.target.value)}
                     rows={3}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="SEO description for search engines"
+                    placeholder={t('metaDescriptionPlaceholder')}
                   />
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Meta Keywords
+                    {t('metaKeywords')}
                   </label>
                   <input
                     type="text"
                     value={formData.meta_keywords}
                     onChange={(e) => handleInputChange('meta_keywords', e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="Comma-separated keywords"
+                    placeholder={t('metaKeywordsPlaceholder')}
                   />
                 </div>
               </div>
@@ -581,7 +583,7 @@ export default function ProductEditPage() {
           <div className="space-y-6">
             {/* Actions */}
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Actions</h2>
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">{t('actions')}</h2>
               
               <div className="space-y-3">
                 <button
@@ -589,32 +591,32 @@ export default function ProductEditPage() {
                   disabled={saving}
                   className="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {saving ? 'Saving...' : 'Save Product'}
+                  {saving ? t('saving') : t('saveProduct')}
                 </button>
 
                 <button
                   onClick={() => router.push('/products')}
                   className="w-full px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500"
                 >
-                  Cancel
+                  {t('cancel')}
                 </button>
               </div>
             </div>
 
             {/* Product Images */}
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Product Images</h2>
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">{t('productImages')}</h2>
               
               {/* Existing Images */}
               {images.length > 0 && (
                 <div className="mb-4">
-                  <h3 className="text-sm font-medium text-gray-700 mb-2">Current Images</h3>
+                  <h3 className="text-sm font-medium text-gray-700 mb-2">{t('currentImages')}</h3>
                   <div className="grid grid-cols-2 gap-2">
                     {images.map((image, index) => (
                       <div key={image.id || index} className="relative">
                         <img
                           src={image.thumbnail_small_url || image.original_url}
-                          alt={image.alt_text || 'Product image'}
+                          alt={image.alt_text || t('altProductImage')}
                           className="w-full h-20 object-cover rounded border"
                         />
                         <button
@@ -632,13 +634,13 @@ export default function ProductEditPage() {
               {/* New Images */}
               {newImages.length > 0 && (
                 <div className="mb-4">
-                  <h3 className="text-sm font-medium text-gray-700 mb-2">New Images</h3>
+                  <h3 className="text-sm font-medium text-gray-700 mb-2">{t('newImagesHeading')}</h3>
                   <div className="grid grid-cols-2 gap-2">
                     {newImages.map((file, index) => (
                       <div key={index} className="relative">
                         <img
                           src={URL.createObjectURL(file)}
-                          alt="New product image"
+                          alt={t('altNewProductImage')}
                           className="w-full h-20 object-cover rounded border"
                         />
                         <button
@@ -656,7 +658,7 @@ export default function ProductEditPage() {
               {/* Upload New Images */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Upload Images
+                  {t('uploadImages')}
                 </label>
                 <input
                   type="file"
@@ -666,7 +668,7 @@ export default function ProductEditPage() {
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                 />
                 <p className="text-xs text-gray-500 mt-1">
-                  Select multiple images (JPEG, PNG, WebP)
+                  {t('uploadHint')}
                 </p>
               </div>
             </div>
@@ -674,23 +676,23 @@ export default function ProductEditPage() {
             {/* Product Info */}
             {product && (
               <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                <h2 className="text-lg font-semibold text-gray-900 mb-4">Product Info</h2>
+                <h2 className="text-lg font-semibold text-gray-900 mb-4">{t('productInfo')}</h2>
                 
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Product ID:</span>
+                    <span className="text-gray-600">{t('productIdLabel')}</span>
                     <span className="font-mono">{product.id}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Created:</span>
+                    <span className="text-gray-600">{t('createdLabel')}</span>
                     <span>{new Date(product.created_at).toLocaleDateString()}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Updated:</span>
+                    <span className="text-gray-600">{t('updatedLabel')}</span>
                     <span>{new Date(product.updated_at).toLocaleDateString()}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Creator:</span>
+                    <span className="text-gray-600">{t('creatorLabel')}</span>
                     <span>{product.creator_first_name} {product.creator_last_name}</span>
                   </div>
                 </div>

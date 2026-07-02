@@ -2,27 +2,29 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { adminOrders, getErrorMessage, isAuthError } from '../../../lib/api';
 
 const ORDER_STATUSES = [
-  { value: 'pending', label: 'Pending', color: 'bg-yellow-100 text-yellow-800' },
-  { value: 'confirmed', label: 'Confirmed', color: 'bg-blue-100 text-blue-800' },
-  { value: 'processing', label: 'Processing', color: 'bg-purple-100 text-purple-800' },
-  { value: 'shipped', label: 'Shipped', color: 'bg-indigo-100 text-indigo-800' },
-  { value: 'delivered', label: 'Delivered', color: 'bg-green-100 text-green-800' },
-  { value: 'cancelled', label: 'Cancelled', color: 'bg-red-100 text-red-800' },
-  { value: 'refunded', label: 'Refunded', color: 'bg-gray-100 text-gray-800' }
+  { value: 'pending', labelKey: 'statusPending', color: 'bg-yellow-100 text-yellow-800' },
+  { value: 'confirmed', labelKey: 'statusConfirmed', color: 'bg-blue-100 text-blue-800' },
+  { value: 'processing', labelKey: 'statusProcessing', color: 'bg-purple-100 text-purple-800' },
+  { value: 'shipped', labelKey: 'statusShipped', color: 'bg-indigo-100 text-indigo-800' },
+  { value: 'delivered', labelKey: 'statusDelivered', color: 'bg-green-100 text-green-800' },
+  { value: 'cancelled', labelKey: 'statusCancelled', color: 'bg-red-100 text-red-800' },
+  { value: 'refunded', labelKey: 'statusRefunded', color: 'bg-gray-100 text-gray-800' }
 ];
 
 const REFUND_REASONS = [
-  { value: 'customer_request', label: 'Customer Request' },
-  { value: 'defective_product', label: 'Defective Product' },
-  { value: 'wrong_item', label: 'Wrong Item Sent' },
-  { value: 'damaged_shipping', label: 'Damaged During Shipping' },
-  { value: 'other', label: 'Other' }
+  { value: 'customer_request', labelKey: 'reasonCustomerRequest' },
+  { value: 'defective_product', labelKey: 'reasonDefectiveProduct' },
+  { value: 'wrong_item', labelKey: 'reasonWrongItem' },
+  { value: 'damaged_shipping', labelKey: 'reasonDamagedShipping' },
+  { value: 'other', labelKey: 'reasonOther' }
 ];
 
 export default function OrderDetailsPage() {
+  const t = useTranslations('OrderDetail');
   const params = useParams();
   const router = useRouter();
   const orderId = params.id;
@@ -34,20 +36,20 @@ export default function OrderDetailsPage() {
   const [refunds, setRefunds] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  
+
   // Status update state
   const [statusUpdateLoading, setStatusUpdateLoading] = useState(false);
   const [showStatusUpdate, setShowStatusUpdate] = useState(false);
   const [newStatus, setNewStatus] = useState('');
   const [statusNotes, setStatusNotes] = useState('');
-  
+
   // Refund state
   const [showRefundModal, setShowRefundModal] = useState(false);
   const [refundLoading, setRefundLoading] = useState(false);
   const [refundAmount, setRefundAmount] = useState('');
   const [refundReason, setRefundReason] = useState('customer_request');
   const [refundNotes, setRefundNotes] = useState('');
-  
+
   // Shipping state
   const [showShippingModal, setShowShippingModal] = useState(false);
   const [shippingLoading, setShippingLoading] = useState(false);
@@ -57,9 +59,9 @@ export default function OrderDetailsPage() {
     try {
       setLoading(true);
       setError('');
-      
+
       const response = await adminOrders.getOrder(orderId);
-      
+
       if (response.success) {
         const data = response.keyValueTable;
         setOrder(data.order);
@@ -68,7 +70,7 @@ export default function OrderDetailsPage() {
         setPayments(data.payments || []);
         setRefunds(data.refunds || []);
       } else {
-        setError(response.message || 'Failed to fetch order details');
+        setError(response.message || t('failedToFetchOrder'));
       }
     } catch (err) {
       if (isAuthError(err)) {
@@ -90,26 +92,26 @@ export default function OrderDetailsPage() {
   // Handle status update
   const handleStatusUpdate = async () => {
     if (!newStatus) {
-      alert('Please select a status');
+      alert(t('pleaseSelectStatus'));
       return;
     }
 
     try {
       setStatusUpdateLoading(true);
-      
+
       const response = await adminOrders.updateOrderStatus(orderId, newStatus, statusNotes);
-      
+
       if (response.success) {
-        alert('Order status updated successfully');
+        alert(t('statusUpdateSuccess'));
         setShowStatusUpdate(false);
         setNewStatus('');
         setStatusNotes('');
         fetchOrderDetails(); // Refresh data
       } else {
-        alert(`Failed to update status: ${response.message}`);
+        alert(t('statusUpdateFailed', { message: response.message }));
       }
     } catch (err) {
-      alert(`Error updating status: ${getErrorMessage(err)}`);
+      alert(t('statusUpdateError', { error: getErrorMessage(err) }));
     } finally {
       setStatusUpdateLoading(false);
     }
@@ -118,33 +120,33 @@ export default function OrderDetailsPage() {
   // Handle refund
   const handleRefund = async () => {
     if (!refundReason) {
-      alert('Please select a refund reason');
+      alert(t('pleaseSelectRefundReason'));
       return;
     }
 
     const amount = refundAmount ? parseFloat(refundAmount) : null;
     if (amount && (amount <= 0 || amount > order.total_amount)) {
-      alert('Invalid refund amount');
+      alert(t('invalidRefundAmount'));
       return;
     }
 
     try {
       setRefundLoading(true);
-      
+
       const response = await adminOrders.processRefund(orderId, amount, refundReason, refundNotes);
-      
+
       if (response.success) {
-        alert('Refund processed successfully');
+        alert(t('refundSuccess'));
         setShowRefundModal(false);
         setRefundAmount('');
         setRefundReason('customer_request');
         setRefundNotes('');
         fetchOrderDetails(); // Refresh data
       } else {
-        alert(`Failed to process refund: ${response.message}`);
+        alert(t('refundFailed', { message: response.message }));
       }
     } catch (err) {
-      alert(`Error processing refund: ${getErrorMessage(err)}`);
+      alert(t('refundError', { error: getErrorMessage(err) }));
     } finally {
       setRefundLoading(false);
     }
@@ -154,20 +156,20 @@ export default function OrderDetailsPage() {
   const handleGenerateShippingLabel = async () => {
     try {
       setShippingLoading(true);
-      
+
       const response = await adminOrders.generateShippingLabel(orderId, {
         serviceType: 'FEDEX_GROUND'
       });
-      
+
       if (response.success) {
-        alert(`Shipping label generated successfully. Tracking: ${response.keyValueTable.trackingNumber}`);
+        alert(t('shippingLabelSuccess', { tracking: response.keyValueTable.trackingNumber }));
         setShowShippingModal(false);
         fetchOrderDetails(); // Refresh data
       } else {
-        alert(`Failed to generate shipping label: ${response.message}`);
+        alert(t('shippingLabelFailed', { message: response.message }));
       }
     } catch (err) {
-      alert(`Error generating shipping label: ${getErrorMessage(err)}`);
+      alert(t('shippingLabelError', { error: getErrorMessage(err) }));
     } finally {
       setShippingLoading(false);
     }
@@ -202,7 +204,7 @@ export default function OrderDetailsPage() {
     return (
       <div className="p-6">
         <div className="text-center py-12">
-          <div className="text-gray-500">Loading order details...</div>
+          <div className="text-gray-500">{t('loadingOrderDetails')}</div>
         </div>
       </div>
     );
@@ -217,7 +219,7 @@ export default function OrderDetailsPage() {
             onClick={() => router.push('/orders')}
             className="mt-2 text-red-600 hover:text-red-800 font-medium"
           >
-            ← Back to Orders
+            ← {t('backToOrders')}
           </button>
         </div>
       </div>
@@ -228,12 +230,12 @@ export default function OrderDetailsPage() {
     return (
       <div className="p-6">
         <div className="text-center py-12">
-          <div className="text-gray-500">Order not found</div>
+          <div className="text-gray-500">{t('orderNotFound')}</div>
           <button
             onClick={() => router.push('/orders')}
             className="mt-2 text-blue-600 hover:text-blue-800 font-medium"
           >
-            ← Back to Orders
+            ← {t('backToOrders')}
           </button>
         </div>
       </div>
@@ -250,26 +252,26 @@ export default function OrderDetailsPage() {
               onClick={() => router.push('/orders')}
               className="text-blue-600 hover:text-blue-800 font-medium mb-2"
             >
-              ← Back to Orders
+              ← {t('backToOrders')}
             </button>
             <h1 className="text-2xl font-bold text-gray-900">
-              Order {order.order_number}
+              {t('orderTitle', { number: order.order_number })}
             </h1>
-            <p className="text-gray-600">Order ID: {order.id}</p>
+            <p className="text-gray-600">{t('orderId', { id: order.id })}</p>
           </div>
           <div className="flex gap-2">
             <button
               onClick={() => setShowStatusUpdate(true)}
               className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
             >
-              Update Status
+              {t('updateStatus')}
             </button>
             {order.status !== 'refunded' && order.status !== 'cancelled' && (
               <button
                 onClick={() => setShowRefundModal(true)}
                 className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
               >
-                Process Refund
+                {t('processRefund')}
               </button>
             )}
             {(order.status === 'confirmed' || order.status === 'processing') && !order.tracking_number && (
@@ -277,7 +279,7 @@ export default function OrderDetailsPage() {
                 onClick={() => setShowShippingModal(true)}
                 className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
               >
-                Generate Shipping Label
+                {t('generateShippingLabel')}
               </button>
             )}
           </div>
@@ -289,36 +291,36 @@ export default function OrderDetailsPage() {
         <div className="lg:col-span-2 space-y-6">
           {/* Order Summary */}
           <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Order Summary</h2>
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">{t('orderSummary')}</h2>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div>
-                <div className="text-sm text-gray-500">Status</div>
+                <div className="text-sm text-gray-500">{t('status')}</div>
                 <span className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(order.status)}`}>
                   {order.status}
                 </span>
               </div>
               <div>
-                <div className="text-sm text-gray-500">Total Amount</div>
+                <div className="text-sm text-gray-500">{t('totalAmount')}</div>
                 <div className="font-semibold">{formatCurrency(order.total_amount, order.currency)}</div>
               </div>
               <div>
-                <div className="text-sm text-gray-500">Payment Status</div>
-                <div className="font-semibold">{order.payment_status || 'N/A'}</div>
+                <div className="text-sm text-gray-500">{t('paymentStatus')}</div>
+                <div className="font-semibold">{order.payment_status || t('notAvailable')}</div>
               </div>
               <div>
-                <div className="text-sm text-gray-500">Created</div>
+                <div className="text-sm text-gray-500">{t('created')}</div>
                 <div className="font-semibold">{formatDate(order.created_at)}</div>
               </div>
             </div>
-            
+
             {order.tracking_number && (
               <div className="mt-4 p-3 bg-blue-50 rounded-lg">
                 <div className="text-sm text-blue-800">
-                  <strong>Tracking Number:</strong> {order.tracking_number}
+                  <strong>{t('trackingNumberLabel')}</strong> {order.tracking_number}
                 </div>
                 {order.estimated_delivery_date && (
                   <div className="text-sm text-blue-600">
-                    <strong>Estimated Delivery:</strong> {formatDate(order.estimated_delivery_date)}
+                    <strong>{t('estimatedDeliveryLabel')}</strong> {formatDate(order.estimated_delivery_date)}
                   </div>
                 )}
               </div>
@@ -327,17 +329,17 @@ export default function OrderDetailsPage() {
 
           {/* Order Items */}
           <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Order Items</h2>
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">{t('orderItems')}</h2>
             <div className="space-y-4">
               {orderItems.map((item, index) => (
                 <div key={index} className="flex items-center justify-between border-b border-gray-200 pb-4">
                   <div className="flex-1">
                     <div className="font-medium text-gray-900">{item.product_name}</div>
                     {item.variant_name && (
-                      <div className="text-sm text-gray-500">Variant: {item.variant_name}</div>
+                      <div className="text-sm text-gray-500">{t('variant', { name: item.variant_name })}</div>
                     )}
                     <div className="text-sm text-gray-500">
-                      SKU: {item.variant_sku || item.product_sku || 'N/A'}
+                      {t('sku', { value: item.variant_sku || item.product_sku || t('notAvailable') })}
                     </div>
                   </div>
                   <div className="text-right">
@@ -345,16 +347,16 @@ export default function OrderDetailsPage() {
                       {item.quantity} × {formatCurrency(item.price)}
                     </div>
                     <div className="text-sm text-gray-500">
-                      Total: {formatCurrency(item.quantity * item.price)}
+                      {t('lineTotal', { amount: formatCurrency(item.quantity * item.price) })}
                     </div>
                   </div>
                 </div>
               ))}
             </div>
-            
+
             <div className="mt-4 pt-4 border-t border-gray-200">
               <div className="flex justify-between items-center">
-                <span className="font-semibold text-gray-900">Order Total:</span>
+                <span className="font-semibold text-gray-900">{t('orderTotal')}</span>
                 <span className="font-bold text-lg">{formatCurrency(order.total_amount, order.currency)}</span>
               </div>
             </div>
@@ -363,7 +365,7 @@ export default function OrderDetailsPage() {
           {/* Payment Information */}
           {payments.length > 0 && (
             <div className="bg-white rounded-lg shadow p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Payment Information</h2>
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">{t('paymentInformation')}</h2>
               <div className="space-y-3">
                 {payments.map((payment, index) => (
                   <div key={index} className="border border-gray-200 rounded-lg p-3">
@@ -396,7 +398,7 @@ export default function OrderDetailsPage() {
           {/* Refunds */}
           {refunds.length > 0 && (
             <div className="bg-white rounded-lg shadow p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Refunds</h2>
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">{t('refunds')}</h2>
               <div className="space-y-3">
                 {refunds.map((refund, index) => (
                   <div key={index} className="border border-gray-200 rounded-lg p-3">
@@ -406,10 +408,10 @@ export default function OrderDetailsPage() {
                           {formatCurrency(refund.amount)}
                         </div>
                         <div className="text-sm text-gray-500">
-                          Reason: {refund.reason}
+                          {t('refundReasonLabel', { reason: refund.reason })}
                         </div>
                         <div className="text-sm text-gray-500">
-                          Processed by: {refund.processed_by_name || 'System'}
+                          {t('processedBy', { name: refund.processed_by_name || t('system') })}
                         </div>
                         <div className="text-sm text-gray-500">
                           {formatDate(refund.created_at)}
@@ -417,7 +419,7 @@ export default function OrderDetailsPage() {
                       </div>
                       <div className="text-right">
                         <span className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${
-                          refund.status === 'completed' ? 'bg-green-100 text-green-800' : 
+                          refund.status === 'completed' ? 'bg-green-100 text-green-800' :
                           refund.status === 'processing' ? 'bg-yellow-100 text-yellow-800' :
                           'bg-red-100 text-red-800'
                         }`}>
@@ -436,29 +438,29 @@ export default function OrderDetailsPage() {
         <div className="space-y-6">
           {/* Customer Information */}
           <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Customer Information</h2>
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">{t('customerInformation')}</h2>
             <div className="space-y-3">
               <div>
-                <div className="text-sm text-gray-500">Name</div>
+                <div className="text-sm text-gray-500">{t('name')}</div>
                 <div className="font-medium">{order.customer_name}</div>
               </div>
               <div>
-                <div className="text-sm text-gray-500">Email</div>
+                <div className="text-sm text-gray-500">{t('email')}</div>
                 <div className="font-medium">{order.customer_email || order.guest_email}</div>
               </div>
               {order.customer_phone && (
                 <div>
-                  <div className="text-sm text-gray-500">Phone</div>
+                  <div className="text-sm text-gray-500">{t('phone')}</div>
                   <div className="font-medium">{order.customer_phone}</div>
                 </div>
               )}
               <div>
-                <div className="text-sm text-gray-500">Customer Type</div>
-                <div className="font-medium">{order.user_id ? 'Registered' : 'Guest'}</div>
+                <div className="text-sm text-gray-500">{t('customerType')}</div>
+                <div className="font-medium">{order.user_id ? t('registered') : t('guest')}</div>
               </div>
               {order.customer_since && (
                 <div>
-                  <div className="text-sm text-gray-500">Customer Since</div>
+                  <div className="text-sm text-gray-500">{t('customerSince')}</div>
                   <div className="font-medium">{formatDate(order.customer_since)}</div>
                 </div>
               )}
@@ -468,7 +470,7 @@ export default function OrderDetailsPage() {
           {/* Shipping Address */}
           {order.shipping_address && (
             <div className="bg-white rounded-lg shadow p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Shipping Address</h2>
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">{t('shippingAddress')}</h2>
               <div className="text-sm">
                 {order.shipping_address.company && (
                   <div className="font-medium">{order.shipping_address.company}</div>
@@ -479,7 +481,7 @@ export default function OrderDetailsPage() {
                 </div>
                 <div>{order.shipping_address.country || 'US'}</div>
                 {order.shipping_address.phone && (
-                  <div className="mt-2">Phone: {order.shipping_address.phone}</div>
+                  <div className="mt-2">{t('phoneWithValue', { phone: order.shipping_address.phone })}</div>
                 )}
               </div>
             </div>
@@ -488,7 +490,7 @@ export default function OrderDetailsPage() {
           {/* Billing Address */}
           {order.billing_address && (
             <div className="bg-white rounded-lg shadow p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Billing Address</h2>
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">{t('billingAddress')}</h2>
               <div className="text-sm">
                 {order.billing_address.company && (
                   <div className="font-medium">{order.billing_address.company}</div>
@@ -499,7 +501,7 @@ export default function OrderDetailsPage() {
                 </div>
                 <div>{order.billing_address.country || 'US'}</div>
                 {order.billing_address.phone && (
-                  <div className="mt-2">Phone: {order.billing_address.phone}</div>
+                  <div className="mt-2">{t('phoneWithValue', { phone: order.billing_address.phone })}</div>
                 )}
               </div>
             </div>
@@ -507,7 +509,7 @@ export default function OrderDetailsPage() {
 
           {/* Status History */}
           <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Status History</h2>
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">{t('statusHistory')}</h2>
             <div className="space-y-3">
               {statusHistory.map((entry, index) => (
                 <div key={index} className="border-l-2 border-gray-200 pl-3">
@@ -520,7 +522,7 @@ export default function OrderDetailsPage() {
                     </div>
                   </div>
                   <div className="text-sm text-gray-600 mt-1">
-                    Changed by: {entry.changed_by_name || 'System'}
+                    {t('changedBy', { name: entry.changed_by_name || t('system') })}
                   </div>
                   {entry.status_details && entry.status_details.notes && (
                     <div className="text-sm text-gray-500 mt-1">
@@ -538,54 +540,54 @@ export default function OrderDetailsPage() {
       {showStatusUpdate && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Update Order Status</h3>
-            
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">{t('updateOrderStatus')}</h3>
+
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  New Status
+                  {t('newStatus')}
                 </label>
                 <select
                   value={newStatus}
                   onChange={(e) => setNewStatus(e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
-                  <option value="">Select status...</option>
+                  <option value="">{t('selectStatus')}</option>
                   {ORDER_STATUSES.map(status => (
                     <option key={status.value} value={status.value}>
-                      {status.label}
+                      {t(status.labelKey)}
                     </option>
                   ))}
                 </select>
               </div>
-              
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Notes (Optional)
+                  {t('notesOptional')}
                 </label>
                 <textarea
                   value={statusNotes}
                   onChange={(e) => setStatusNotes(e.target.value)}
                   rows={3}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Add notes about this status change..."
+                  placeholder={t('statusNotesPlaceholder')}
                 />
               </div>
             </div>
-            
+
             <div className="flex gap-3 mt-6">
               <button
                 onClick={handleStatusUpdate}
                 disabled={statusUpdateLoading || !newStatus}
                 className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
               >
-                {statusUpdateLoading ? 'Updating...' : 'Update Status'}
+                {statusUpdateLoading ? t('updating') : t('updateStatus')}
               </button>
               <button
                 onClick={() => setShowStatusUpdate(false)}
                 className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
               >
-                Cancel
+                {t('cancel')}
               </button>
             </div>
           </div>
@@ -596,12 +598,12 @@ export default function OrderDetailsPage() {
       {showRefundModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Process Refund</h3>
-            
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">{t('processRefund')}</h3>
+
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Refund Amount (Leave empty for full refund)
+                  {t('refundAmountLabel')}
                 </label>
                 <input
                   type="number"
@@ -610,13 +612,13 @@ export default function OrderDetailsPage() {
                   value={refundAmount}
                   onChange={(e) => setRefundAmount(e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder={`Max: ${formatCurrency(order.total_amount)}`}
+                  placeholder={t('refundAmountPlaceholder', { max: formatCurrency(order.total_amount) })}
                 />
               </div>
-              
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Refund Reason
+                  {t('refundReason')}
                 </label>
                 <select
                   value={refundReason}
@@ -625,39 +627,39 @@ export default function OrderDetailsPage() {
                 >
                   {REFUND_REASONS.map(reason => (
                     <option key={reason.value} value={reason.value}>
-                      {reason.label}
+                      {t(reason.labelKey)}
                     </option>
                   ))}
                 </select>
               </div>
-              
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Notes (Optional)
+                  {t('notesOptional')}
                 </label>
                 <textarea
                   value={refundNotes}
                   onChange={(e) => setRefundNotes(e.target.value)}
                   rows={3}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Add notes about this refund..."
+                  placeholder={t('refundNotesPlaceholder')}
                 />
               </div>
             </div>
-            
+
             <div className="flex gap-3 mt-6">
               <button
                 onClick={handleRefund}
                 disabled={refundLoading}
                 className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50"
               >
-                {refundLoading ? 'Processing...' : 'Process Refund'}
+                {refundLoading ? t('processing') : t('processRefund')}
               </button>
               <button
                 onClick={() => setShowRefundModal(false)}
                 className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
               >
-                Cancel
+                {t('cancel')}
               </button>
             </div>
           </div>
@@ -668,27 +670,27 @@ export default function OrderDetailsPage() {
       {showShippingModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Generate Shipping Label</h3>
-            
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">{t('generateShippingLabel')}</h3>
+
             <div className="mb-4">
               <p className="text-sm text-gray-600">
-                This will generate a FedEx Ground shipping label for this order and automatically update the status to "shipped".
+                {t('shippingModalDescription')}
               </p>
             </div>
-            
+
             <div className="flex gap-3">
               <button
                 onClick={handleGenerateShippingLabel}
                 disabled={shippingLoading}
                 className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
               >
-                {shippingLoading ? 'Generating...' : 'Generate Label'}
+                {shippingLoading ? t('generating') : t('generateLabel')}
               </button>
               <button
                 onClick={() => setShowShippingModal(false)}
                 className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
               >
-                Cancel
+                {t('cancel')}
               </button>
             </div>
           </div>

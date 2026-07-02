@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslations } from 'next-intl';
 
 export default function OrderDetailView({ order, onBack }) {
+    const t = useTranslations('OrderDetailView');
     const [orderDetails, setOrderDetails] = useState(order);
     const [status, setStatus] = useState(order.status || 'Processing');
     const [trackingNumber, setTrackingNumber] = useState('');
@@ -25,7 +27,7 @@ export default function OrderDetailView({ order, onBack }) {
                     // Address parsing if needed? Backend returns JSON blocks, frontend might need object.
                     // The backend returns row with shipping_address_json string.
                     // We might need to parse it if it wasn't parsed.
-                    // But adminRoutes.js GET /:id returns `order.*`. 
+                    // But adminRoutes.js GET /:id returns `order.*`.
                     // Let's assume we might need to parse JSON fields if they are strings.
                 }
             } catch (e) {
@@ -49,13 +51,13 @@ export default function OrderDetailView({ order, onBack }) {
                 body: JSON.stringify({ status })
             });
             if (response.status === 'SUCCESS') {
-                alert('Order updated successfully');
+                alert(t('orderUpdatedSuccess'));
             } else {
-                alert('Failed to update order');
+                alert(t('failedToUpdate'));
             }
         } catch (e) {
             console.error('Update failed', e);
-            alert('Error updating order');
+            alert(t('errorUpdating'));
         } finally {
             setIsSaving(false);
         }
@@ -89,20 +91,20 @@ export default function OrderDetailView({ order, onBack }) {
                         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7 7-7m8 14l-7-7 7-7" /></svg>
                     </button>
                     <h2 className="text-3xl font-bold text-gray-900">
-                        Order {orderDetails.order_number || orderDetails.id}
-                        {isLoading && <span className="text-sm font-normal text-gray-400 ml-2">(Loading details...)</span>}
+                        {t('orderTitle', { orderNumber: orderDetails.order_number || orderDetails.id })}
+                        {isLoading && <span className="text-sm font-normal text-gray-400 ml-2">{t('loadingDetails')}</span>}
                     </h2>
                 </div>
                 <div className="flex gap-3">
                     <button onClick={onBack} className="px-4 py-2 bg-white border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-50 font-medium">
-                        Cancel
+                        {t('cancel')}
                     </button>
                     <button
                         onClick={handleSave}
                         disabled={isSaving}
                         className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium shadow-sm disabled:opacity-50"
                     >
-                        {isSaving ? 'Saving...' : 'Save Changes'}
+                        {isSaving ? t('saving') : t('saveChanges')}
                     </button>
                 </div>
             </div>
@@ -114,25 +116,25 @@ export default function OrderDetailView({ order, onBack }) {
                     {/* Customer & Order Details */}
                     <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
                         <div className="flex justify-between items-center mb-6">
-                            <h3 className="text-lg font-semibold text-gray-900">Customer & Order Details</h3>
-                            <button className="text-blue-600 text-sm font-medium hover:text-blue-700">Edit</button>
+                            <h3 className="text-lg font-semibold text-gray-900">{t('customerOrderDetails')}</h3>
+                            <button className="text-blue-600 text-sm font-medium hover:text-blue-700">{t('edit')}</button>
                         </div>
                         <div className="grid grid-cols-2 gap-y-6">
                             <div>
-                                <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">Customer Name</p>
-                                <p className="text-gray-900 font-medium">{orderDetails.first_name ? `${orderDetails.first_name} ${orderDetails.last_name || ''}` : (orderDetails.customer || 'Guest')}</p>
+                                <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">{t('customerName')}</p>
+                                <p className="text-gray-900 font-medium">{orderDetails.first_name ? `${orderDetails.first_name} ${orderDetails.last_name || ''}` : (orderDetails.customer || t('guest'))}</p>
                             </div>
                             <div>
-                                <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">Order Date</p>
+                                <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">{t('orderDate')}</p>
                                 <p className="text-gray-900 font-medium">{orderDetails.created_at || orderDetails.date}</p>
                             </div>
                             <div>
-                                <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">Email Address</p>
-                                <p className="text-gray-900 font-medium">{orderDetails.user_email || orderDetails.guest_email || 'N/A'}</p>
+                                <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">{t('emailAddress')}</p>
+                                <p className="text-gray-900 font-medium">{orderDetails.user_email || orderDetails.guest_email || t('notAvailable')}</p>
                             </div>
                             <div>
-                                <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">Contact Number</p>
-                                <p className="text-gray-900 font-medium">{shippingAddress.phone || 'N/A'}</p>
+                                <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">{t('contactNumber')}</p>
+                                <p className="text-gray-900 font-medium">{shippingAddress.phone || t('notAvailable')}</p>
                             </div>
                         </div>
                     </div>
@@ -140,17 +142,17 @@ export default function OrderDetailView({ order, onBack }) {
                     {/* Order Items */}
                     <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
                         <div className="flex justify-between items-center mb-6">
-                            <h3 className="text-lg font-semibold text-gray-900">Order Items</h3>
+                            <h3 className="text-lg font-semibold text-gray-900">{t('orderItems')}</h3>
                         </div>
 
                         <div className="overflow-x-auto">
                             <table className="w-full">
                                 <thead>
                                     <tr className="border-b border-gray-100 text-left">
-                                        <th className="pb-4 text-xs font-medium text-gray-500 uppercase tracking-wider w-1/2">Product</th>
-                                        <th className="pb-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>
-                                        <th className="pb-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Quantity</th>
-                                        <th className="pb-4 text-xs font-medium text-gray-500 uppercase tracking-wider text-right">Total</th>
+                                        <th className="pb-4 text-xs font-medium text-gray-500 uppercase tracking-wider w-1/2">{t('product')}</th>
+                                        <th className="pb-4 text-xs font-medium text-gray-500 uppercase tracking-wider">{t('price')}</th>
+                                        <th className="pb-4 text-xs font-medium text-gray-500 uppercase tracking-wider">{t('quantity')}</th>
+                                        <th className="pb-4 text-xs font-medium text-gray-500 uppercase tracking-wider text-right">{t('total')}</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-gray-50">
@@ -159,7 +161,7 @@ export default function OrderDetailView({ order, onBack }) {
                                             <td className="py-4">
                                                 <div className="flex items-center gap-4">
                                                     {/* We might not have image URL in order items without join. Use placeholder if missing */}
-                                                    <div className="w-12 h-12 bg-gray-100 rounded-md flex items-center justify-center text-xs text-gray-400">IMG</div>
+                                                    <div className="w-12 h-12 bg-gray-100 rounded-md flex items-center justify-center text-xs text-gray-400">{t('imagePlaceholder')}</div>
                                                     <div>
                                                         <p className="text-sm font-medium text-gray-900">{item.product_name || item.name}</p>
                                                         <p className="text-xs text-gray-500">{item.product_sku || item.sku}</p>
@@ -172,7 +174,7 @@ export default function OrderDetailView({ order, onBack }) {
                                         </tr>
                                     ))}
                                     {items.length === 0 && (
-                                        <tr><td colSpan="4" className="py-8 text-center text-gray-500">No items found</td></tr>
+                                        <tr><td colSpan="4" className="py-8 text-center text-gray-500">{t('noItemsFound')}</td></tr>
                                     )}
                                 </tbody>
                             </table>
@@ -180,19 +182,19 @@ export default function OrderDetailView({ order, onBack }) {
 
                         <div className="mt-6 border-t border-gray-100 pt-6 space-y-3">
                             <div className="flex justify-between text-sm">
-                                <span className="text-gray-500">Subtotal</span>
+                                <span className="text-gray-500">{t('subtotal')}</span>
                                 <span className="font-medium text-gray-900">${Number(subtotal).toFixed(2)}</span>
                             </div>
                             <div className="flex justify-between text-sm">
-                                <span className="text-gray-500">Shipping</span>
+                                <span className="text-gray-500">{t('shipping')}</span>
                                 <span className="font-medium text-gray-900">${Number(shipping).toFixed(2)}</span>
                             </div>
                             <div className="flex justify-between text-sm">
-                                <span className="text-gray-500">Taxes</span>
+                                <span className="text-gray-500">{t('taxes')}</span>
                                 <span className="font-medium text-gray-900">${Number(taxes).toFixed(2)}</span>
                             </div>
                             <div className="flex justify-between text-base pt-3 border-t border-gray-100">
-                                <span className="font-bold text-gray-900">Total</span>
+                                <span className="font-bold text-gray-900">{t('total')}</span>
                                 <span className="font-bold text-gray-900">${Number(total).toFixed(2)}</span>
                             </div>
                         </div>
@@ -204,31 +206,31 @@ export default function OrderDetailView({ order, onBack }) {
 
                     {/* Order Status */}
                     <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-                        <h3 className="text-lg font-semibold text-gray-900 mb-4">Order Status</h3>
+                        <h3 className="text-lg font-semibold text-gray-900 mb-4">{t('orderStatus')}</h3>
                         <div>
-                            <label className="block text-xs text-gray-500 uppercase tracking-wider mb-2">Status</label>
+                            <label className="block text-xs text-gray-500 uppercase tracking-wider mb-2">{t('status')}</label>
                             <select
                                 value={status}
                                 onChange={(e) => setStatus(e.target.value)}
                                 className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50"
                             >
-                                <option value="Pending">Pending</option>
-                                <option value="Processing">Processing</option>
-                                <option value="Shipped">Shipped</option>
-                                <option value="Delivered">Delivered</option>
-                                <option value="Cancelled">Cancelled</option>
+                                <option value="Pending">{t('statusPending')}</option>
+                                <option value="Processing">{t('statusProcessing')}</option>
+                                <option value="Shipped">{t('statusShipped')}</option>
+                                <option value="Delivered">{t('statusDelivered')}</option>
+                                <option value="Cancelled">{t('statusCancelled')}</option>
                             </select>
                         </div>
                     </div>
 
                     {/* Fulfillment */}
                     <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-                        <h3 className="text-lg font-semibold text-gray-900 mb-4">Fulfillment</h3>
+                        <h3 className="text-lg font-semibold text-gray-900 mb-4">{t('fulfillment')}</h3>
                         <div>
-                            <label className="block text-xs text-gray-500 uppercase tracking-wider mb-2">Tracking Number</label>
+                            <label className="block text-xs text-gray-500 uppercase tracking-wider mb-2">{t('trackingNumber')}</label>
                             <input
                                 type="text"
-                                placeholder="Add tracking number"
+                                placeholder={t('addTrackingNumber')}
                                 value={trackingNumber}
                                 onChange={(e) => setTrackingNumber(e.target.value)}
                                 className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50"
@@ -239,12 +241,12 @@ export default function OrderDetailView({ order, onBack }) {
                     {/* Address */}
                     <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
                         <div className="flex justify-between items-center mb-4">
-                            <h3 className="text-lg font-semibold text-gray-900">Address</h3>
+                            <h3 className="text-lg font-semibold text-gray-900">{t('address')}</h3>
                         </div>
 
                         <div className="space-y-4">
                             <div>
-                                <p className="text-xs text-gray-500 uppercase tracking-wider mb-2">Shipping Address</p>
+                                <p className="text-xs text-gray-500 uppercase tracking-wider mb-2">{t('shippingAddress')}</p>
                                 <div className="text-sm text-gray-600 leading-relaxed">
                                     <p className="font-medium text-gray-900">{shippingAddress.firstName} {shippingAddress.lastName}</p>
                                     <p>{shippingAddress.address1}</p>

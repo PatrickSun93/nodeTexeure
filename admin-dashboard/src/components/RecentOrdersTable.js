@@ -1,6 +1,9 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
+
 export default function RecentOrdersTable({ orders = [] }) {
+    const t = useTranslations('RecentOrders');
     const displayOrders = orders;
 
     const getStatusBadge = (status) => {
@@ -16,24 +19,24 @@ export default function RecentOrdersTable({ orders = [] }) {
     return (
         <div className="bg-white rounded-lg shadow overflow-hidden">
             <div className="p-6 border-b">
-                <h3 className="text-lg font-semibold">Recent Orders</h3>
+                <h3 className="text-lg font-semibold">{t('title')}</h3>
             </div>
             <div className="overflow-x-auto">
                 <table className="w-full">
                     <thead className="bg-gray-50 border-b">
                         <tr>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Order ID</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Customer Name</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Amount</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('orderId')}</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('customer')}</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('date')}</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('totalAmount')}</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('status')}</th>
                         </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
                         {displayOrders.length === 0 ? (
                             <tr>
                                 <td colSpan="5" className="px-6 py-10 text-center text-gray-500">
-                                    No recent orders found.
+                                    {t('noOrders')}
                                 </td>
                             </tr>
                         ) : (

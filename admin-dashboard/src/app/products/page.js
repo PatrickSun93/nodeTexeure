@@ -2,9 +2,11 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { adminProducts, getErrorMessage } from '../../lib/api';
 
 export default function ProductsPage() {
+  const t = useTranslations('Products');
   const router = useRouter();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -33,14 +35,14 @@ export default function ProductsPage() {
     try {
       setLoading(true);
       setError(null);
-      
+
       const response = await adminProducts.getProducts(filters);
-      
+
       if (response.status === 'SUCCESS') {
         setProducts(response.keyValueTable.products || []);
         setPagination(response.keyValueTable.pagination || {});
       } else {
-        throw new Error(response.message || 'Failed to fetch products');
+        throw new Error(response.message || t('failedToFetch'));
       }
     } catch (err) {
       setError(getErrorMessage(err));
@@ -163,20 +165,20 @@ export default function ProductsPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <h1 className="text-xl font-semibold text-gray-900">
-              Product Management
+              {t('title')}
             </h1>
             <nav className="flex items-center space-x-4">
-              <a 
+              <a
                 href="/"
                 className="text-sm text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md hover:bg-gray-100"
               >
-                Dashboard
+                {t('navDashboard')}
               </a>
-              <a 
+              <a
                 href="/products"
                 className="text-sm text-blue-600 px-3 py-2 rounded-md bg-blue-50"
               >
-                Products
+                {t('navProducts')}
               </a>
             </nav>
           </div>
@@ -185,8 +187,8 @@ export default function ProductsPage() {
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-6">
-          <h2 className="text-2xl font-bold text-gray-900">Product Management</h2>
-          <p className="text-gray-600">Manage products, inventory, and approval workflow</p>
+          <h2 className="text-2xl font-bold text-gray-900">{t('title')}</h2>
+          <p className="text-gray-600">{t('subtitle')}</p>
         </div>
 
       {/* Filters and Search */}
@@ -194,38 +196,38 @@ export default function ProductsPage() {
         <form onSubmit={handleSearch} className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Search Products
+              {t('searchLabel')}
             </label>
             <input
               type="text"
               value={filters.search}
               onChange={(e) => handleFilterChange('search', e.target.value)}
-              placeholder="Search by name, SKU, or description..."
+              placeholder={t('searchPlaceholder')}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Status
+              {t('statusLabel')}
             </label>
             <select
               value={filters.status}
               onChange={(e) => handleFilterChange('status', e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-              <option value="">All Statuses</option>
-              <option value="draft">Draft</option>
-              <option value="pending_approval">Pending Approval</option>
-              <option value="approved">Approved</option>
-              <option value="rejected">Rejected</option>
-              <option value="discontinued">Discontinued</option>
+              <option value="">{t('allStatuses')}</option>
+              <option value="draft">{t('statuses.draft')}</option>
+              <option value="pending_approval">{t('statuses.pending_approval')}</option>
+              <option value="approved">{t('statuses.approved')}</option>
+              <option value="rejected">{t('statuses.rejected')}</option>
+              <option value="discontinued">{t('statuses.discontinued')}</option>
             </select>
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Sort By
+              {t('sortByLabel')}
             </label>
             <select
               value={`${filters.sort_by}_${filters.sort_order}`}
@@ -236,12 +238,12 @@ export default function ProductsPage() {
               }}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-              <option value="created_at_DESC">Newest First</option>
-              <option value="created_at_ASC">Oldest First</option>
-              <option value="name_ASC">Name A-Z</option>
-              <option value="name_DESC">Name Z-A</option>
-              <option value="base_price_ASC">Price Low-High</option>
-              <option value="base_price_DESC">Price High-Low</option>
+              <option value="created_at_DESC">{t('sortNewest')}</option>
+              <option value="created_at_ASC">{t('sortOldest')}</option>
+              <option value="name_ASC">{t('sortNameAsc')}</option>
+              <option value="name_DESC">{t('sortNameDesc')}</option>
+              <option value="base_price_ASC">{t('sortPriceAsc')}</option>
+              <option value="base_price_DESC">{t('sortPriceDesc')}</option>
             </select>
           </div>
 
@@ -250,7 +252,7 @@ export default function ProductsPage() {
               type="submit"
               className="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-              Search
+              {t('searchButton')}
             </button>
           </div>
         </form>
@@ -261,7 +263,7 @@ export default function ProductsPage() {
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
           <div className="flex items-center justify-between">
             <span className="text-sm text-blue-800">
-              {selectedProducts.size} product(s) selected
+              {t('selectedCount', { count: selectedProducts.size })}
             </span>
             <div className="flex items-center space-x-2">
               <select
@@ -269,18 +271,18 @@ export default function ProductsPage() {
                 onChange={(e) => setBulkAction(e.target.value)}
                 className="px-3 py-1 border border-blue-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
-                <option value="">Select Action</option>
-                <option value="status_approved">Approve</option>
-                <option value="status_rejected">Reject</option>
-                <option value="status_discontinued">Discontinue</option>
-                <option value="delete">Delete</option>
+                <option value="">{t('selectAction')}</option>
+                <option value="status_approved">{t('bulkApprove')}</option>
+                <option value="status_rejected">{t('bulkReject')}</option>
+                <option value="status_discontinued">{t('bulkDiscontinue')}</option>
+                <option value="delete">{t('bulkDelete')}</option>
               </select>
               <button
                 onClick={handleBulkAction}
                 disabled={!bulkAction || bulkLoading}
                 className="px-4 py-1 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
               >
-                {bulkLoading ? 'Processing...' : 'Apply'}
+                {bulkLoading ? t('processing') : t('apply')}
               </button>
             </div>
           </div>
@@ -309,25 +311,25 @@ export default function ProductsPage() {
                   />
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Product
+                  {t('columnProduct')}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  SKU
+                  {t('columnSku')}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Category
+                  {t('columnCategory')}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Price
+                  {t('columnPrice')}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Status
+                  {t('columnStatus')}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Created
+                  {t('columnCreated')}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Actions
+                  {t('columnActions')}
                 </th>
               </tr>
             </thead>
@@ -335,13 +337,13 @@ export default function ProductsPage() {
               {loading ? (
                 <tr>
                   <td colSpan="8" className="px-6 py-12 text-center text-gray-500">
-                    Loading products...
+                    {t('loading')}
                   </td>
                 </tr>
               ) : products.length === 0 ? (
                 <tr>
                   <td colSpan="8" className="px-6 py-12 text-center text-gray-500">
-                    No products found
+                    {t('noProducts')}
                   </td>
                 </tr>
               ) : (
@@ -359,7 +361,7 @@ export default function ProductsPage() {
                       <div className="flex items-center">
                         <div className="flex-shrink-0 h-10 w-10">
                           <div className="h-10 w-10 rounded-lg bg-gray-200 flex items-center justify-center">
-                            <span className="text-xs text-gray-500">IMG</span>
+                            <span className="text-xs text-gray-500">{t('imagePlaceholder')}</span>
                           </div>
                         </div>
                         <div className="ml-4">
@@ -376,14 +378,14 @@ export default function ProductsPage() {
                       {product.sku}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {product.category_name || 'N/A'}
+                      {product.category_name || t('notAvailable')}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       {formatPrice(product.base_price)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusBadgeColor(product.status)}`}>
-                        {product.status.replace('_', ' ')}
+                        {t(`statuses.${product.status}`)}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -395,19 +397,19 @@ export default function ProductsPage() {
                           onClick={() => window.open(`/products/${product.id}`, '_blank')}
                           className="text-blue-600 hover:text-blue-900"
                         >
-                          View
+                          {t('actionView')}
                         </button>
                         <button
                           onClick={() => router.push(`/products/${product.id}/edit`)}
                           className="text-indigo-600 hover:text-indigo-900"
                         >
-                          Edit
+                          {t('actionEdit')}
                         </button>
                         <button
                           onClick={() => router.push(`/products/${product.id}/approval`)}
                           className="text-purple-600 hover:text-purple-900"
                         >
-                          Approval
+                          {t('actionApproval')}
                         </button>
                         {product.status === 'pending_approval' && (
                           <>
@@ -415,13 +417,13 @@ export default function ProductsPage() {
                               onClick={() => handleStatusUpdate(product.id, 'approved')}
                               className="text-green-600 hover:text-green-900"
                             >
-                              Quick Approve
+                              {t('actionQuickApprove')}
                             </button>
                             <button
                               onClick={() => handleStatusUpdate(product.id, 'rejected')}
                               className="text-red-600 hover:text-red-900"
                             >
-                              Quick Reject
+                              {t('actionQuickReject')}
                             </button>
                           </>
                         )}
@@ -443,42 +445,37 @@ export default function ProductsPage() {
                 disabled={pagination.page <= 1}
                 className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Previous
+                {t('previous')}
               </button>
               <button
                 onClick={() => handleFilterChange('page', Math.min(pagination.totalPages, pagination.page + 1))}
                 disabled={pagination.page >= pagination.totalPages}
                 className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Next
+                {t('next')}
               </button>
             </div>
             <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
               <div>
                 <p className="text-sm text-gray-700">
-                  Showing{' '}
-                  <span className="font-medium">
-                    {((pagination.page - 1) * pagination.limit) + 1}
-                  </span>{' '}
-                  to{' '}
-                  <span className="font-medium">
-                    {Math.min(pagination.page * pagination.limit, pagination.total)}
-                  </span>{' '}
-                  of{' '}
-                  <span className="font-medium">{pagination.total}</span>{' '}
-                  results
+                  {t.rich('showingResults', {
+                    from: ((pagination.page - 1) * pagination.limit) + 1,
+                    to: Math.min(pagination.page * pagination.limit, pagination.total),
+                    total: pagination.total,
+                    b: (chunks) => <span className="font-medium">{chunks}</span>
+                  })}
                 </p>
               </div>
               <div>
-                <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label={t('paginationAriaLabel')}>
                   <button
                     onClick={() => handleFilterChange('page', Math.max(1, pagination.page - 1))}
                     disabled={pagination.page <= 1}
                     className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    Previous
+                    {t('previous')}
                   </button>
-                  
+
                   {/* Page numbers */}
                   {Array.from({ length: Math.min(5, pagination.totalPages) }, (_, i) => {
                     const pageNum = i + 1;
@@ -496,13 +493,13 @@ export default function ProductsPage() {
                       </button>
                     );
                   })}
-                  
+
                   <button
                     onClick={() => handleFilterChange('page', Math.min(pagination.totalPages, pagination.page + 1))}
                     disabled={pagination.page >= pagination.totalPages}
                     className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    Next
+                    {t('next')}
                   </button>
                 </nav>
               </div>

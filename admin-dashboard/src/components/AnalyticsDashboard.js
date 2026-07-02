@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useTranslations } from 'next-intl';
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, BarElement, ArcElement, Title, Tooltip, Legend } from 'chart.js';
 import { Line, Bar, Pie } from 'react-chartjs-2';
 
@@ -12,6 +13,7 @@ ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarEleme
  * Main analytics dashboard with metrics and charts
  */
 export default function AnalyticsDashboard() {
+    const t = useTranslations('AnalyticsDashboard');
     const [period, setPeriod] = useState('month');
     const [dateRange, setDateRange] = useState({ start: '', end: '' });
     const [isLoading, setIsLoading] = useState(true);
@@ -63,7 +65,7 @@ export default function AnalyticsDashboard() {
 
         } catch (err) {
             console.error('Error fetching analytics:', err);
-            setError('Failed to load analytics data');
+            setError(t('failedToLoad'));
         } finally {
             setIsLoading(false);
         }
@@ -91,7 +93,7 @@ export default function AnalyticsDashboard() {
             document.body.removeChild(a);
         } catch (err) {
             console.error('Error exporting:', err);
-            alert('Export failed');
+            alert(t('exportFailed'));
         }
     };
 
@@ -100,14 +102,14 @@ export default function AnalyticsDashboard() {
         labels: revenueTrend.data.map(d => d.period),
         datasets: [
             {
-                label: 'Revenue',
+                label: t('revenue'),
                 data: revenueTrend.data.map(d => parseFloat(d.revenue)),
                 borderColor: 'rgb(59, 130, 246)',
                 backgroundColor: 'rgba(59, 130, 246, 0.1)',
                 tension: 0.4
             },
             {
-                label: 'Orders',
+                label: t('orders'),
                 data: revenueTrend.data.map(d => d.order_count),
                 borderColor: 'rgb(16, 185, 129)',
                 backgroundColor: 'rgba(16, 185, 129, 0.1)',
@@ -122,11 +124,11 @@ export default function AnalyticsDashboard() {
         interaction: { mode: 'index', intersect: false },
         plugins: {
             legend: { position: 'top' },
-            title: { display: true, text: 'Revenue & Orders Trend' }
+            title: { display: true, text: t('revenueOrdersTrend') }
         },
         scales: {
-            y: { type: 'linear', display: true, position: 'left', title: { display: true, text: 'Revenue ($)' } },
-            y1: { type: 'linear', display: true, position: 'right', title: { display: true, text: 'Orders' }, grid: { drawOnChartArea: false } }
+            y: { type: 'linear', display: true, position: 'left', title: { display: true, text: t('revenueAxis') } },
+            y1: { type: 'linear', display: true, position: 'right', title: { display: true, text: t('orders') }, grid: { drawOnChartArea: false } }
         }
     };
 
@@ -152,7 +154,7 @@ export default function AnalyticsDashboard() {
             <div className="flex items-center justify-center min-h-screen">
                 <div className="text-center">
                     <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-                    <p className="text-gray-600">Loading analytics...</p>
+                    <p className="text-gray-600">{t('loadingAnalytics')}</p>
                 </div>
             </div>
         );
@@ -172,25 +174,25 @@ export default function AnalyticsDashboard() {
         <div className="p-8 bg-gray-50 min-h-screen">
             {/* Header */}
             <div className="mb-8">
-                <h1 className="text-3xl font-bold text-gray-900 mb-2">Analytics Dashboard</h1>
-                <p className="text-gray-600">Monitor your store's performance and insights</p>
+                <h1 className="text-3xl font-bold text-gray-900 mb-2">{t('title')}</h1>
+                <p className="text-gray-600">{t('subtitle')}</p>
             </div>
 
             {/* Period Selector */}
             <div className="bg-white rounded-lg shadow-sm p-4 mb-6 flex items-center gap-4 flex-wrap">
                 <div className="flex items-center gap-2">
-                    <label className="text-sm font-medium text-gray-700">Period:</label>
+                    <label className="text-sm font-medium text-gray-700">{t('periodLabel')}</label>
                     <select
                         value={period}
                         onChange={(e) => setPeriod(e.target.value)}
                         className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500"
                     >
-                        <option value="today">Today</option>
-                        <option value="yesterday">Yesterday</option>
-                        <option value="week">Last 7 Days</option>
-                        <option value="month">Last 30 Days</option>
-                        <option value="year">Last Year</option>
-                        <option value="custom">Custom Range</option>
+                        <option value="today">{t('today')}</option>
+                        <option value="yesterday">{t('yesterday')}</option>
+                        <option value="week">{t('last7Days')}</option>
+                        <option value="month">{t('last30Days')}</option>
+                        <option value="year">{t('lastYear')}</option>
+                        <option value="custom">{t('customRange')}</option>
                     </select>
                 </div>
 
@@ -202,7 +204,7 @@ export default function AnalyticsDashboard() {
                             onChange={(e) => setDateRange({ ...dateRange, start: e.target.value })}
                             className="px-3 py-2 border border-gray-300 rounded-md text-sm"
                         />
-                        <span className="text-gray-500">to</span>
+                        <span className="text-gray-500">{t('to')}</span>
                         <input
                             type="date"
                             value={dateRange.end}
@@ -217,19 +219,19 @@ export default function AnalyticsDashboard() {
                         onClick={() => handleExportCSV('orders')}
                         className="px-4 py-2 bg-blue-600 text-white rounded-md text-sm hover:bg-blue-700"
                     >
-                        Export Orders
+                        {t('exportOrders')}
                     </button>
                     <button
                         onClick={() => handleExportCSV('products')}
                         className="px-4 py-2 bg-green-600 text-white rounded-md text-sm hover:bg-green-700"
                     >
-                        Export Products
+                        {t('exportProducts')}
                     </button>
                     <button
                         onClick={() => handleExportCSV('customers')}
                         className="px-4 py-2 bg-purple-600 text-white rounded-md text-sm hover:bg-purple-700"
                     >
-                        Export Customers
+                        {t('exportCustomers')}
                     </button>
                 </div>
             </div>
@@ -238,26 +240,26 @@ export default function AnalyticsDashboard() {
             {salesSummary && (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                     <MetricCard
-                        title="Total Revenue"
+                        title={t('totalRevenue')}
                         value={`$${parseFloat(salesSummary.metrics.total_revenue).toLocaleString()}`}
                         change={salesSummary.growth.revenue}
                         icon="💰"
                     />
                     <MetricCard
-                        title="Total Orders"
+                        title={t('totalOrders')}
                         value={salesSummary.metrics.total_orders}
                         change={salesSummary.growth.orders}
                         icon="📦"
                     />
                     <MetricCard
-                        title="Avg Order Value"
+                        title={t('avgOrderValue')}
                         value={`$${parseFloat(salesSummary.metrics.avg_order_value).toFixed(2)}`}
                         icon="💳"
                     />
                     <MetricCard
-                        title="Delivered Orders"
+                        title={t('deliveredOrders')}
                         value={salesSummary.metrics.delivered_orders}
-                        subtitle={`${salesSummary.metrics.pending_orders} pending`}
+                        subtitle={t('pendingCount', { count: salesSummary.metrics.pending_orders })}
                         icon="✅"
                     />
                 </div>
@@ -275,7 +277,7 @@ export default function AnalyticsDashboard() {
                 {/* Category Distribution */}
                 {categoryChartData && (
                     <div className="bg-white rounded-lg shadow-sm p-6">
-                        <h3 className="text-lg font-semibold mb-4">Revenue by Category</h3>
+                        <h3 className="text-lg font-semibold mb-4">{t('revenueByCategory')}</h3>
                         <Pie data={categoryChartData} options={{ responsive: true, plugins: { legend: { position: 'right' } } }} />
                     </div>
                 )}
@@ -286,12 +288,12 @@ export default function AnalyticsDashboard() {
                 {/* Customer Stats */}
                 {customerStats && (
                     <div className="bg-white rounded-lg shadow-sm p-6">
-                        <h3 className="text-lg font-semibold mb-4">Customer Metrics</h3>
+                        <h3 className="text-lg font-semibold mb-4">{t('customerMetrics')}</h3>
                         <div className="space-y-3">
-                            <StatRow label="New Customers" value={customerStats.metrics.new_customers} />
-                            <StatRow label="Active Customers" value={customerStats.metrics.active_customers} />
-                            <StatRow label="Repeat Customers" value={customerStats.metrics.repeat_customers} />
-                            <StatRow label="Retention Rate" value={`${customerStats.metrics.retention_rate}%`} />
+                            <StatRow label={t('newCustomers')} value={customerStats.metrics.new_customers} />
+                            <StatRow label={t('activeCustomers')} value={customerStats.metrics.active_customers} />
+                            <StatRow label={t('repeatCustomers')} value={customerStats.metrics.repeat_customers} />
+                            <StatRow label={t('retentionRate')} value={`${customerStats.metrics.retention_rate}%`} />
                         </div>
                     </div>
                 )}
@@ -299,21 +301,21 @@ export default function AnalyticsDashboard() {
                 {/* Inventory Status */}
                 {inventoryStatus && (
                     <div className="bg-white rounded-lg shadow-sm p-6">
-                        <h3 className="text-lg font-semibold mb-4">Inventory Overview</h3>
+                        <h3 className="text-lg font-semibold mb-4">{t('inventoryOverview')}</h3>
                         <div className="space-y-3">
-                            <StatRow label="Total Products" value={inventoryStatus.overview.total_products} />
-                            <StatRow label="Total Stock" value={inventoryStatus.overview.total_stock} />
-                            <StatRow 
-                                label="Low Stock Items" 
+                            <StatRow label={t('totalProducts')} value={inventoryStatus.overview.total_products} />
+                            <StatRow label={t('totalStock')} value={inventoryStatus.overview.total_stock} />
+                            <StatRow
+                                label={t('lowStockItems')}
                                 value={inventoryStatus.overview.low_stock_items}
                                 highlight={inventoryStatus.overview.low_stock_items > 0}
                             />
-                            <StatRow 
-                                label="Out of Stock" 
+                            <StatRow
+                                label={t('outOfStock')}
                                 value={inventoryStatus.overview.out_of_stock_items}
                                 highlight={inventoryStatus.overview.out_of_stock_items > 0}
                             />
-                            <StatRow label="Inventory Value" value={`$${parseFloat(inventoryStatus.overview.total_retail_value).toLocaleString()}`} />
+                            <StatRow label={t('inventoryValue')} value={`$${parseFloat(inventoryStatus.overview.total_retail_value).toLocaleString()}`} />
                         </div>
                     </div>
                 )}
@@ -322,16 +324,16 @@ export default function AnalyticsDashboard() {
             {/* Top Products Table */}
             {topProducts.length > 0 && (
                 <div className="bg-white rounded-lg shadow-sm p-6">
-                    <h3 className="text-lg font-semibold mb-4">Top Selling Products</h3>
+                    <h3 className="text-lg font-semibold mb-4">{t('topSellingProducts')}</h3>
                     <div className="overflow-x-auto">
                         <table className="w-full">
                             <thead>
                                 <tr className="border-b border-gray-200">
-                                    <th className="text-left py-3 px-4 font-medium text-gray-700">Product</th>
-                                    <th className="text-right py-3 px-4 font-medium text-gray-700">Sold</th>
-                                    <th className="text-right py-3 px-4 font-medium text-gray-700">Quantity</th>
-                                    <th className="text-right py-3 px-4 font-medium text-gray-700">Revenue</th>
-                                    <th className="text-right py-3 px-4 font-medium text-gray-700">Rating</th>
+                                    <th className="text-left py-3 px-4 font-medium text-gray-700">{t('colProduct')}</th>
+                                    <th className="text-right py-3 px-4 font-medium text-gray-700">{t('colSold')}</th>
+                                    <th className="text-right py-3 px-4 font-medium text-gray-700">{t('colQuantity')}</th>
+                                    <th className="text-right py-3 px-4 font-medium text-gray-700">{t('colRevenue')}</th>
+                                    <th className="text-right py-3 px-4 font-medium text-gray-700">{t('colRating')}</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -354,7 +356,7 @@ export default function AnalyticsDashboard() {
                                                     <span className="text-gray-400 text-sm ml-1">({product.review_count})</span>
                                                 </span>
                                             ) : (
-                                                <span className="text-gray-400">N/A</span>
+                                                <span className="text-gray-400">{t('notAvailable')}</span>
                                             )}
                                         </td>
                                     </tr>
@@ -370,6 +372,7 @@ export default function AnalyticsDashboard() {
 
 // Metric Card Component
 function MetricCard({ title, value, change, subtitle, icon }) {
+    const t = useTranslations('AnalyticsDashboard');
     return (
         <div className="bg-white rounded-lg shadow-sm p-6">
             <div className="flex items-center justify-between mb-2">
@@ -379,7 +382,7 @@ function MetricCard({ title, value, change, subtitle, icon }) {
             <p className="text-3xl font-bold text-gray-900 mb-1">{value}</p>
             {change !== undefined && (
                 <p className={`text-sm ${change >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                    {change >= 0 ? '↑' : '↓'} {Math.abs(change)}% vs previous period
+                    {change >= 0 ? '↑' : '↓'} {t('vsPreviousPeriod', { change: Math.abs(change) })}
                 </p>
             )}
             {subtitle && <p className="text-sm text-gray-500">{subtitle}</p>}

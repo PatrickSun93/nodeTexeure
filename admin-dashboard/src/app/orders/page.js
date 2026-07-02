@@ -3,39 +3,17 @@
 import { useState, useEffect, useCallback } from 'react';
 import { adminOrders, getErrorMessage, isAuthError } from '../../lib/api';
 import { useRouter } from 'next/navigation';
-
-const ORDER_STATUSES = [
-  { value: '', label: 'All Statuses' },
-  { value: 'pending', label: 'Pending', color: 'bg-yellow-100 text-yellow-800' },
-  { value: 'confirmed', label: 'Confirmed', color: 'bg-blue-100 text-blue-800' },
-  { value: 'processing', label: 'Processing', color: 'bg-purple-100 text-purple-800' },
-  { value: 'shipped', label: 'Shipped', color: 'bg-indigo-100 text-indigo-800' },
-  { value: 'delivered', label: 'Delivered', color: 'bg-green-100 text-green-800' },
-  { value: 'cancelled', label: 'Cancelled', color: 'bg-red-100 text-red-800' },
-  { value: 'refunded', label: 'Refunded', color: 'bg-gray-100 text-gray-800' }
-];
-
-const CUSTOMER_TYPES = [
-  { value: '', label: 'All Customers' },
-  { value: 'registered', label: 'Registered' },
-  { value: 'guest', label: 'Guest' }
-];
-
-const SORT_OPTIONS = [
-  { value: 'created_at', label: 'Date Created' },
-  { value: 'total_amount', label: 'Order Value' },
-  { value: 'status', label: 'Status' },
-  { value: 'order_number', label: 'Order Number' }
-];
+import { useTranslations } from 'next-intl';
 
 export default function OrdersPage() {
+  const t = useTranslations('Orders');
   const router = useRouter();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [selectedOrders, setSelectedOrders] = useState([]);
   const [bulkActionLoading, setBulkActionLoading] = useState(false);
-  
+
   // Filters and pagination
   const [filters, setFilters] = useState({
     page: 1,
@@ -50,7 +28,7 @@ export default function OrdersPage() {
     sortBy: 'created_at',
     sortOrder: 'desc'
   });
-  
+
   const [pagination, setPagination] = useState({
     currentPage: 1,
     totalPages: 1,
@@ -60,20 +38,45 @@ export default function OrdersPage() {
 
   const [statusStats, setStatusStats] = useState([]);
 
+  // Order status, customer type, and sort options with localized labels
+  const ORDER_STATUSES = [
+    { value: '', label: t('statusAll') },
+    { value: 'pending', label: t('statusPending'), color: 'bg-yellow-100 text-yellow-800' },
+    { value: 'confirmed', label: t('statusConfirmed'), color: 'bg-blue-100 text-blue-800' },
+    { value: 'processing', label: t('statusProcessing'), color: 'bg-purple-100 text-purple-800' },
+    { value: 'shipped', label: t('statusShipped'), color: 'bg-indigo-100 text-indigo-800' },
+    { value: 'delivered', label: t('statusDelivered'), color: 'bg-green-100 text-green-800' },
+    { value: 'cancelled', label: t('statusCancelled'), color: 'bg-red-100 text-red-800' },
+    { value: 'refunded', label: t('statusRefunded'), color: 'bg-gray-100 text-gray-800' }
+  ];
+
+  const CUSTOMER_TYPES = [
+    { value: '', label: t('customerAll') },
+    { value: 'registered', label: t('registered') },
+    { value: 'guest', label: t('guest') }
+  ];
+
+  const SORT_OPTIONS = [
+    { value: 'created_at', label: t('sortDateCreated') },
+    { value: 'total_amount', label: t('sortOrderValue') },
+    { value: 'status', label: t('status') },
+    { value: 'order_number', label: t('sortOrderNumber') }
+  ];
+
   // Fetch orders with current filters
   const fetchOrders = useCallback(async () => {
     try {
       setLoading(true);
       setError('');
-      
+
       const response = await adminOrders.getOrders(filters);
-      
+
       if (response.success) {
         setOrders(response.keyValueTable.orders || []);
         setPagination(response.keyValueTable.pagination || {});
         setStatusStats(response.keyValueTable.statusStats || []);
       } else {
-        setError(response.message || 'Failed to fetch orders');
+        setError(response.message || t('fetchFailed'));
       }
     } catch (err) {
       if (isAuthError(err)) {
@@ -84,7 +87,7 @@ export default function OrdersPage() {
     } finally {
       setLoading(false);
     }
-  }, [filters, router]);
+  }, [filters, router, t]);
 
   // Initial load
   useEffect(() => {
@@ -126,27 +129,27 @@ export default function OrdersPage() {
   // Handle bulk status update
   const handleBulkStatusUpdate = async (newStatus) => {
     if (selectedOrders.length === 0) {
-      alert('Please select orders to update');
+      alert(t('selectOrdersToUpdate'));
       return;
     }
 
-    const notes = prompt(`Enter notes for status change to "${newStatus}" (optional):`);
+    const notes = prompt(t('enterNotes', { status: newStatus }));
     if (notes === null) return; // User cancelled
 
     try {
       setBulkActionLoading(true);
-      
+
       const response = await adminOrders.bulkUpdateOrders(selectedOrders, newStatus, notes);
-      
+
       if (response.success) {
-        alert(`Successfully updated ${response.keyValueTable.successful} orders`);
+        alert(t('updateSuccess', { count: response.keyValueTable.successful }));
         setSelectedOrders([]);
         fetchOrders(); // Refresh the list
       } else {
-        alert(`Failed to update orders: ${response.message}`);
+        alert(t('updateFailed', { message: response.message }));
       }
     } catch (err) {
-      alert(`Error updating orders: ${getErrorMessage(err)}`);
+      alert(t('updateError', { message: getErrorMessage(err) }));
     } finally {
       setBulkActionLoading(false);
     }
@@ -181,8 +184,8 @@ export default function OrdersPage() {
     <div className="p-6">
       {/* Header */}
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Order Management</h1>
-        <p className="text-gray-600">Manage and track customer orders</p>
+        <h1 className="text-2xl font-bold text-gray-900">{t('title')}</h1>
+        <p className="text-gray-600">{t('subtitle')}</p>
       </div>
 
       {/* Status Stats */}
@@ -192,7 +195,7 @@ export default function OrdersPage() {
             const stat = statusStats.find(s => s.status === status.value);
             const count = stat?.count || 0;
             const value = stat?.total_value || 0;
-            
+
             return (
               <div key={status.value} className="bg-white p-4 rounded-lg shadow border">
                 <div className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${status.color} mb-2`}>
@@ -212,11 +215,11 @@ export default function OrdersPage() {
           {/* Search */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Search Orders
+              {t('searchOrders')}
             </label>
             <input
               type="text"
-              placeholder="Order number, customer name, email..."
+              placeholder={t('searchPlaceholder')}
               value={filters.search}
               onChange={(e) => handleFilterChange('search', e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -226,7 +229,7 @@ export default function OrdersPage() {
           {/* Status Filter */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Status
+              {t('status')}
             </label>
             <select
               value={filters.status}
@@ -244,7 +247,7 @@ export default function OrdersPage() {
           {/* Customer Type */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Customer Type
+              {t('customerType')}
             </label>
             <select
               value={filters.customerType}
@@ -262,7 +265,7 @@ export default function OrdersPage() {
           {/* Sort */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Sort By
+              {t('sortBy')}
             </label>
             <div className="flex gap-2">
               <select
@@ -279,7 +282,7 @@ export default function OrdersPage() {
               <button
                 onClick={() => handleFilterChange('sortOrder', filters.sortOrder === 'asc' ? 'desc' : 'asc')}
                 className="px-3 py-2 border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                title={`Sort ${filters.sortOrder === 'asc' ? 'Descending' : 'Ascending'}`}
+                title={filters.sortOrder === 'asc' ? t('sortDescending') : t('sortAscending')}
               >
                 {filters.sortOrder === 'asc' ? '↑' : '↓'}
               </button>
@@ -291,7 +294,7 @@ export default function OrdersPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Date From
+              {t('dateFrom')}
             </label>
             <input
               type="date"
@@ -303,7 +306,7 @@ export default function OrdersPage() {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Date To
+              {t('dateTo')}
             </label>
             <input
               type="date"
@@ -315,11 +318,11 @@ export default function OrdersPage() {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Min Amount
+              {t('minAmount')}
             </label>
             <input
               type="number"
-              placeholder="0.00"
+              placeholder={t('minAmountPlaceholder')}
               value={filters.minAmount}
               onChange={(e) => handleFilterChange('minAmount', e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -328,11 +331,11 @@ export default function OrdersPage() {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Max Amount
+              {t('maxAmount')}
             </label>
             <input
               type="number"
-              placeholder="1000.00"
+              placeholder={t('maxAmountPlaceholder')}
               value={filters.maxAmount}
               onChange={(e) => handleFilterChange('maxAmount', e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -346,7 +349,7 @@ export default function OrdersPage() {
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
           <div className="flex items-center justify-between">
             <span className="text-sm font-medium text-blue-800">
-              {selectedOrders.length} order(s) selected
+              {t('ordersSelected', { count: selectedOrders.length })}
             </span>
             <div className="flex gap-2">
               {ORDER_STATUSES.slice(1).map(status => (
@@ -356,7 +359,7 @@ export default function OrdersPage() {
                   disabled={bulkActionLoading}
                   className="px-3 py-1 text-xs font-medium text-white bg-blue-600 rounded hover:bg-blue-700 disabled:opacity-50"
                 >
-                  Mark as {status.label}
+                  {t('markAs', { status: status.label })}
                 </button>
               ))}
             </div>
@@ -386,25 +389,25 @@ export default function OrdersPage() {
                   />
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Order
+                  {t('columnOrder')}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Customer
+                  {t('columnCustomer')}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Status
+                  {t('status')}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Amount
+                  {t('columnAmount')}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Items
+                  {t('columnItems')}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Date
+                  {t('columnDate')}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Actions
+                  {t('columnActions')}
                 </th>
               </tr>
             </thead>
@@ -412,13 +415,13 @@ export default function OrdersPage() {
               {loading ? (
                 <tr>
                   <td colSpan="8" className="px-6 py-12 text-center text-gray-500">
-                    Loading orders...
+                    {t('loading')}
                   </td>
                 </tr>
               ) : orders.length === 0 ? (
                 <tr>
                   <td colSpan="8" className="px-6 py-12 text-center text-gray-500">
-                    No orders found
+                    {t('noOrders')}
                   </td>
                 </tr>
               ) : (
@@ -438,7 +441,7 @@ export default function OrdersPage() {
                           {order.order_number}
                         </div>
                         <div className="text-sm text-gray-500">
-                          ID: {order.id}
+                          {t('idLabel', { id: order.id })}
                         </div>
                       </div>
                     </td>
@@ -451,7 +454,7 @@ export default function OrdersPage() {
                           {order.customer_email || order.guest_email}
                         </div>
                         <div className="text-xs text-gray-400">
-                          {order.user_id ? 'Registered' : 'Guest'}
+                          {order.user_id ? t('registered') : t('guest')}
                         </div>
                       </div>
                     </td>
@@ -461,7 +464,7 @@ export default function OrdersPage() {
                       </span>
                       {order.payment_status && (
                         <div className="text-xs text-gray-500 mt-1">
-                          Payment: {order.payment_status}
+                          {t('paymentLabel', { status: order.payment_status })}
                         </div>
                       )}
                     </td>
@@ -472,10 +475,10 @@ export default function OrdersPage() {
                     </td>
                     <td className="px-6 py-4">
                       <div className="text-sm text-gray-900">
-                        {order.total_items} items
+                        {t('itemsCount', { count: order.total_items })}
                       </div>
                       <div className="text-xs text-gray-500">
-                        {order.item_count} products
+                        {t('productsCount', { count: order.item_count })}
                       </div>
                     </td>
                     <td className="px-6 py-4">
@@ -484,7 +487,7 @@ export default function OrdersPage() {
                       </div>
                       {order.tracking_number && (
                         <div className="text-xs text-gray-500">
-                          Tracking: {order.tracking_number}
+                          {t('trackingLabel', { number: order.tracking_number })}
                         </div>
                       )}
                     </td>
@@ -493,7 +496,7 @@ export default function OrdersPage() {
                         onClick={() => router.push(`/orders/${order.id}`)}
                         className="text-blue-600 hover:text-blue-900 text-sm font-medium"
                       >
-                        View Details
+                        {t('viewDetails')}
                       </button>
                     </td>
                   </tr>
@@ -513,30 +516,25 @@ export default function OrdersPage() {
                   disabled={pagination.currentPage <= 1}
                   className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
                 >
-                  Previous
+                  {t('previous')}
                 </button>
                 <button
                   onClick={() => handlePageChange(pagination.currentPage + 1)}
                   disabled={pagination.currentPage >= pagination.totalPages}
                   className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
                 >
-                  Next
+                  {t('next')}
                 </button>
               </div>
               <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
                 <div>
                   <p className="text-sm text-gray-700">
-                    Showing{' '}
-                    <span className="font-medium">
-                      {((pagination.currentPage - 1) * pagination.limit) + 1}
-                    </span>{' '}
-                    to{' '}
-                    <span className="font-medium">
-                      {Math.min(pagination.currentPage * pagination.limit, pagination.totalOrders)}
-                    </span>{' '}
-                    of{' '}
-                    <span className="font-medium">{pagination.totalOrders}</span>{' '}
-                    results
+                    {t.rich('showingResults', {
+                      from: ((pagination.currentPage - 1) * pagination.limit) + 1,
+                      to: Math.min(pagination.currentPage * pagination.limit, pagination.totalOrders),
+                      total: pagination.totalOrders,
+                      medium: (chunks) => <span className="font-medium">{chunks}</span>
+                    })}
                   </p>
                 </div>
                 <div>
@@ -546,9 +544,9 @@ export default function OrdersPage() {
                       disabled={pagination.currentPage <= 1}
                       className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50"
                     >
-                      Previous
+                      {t('previous')}
                     </button>
-                    
+
                     {/* Page numbers */}
                     {Array.from({ length: Math.min(5, pagination.totalPages) }, (_, i) => {
                       const pageNum = i + 1;
@@ -566,13 +564,13 @@ export default function OrdersPage() {
                         </button>
                       );
                     })}
-                    
+
                     <button
                       onClick={() => handlePageChange(pagination.currentPage + 1)}
                       disabled={pagination.currentPage >= pagination.totalPages}
                       className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50"
                     >
-                      Next
+                      {t('next')}
                     </button>
                   </nav>
                 </div>

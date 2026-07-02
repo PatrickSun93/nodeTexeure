@@ -109,8 +109,14 @@ proxy + design tokens → seed example data → smoke test).
 - Backend is CommonJS (`require`); frontend is ES modules; `@/*` → `src/*`.
 - Prepared statements for all user input. Services degrade gracefully when
   integration credentials (Stripe/AWS/FedEx) are absent.
-- i18n (multi-language) is **deferred to a `feature/i18n` branch** — it broke the
-  app before, so keep it off `main` until verified end-to-end.
+- **i18n (multi-language)** is implemented with **cookie-based `next-intl`** in both
+  Next.js apps — a `NEXT_LOCALE` cookie read server-side in `src/i18n/request.js`
+  (per app), a `LanguageSwitcher` that sets the cookie + `router.refresh()`, and
+  namespace-per-page message catalogs under `messages/{en,zh,fr,es}.json`. There is
+  deliberately **no `[locale]` URL segment** — URL-based routing is what broke i18n
+  before. Keep every locale in per-namespace key parity. Transactional emails stay
+  English by design. Backend serves translated product copy via
+  `product_translations` (`LEFT JOIN` + `COALESCE`, keyed off `resolveLocale(req)`).
 
 ## gstack skills (Claude Code)
 

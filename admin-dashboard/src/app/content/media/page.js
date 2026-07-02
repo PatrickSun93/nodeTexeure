@@ -1,8 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useTranslations } from 'next-intl';
 
 export default function MediaLibrary() {
+  const t = useTranslations('MediaLibrary');
   const [media, setMedia] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -26,7 +28,7 @@ export default function MediaLibrary() {
 
       const token = localStorage.getItem('adminToken');
       if (!token) {
-        throw new Error('No authentication token found');
+        throw new Error(t('noAuthToken'));
       }
 
       const queryParams = new URLSearchParams();
@@ -42,7 +44,7 @@ export default function MediaLibrary() {
       });
 
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        throw new Error(t('httpError', { status: response.status }));
       }
 
       const data = await response.json();
@@ -50,7 +52,7 @@ export default function MediaLibrary() {
       if (data.success) {
         setMedia(data.keyValueTable?.media || []);
       } else {
-        throw new Error(data.message || 'Failed to fetch media');
+        throw new Error(data.message || t('failedToFetchMedia'));
       }
     } catch (error) {
       console.error('Error fetching media:', error);
@@ -63,7 +65,7 @@ export default function MediaLibrary() {
   const handleFileUpload = async (files) => {
     const token = localStorage.getItem('adminToken');
     if (!token) {
-      setError('No authentication token found');
+      setError(t('noAuthToken'));
       return;
     }
 
@@ -83,7 +85,7 @@ export default function MediaLibrary() {
         });
 
         if (!response.ok) {
-          throw new Error(`Upload failed for ${file.name}`);
+          throw new Error(t('uploadFailedFor', { name: file.name }));
         }
 
         const data = await response.json();
@@ -93,7 +95,7 @@ export default function MediaLibrary() {
           // Refresh media list
           fetchMedia();
         } else {
-          throw new Error(data.message || `Upload failed for ${file.name}`);
+          throw new Error(data.message || t('uploadFailedFor', { name: file.name }));
         }
       } catch (error) {
         console.error('Upload error:', error);
@@ -128,7 +130,7 @@ export default function MediaLibrary() {
   };
 
   const handleDelete = async (mediaId) => {
-    if (!confirm('Are you sure you want to delete this media file?')) {
+    if (!confirm(t('confirmDelete'))) {
       return;
     }
 
@@ -143,7 +145,7 @@ export default function MediaLibrary() {
       });
 
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        throw new Error(t('httpError', { status: response.status }));
       }
 
       const data = await response.json();
@@ -151,7 +153,7 @@ export default function MediaLibrary() {
       if (data.success) {
         fetchMedia(); // Refresh the list
       } else {
-        throw new Error(data.message || 'Failed to delete media file');
+        throw new Error(data.message || t('failedToDeleteMedia'));
       }
     } catch (error) {
       console.error('Error deleting media:', error);
@@ -162,7 +164,7 @@ export default function MediaLibrary() {
   const copyToClipboard = (url) => {
     navigator.clipboard.writeText(url).then(() => {
       // You could show a toast notification here
-      alert('URL copied to clipboard!');
+      alert(t('urlCopied'));
     });
   };
 
@@ -177,8 +179,8 @@ export default function MediaLibrary() {
   return (
     <div className="p-6">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Media Library</h1>
-        <p className="text-gray-600">Manage your images and media files</p>
+        <h1 className="text-2xl font-bold text-gray-900">{t('title')}</h1>
+        <p className="text-gray-600">{t('subtitle')}</p>
       </div>
 
       {error && (
@@ -201,9 +203,9 @@ export default function MediaLibrary() {
               </svg>
             </div>
             <div>
-              <p className="text-lg text-gray-600">Drop images here or</p>
+              <p className="text-lg text-gray-600">{t('dropImagesHere')}</p>
               <label className="cursor-pointer">
-                <span className="text-blue-600 hover:text-blue-700 font-medium">browse files</span>
+                <span className="text-blue-600 hover:text-blue-700 font-medium">{t('browseFiles')}</span>
                 <input
                   type="file"
                   multiple
@@ -213,7 +215,7 @@ export default function MediaLibrary() {
                 />
               </label>
             </div>
-            <p className="text-sm text-gray-500">Supports: JPG, PNG, GIF, WebP</p>
+            <p className="text-sm text-gray-500">{t('supportedFormats')}</p>
           </div>
         </div>
 
@@ -224,7 +226,7 @@ export default function MediaLibrary() {
               <div key={filename} className="bg-gray-50 rounded p-3">
                 <div className="flex justify-between text-sm text-gray-600 mb-1">
                   <span>{filename}</span>
-                  <span>{progress}%</span>
+                  <span>{t('progressPercent', { progress })}</span>
                 </div>
                 <div className="w-full bg-gray-200 rounded-full h-2">
                   <div 
@@ -245,15 +247,15 @@ export default function MediaLibrary() {
           onChange={(e) => setFilters(prev => ({ ...prev, type: e.target.value, page: 1 }))}
           className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
-          <option value="">All Types</option>
-          <option value="image">Images</option>
-          <option value="video">Videos</option>
-          <option value="document">Documents</option>
+          <option value="">{t('allTypes')}</option>
+          <option value="image">{t('optionImages')}</option>
+          <option value="video">{t('optionVideos')}</option>
+          <option value="document">{t('optionDocuments')}</option>
         </select>
 
         <input
           type="text"
-          placeholder="Search files..."
+          placeholder={t('searchPlaceholder')}
           value={filters.search}
           onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value, page: 1 }))}
           className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -262,9 +264,9 @@ export default function MediaLibrary() {
 
       {/* Media Grid */}
       {loading ? (
-        <div className="text-center py-8">Loading media files...</div>
+        <div className="text-center py-8">{t('loadingMedia')}</div>
       ) : media.length === 0 ? (
-        <div className="text-center py-8 text-gray-500">No media files found</div>
+        <div className="text-center py-8 text-gray-500">{t('noMediaFound')}</div>
       ) : (
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
           {media.map((file) => (
@@ -297,16 +299,16 @@ export default function MediaLibrary() {
                   <button
                     onClick={() => copyToClipboard(file.file_path)}
                     className="flex-1 text-xs bg-blue-50 text-blue-600 px-2 py-1 rounded hover:bg-blue-100"
-                    title="Copy URL"
+                    title={t('copyUrl')}
                   >
-                    Copy URL
+                    {t('copyUrl')}
                   </button>
                   <button
                     onClick={() => handleDelete(file.id)}
                     className="text-xs bg-red-50 text-red-600 px-2 py-1 rounded hover:bg-red-100"
-                    title="Delete"
+                    title={t('delete')}
                   >
-                    Delete
+                    {t('delete')}
                   </button>
                 </div>
               </div>

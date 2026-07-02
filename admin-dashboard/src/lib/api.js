@@ -88,7 +88,11 @@ export const adminAuth = {
    * @returns {Promise<object>} - Login response
    */
   async login(email, password) {
-    return apiRequest('admin/auth/login', {
+    // Login goes through the public users/login endpoint (there is no
+    // /api/admin/auth/login — /api/admin/* is auth-protected). The backend sets an
+    // HttpOnly admin_auth cookie which the admin routes accept, and apiRequest sends
+    // cookies (credentials: 'include'), so subsequent admin calls are authenticated.
+    return apiRequest('users/login', {
       method: 'POST',
       body: JSON.stringify({ email, password }),
     });
@@ -109,7 +113,9 @@ export const adminAuth = {
    * @returns {Promise<object>} - Verification response
    */
   async verify() {
-    return apiRequest('admin/auth/verify');
+    // Verify the session via a protected endpoint using the admin_auth cookie
+    // (there is no /api/admin/auth/verify). A 200 means the cookie is valid.
+    return apiRequest('users/profile');
   },
 
   /**

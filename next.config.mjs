@@ -2,7 +2,11 @@
  * Next.js configuration
  * - Rewrites API routes to backend server (dev/prod)
  * - Adds images.remotePatterns to allow loading images from backend uploads
+ * - Wires next-intl (cookie-based locale; see src/i18n/request.js)
  */
+import createNextIntlPlugin from 'next-intl/plugin';
+
+const withNextIntl = createNextIntlPlugin('./src/i18n/request.js');
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
@@ -46,4 +50,4 @@ const nextConfig = {
   },
 };
 
-export default nextConfig;
+export default withNextIntl(nextConfig);

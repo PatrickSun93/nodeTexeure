@@ -5,34 +5,65 @@ const PerformanceMiddleware = require('../middleware/performanceMiddleware');
 const cacheManager = require('../utils/cacheManager');
 const router = express.Router();
 
+// Locale for serving translated product content. Comes from the NEXT_LOCALE cookie
+// (set by the storefront LanguageSwitcher and forwarded through the Next proxy), with
+// a ?locale= query override. Unknown values fall back to English.
+const SUPPORTED_LOCALES = ['en', 'zh', 'fr', 'es'];
+function resolveLocale(req) {
+  const raw = req.query.locale || req.cookies?.NEXT_LOCALE || 'en';
+  return SUPPORTED_LOCALES.includes(raw) ? raw : 'en';
+}
+
+// Map a product row's translation-override columns back onto the canonical fields
+// and drop the temporary t_* aliases.
+function applyTranslation(p) {
+  const out = {
+    ...p,
+    name: p.t_name ?? p.name,
+    short_description: p.t_short_description ?? p.short_description,
+    description: p.t_description ?? p.description,
+  };
+  delete out.t_name;
+  delete out.t_short_description;
+  delete out.t_description;
+  return out;
+}
+
 // GET /api/products - Product listing with pagination and filters (with caching)
 router.get('/', PerformanceMiddleware.responseCache({
   ttl: 300, // 5 minutes cache
   cacheType: 'products',
-  keyGenerator: (req) => `products_list_${JSON.stringify(req.query)}`,
+  keyGenerator: (req) => `products_list_${resolveLocale(req)}_${JSON.stringify(req.query)}`,
   skipCache: (req) => req.query.nocache === 'true'
 }), async (req, res) => {
   try {
     const { page = 1, limit = 10, category, min_price, max_price, search } = req.query;
+    const locale = resolveLocale(req);
     const offset = (page - 1) * limit;
-    let query = 'SELECT * FROM products';
-    let countQuery = 'SELECT COUNT(*) as total FROM products';
-    let whereClauses = ['status = ?']; // Only show approved products to public
-    let filterParams = ['approved'];
+    // p.* plus the translated overrides (t_*); COALESCE falls back to the English base.
+    let query = `SELECT p.*,
+        COALESCE(pt.name, p.name) AS t_name,
+        COALESCE(pt.short_description, p.short_description) AS t_short_description,
+        COALESCE(pt.description, p.description) AS t_description
+      FROM products p
+      LEFT JOIN product_translations pt ON pt.product_id = p.id AND pt.locale = ?`;
+    let countQuery = 'SELECT COUNT(*) as total FROM products p';
+    let whereClauses = ['p.status = ?']; // Only show approved products to public
+    let filterParams = ['approved'];      // params for the WHERE (shared by list + count)
 
     // Category filter
     if (category) {
-      whereClauses.push('category_id = ?');
+      whereClauses.push('p.category_id = ?');
       filterParams.push(category);
     }
 
     // Price filters
     if (min_price) {
-      whereClauses.push('base_price >= ?');
+      whereClauses.push('p.base_price >= ?');
       filterParams.push(min_price);
     }
     if (max_price) {
-      whereClauses.push('base_price <= ?');
+      whereClauses.push('p.base_price <= ?');
       filterParams.push(max_price);
     }
 
@@ -50,13 +81,13 @@ router.get('/', PerformanceMiddleware.responseCache({
     if (materials.length > 0) {
       const placeholders = materials.map(() => '?').join(', ');
       // JSON_EXTRACT returns JSON string => unquote to compare to plain strings
-      whereClauses.push(`JSON_UNQUOTE(JSON_EXTRACT(product_details, '$.material')) IN (${placeholders})`);
+      whereClauses.push(`JSON_UNQUOTE(JSON_EXTRACT(p.product_details, '$.material')) IN (${placeholders})`);
       filterParams.push(...materials);
     }
 
     // Fulltext or LIKE search
     if (search) {
-      whereClauses.push('MATCH(name, description, short_description) AGAINST (? IN NATURAL LANGUAGE MODE)');
+      whereClauses.push('MATCH(p.name, p.description, p.short_description) AGAINST (? IN NATURAL LANGUAGE MODE)');
       filterParams.push(search);
     }
 
@@ -72,7 +103,8 @@ router.get('/', PerformanceMiddleware.responseCache({
 
     query += ` LIMIT ${limitNum} OFFSET ${offsetNum}`;
 
-    const listResult = await DatabaseUtil.executeQuery(query, filterParams);
+    // List query joins translations, so the locale param leads; count has no join.
+    const listResult = await DatabaseUtil.executeQuery(query, [locale, ...filterParams]);
     if (!listResult.success) throw new Error(listResult.error || 'Failed to fetch products');
     const rows = listResult.data;
 
@@ -80,11 +112,14 @@ router.get('/', PerformanceMiddleware.responseCache({
     if (!countResult.success) throw new Error(countResult.error || 'Failed to count products');
     const total = Number(countResult.data[0]?.total || 0);
 
-    // Map image alias for frontend compatibility
-    const products = (rows || []).map(p => ({
-      ...p,
-      image: p.image || p.thumbnail_small_url || p.thumbnail_medium_url || p.thumbnail_large_url || null,
-    }));
+    // Apply the locale translation overrides + map image alias for the frontend.
+    const products = (rows || []).map((row) => {
+      const p = applyTranslation(row);
+      return {
+        ...p,
+        image: p.image || p.thumbnail_small_url || p.thumbnail_medium_url || p.thumbnail_large_url || null,
+      };
+    });
 
     const keyValueTable = { products, total, page: pageNum, limit: limitNum };
     res.json(ResponseFormatter.success('Products fetched successfully', keyValueTable));
@@ -148,23 +183,31 @@ router.get('/by-ids', async (req, res) => {
 router.get('/:id', PerformanceMiddleware.responseCache({
   ttl: 600, // 10 minutes cache for individual products
   cacheType: 'products',
-  keyGenerator: (req) => `product_${req.params.id}`,
+  keyGenerator: (req) => `product_${resolveLocale(req)}_${req.params.id}`,
   skipCache: (req) => req.query.nocache === 'true'
 }), async (req, res) => {
   try {
     const { id: param } = req.params;
+    const locale = resolveLocale(req);
 
-    // Allow fetching by numeric/primary id OR by slug, but only approved products for public
+    // Allow fetching by primary id OR slug, but only approved products for public.
+    // COALESCE the localized name/descriptions over the English base.
     const productResult = await DatabaseUtil.executeQuery(
-      'SELECT * FROM products WHERE (id = ? OR slug = ?) AND status = ? LIMIT 1',
-      [param, param, 'approved']
+      `SELECT p.*,
+          COALESCE(pt.name, p.name) AS t_name,
+          COALESCE(pt.short_description, p.short_description) AS t_short_description,
+          COALESCE(pt.description, p.description) AS t_description
+        FROM products p
+        LEFT JOIN product_translations pt ON pt.product_id = p.id AND pt.locale = ?
+        WHERE (p.id = ? OR p.slug = ?) AND p.status = ? LIMIT 1`,
+      [locale, param, param, 'approved']
     );
     if (!productResult.success) throw new Error(productResult.error || 'Failed to fetch product');
     if (!productResult.data || productResult.data.length === 0) {
       return res.status(404).json(ResponseFormatter.failure('Product not found'));
     }
 
-    const product = productResult.data[0];
+    const product = applyTranslation(productResult.data[0]);
     const productId = product.id;
 
     const variantsResult = await DatabaseUtil.executeQuery('SELECT * FROM product_variants WHERE product_id = ?', [productId]);

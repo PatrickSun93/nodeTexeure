@@ -2,9 +2,11 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { adminProducts, getErrorMessage } from '../../../../lib/api';
 
 export default function ProductApprovalPage() {
+  const t = useTranslations('ProductApproval');
   const router = useRouter();
   const params = useParams();
   const productId = params.id;
@@ -36,7 +38,7 @@ export default function ProductApprovalPage() {
       if (response.status === 'SUCCESS') {
         setProduct(response.keyValueTable);
       } else {
-        throw new Error(response.message || 'Failed to fetch product');
+        throw new Error(response.message || t('fetchError'));
       }
     } catch (err) {
       setError(getErrorMessage(err));
@@ -49,7 +51,7 @@ export default function ProductApprovalPage() {
   // Handle approval action
   const handleApprovalAction = async () => {
     if (!approvalAction) {
-      setError('Please select an approval action');
+      setError(t('selectActionError'));
       return;
     }
 
@@ -60,7 +62,7 @@ export default function ProductApprovalPage() {
 
       await adminProducts.updateProductStatus(productId, approvalAction, approvalNotes);
       
-      setSuccess(`Product ${approvalAction} successfully!`);
+      setSuccess(t('updateSuccess', { action: approvalAction }));
       setApprovalAction('');
       setApprovalNotes('');
       
@@ -129,12 +131,18 @@ export default function ProductApprovalPage() {
     return colors[status] || 'bg-gray-100 text-gray-800';
   };
 
+  // Get a translated status label, falling back to the raw enum for unknown values
+  const getStatusLabel = (status) => {
+    if (!status) return '';
+    return t.has(`status.${status}`) ? t(`status.${status}`) : status.replace('_', ' ');
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading product...</p>
+          <p className="mt-4 text-gray-600">{t('loadingProduct')}</p>
         </div>
       </div>
     );
@@ -144,12 +152,12 @@ export default function ProductApprovalPage() {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <p className="text-gray-600">Product not found</p>
+          <p className="text-gray-600">{t('productNotFound')}</p>
           <button
             onClick={() => router.push('/products')}
             className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
           >
-            Back to Products
+            {t('backToProducts')}
           </button>
         </div>
       </div>
@@ -169,10 +177,10 @@ export default function ProductApprovalPage() {
                 onClick={() => router.back()}
                 className="text-gray-600 hover:text-gray-900"
               >
-                ← Back
+                ← {t('back')}
               </button>
               <h1 className="text-xl font-semibold text-gray-900">
-                Product Approval
+                {t('pageTitle')}
               </h1>
             </div>
             <nav className="flex items-center space-x-4">
@@ -180,13 +188,13 @@ export default function ProductApprovalPage() {
                 href="/"
                 className="text-sm text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md hover:bg-gray-100"
               >
-                Dashboard
+                {t('navDashboard')}
               </a>
               <a 
                 href="/products"
                 className="text-sm text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md hover:bg-gray-100"
               >
-                Products
+                {t('navProducts')}
               </a>
             </nav>
           </div>
@@ -212,22 +220,22 @@ export default function ProductApprovalPage() {
           <div className="lg:col-span-2 space-y-6">
             {/* Product Overview */}
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Product Overview</h2>
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">{t('productOverview')}</h2>
               
               <div className="flex items-start space-x-4">
                 <div className="flex-shrink-0">
                   <div className="w-24 h-24 bg-gray-200 rounded-lg flex items-center justify-center">
-                    <span className="text-gray-500 text-sm">No Image</span>
+                    <span className="text-gray-500 text-sm">{t('noImage')}</span>
                   </div>
                 </div>
                 
                 <div className="flex-1">
                   <h3 className="text-xl font-semibold text-gray-900">{product.name}</h3>
-                  <p className="text-gray-600 mt-1">SKU: {product.sku}</p>
-                  <p className="text-gray-600">Price: ${product.base_price}</p>
+                  <p className="text-gray-600 mt-1">{t('skuLabel')} {product.sku}</p>
+                  <p className="text-gray-600">{t('priceLabel')} ${product.base_price}</p>
                   <div className="mt-2">
                     <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusBadgeColor(product.status)}`}>
-                      {product.status.replace('_', ' ')}
+                      {getStatusLabel(product.status)}
                     </span>
                   </div>
                 </div>
@@ -235,34 +243,34 @@ export default function ProductApprovalPage() {
 
               {product.short_description && (
                 <div className="mt-4">
-                  <h4 className="text-sm font-medium text-gray-900 mb-2">Description</h4>
+                  <h4 className="text-sm font-medium text-gray-900 mb-2">{t('descriptionLabel')}</h4>
                   <p className="text-gray-700">{product.short_description}</p>
                 </div>
               )}
 
               <div className="mt-4 grid grid-cols-2 gap-4 text-sm">
                 <div>
-                  <span className="text-gray-600">Created:</span>
+                  <span className="text-gray-600">{t('createdLabel')}</span>
                   <span className="ml-2">{formatDate(product.created_at)}</span>
                 </div>
                 <div>
-                  <span className="text-gray-600">Updated:</span>
+                  <span className="text-gray-600">{t('updatedLabel')}</span>
                   <span className="ml-2">{formatDate(product.updated_at)}</span>
                 </div>
                 <div>
-                  <span className="text-gray-600">Creator:</span>
+                  <span className="text-gray-600">{t('creatorLabel')}</span>
                   <span className="ml-2">{product.creator_first_name} {product.creator_last_name}</span>
                 </div>
                 <div>
-                  <span className="text-gray-600">Category:</span>
-                  <span className="ml-2">{product.category_name || 'N/A'}</span>
+                  <span className="text-gray-600">{t('categoryLabel')}</span>
+                  <span className="ml-2">{product.category_name || t('notAvailable')}</span>
                 </div>
               </div>
             </div>
 
             {/* Approval History */}
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Approval History</h2>
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">{t('approvalHistory')}</h2>
               
               {approvalHistory.length > 0 ? (
                 <div className="space-y-4">
@@ -271,10 +279,10 @@ export default function ProductApprovalPage() {
                       <div className="flex items-center justify-between">
                         <div>
                           <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusBadgeColor(entry.status)}`}>
-                            {entry.status.replace('_', ' ')}
+                            {getStatusLabel(entry.status)}
                           </span>
                           <span className="ml-2 text-sm text-gray-600">
-                            by {entry.user_name || 'Unknown'}
+                            {t('byUser', { user: entry.user_name || t('unknown') })}
                           </span>
                         </div>
                         <span className="text-sm text-gray-500">
@@ -289,7 +297,7 @@ export default function ProductApprovalPage() {
                 </div>
               ) : (
                 <div className="text-center py-8 text-gray-500">
-                  No approval history available
+                  {t('noApprovalHistory')}
                 </div>
               )}
             </div>
@@ -297,19 +305,19 @@ export default function ProductApprovalPage() {
             {/* Current Status */}
             {currentApproval && (
               <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                <h2 className="text-lg font-semibold text-gray-900 mb-4">Current Status</h2>
+                <h2 className="text-lg font-semibold text-gray-900 mb-4">{t('currentStatus')}</h2>
                 
                 <div className="bg-gray-50 rounded-lg p-4">
                   <div className="flex items-center justify-between mb-2">
                     <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusBadgeColor(currentApproval.status)}`}>
-                      {currentApproval.status.replace('_', ' ')}
+                      {getStatusLabel(currentApproval.status)}
                     </span>
                     <span className="text-sm text-gray-500">
                       {formatDate(currentApproval.approved_at)}
                     </span>
                   </div>
                   <p className="text-sm text-gray-600">
-                    Last updated by {currentApproval.user_name || 'Unknown'}
+                    {t('lastUpdatedBy', { user: currentApproval.user_name || t('unknown') })}
                   </p>
                   {currentApproval.notes && (
                     <p className="mt-2 text-sm text-gray-700">{currentApproval.notes}</p>
@@ -323,57 +331,57 @@ export default function ProductApprovalPage() {
           <div className="space-y-6">
             {/* Quick Actions */}
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h2>
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">{t('quickActions')}</h2>
               
               <div className="space-y-3">
                 <button
                   onClick={() => router.push(`/products/${productId}/edit`)}
                   className="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
-                  Edit Product
+                  {t('editProduct')}
                 </button>
 
                 <button
                   onClick={() => window.open(`/products/${productId}`, '_blank')}
                   className="w-full px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500"
                 >
-                  Preview Product
+                  {t('previewProduct')}
                 </button>
               </div>
             </div>
 
             {/* Approval Form */}
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Update Status</h2>
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">{t('updateStatus')}</h2>
               
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Action
+                    {t('actionLabel')}
                   </label>
                   <select
                     value={approvalAction}
                     onChange={(e) => setApprovalAction(e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
-                    <option value="">Select Action</option>
-                    <option value="approved">Approve</option>
-                    <option value="rejected">Reject</option>
-                    <option value="pending_approval">Request Changes</option>
-                    <option value="discontinued">Discontinue</option>
+                    <option value="">{t('selectAction')}</option>
+                    <option value="approved">{t('actionApprove')}</option>
+                    <option value="rejected">{t('actionReject')}</option>
+                    <option value="pending_approval">{t('actionRequestChanges')}</option>
+                    <option value="discontinued">{t('actionDiscontinue')}</option>
                   </select>
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Notes
+                    {t('notesLabel')}
                   </label>
                   <textarea
                     value={approvalNotes}
                     onChange={(e) => setApprovalNotes(e.target.value)}
                     rows={4}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="Add notes about this status change..."
+                    placeholder={t('notesPlaceholder')}
                   />
                 </div>
 
@@ -382,26 +390,26 @@ export default function ProductApprovalPage() {
                   disabled={!approvalAction || processing}
                   className="w-full px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {processing ? 'Processing...' : 'Update Status'}
+                  {processing ? t('processing') : t('updateStatus')}
                 </button>
               </div>
             </div>
 
             {/* Product Stats */}
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Product Stats</h2>
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">{t('productStats')}</h2>
               
               <div className="space-y-3 text-sm">
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Variants:</span>
+                  <span className="text-gray-600">{t('variantsLabel')}</span>
                   <span>{product.variant_count || 0}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Images:</span>
+                  <span className="text-gray-600">{t('imagesLabel')}</span>
                   <span>{product.image_count || 0}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Inventory Items:</span>
+                  <span className="text-gray-600">{t('inventoryItemsLabel')}</span>
                   <span>{product.inventory_count || 0}</span>
                 </div>
               </div>

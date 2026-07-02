@@ -2,104 +2,78 @@
 
 import { useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAdmin } from '@/contexts/AdminContext';
+import LanguageSwitcher from './LanguageSwitcher';
 
-// Navigation items configuration
+// Navigation items configuration. Labels/descriptions are keyed into the AdminNav
+// message namespace (items.* / desc.*) so the sidebar localizes.
 const navigationItems = [
+  { key: 'dashboard', href: '/', icon: '📊', hasDesc: true },
   {
-    name: 'Dashboard',
-    href: '/',
-    icon: '📊',
-    description: 'Overview and analytics'
-  },
-  {
-    name: 'Products',
-    href: '/products',
-    icon: '📦',
-    description: 'Product management',
+    key: 'products', href: '/products', icon: '📦', hasDesc: true,
     children: [
-      { name: 'All Products', href: '/products' },
-      { name: 'Product Approval', href: '/products/approval' },
-      { name: 'Add Product', href: '/products/new' }
+      { key: 'allProducts', href: '/products' },
+      { key: 'productApproval', href: '/products/approval' },
+      { key: 'addProduct', href: '/products/new' }
     ]
   },
   {
-    name: 'Orders',
-    href: '/orders',
-    icon: '🛒',
-    description: 'Order management',
+    key: 'orders', href: '/orders', icon: '🛒', hasDesc: true,
     children: [
-      { name: 'All Orders', href: '/orders' },
-      { name: 'Order Details', href: '/orders/details' }
+      { key: 'allOrders', href: '/orders' },
+      { key: 'orderDetails', href: '/orders/details' }
     ]
   },
   {
-    name: 'Customers',
-    href: '/customers',
-    icon: '👥',
-    description: 'Customer management',
+    key: 'customers', href: '/customers', icon: '👥', hasDesc: true,
     children: [
-      { name: 'All Customers', href: '/customers' },
-      { name: 'Customer Support', href: '/customers/support' }
+      { key: 'allCustomers', href: '/customers' },
+      { key: 'customerSupport', href: '/customers/support' }
     ]
   },
   {
-    name: 'Inventory',
-    href: '/inventory',
-    icon: '📋',
-    description: 'Stock management',
+    key: 'inventory', href: '/inventory', icon: '📋', hasDesc: true,
     children: [
-      { name: 'Stock Management', href: '/inventory/stock-management' },
-      { name: 'Purchase Orders', href: '/inventory/purchase-orders' },
-      { name: 'Suppliers', href: '/inventory/suppliers' }
+      { key: 'stockManagement', href: '/inventory/stock-management' },
+      { key: 'purchaseOrders', href: '/inventory/purchase-orders' },
+      { key: 'suppliers', href: '/inventory/suppliers' }
     ]
   },
   {
-    name: 'Reports',
-    href: '/reports',
-    icon: '📈',
-    description: 'Analytics and reports',
+    key: 'reports', href: '/reports', icon: '📈', hasDesc: true,
     children: [
-      { name: 'Financial Reports', href: '/reports' },
-      { name: 'Payment Analytics', href: '/reports/payment-analytics' },
-      { name: 'Tax Analytics', href: '/reports/tax-analytics' },
-      { name: 'Scheduled Reports', href: '/reports/scheduled' }
+      { key: 'financialReports', href: '/reports' },
+      { key: 'paymentAnalytics', href: '/reports/payment-analytics' },
+      { key: 'taxAnalytics', href: '/reports/tax-analytics' },
+      { key: 'scheduledReports', href: '/reports/scheduled' }
     ]
   },
   {
-    name: 'Content',
-    href: '/content',
-    icon: '📝',
-    description: 'Content management',
+    key: 'content', href: '/content', icon: '📝', hasDesc: true,
     children: [
-      { name: 'Pages', href: '/content/pages' },
-      { name: 'Media Library', href: '/content/media' },
-      { name: 'Menus', href: '/content/menus' },
-      { name: 'Banners', href: '/content/banners' },
-      { name: 'SEO Settings', href: '/content/seo' }
+      { key: 'pages', href: '/content/pages' },
+      { key: 'mediaLibrary', href: '/content/media' },
+      { key: 'menus', href: '/content/menus' },
+      { key: 'banners', href: '/content/banners' },
+      { key: 'seoSettings', href: '/content/seo' }
     ]
   },
   {
-    name: 'Settings',
-    href: '/settings',
-    icon: '⚙️',
-    description: 'System configuration',
+    key: 'settingsNav', href: '/settings', icon: '⚙️', hasDesc: true,
     children: [
-      { name: 'General Settings', href: '/settings' },
-      { name: 'Email Templates', href: '/email-templates' },
-      { name: 'User Management', href: '/users' }
+      { key: 'generalSettings', href: '/settings' },
+      { key: 'emailTemplates', href: '/email-templates' },
+      { key: 'userManagement', href: '/users' }
     ]
   },
   {
-    name: 'Security',
-    href: '/security',
-    icon: '🔒',
-    description: 'Security and audit',
+    key: 'security', href: '/security', icon: '🔒', hasDesc: true,
     children: [
-      { name: 'Security Overview', href: '/security' },
-      { name: 'Audit Logs', href: '/security/audit' },
-      { name: 'Backup Management', href: '/security/backup' }
+      { key: 'securityOverview', href: '/security' },
+      { key: 'auditLogs', href: '/security/audit' },
+      { key: 'backupManagement', href: '/security/backup' }
     ]
   }
 ];
@@ -107,6 +81,7 @@ const navigationItems = [
 // Navigation Item Component
 function NavigationItem({ item, isActive, isExpanded, onToggle, level = 0, alertCount = 0 }) {
   const router = useRouter();
+  const t = useTranslations('AdminNav');
   const hasChildren = item.children && item.children.length > 0;
 
   const handleClick = (e) => {
@@ -132,12 +107,12 @@ function NavigationItem({ item, isActive, isExpanded, onToggle, level = 0, alert
       <button
         onClick={handleClick}
         className={itemClasses}
-        title={item.description}
+        title={item.hasDesc ? t(`desc.${item.key}`) : undefined}
       >
         {level === 0 && (
           <span className="mr-3 text-base">{item.icon}</span>
         )}
-        <span className="flex-1 text-left">{item.name}</span>
+        <span className="flex-1 text-left">{t(`items.${item.key}`)}</span>
         
         {/* Alert Badge */}
         {alertCount > 0 && (
@@ -181,6 +156,7 @@ export default function Navigation({ isCollapsed, onToggleCollapse }) {
     notifications 
   } = useAdmin();
   const router = useRouter();
+  const t = useTranslations('AdminNav');
   const [expandedItems, setExpandedItems] = useState(new Set());
 
   const toggleExpanded = (itemName) => {
@@ -196,10 +172,10 @@ export default function Navigation({ isCollapsed, onToggleCollapse }) {
   const handleLogout = async () => {
     try {
       await logout();
-      showSuccess('Logged out successfully');
+      showSuccess(t('logoutSuccess'));
       router.push('/login?logout=true');
     } catch (error) {
-      showError('Failed to logout properly');
+      showError(t('logoutFailed'));
       // Force logout anyway
       router.push('/login?logout=true');
     }
@@ -221,13 +197,13 @@ export default function Navigation({ isCollapsed, onToggleCollapse }) {
       <div className="flex items-center justify-between p-4 border-b border-gray-200">
         {!isCollapsed && (
           <div className="flex items-center">
-            <h1 className="text-lg font-semibold text-gray-900">Admin Panel</h1>
+            <h1 className="text-lg font-semibold text-gray-900">{t('adminPanel')}</h1>
           </div>
         )}
         <button
           onClick={onToggleCollapse}
           className="p-1 rounded-md hover:bg-gray-100 transition-colors"
-          title={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          title={isCollapsed ? t('expandSidebar') : t('collapseSidebar')}
         >
           <span className="text-gray-500">
             {isCollapsed ? '▶' : '◀'}
@@ -246,8 +222,11 @@ export default function Navigation({ isCollapsed, onToggleCollapse }) {
               <p className="text-sm font-medium text-gray-900">
                 {user?.firstName} {user?.lastName}
               </p>
-              <p className="text-xs text-gray-500">{user?.role || 'Admin'}</p>
+              <p className="text-xs text-gray-500">{user?.role || t('roleAdmin')}</p>
             </div>
+          </div>
+          <div className="mt-3 flex justify-end">
+            <LanguageSwitcher />
           </div>
         </div>
       )}
@@ -257,17 +236,17 @@ export default function Navigation({ isCollapsed, onToggleCollapse }) {
         {navigationItems.map((item) => {
           // Calculate alert counts for specific sections
           let alertCount = 0;
-          if (item.name === 'Inventory' && inventoryAlerts) {
+          if (item.key === 'inventory' && inventoryAlerts) {
             alertCount = inventoryAlerts.length;
           }
-          
+
           return (
             <NavigationItem
-              key={item.name}
+              key={item.key}
               item={item}
               isActive={isItemActive(item)}
-              isExpanded={expandedItems.has(item.name)}
-              onToggle={() => toggleExpanded(item.name)}
+              isExpanded={expandedItems.has(item.key)}
+              onToggle={() => toggleExpanded(item.key)}
               alertCount={alertCount}
             />
           );
@@ -283,14 +262,14 @@ export default function Navigation({ isCollapsed, onToggleCollapse }) {
               className="flex items-center w-full px-3 py-2 text-sm text-gray-700 rounded-md hover:bg-gray-100 transition-colors"
             >
               <span className="mr-3">⚙️</span>
-              Settings
+              {t('settings')}
             </button>
             <button
               onClick={handleLogout}
               className="flex items-center w-full px-3 py-2 text-sm text-red-600 rounded-md hover:bg-red-50 transition-colors"
             >
               <span className="mr-3">🚪</span>
-              Logout
+              {t('logout')}
             </button>
           </div>
         ) : (
@@ -298,14 +277,14 @@ export default function Navigation({ isCollapsed, onToggleCollapse }) {
             <button
               onClick={() => router.push('/settings')}
               className="w-full p-2 text-gray-700 rounded-md hover:bg-gray-100 transition-colors"
-              title="Settings"
+              title={t('settings')}
             >
               ⚙️
             </button>
             <button
               onClick={handleLogout}
               className="w-full p-2 text-red-600 rounded-md hover:bg-red-50 transition-colors"
-              title="Logout"
+              title={t('logout')}
             >
               🚪
             </button>

@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
+import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { LineChart, BarChart } from '@/components/charts';
@@ -34,6 +35,7 @@ const auditAPI = {
 
 // Filter Component
 function AuditFilters({ filters, onFiltersChange, onSearch, isLoading }) {
+  const t = useTranslations('SecurityAudit');
   const [localFilters, setLocalFilters] = useState(filters);
 
   const handleFilterChange = (key, value) => {
@@ -48,86 +50,86 @@ function AuditFilters({ filters, onFiltersChange, onSearch, isLoading }) {
 
   return (
     <div className="admin-card mb-6">
-      <h3 className="text-lg font-semibold mb-4">Audit Trail Filters</h3>
+      <h3 className="text-lg font-semibold mb-4">{t('auditTrailFilters')}</h3>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Time Range</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">{t('timeRange')}</label>
           <select
             value={localFilters.timeRange}
             onChange={(e) => handleFilterChange('timeRange', e.target.value)}
             className="w-full text-sm border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
-            <option value="1h">Last Hour</option>
-            <option value="24h">Last 24 Hours</option>
-            <option value="7d">Last 7 Days</option>
-            <option value="30d">Last 30 Days</option>
+            <option value="1h">{t('lastHour')}</option>
+            <option value="24h">{t('last24Hours')}</option>
+            <option value="7d">{t('last7Days')}</option>
+            <option value="30d">{t('last30Days')}</option>
           </select>
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Operation Type</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">{t('operationType')}</label>
           <select
             value={localFilters.operationType}
             onChange={(e) => handleFilterChange('operationType', e.target.value)}
             className="w-full text-sm border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
-            <option value="all">All Operations</option>
-            <option value="USER_LOGIN">User Login</option>
-            <option value="AUTH_FAILURE">Auth Failure</option>
-            <option value="ADMIN_ACTION">Admin Action</option>
-            <option value="PAYMENT_CONFIRM">Payment Confirm</option>
-            <option value="SECURITY_VIOLATION">Security Violation</option>
+            <option value="all">{t('allOperations')}</option>
+            <option value="USER_LOGIN">{t('userLogin')}</option>
+            <option value="AUTH_FAILURE">{t('authFailure')}</option>
+            <option value="ADMIN_ACTION">{t('adminAction')}</option>
+            <option value="PAYMENT_CONFIRM">{t('paymentConfirm')}</option>
+            <option value="SECURITY_VIOLATION">{t('securityViolation')}</option>
           </select>
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Severity</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">{t('severity')}</label>
           <select
             value={localFilters.severity}
             onChange={(e) => handleFilterChange('severity', e.target.value)}
             className="w-full text-sm border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
-            <option value="all">All Severities</option>
-            <option value="low">Low</option>
-            <option value="medium">Medium</option>
-            <option value="high">High</option>
-            <option value="critical">Critical</option>
+            <option value="all">{t('allSeverities')}</option>
+            <option value="low">{t('low')}</option>
+            <option value="medium">{t('medium')}</option>
+            <option value="high">{t('high')}</option>
+            <option value="critical">{t('critical')}</option>
           </select>
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Success Status</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">{t('successStatus')}</label>
           <select
             value={localFilters.success}
             onChange={(e) => handleFilterChange('success', e.target.value)}
             className="w-full text-sm border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
-            <option value="all">All</option>
-            <option value="true">Success</option>
-            <option value="false">Failed</option>
+            <option value="all">{t('all')}</option>
+            <option value="true">{t('success')}</option>
+            <option value="false">{t('failed')}</option>
           </select>
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">User ID</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">{t('userId')}</label>
           <input
             type="text"
             value={localFilters.userId}
             onChange={(e) => handleFilterChange('userId', e.target.value)}
-            placeholder="Filter by user ID..."
+            placeholder={t('filterByUserId')}
             className="w-full text-sm border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">IP Address</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">{t('ipAddress')}</label>
           <input
             type="text"
             value={localFilters.ipAddress}
             onChange={(e) => handleFilterChange('ipAddress', e.target.value)}
-            placeholder="Filter by IP address..."
+            placeholder={t('filterByIpAddress')}
             className="w-full text-sm border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
@@ -139,7 +141,7 @@ function AuditFilters({ filters, onFiltersChange, onSearch, isLoading }) {
           disabled={isLoading}
           className="admin-button admin-button-primary"
         >
-          {isLoading ? 'Searching...' : 'Apply Filters'}
+          {isLoading ? t('searching') : t('applyFilters')}
         </button>
         <button
           onClick={() => {
@@ -157,7 +159,7 @@ function AuditFilters({ filters, onFiltersChange, onSearch, isLoading }) {
           }}
           className="admin-button admin-button-secondary"
         >
-          Reset Filters
+          {t('resetFilters')}
         </button>
       </div>
     </div>
@@ -166,6 +168,7 @@ function AuditFilters({ filters, onFiltersChange, onSearch, isLoading }) {
 
 // Audit Trail Table Component
 function AuditTrailTable({ auditTrail, isLoading, pagination, onPageChange }) {
+  const t = useTranslations('SecurityAudit');
   if (isLoading) {
     return (
       <div className="animate-pulse space-y-3">
@@ -194,9 +197,9 @@ function AuditTrailTable({ auditTrail, isLoading, pagination, onPageChange }) {
   return (
     <div className="admin-card">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold">Audit Trail</h3>
+        <h3 className="text-lg font-semibold">{t('auditTrail')}</h3>
         <div className="text-sm text-gray-600">
-          Showing {auditTrail?.length || 0} of {pagination?.totalCount || 0} events
+          {t('showingEvents', { shown: auditTrail?.length || 0, total: pagination?.totalCount || 0 })}
         </div>
       </div>
 
@@ -205,25 +208,25 @@ function AuditTrailTable({ auditTrail, isLoading, pagination, onPageChange }) {
           <thead className="bg-gray-50">
             <tr>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Timestamp
+                {t('timestamp')}
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Operation
+                {t('operation')}
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                User
+                {t('user')}
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                IP Address
+                {t('ipAddress')}
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Severity
+                {t('severity')}
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Status
+                {t('status')}
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Resource
+                {t('resource')}
               </th>
             </tr>
           </thead>
@@ -238,7 +241,7 @@ function AuditTrailTable({ auditTrail, isLoading, pagination, onPageChange }) {
                     {event.operationType || event.action}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {event.userId || 'System'}
+                    {event.userId || t('system')}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                     {event.ipAddress || 'N/A'}
@@ -254,7 +257,7 @@ function AuditTrailTable({ auditTrail, isLoading, pagination, onPageChange }) {
                         ? 'bg-green-100 text-green-800' 
                         : 'bg-red-100 text-red-800'
                     }`}>
-                      {event.details?.response?.success !== false ? 'Success' : 'Failed'}
+                      {event.details?.response?.success !== false ? t('success') : t('failed')}
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
@@ -268,7 +271,7 @@ function AuditTrailTable({ auditTrail, isLoading, pagination, onPageChange }) {
             ) : (
               <tr>
                 <td colSpan="7" className="px-6 py-4 text-center text-sm text-gray-500">
-                  No audit events found
+                  {t('noAuditEventsFound')}
                 </td>
               </tr>
             )}
@@ -280,7 +283,7 @@ function AuditTrailTable({ auditTrail, isLoading, pagination, onPageChange }) {
       {pagination && pagination.totalPages > 1 && (
         <div className="flex items-center justify-between mt-4">
           <div className="text-sm text-gray-600">
-            Page {pagination.currentPage} of {pagination.totalPages}
+            {t('pageOf', { current: pagination.currentPage, total: pagination.totalPages })}
           </div>
           <div className="flex space-x-2">
             <button
@@ -288,14 +291,14 @@ function AuditTrailTable({ auditTrail, isLoading, pagination, onPageChange }) {
               disabled={!pagination.hasPrev}
               className="admin-button admin-button-secondary text-sm disabled:opacity-50"
             >
-              Previous
+              {t('previous')}
             </button>
             <button
               onClick={() => onPageChange(pagination.currentPage + 1)}
               disabled={!pagination.hasNext}
               className="admin-button admin-button-secondary text-sm disabled:opacity-50"
             >
-              Next
+              {t('next')}
             </button>
           </div>
         </div>
@@ -305,6 +308,7 @@ function AuditTrailTable({ auditTrail, isLoading, pagination, onPageChange }) {
 }
 
 export default function AuditTrailPage() {
+  const t = useTranslations('SecurityAudit');
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   const router = useRouter();
   
@@ -345,15 +349,15 @@ export default function AuditTrailPage() {
         setPagination(response.data.pagination);
         setSummary(response.data.summary);
       } else {
-        throw new Error(response.message || 'Failed to fetch audit trail');
+        throw new Error(response.message || t('failedToFetchAuditTrail'));
       }
     } catch (err) {
       console.error('Audit trail fetch error:', err);
-      setError(err.message || 'Failed to fetch audit trail');
+      setError(err.message || t('failedToFetchAuditTrail'));
     } finally {
       setIsLoading(false);
     }
-  }, [filters]);
+  }, [filters, t]);
 
   // Initial data fetch
   useEffect(() => {
@@ -397,7 +401,7 @@ export default function AuditTrailPage() {
       window.URL.revokeObjectURL(url);
     } catch (err) {
       console.error('Export error:', err);
-      setError('Failed to export audit trail');
+      setError(t('failedToExport'));
     }
   };
 
@@ -405,7 +409,7 @@ export default function AuditTrailPage() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="admin-spinner"></div>
-        <span className="ml-2">Loading...</span>
+        <span className="ml-2">{t('loading')}</span>
       </div>
     );
   }
@@ -424,10 +428,10 @@ export default function AuditTrailPage() {
                 onClick={() => router.push('/security')}
                 className="text-gray-600 hover:text-gray-900"
               >
-                ← Back to Security
+                ← {t('backToSecurity')}
               </button>
               <h1 className="text-xl font-semibold text-gray-900">
-                Audit Trail
+                {t('auditTrail')}
               </h1>
             </div>
             <div className="flex items-center space-x-4">
@@ -435,14 +439,14 @@ export default function AuditTrailPage() {
                 onClick={handleExportCSV}
                 className="admin-button admin-button-secondary text-sm"
               >
-                Export CSV
+                {t('exportCsv')}
               </button>
               <button
                 onClick={() => fetchAuditTrail()}
                 disabled={isLoading}
                 className="admin-button admin-button-primary text-sm"
               >
-                {isLoading ? 'Refreshing...' : 'Refresh'}
+                {isLoading ? t('refreshing') : t('refresh')}
               </button>
             </div>
           </div>
@@ -461,15 +465,15 @@ export default function AuditTrailPage() {
         {summary && (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
             <div className="admin-card">
-              <h3 className="text-sm font-medium text-gray-500 mb-2">Total Events</h3>
+              <h3 className="text-sm font-medium text-gray-500 mb-2">{t('totalEvents')}</h3>
               <p className="text-2xl font-bold text-gray-900">{summary.totalEvents}</p>
             </div>
             <div className="admin-card">
-              <h3 className="text-sm font-medium text-gray-500 mb-2">Critical Events</h3>
+              <h3 className="text-sm font-medium text-gray-500 mb-2">{t('criticalEvents')}</h3>
               <p className="text-2xl font-bold text-red-600">{summary.criticalEvents}</p>
             </div>
             <div className="admin-card">
-              <h3 className="text-sm font-medium text-gray-500 mb-2">Failed Operations</h3>
+              <h3 className="text-sm font-medium text-gray-500 mb-2">{t('failedOperations')}</h3>
               <p className="text-2xl font-bold text-orange-600">{summary.failedOperations}</p>
             </div>
           </div>

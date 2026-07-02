@@ -1,8 +1,10 @@
 'use client';
 
 import ReactECharts from 'echarts-for-react';
+import { useTranslations } from 'next-intl';
 
 export default function SalesDistributionChart({ data = [] }) {
+    const t = useTranslations('Charts');
     const option = {
         tooltip: {
             trigger: 'item',
@@ -15,7 +17,7 @@ export default function SalesDistributionChart({ data = [] }) {
         },
         series: [
             {
-                name: 'Sales',
+                name: t('sales'),
                 type: 'pie',
                 radius: ['40%', '70%'],
                 avoidLabelOverlap: false,
@@ -39,8 +41,8 @@ export default function SalesDistributionChart({ data = [] }) {
                     show: false
                 },
                 data: data.length > 0 ? data : [
-                    { value: 450, name: 'Site Visitors', itemStyle: { color: '#D2B48C' } },
-                    { value: 300, name: 'Customer Brands', itemStyle: { color: '#A8D08D' } }
+                    { value: 450, name: t('siteVisitors'), itemStyle: { color: '#D2B48C' } },
+                    { value: 300, name: t('customerBrands'), itemStyle: { color: '#A8D08D' } }
                 ]
             }
         ]
@@ -48,7 +50,7 @@ export default function SalesDistributionChart({ data = [] }) {
 
     return (
         <div className="bg-white rounded-lg shadow p-6">
-            <h3 className="text-lg font-semibold mb-4">Sales Distribution</h3>
+            <h3 className="text-lg font-semibold mb-4">{t('salesDistribution')}</h3>
             <ReactECharts option={option} style={{ height: '300px' }} />
         </div>
     );

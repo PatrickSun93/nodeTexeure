@@ -1,3 +1,5 @@
+import { NextIntlClientProvider } from 'next-intl';
+import { getLocale, getMessages } from 'next-intl/server';
 import Providers from '../components/Providers';
 import { Jost, Cormorant_Garamond, EB_Garamond } from "next/font/google";
 import "./globals.css";
@@ -37,18 +39,24 @@ export const metadata = {
 // Applies the saved theme before first paint so there's no light->dark flash.
 const themeInitScript = `try{var t=localStorage.getItem('noirae-theme');if(t==='dark'||t==='light'){document.documentElement.setAttribute('data-theme',t);}}catch(e){}`;
 
-export default function RootLayout({ children }) {
+export default async function RootLayout({ children }) {
+  // Locale + messages come from src/i18n/request.js (cookie-based).
+  const locale = await getLocale();
+  const messages = await getMessages();
+
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang={locale} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
       </head>
       <body
         className={`${jost.variable} ${cormorantGaramond.variable} ${ebGaramond.variable} antialiased`}
       >
-        <Providers>
-          {children}
-        </Providers>
+        <NextIntlClientProvider locale={locale} messages={messages}>
+          <Providers>
+            {children}
+          </Providers>
+        </NextIntlClientProvider>
       </body>
     </html>
   );

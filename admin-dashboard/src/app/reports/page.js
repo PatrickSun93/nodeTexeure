@@ -1,11 +1,13 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useTranslations } from 'next-intl';
 import { LineChart, BarChart, PieChart, GaugeChart } from '../../components/charts';
 import ExportButton from '../../components/ExportButton';
 import api from '../../lib/api';
 
 export default function FinancialReportsPage() {
+  const t = useTranslations('Reports');
   const [loading, setLoading] = useState(true);
   const [period, setPeriod] = useState('month');
   const [customDateRange, setCustomDateRange] = useState({
@@ -89,8 +91,8 @@ export default function FinancialReportsPage() {
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Financial Reports</h1>
-          <p className="text-gray-600 mt-1">Comprehensive financial analytics and reporting</p>
+          <h1 className="text-3xl font-bold text-gray-900">{t('title')}</h1>
+          <p className="text-gray-600 mt-1">{t('subtitle')}</p>
         </div>
         
         {/* Controls */}
@@ -100,12 +102,12 @@ export default function FinancialReportsPage() {
             onChange={(e) => handlePeriodChange(e.target.value)}
             className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           >
-            <option value="today">Today</option>
-            <option value="week">This Week</option>
-            <option value="month">This Month</option>
-            <option value="quarter">This Quarter</option>
-            <option value="year">This Year</option>
-            <option value="custom">Custom Range</option>
+            <option value="today">{t('periodToday')}</option>
+            <option value="week">{t('periodWeek')}</option>
+            <option value="month">{t('periodMonth')}</option>
+            <option value="quarter">{t('periodQuarter')}</option>
+            <option value="year">{t('periodYear')}</option>
+            <option value="custom">{t('periodCustom')}</option>
           </select>
           
           <ExportButton
@@ -120,7 +122,7 @@ export default function FinancialReportsPage() {
             }}
             variant="secondary"
           >
-            Export Report
+            {t('exportReport')}
           </ExportButton>
           
           {period === 'custom' && (
@@ -131,7 +133,7 @@ export default function FinancialReportsPage() {
                 onChange={(e) => setCustomDateRange(prev => ({ ...prev, startDate: e.target.value }))}
                 className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
-              <span className="text-gray-500">to</span>
+              <span className="text-gray-500">{t('to')}</span>
               <input
                 type="date"
                 value={customDateRange.endDate}
@@ -149,7 +151,7 @@ export default function FinancialReportsPage() {
           <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Gross Revenue</p>
+                <p className="text-sm font-medium text-gray-600">{t('grossRevenue')}</p>
                 <p className="text-2xl font-bold text-gray-900">{formatCurrency(financialOverview.revenue.gross)}</p>
               </div>
               <div className="text-right">
@@ -165,7 +167,7 @@ export default function FinancialReportsPage() {
           <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Net Revenue</p>
+                <p className="text-sm font-medium text-gray-600">{t('netRevenue')}</p>
                 <p className="text-2xl font-bold text-gray-900">{formatCurrency(financialOverview.revenue.net)}</p>
               </div>
               <div className="text-right">
@@ -181,7 +183,7 @@ export default function FinancialReportsPage() {
           <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Total Orders</p>
+                <p className="text-sm font-medium text-gray-600">{t('totalOrders')}</p>
                 <p className="text-2xl font-bold text-gray-900">{financialOverview.orders.total.toLocaleString()}</p>
               </div>
               <div className="text-right">
@@ -197,12 +199,12 @@ export default function FinancialReportsPage() {
           <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Avg Order Value</p>
+                <p className="text-sm font-medium text-gray-600">{t('avgOrderValue')}</p>
                 <p className="text-2xl font-bold text-gray-900">{formatCurrency(financialOverview.revenue.avgOrderValue)}</p>
               </div>
               <div className="text-right">
                 <span className="text-sm text-gray-500">
-                  {financialOverview.orders.uniqueCustomers} customers
+                  {t('customersCount', { n: financialOverview.orders.uniqueCustomers })}
                 </span>
               </div>
             </div>
@@ -214,7 +216,7 @@ export default function FinancialReportsPage() {
       <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
         <LineChart
           data={revenueAnalytics}
-          title="Revenue Trend"
+          title={t('revenueTrend')}
           loading={loading}
           height={400}
           areaStyle={true}
@@ -232,7 +234,7 @@ export default function FinancialReportsPage() {
               revenue: item.revenue,
               orders: item.orderCount
             }))}
-            title="Category Performance"
+            title={t('categoryPerformance')}
             loading={loading}
             height={350}
             colors={['#3b82f6', '#10b981']}
@@ -247,7 +249,7 @@ export default function FinancialReportsPage() {
                 name: method.method,
                 value: method.totalAmount
               }))}
-              title="Payment Methods Distribution"
+              title={t('paymentMethodsDistribution')}
               loading={loading}
               height={350}
             />
@@ -259,17 +261,17 @@ export default function FinancialReportsPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Refund Analysis */}
         <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Refund Analysis</h3>
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">{t('refundAnalysis')}</h3>
           <div className="space-y-4">
             {refundAnalytics.map((refund, index) => (
               <div key={index} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
                 <div>
                   <p className="font-medium text-gray-900 capitalize">{refund.reason.replace('_', ' ')}</p>
-                  <p className="text-sm text-gray-600">{refund.refundCount} refunds</p>
+                  <p className="text-sm text-gray-600">{t('refundsCount', { n: refund.refundCount })}</p>
                 </div>
                 <div className="text-right">
                   <p className="font-semibold text-gray-900">{formatCurrency(refund.totalRefunded)}</p>
-                  <p className="text-sm text-gray-600">Avg: {formatCurrency(refund.avgRefundAmount)}</p>
+                  <p className="text-sm text-gray-600">{t('avgRefund', { amount: formatCurrency(refund.avgRefundAmount) })}</p>
                 </div>
               </div>
             ))}
@@ -278,17 +280,17 @@ export default function FinancialReportsPage() {
 
         {/* Tax Collection */}
         <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Tax Collection by Jurisdiction</h3>
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">{t('taxCollectionByJurisdiction')}</h3>
           <div className="space-y-4">
             {taxData.slice(0, 5).map((tax, index) => (
               <div key={index} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
                 <div>
                   <p className="font-medium text-gray-900">{tax.state ? `${tax.state}, ${tax.country}` : tax.country}</p>
-                  <p className="text-sm text-gray-600">{tax.orderCount} orders</p>
+                  <p className="text-sm text-gray-600">{t('ordersCount', { n: tax.orderCount })}</p>
                 </div>
                 <div className="text-right">
                   <p className="font-semibold text-gray-900">{formatCurrency(tax.totalTaxCollected)}</p>
-                  <p className="text-sm text-gray-600">{tax.effectiveTaxRate.toFixed(2)}% rate</p>
+                  <p className="text-sm text-gray-600">{t('taxRateLabel', { rate: tax.effectiveTaxRate.toFixed(2) })}</p>
                 </div>
               </div>
             ))}
@@ -299,25 +301,25 @@ export default function FinancialReportsPage() {
       {/* Payment Analytics Details */}
       {paymentAnalytics && (
         <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Payment Method Performance</h3>
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">{t('paymentMethodPerformance')}</h3>
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Payment Method
+                    {t('paymentMethod')}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Transactions
+                    {t('transactions')}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Total Amount
+                    {t('totalAmount')}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Success Rate
+                    {t('successRate')}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Avg Amount
+                    {t('avgAmount')}
                   </th>
                 </tr>
               </thead>

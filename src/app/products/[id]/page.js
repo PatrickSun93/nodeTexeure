@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import Header from '../../../components/Header';
 import Footer from '../../../components/Footer';
@@ -13,6 +14,7 @@ import WishlistButton from '../../../components/common/WishlistButton';
 
 
 export default function ProductDetails() {
+  const t = useTranslations('Product');
   const { id } = useParams();
   const [product, setProduct] = useState(null);
   const [selectedVariantId, setSelectedVariantId] = useState(null);
@@ -76,7 +78,7 @@ export default function ProductDetails() {
     }
   };
 
-  if (loading) return <div>Loading...</div>;
+  if (loading) return <div>{t('loading')}</div>;
   if (error) return (
     <div>
       <Header />
@@ -87,7 +89,7 @@ export default function ProductDetails() {
   if (!product) return (
     <div>
       <Header />
-      <div className="max-w-7xl mx-auto px-4 py-8">Product not found</div>
+      <div className="max-w-7xl mx-auto px-4 py-8">{t('notFound')}</div>
       <Footer />
     </div>
   );
@@ -106,9 +108,9 @@ export default function ProductDetails() {
       <main className="aesop-container">
         {/* Breadcrumb */}
         <nav className="nt-breadcrumb" style={{ marginBottom: '1rem' }}>
-          <Link href="/">Home</Link>
+          <Link href="/">{t('home')}</Link>
           <span className="nt-breadcrumb-sep">/</span>
-          <Link href="/shop">Shop</Link>
+          <Link href="/shop">{t('shop')}</Link>
           <span className="nt-breadcrumb-sep">/</span>
           <span>{product.name}</span>
         </nav>
@@ -131,11 +133,11 @@ export default function ProductDetails() {
               </div>
               {/* Stock Badge */}
               {isOutOfStock ? (
-                <span className="nt-stock-badge nt-stock-badge-out">Out of Stock</span>
+                <span className="nt-stock-badge nt-stock-badge-out">{t('outOfStock')}</span>
               ) : isLowStock ? (
-                <span className="nt-stock-badge nt-stock-badge-low">Only {stockQty} left</span>
+                <span className="nt-stock-badge nt-stock-badge-low">{t('onlyNLeft', { count: stockQty })}</span>
               ) : stockQty !== null ? (
-                <span className="nt-stock-badge nt-stock-badge-in">In Stock</span>
+                <span className="nt-stock-badge nt-stock-badge-in">{t('inStock')}</span>
               ) : null}
             </div>
 
@@ -147,19 +149,19 @@ export default function ProductDetails() {
             <div className="noirae-product-details-grid">
               {product.material && (
                 <div className="noirae-detail-item">
-                  <span className="noirae-detail-label">Material</span>
+                  <span className="noirae-detail-label">{t('material')}</span>
                   <span className="noirae-detail-value">{product.material}</span>
                 </div>
               )}
               {product.threadCount && (
                 <div className="noirae-detail-item">
-                  <span className="noirae-detail-label">Thread Count</span>
+                  <span className="noirae-detail-label">{t('threadCount')}</span>
                   <span className="noirae-detail-value">{product.threadCount}</span>
                 </div>
               )}
               {product.brand && (
                 <div className="noirae-detail-item">
-                  <span className="noirae-detail-label">Brand</span>
+                  <span className="noirae-detail-label">{t('brand')}</span>
                   <span className="noirae-detail-value">{product.brand}</span>
                 </div>
               )}
@@ -168,7 +170,7 @@ export default function ProductDetails() {
             {/* Variants Selector */}
             {product.variants?.length > 0 && (
               <div className="noirae-variant-selector">
-                <h3 className="noirae-variant-label">Select Options</h3>
+                <h3 className="noirae-variant-label">{t('selectOptions')}</h3>
                 <div className="noirae-variant-options">
                   {product.variants.map((v) => (
                     <button
@@ -191,7 +193,7 @@ export default function ProductDetails() {
                 disabled={adding || isOutOfStock}
                 className="noirae-btn-primary noirae-btn-large"
               >
-                {isOutOfStock ? 'Out of Stock' : adding ? 'Adding to Cart...' : 'Add to Cart'}
+                {isOutOfStock ? t('outOfStock') : adding ? t('addingToCart') : t('addToCart')}
               </button>
               <WishlistButton productId={id} variantId={selectedVariantId} />
             </div>
@@ -202,19 +204,19 @@ export default function ProductDetails() {
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
-                <span>Free shipping on orders over $100</span>
+                <span>{t('freeShipping')}</span>
               </div>
               <div className="noirae-feature-item">
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                 </svg>
-                <span>30-day return policy</span>
+                <span>{t('returnPolicy')}</span>
               </div>
               <div className="noirae-feature-item">
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                 </svg>
-                <span>1-year warranty</span>
+                <span>{t('warranty')}</span>
               </div>
             </div>
           </div>
@@ -223,13 +225,13 @@ export default function ProductDetails() {
         {/* Reviews Section */}
         <div className="noirae-reviews-section" style={{ marginTop: '3rem' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-            <h2 className="noirae-heading-2">Customer Reviews</h2>
+            <h2 className="noirae-heading-2">{t('customerReviews')}</h2>
             <button
               onClick={() => setShowReviewForm(!showReviewForm)}
               className="noirae-btn-secondary"
               style={{ padding: '0.5rem 1.5rem' }}
             >
-              {showReviewForm ? 'Cancel' : 'Write a Review'}
+              {showReviewForm ? t('cancel') : t('writeReview')}
             </button>
           </div>
 

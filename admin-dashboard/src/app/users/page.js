@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { apiRequest, getErrorMessage } from '@/lib/api';
+import { useTranslations } from 'next-intl';
 
 // User Role Badge Component
 function UserRoleBadge({ role }) {
@@ -29,10 +30,12 @@ function UserRoleBadge({ role }) {
 
 // User Status Badge Component
 function UserStatusBadge({ isDeleted, emailVerified }) {
+  const t = useTranslations('Users');
+
   if (isDeleted) {
     return (
       <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">
-        Deleted
+        {t('statusDeleted')}
       </span>
     );
   }
@@ -41,13 +44,14 @@ function UserStatusBadge({ isDeleted, emailVerified }) {
     <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
       emailVerified ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
     }`}>
-      {emailVerified ? 'Verified' : 'Unverified'}
+      {emailVerified ? t('verified') : t('unverified')}
     </span>
   );
 }
 
 // User Actions Component
 function UserActions({ user, onRoleChange, onStatusChange, currentUser }) {
+  const t = useTranslations('Users');
   const [showActions, setShowActions] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -84,7 +88,7 @@ function UserActions({ user, onRoleChange, onStatusChange, currentUser }) {
   if (!canModifyUser) {
     return (
       <span className="text-xs text-gray-400">
-        {user.id === currentUser?.id ? 'Current User' : 'No Access'}
+        {user.id === currentUser?.id ? t('currentUser') : t('noAccess')}
       </span>
     );
   }
@@ -96,14 +100,14 @@ function UserActions({ user, onRoleChange, onStatusChange, currentUser }) {
         disabled={isLoading}
         className="text-sm text-blue-600 hover:text-blue-800 disabled:opacity-50"
       >
-        {isLoading ? 'Loading...' : 'Actions'}
+        {isLoading ? t('loading') : t('actions')}
       </button>
       
       {showActions && (
         <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-md shadow-lg z-10">
           <div className="py-1">
             <div className="px-3 py-2 text-xs font-medium text-gray-500 border-b">
-              Change Role
+              {t('changeRole')}
             </div>
             {['admin', 'staff', 'customer'].map(role => (
               <button
@@ -113,7 +117,7 @@ function UserActions({ user, onRoleChange, onStatusChange, currentUser }) {
                 className="block w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {role.charAt(0).toUpperCase() + role.slice(1)}
-                {user.role === role && ' (Current)'}
+                {user.role === role && t('currentSuffix')}
               </button>
             ))}
             
@@ -122,7 +126,7 @@ function UserActions({ user, onRoleChange, onStatusChange, currentUser }) {
                 onClick={handleStatusToggle}
                 className="block w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100"
               >
-                {user.isDeleted ? 'Restore User' : 'Delete User'}
+                {user.isDeleted ? t('restoreUser') : t('deleteUser')}
               </button>
             </div>
           </div>
@@ -134,6 +138,7 @@ function UserActions({ user, onRoleChange, onStatusChange, currentUser }) {
 
 // New User Modal Component
 function NewUserModal({ isOpen, onClose, onSave }) {
+  const t = useTranslations('Users');
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -148,12 +153,12 @@ function NewUserModal({ isOpen, onClose, onSave }) {
   const validateForm = () => {
     const newErrors = {};
     
-    if (!formData.email) newErrors.email = 'Email is required';
+    if (!formData.email) newErrors.email = t('emailRequired');
     if (!formData.password || formData.password.length < 6) {
-      newErrors.password = 'Password must be at least 6 characters';
+      newErrors.password = t('passwordMinLength');
     }
-    if (!formData.firstName) newErrors.firstName = 'First name is required';
-    if (!formData.lastName) newErrors.lastName = 'Last name is required';
+    if (!formData.firstName) newErrors.firstName = t('firstNameRequired');
+    if (!formData.lastName) newErrors.lastName = t('lastNameRequired');
     
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -190,12 +195,12 @@ function NewUserModal({ isOpen, onClose, onSave }) {
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
-        <h3 className="text-lg font-semibold mb-4">Add New User</h3>
+        <h3 className="text-lg font-semibold mb-4">{t('addNewUser')}</h3>
         
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Email *
+              {t('email')} *
             </label>
             <input
               type="email"
@@ -211,7 +216,7 @@ function NewUserModal({ isOpen, onClose, onSave }) {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Password *
+              {t('password')} *
             </label>
             <input
               type="password"
@@ -228,7 +233,7 @@ function NewUserModal({ isOpen, onClose, onSave }) {
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                First Name *
+                {t('firstName')} *
               </label>
               <input
                 type="text"
@@ -244,7 +249,7 @@ function NewUserModal({ isOpen, onClose, onSave }) {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Last Name *
+                {t('lastName')} *
               </label>
               <input
                 type="text"
@@ -261,7 +266,7 @@ function NewUserModal({ isOpen, onClose, onSave }) {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Phone
+              {t('phone')}
             </label>
             <input
               type="tel"
@@ -273,16 +278,16 @@ function NewUserModal({ isOpen, onClose, onSave }) {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Role
+              {t('role')}
             </label>
             <select
               value={formData.role}
               onChange={(e) => setFormData(prev => ({ ...prev, role: e.target.value }))}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-              <option value="customer">Customer</option>
-              <option value="staff">Staff</option>
-              <option value="admin">Admin</option>
+              <option value="customer">{t('roleCustomer')}</option>
+              <option value="staff">{t('roleStaff')}</option>
+              <option value="admin">{t('roleAdmin')}</option>
             </select>
           </div>
 
@@ -298,14 +303,14 @@ function NewUserModal({ isOpen, onClose, onSave }) {
               disabled={isLoading}
               className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 disabled:opacity-50"
             >
-              {isLoading ? 'Creating...' : 'Create User'}
+              {isLoading ? t('creating') : t('createUser')}
             </button>
             <button
               type="button"
               onClick={onClose}
               className="flex-1 bg-gray-600 text-white py-2 px-4 rounded-md hover:bg-gray-700"
             >
-              Cancel
+              {t('cancel')}
             </button>
           </div>
         </form>
@@ -315,6 +320,7 @@ function NewUserModal({ isOpen, onClose, onSave }) {
 }
 
 export default function UserManagement() {
+  const t = useTranslations('Users');
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   const router = useRouter();
   
@@ -358,7 +364,7 @@ export default function UserManagement() {
         setUsers(response.keyValueTable.users || []);
         setTotalPages(response.keyValueTable.pagination?.totalPages || 1);
       } else {
-        throw new Error(response.message || 'Failed to fetch users');
+        throw new Error(response.message || t('fetchError'));
       }
     } catch (err) {
       console.error('Users fetch error:', err);
@@ -366,7 +372,7 @@ export default function UserManagement() {
     } finally {
       setIsLoading(false);
     }
-  }, [currentPage, searchTerm, roleFilter, statusFilter]);
+  }, [currentPage, searchTerm, roleFilter, statusFilter, t]);
 
   // Change user role
   const changeUserRole = async (userId, newRole) => {
@@ -379,7 +385,7 @@ export default function UserManagement() {
       if (response.status === 'SUCCESS') {
         await fetchUsers(); // Refresh users list
       } else {
-        throw new Error(response.message || 'Failed to change user role');
+        throw new Error(response.message || t('roleChangeError'));
       }
     } catch (err) {
       console.error('Role change error:', err);
@@ -398,7 +404,7 @@ export default function UserManagement() {
       if (response.status === 'SUCCESS') {
         await fetchUsers(); // Refresh users list
       } else {
-        throw new Error(response.message || 'Failed to change user status');
+        throw new Error(response.message || t('statusChangeError'));
       }
     } catch (err) {
       console.error('Status change error:', err);
@@ -417,7 +423,7 @@ export default function UserManagement() {
       if (response.status === 'SUCCESS') {
         await fetchUsers(); // Refresh users list
       } else {
-        throw new Error(response.message || 'Failed to create user');
+        throw new Error(response.message || t('createError'));
       }
     } catch (err) {
       console.error('User creation error:', err);
@@ -441,7 +447,7 @@ export default function UserManagement() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="admin-spinner"></div>
-        <span className="ml-2">Loading...</span>
+        <span className="ml-2">{t('loading')}</span>
       </div>
     );
   }
@@ -456,23 +462,23 @@ export default function UserManagement() {
         <div className="admin-container">
           <div className="flex items-center justify-between h-16">
             <h1 className="text-xl font-semibold text-gray-900">
-              User Management
+              {t('title')}
             </h1>
             <nav className="flex items-center space-x-4">
               <a 
                 href="/"
                 className="text-sm text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md hover:bg-gray-100"
               >
-                Dashboard
+                {t('navDashboard')}
               </a>
               <a 
                 href="/settings"
                 className="text-sm text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md hover:bg-gray-100"
               >
-                Settings
+                {t('navSettings')}
               </a>
               <span className="text-sm text-gray-600">
-                Welcome, {user?.firstName || 'Admin'}
+                {t('welcome', { name: user?.firstName || 'Admin' })}
               </span>
             </nav>
           </div>
@@ -485,7 +491,7 @@ export default function UserManagement() {
           <div className="flex items-center space-x-4">
             <input
               type="text"
-              placeholder="Search users..."
+              placeholder={t('searchPlaceholder')}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -495,19 +501,19 @@ export default function UserManagement() {
               onChange={(e) => setRoleFilter(e.target.value)}
               className="px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-              <option value="">All Roles</option>
-              <option value="admin">Admin</option>
-              <option value="staff">Staff</option>
-              <option value="customer">Customer</option>
+              <option value="">{t('allRoles')}</option>
+              <option value="admin">{t('roleAdmin')}</option>
+              <option value="staff">{t('roleStaff')}</option>
+              <option value="customer">{t('roleCustomer')}</option>
             </select>
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
               className="px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-              <option value="">All Status</option>
-              <option value="active">Active</option>
-              <option value="deleted">Deleted</option>
+              <option value="">{t('allStatus')}</option>
+              <option value="active">{t('statusActive')}</option>
+              <option value="deleted">{t('statusDeleted')}</option>
             </select>
           </div>
           {user?.role === 'admin' && (
@@ -515,7 +521,7 @@ export default function UserManagement() {
               onClick={() => setShowNewUserModal(true)}
               className="admin-button admin-button-primary"
             >
-              Add User
+              {t('addUser')}
             </button>
           )}
         </div>
@@ -531,7 +537,7 @@ export default function UserManagement() {
         {isLoading ? (
           <div className="flex items-center justify-center py-12">
             <div className="admin-spinner"></div>
-            <span className="ml-2">Loading users...</span>
+            <span className="ml-2">{t('loadingUsers')}</span>
           </div>
         ) : (
           <div className="admin-card overflow-hidden">
@@ -540,25 +546,25 @@ export default function UserManagement() {
                 <thead className="bg-gray-50">
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      User
+                      {t('columnUser')}
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Role
+                      {t('role')}
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Status
+                      {t('status')}
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Orders
+                      {t('columnOrders')}
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Created
+                      {t('columnCreated')}
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Last Login
+                      {t('lastLogin')}
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Actions
+                      {t('columnActions')}
                     </th>
                   </tr>
                 </thead>
@@ -592,7 +598,7 @@ export default function UserManagement() {
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                           {userItem.last_login 
                             ? new Date(userItem.last_login).toLocaleDateString()
-                            : 'Never'
+                            : t('never')
                           }
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm">
@@ -608,7 +614,7 @@ export default function UserManagement() {
                   ) : (
                     <tr>
                       <td colSpan="7" className="px-6 py-12 text-center text-gray-500">
-                        No users found
+                        {t('noUsers')}
                         {(searchTerm || roleFilter || statusFilter) && (
                           <button
                             onClick={() => {
@@ -618,7 +624,7 @@ export default function UserManagement() {
                             }}
                             className="ml-2 text-blue-600 hover:text-blue-800"
                           >
-                            Clear filters
+                            {t('clearFilters')}
                           </button>
                         )}
                       </td>
@@ -632,7 +638,7 @@ export default function UserManagement() {
             {totalPages > 1 && (
               <div className="px-6 py-3 border-t border-gray-200 flex items-center justify-between">
                 <div className="text-sm text-gray-500">
-                  Page {currentPage} of {totalPages}
+                  {t('pageOf', { current: currentPage, total: totalPages })}
                 </div>
                 <div className="flex space-x-2">
                   <button
@@ -640,14 +646,14 @@ export default function UserManagement() {
                     disabled={currentPage === 1}
                     className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    Previous
+                    {t('previous')}
                   </button>
                   <button
                     onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
                     disabled={currentPage === totalPages}
                     className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    Next
+                    {t('next')}
                   </button>
                 </div>
               </div>

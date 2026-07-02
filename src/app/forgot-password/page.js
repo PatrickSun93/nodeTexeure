@@ -1,12 +1,14 @@
 'use client';
 
 import { useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Header from '../../components/Header';
 import Footer from '../../components/Footer';
 
 export default function ForgotPasswordPage() {
+  const t = useTranslations('ForgotPassword');
   const [email, setEmail] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
@@ -31,10 +33,10 @@ export default function ForgotPasswordPage() {
         setSuccess(true);
         setEmail('');
       } else {
-        setError(data.message || 'Failed to send reset link');
+        setError(data.message || t('failedToSend'));
       }
     } catch (err) {
-      setError('An error occurred. Please try again.');
+      setError(t('genericError'));
     } finally {
       setIsLoading(false);
     }
@@ -43,14 +45,14 @@ export default function ForgotPasswordPage() {
   return (
     <div className="noirae-page">
       <Header />
-      
+
       <main className="noirae-login-main">
         <div className="noirae-login-container">
           {/* Header Section */}
           <div className="noirae-login-header">
-            <h1 className="noirae-login-title">Forgot Your Password?</h1>
+            <h1 className="noirae-login-title">{t('title')}</h1>
             <p className="noirae-login-subtitle">
-              Enter your email and we&apos;ll send you a reset link.
+              {t('subtitle')}
             </p>
           </div>
 
@@ -64,14 +66,14 @@ export default function ForgotPasswordPage() {
 
             {success ? (
               <div className="noirae-login-success">
-                <p>Reset link sent! Please check your email.</p>
+                <p>{t('successMessage')}</p>
               </div>
             ) : (
               <form onSubmit={handleSubmit} className="noirae-login-form">
                 {/* Email Field */}
                 <div className="noirae-form-group">
                   <label htmlFor="email" className="noirae-form-label">
-                    Email
+                    {t('emailLabel')}
                   </label>
                   <input
                     id="email"
@@ -82,7 +84,7 @@ export default function ForgotPasswordPage() {
                     onChange={(e) => setEmail(e.target.value)}
                     disabled={isLoading}
                     className="noirae-form-input"
-                    placeholder="you@example.com"
+                    placeholder={t('emailPlaceholder')}
                   />
                 </div>
 
@@ -92,7 +94,7 @@ export default function ForgotPasswordPage() {
                   disabled={isLoading}
                   className="noirae-login-button"
                 >
-                  {isLoading ? 'Sending...' : 'Send Reset Link'}
+                  {isLoading ? t('sending') : t('sendResetLink')}
                 </button>
               </form>
             )}
@@ -100,15 +102,14 @@ export default function ForgotPasswordPage() {
             {/* Return to Login Link */}
             <div className="noirae-register-link">
               <Link href="/login" className="noirae-register-cta">
-                Return to Login
+                {t('returnToLogin')}
               </Link>
             </div>
           </div>
         </div>
       </main>
-      
+
       <Footer />
     </div>
   );
 }
-

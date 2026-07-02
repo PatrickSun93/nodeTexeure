@@ -2,8 +2,10 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 
 export default function NewBanner() {
+  const t = useTranslations('BannerNew');
   const router = useRouter();
   const [formData, setFormData] = useState({
     title: '',
@@ -30,18 +32,18 @@ export default function NewBanner() {
   const [error, setError] = useState('');
 
   const positionOptions = [
-    { value: 'homepage', label: 'Homepage' },
-    { value: 'header', label: 'Header' },
-    { value: 'footer', label: 'Footer' },
-    { value: 'sidebar', label: 'Sidebar' },
-    { value: 'category', label: 'Category Pages' }
+    { value: 'homepage', label: t('positionHomepage') },
+    { value: 'header', label: t('positionHeader') },
+    { value: 'footer', label: t('positionFooter') },
+    { value: 'sidebar', label: t('positionSidebar') },
+    { value: 'category', label: t('positionCategory') }
   ];
 
   const deviceOptions = [
-    { value: 'all', label: 'All Devices' },
-    { value: 'desktop', label: 'Desktop Only' },
-    { value: 'mobile', label: 'Mobile Only' },
-    { value: 'tablet', label: 'Tablet Only' }
+    { value: 'all', label: t('deviceAll') },
+    { value: 'desktop', label: t('deviceDesktop') },
+    { value: 'mobile', label: t('deviceMobile') },
+    { value: 'tablet', label: t('deviceTablet') }
   ];
 
   const handleInputChange = (e) => {
@@ -77,9 +79,9 @@ export default function NewBanner() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!formData.title) {
-      setError('Title is required');
+      setError(t('titleRequired'));
       return;
     }
 
@@ -89,7 +91,7 @@ export default function NewBanner() {
 
       const token = localStorage.getItem('adminToken');
       if (!token) {
-        throw new Error('No authentication token found');
+        throw new Error(t('noAuthToken'));
       }
 
       // Clean up display rules - remove empty values
@@ -112,15 +114,15 @@ export default function NewBanner() {
       });
 
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        throw new Error(t('httpError', { status: response.status }));
       }
 
       const data = await response.json();
-      
+
       if (data.success) {
         router.push('/content');
       } else {
-        throw new Error(data.message || 'Failed to create banner');
+        throw new Error(data.message || t('failedToCreate'));
       }
     } catch (error) {
       console.error('Error creating banner:', error);
@@ -133,8 +135,8 @@ export default function NewBanner() {
   return (
     <div className="p-6 max-w-4xl mx-auto">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Create New Banner</h1>
-        <p className="text-gray-600">Create a new promotional banner</p>
+        <h1 className="text-2xl font-bold text-gray-900">{t('title')}</h1>
+        <p className="text-gray-600">{t('subtitle')}</p>
       </div>
 
       {error && (
@@ -147,13 +149,13 @@ export default function NewBanner() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Basic Information */}
           <div className="bg-white border border-gray-200 rounded-lg p-6">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Basic Information</h3>
-            
+            <h3 className="text-lg font-medium text-gray-900 mb-4">{t('basicInformation')}</h3>
+
             <div className="space-y-4">
               {/* Title */}
               <div>
                 <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-2">
-                  Banner Title *
+                  {t('bannerTitleLabel')} *
                 </label>
                 <input
                   type="text"
@@ -162,7 +164,7 @@ export default function NewBanner() {
                   value={formData.title}
                   onChange={handleInputChange}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Enter banner title"
+                  placeholder={t('bannerTitlePlaceholder')}
                   required
                 />
               </div>
@@ -170,7 +172,7 @@ export default function NewBanner() {
               {/* Content */}
               <div>
                 <label htmlFor="content" className="block text-sm font-medium text-gray-700 mb-2">
-                  Banner Content
+                  {t('bannerContentLabel')}
                 </label>
                 <textarea
                   id="content"
@@ -179,14 +181,14 @@ export default function NewBanner() {
                   onChange={handleInputChange}
                   rows={3}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Enter banner content/description"
+                  placeholder={t('bannerContentPlaceholder')}
                 />
               </div>
 
               {/* Image URL */}
               <div>
                 <label htmlFor="image_url" className="block text-sm font-medium text-gray-700 mb-2">
-                  Image URL
+                  {t('imageUrlLabel')}
                 </label>
                 <input
                   type="url"
@@ -199,9 +201,9 @@ export default function NewBanner() {
                 />
                 {formData.image_url && (
                   <div className="mt-2">
-                    <img 
-                      src={formData.image_url} 
-                      alt="Banner preview"
+                    <img
+                      src={formData.image_url}
+                      alt={t('bannerPreviewAlt')}
                       className="w-full h-32 object-cover rounded"
                       onError={(e) => {
                         e.target.style.display = 'none';
@@ -214,7 +216,7 @@ export default function NewBanner() {
               {/* Link URL */}
               <div>
                 <label htmlFor="link_url" className="block text-sm font-medium text-gray-700 mb-2">
-                  Link URL
+                  {t('linkUrlLabel')}
                 </label>
                 <input
                   type="url"
@@ -230,7 +232,7 @@ export default function NewBanner() {
               {/* Link Text */}
               <div>
                 <label htmlFor="link_text" className="block text-sm font-medium text-gray-700 mb-2">
-                  Link Text
+                  {t('linkTextLabel')}
                 </label>
                 <input
                   type="text"
@@ -239,14 +241,14 @@ export default function NewBanner() {
                   value={formData.link_text}
                   onChange={handleInputChange}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Learn More, Shop Now, etc."
+                  placeholder={t('linkTextPlaceholder')}
                 />
               </div>
 
               {/* Position */}
               <div>
                 <label htmlFor="position" className="block text-sm font-medium text-gray-700 mb-2">
-                  Display Position
+                  {t('displayPositionLabel')}
                 </label>
                 <select
                   id="position"
@@ -274,7 +276,7 @@ export default function NewBanner() {
                   className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                 />
                 <label htmlFor="is_active" className="ml-2 block text-sm text-gray-900">
-                  Active (banner will be displayed)
+                  {t('activeLabel')}
                 </label>
               </div>
             </div>
@@ -284,13 +286,13 @@ export default function NewBanner() {
           <div className="space-y-6">
             {/* Display Rules */}
             <div className="bg-white border border-gray-200 rounded-lg p-6">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">Display Rules</h3>
-              
+              <h3 className="text-lg font-medium text-gray-900 mb-4">{t('displayRules')}</h3>
+
               <div className="space-y-4">
                 {/* Start Date */}
                 <div>
                   <label htmlFor="start_date" className="block text-sm font-medium text-gray-700 mb-2">
-                    Start Date
+                    {t('startDateLabel')}
                   </label>
                   <input
                     type="datetime-local"
@@ -305,7 +307,7 @@ export default function NewBanner() {
                 {/* End Date */}
                 <div>
                   <label htmlFor="end_date" className="block text-sm font-medium text-gray-700 mb-2">
-                    End Date
+                    {t('endDateLabel')}
                   </label>
                   <input
                     type="datetime-local"
@@ -320,7 +322,7 @@ export default function NewBanner() {
                 {/* Max Impressions */}
                 <div>
                   <label htmlFor="max_impressions" className="block text-sm font-medium text-gray-700 mb-2">
-                    Max Impressions
+                    {t('maxImpressionsLabel')}
                   </label>
                   <input
                     type="number"
@@ -329,14 +331,14 @@ export default function NewBanner() {
                     value={formData.display_rules.max_impressions}
                     onChange={handleDisplayRuleChange}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="Leave empty for unlimited"
+                    placeholder={t('maxImpressionsPlaceholder')}
                   />
                 </div>
 
                 {/* Priority */}
                 <div>
                   <label htmlFor="priority" className="block text-sm font-medium text-gray-700 mb-2">
-                    Priority (1-10)
+                    {t('priorityLabel')}
                   </label>
                   <input
                     type="number"
@@ -353,7 +355,7 @@ export default function NewBanner() {
                 {/* Device Targeting */}
                 <div>
                   <label htmlFor="device_targeting" className="block text-sm font-medium text-gray-700 mb-2">
-                    Device Targeting
+                    {t('deviceTargetingLabel')}
                   </label>
                   <select
                     id="device_targeting"
@@ -374,13 +376,13 @@ export default function NewBanner() {
 
             {/* Target Audience */}
             <div className="bg-white border border-gray-200 rounded-lg p-6">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">Target Audience</h3>
-              
+              <h3 className="text-lg font-medium text-gray-900 mb-4">{t('targetAudience')}</h3>
+
               <div className="space-y-4">
                 {/* User Roles */}
                 <div>
                   <label htmlFor="user_roles" className="block text-sm font-medium text-gray-700 mb-2">
-                    User Roles (comma-separated)
+                    {t('userRolesLabel')}
                   </label>
                   <input
                     type="text"
@@ -396,7 +398,7 @@ export default function NewBanner() {
                 {/* Categories */}
                 <div>
                   <label htmlFor="categories" className="block text-sm font-medium text-gray-700 mb-2">
-                    Product Categories (comma-separated)
+                    {t('categoriesLabel')}
                   </label>
                   <input
                     type="text"
@@ -412,7 +414,7 @@ export default function NewBanner() {
                 {/* Pages */}
                 <div>
                   <label htmlFor="pages" className="block text-sm font-medium text-gray-700 mb-2">
-                    Specific Pages (comma-separated)
+                    {t('pagesLabel')}
                   </label>
                   <input
                     type="text"
@@ -436,15 +438,15 @@ export default function NewBanner() {
             onClick={() => router.push('/content')}
             className="px-4 py-2 text-gray-600 hover:text-gray-800"
           >
-            Cancel
+            {t('cancel')}
           </button>
-          
+
           <button
             type="submit"
             disabled={loading}
             className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
           >
-            {loading ? 'Creating...' : 'Create Banner'}
+            {loading ? t('creating') : t('createBanner')}
           </button>
         </div>
       </form>

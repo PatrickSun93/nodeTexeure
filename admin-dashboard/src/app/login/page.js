@@ -4,8 +4,10 @@ import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Eye, EyeOff, AlertCircle, Shield } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useTranslations } from 'next-intl';
 
 function LoginForm() {
+  const t = useTranslations('Login');
   const [formData, setFormData] = useState({
     email: '',
     password: ''
@@ -25,7 +27,7 @@ function LoginForm() {
 
     // Check for logout message
     if (searchParams.get('logout') === 'true') {
-      setSuccess('You have been logged out successfully');
+      setSuccess(t('logoutSuccess'));
     }
   }, [isAuthenticated, isLoading, router, searchParams]);
 
@@ -42,13 +44,13 @@ function LoginForm() {
 
   const validateForm = () => {
     if (!formData.email) {
-      return 'Email is required';
+      return t('emailRequired');
     }
     if (!formData.password) {
-      return 'Password is required';
+      return t('passwordRequired');
     }
     if (!formData.email.includes('@')) {
-      return 'Please enter a valid email address';
+      return t('emailInvalid');
     }
     return null;
   };
@@ -67,7 +69,7 @@ function LoginForm() {
     const result = await login(formData.email, formData.password);
     
     if (result.success) {
-      setSuccess('Login successful! Redirecting...');
+      setSuccess(t('loginSuccessRedirecting'));
       
       // Small delay to show success message
       setTimeout(() => {
@@ -86,10 +88,10 @@ function LoginForm() {
             <Shield className="w-8 h-8 text-white" />
           </div>
           <h1 className="text-2xl font-bold text-gray-900 mb-2">
-            Admin Dashboard
+            {t('title')}
           </h1>
           <p className="text-gray-600">
-            Sign in to access the administrative interface
+            {t('subtitle')}
           </p>
         </div>
 
@@ -123,7 +125,7 @@ function LoginForm() {
             {/* Email Field */}
             <div>
               <label htmlFor="email" className="admin-label">
-                Email Address
+                {t('emailLabel')}
               </label>
               <input
                 id="email"
@@ -132,7 +134,7 @@ function LoginForm() {
                 autoComplete="email"
                 required
                 className="admin-input"
-                placeholder="admin@example.com"
+                placeholder={t('emailPlaceholder')}
                 value={formData.email}
                 onChange={handleInputChange}
                 disabled={isLoading}
@@ -142,7 +144,7 @@ function LoginForm() {
             {/* Password Field */}
             <div>
               <label htmlFor="password" className="admin-label">
-                Password
+                {t('passwordLabel')}
               </label>
               <div className="relative">
                 <input
@@ -152,7 +154,7 @@ function LoginForm() {
                   autoComplete="current-password"
                   required
                   className="admin-input pr-10"
-                  placeholder="Enter your password"
+                  placeholder={t('passwordPlaceholder')}
                   value={formData.password}
                   onChange={handleInputChange}
                   disabled={isLoading}
@@ -181,10 +183,10 @@ function LoginForm() {
               {isLoading ? (
                 <div className="flex items-center justify-center">
                   <div className="admin-spinner mr-2"></div>
-                  Signing in...
+                  {t('signingIn')}
                 </div>
               ) : (
-                'Sign In'
+                t('signIn')
               )}
             </button>
           </form>
@@ -194,10 +196,9 @@ function LoginForm() {
             <div className="flex items-start space-x-3">
               <Shield className="w-5 h-5 text-gray-400 flex-shrink-0 mt-0.5" />
               <div className="text-sm text-gray-600">
-                <p className="font-medium mb-1">Security Notice</p>
+                <p className="font-medium mb-1">{t('securityNotice')}</p>
                 <p>
-                  This is a secure administrative interface. All login attempts are logged and monitored.
-                  Only authorized personnel should access this system.
+                  {t('securityNoticeBody')}
                 </p>
               </div>
             </div>
@@ -207,7 +208,7 @@ function LoginForm() {
         {/* Footer */}
         <div className="text-center mt-8">
           <p className="text-sm text-gray-500">
-            © 2025 Bed Texture Admin Dashboard
+            {t('copyright')}
           </p>
         </div>
       </div>
@@ -216,11 +217,12 @@ function LoginForm() {
 }
 
 export default function AdminLogin() {
+  const t = useTranslations('Login');
   return (
     <Suspense fallback={
       <div className="min-h-screen flex items-center justify-center">
         <div className="admin-spinner"></div>
-        <span className="ml-2">Loading...</span>
+        <span className="ml-2">{t('loading')}</span>
       </div>
     }>
       <LoginForm />

@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { apiRequest, getErrorMessage } from '@/lib/api';
+import { useTranslations } from 'next-intl';
 
 // Purchase Order API functions
 const purchaseOrderAPI = {
@@ -44,6 +45,7 @@ const purchaseOrderAPI = {
 
 // Purchase Order Form Modal Component
 function PurchaseOrderFormModal({ isOpen, onClose, onSubmit }) {
+  const t = useTranslations('PurchaseOrders');
   const [formData, setFormData] = useState({
     supplier_id: '',
     items: [],
@@ -132,14 +134,14 @@ function PurchaseOrderFormModal({ isOpen, onClose, onSubmit }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.supplier_id || formData.items.length === 0) {
-      alert('Please select a supplier and add at least one item');
+      alert(t('selectSupplierAndItem'));
       return;
     }
 
     // Validate all items have unit costs
     const invalidItems = formData.items.filter(item => !item.unit_cost || item.unit_cost <= 0);
     if (invalidItems.length > 0) {
-      alert('Please set unit costs for all items');
+      alert(t('setUnitCostsForAllItems'));
       return;
     }
 
@@ -161,13 +163,13 @@ function PurchaseOrderFormModal({ isOpen, onClose, onSubmit }) {
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
-        <h3 className="text-lg font-semibold mb-4">Create Purchase Order</h3>
+        <h3 className="text-lg font-semibold mb-4">{t('createPurchaseOrder')}</h3>
         
         <form onSubmit={handleSubmit}>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Supplier *
+                {t('supplierRequired')}
               </label>
               <select
                 value={formData.supplier_id}
@@ -175,7 +177,7 @@ function PurchaseOrderFormModal({ isOpen, onClose, onSubmit }) {
                 className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 required
               >
-                <option value="">Select Supplier</option>
+                <option value="">{t('selectSupplier')}</option>
                 {suppliers.map(supplier => (
                   <option key={supplier.id} value={supplier.id}>
                     {supplier.name}
@@ -186,7 +188,7 @@ function PurchaseOrderFormModal({ isOpen, onClose, onSubmit }) {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Expected Delivery Date
+                {t('expectedDeliveryDate')}
               </label>
               <input
                 type="date"
@@ -200,25 +202,25 @@ function PurchaseOrderFormModal({ isOpen, onClose, onSubmit }) {
           {/* Items Section */}
           <div className="mb-6">
             <div className="flex items-center justify-between mb-4">
-              <h4 className="text-md font-medium text-gray-700">Items</h4>
+              <h4 className="text-md font-medium text-gray-700">{t('items')}</h4>
               <button
                 type="button"
                 onClick={() => setShowProductSelector(true)}
                 className="admin-button admin-button-secondary text-sm"
               >
-                Add Item
+                {t('addItem')}
               </button>
             </div>
 
             {formData.items.length === 0 ? (
               <div className="text-center py-8 text-gray-500 border-2 border-dashed border-gray-300 rounded-lg">
-                <p>No items added yet</p>
+                <p>{t('noItemsAddedYet')}</p>
                 <button
                   type="button"
                   onClick={() => setShowProductSelector(true)}
                   className="mt-2 text-blue-600 hover:text-blue-800"
                 >
-                  Add your first item
+                  {t('addYourFirstItem')}
                 </button>
               </div>
             ) : (
@@ -226,11 +228,11 @@ function PurchaseOrderFormModal({ isOpen, onClose, onSubmit }) {
                 <table className="w-full">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Product</th>
-                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Quantity</th>
-                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Unit Cost</th>
-                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Total</th>
-                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">{t('product')}</th>
+                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">{t('quantity')}</th>
+                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">{t('unitCost')}</th>
+                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">{t('total')}</th>
+                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">{t('actions')}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200">
@@ -244,9 +246,9 @@ function PurchaseOrderFormModal({ isOpen, onClose, onSubmit }) {
                           <td className="px-4 py-2">
                             <div>
                               <p className="font-medium text-sm">{item.product_name}</p>
-                              <p className="text-xs text-gray-500">SKU: {item.product_sku}</p>
+                              <p className="text-xs text-gray-500">{t('sku', { sku: item.product_sku })}</p>
                               {variant && (
-                                <p className="text-xs text-gray-500">Variant: {variant}</p>
+                                <p className="text-xs text-gray-500">{t('variant', { variant })}</p>
                               )}
                             </div>
                           </td>
@@ -279,7 +281,7 @@ function PurchaseOrderFormModal({ isOpen, onClose, onSubmit }) {
                               onClick={() => removeItem(index)}
                               className="text-red-600 hover:text-red-800 text-sm"
                             >
-                              Remove
+                              {t('remove')}
                             </button>
                           </td>
                         </tr>
@@ -288,7 +290,7 @@ function PurchaseOrderFormModal({ isOpen, onClose, onSubmit }) {
                   </tbody>
                   <tfoot className="bg-gray-50">
                     <tr>
-                      <td colSpan="3" className="px-4 py-2 text-right font-medium">Total Amount:</td>
+                      <td colSpan="3" className="px-4 py-2 text-right font-medium">{t('totalAmount')}</td>
                       <td className="px-4 py-2 font-bold">${totalAmount.toFixed(2)}</td>
                       <td></td>
                     </tr>
@@ -300,14 +302,14 @@ function PurchaseOrderFormModal({ isOpen, onClose, onSubmit }) {
 
           <div className="mb-6">
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Notes
+              {t('notes')}
             </label>
             <textarea
               value={formData.notes}
               onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
               className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
               rows="3"
-              placeholder="Additional notes for this purchase order"
+              placeholder={t('notesPlaceholder')}
             />
           </div>
 
@@ -318,14 +320,14 @@ function PurchaseOrderFormModal({ isOpen, onClose, onSubmit }) {
               className="px-4 py-2 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50"
               disabled={isSubmitting}
             >
-              Cancel
+              {t('cancel')}
             </button>
             <button
               type="submit"
               className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
               disabled={isSubmitting}
             >
-              {isSubmitting ? 'Creating...' : 'Create Purchase Order'}
+              {isSubmitting ? t('creating') : t('createPurchaseOrder')}
             </button>
           </div>
         </form>
@@ -334,7 +336,7 @@ function PurchaseOrderFormModal({ isOpen, onClose, onSubmit }) {
         {showProductSelector && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-60">
             <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[80vh] overflow-y-auto">
-              <h4 className="text-lg font-semibold mb-4">Select Products</h4>
+              <h4 className="text-lg font-semibold mb-4">{t('selectProducts')}</h4>
               <div className="space-y-2 max-h-96 overflow-y-auto">
                 {inventory.map((item) => {
                   const variant = item.size || item.color || item.pattern ? 
@@ -349,16 +351,16 @@ function PurchaseOrderFormModal({ isOpen, onClose, onSubmit }) {
                     >
                       <div>
                         <p className="font-medium">{item.product_name}</p>
-                        <p className="text-sm text-gray-500">SKU: {item.product_sku}</p>
+                        <p className="text-sm text-gray-500">{t('sku', { sku: item.product_sku })}</p>
                         {variant !== 'Base Product' && (
-                          <p className="text-sm text-gray-500">Variant: {variant}</p>
+                          <p className="text-sm text-gray-500">{t('variant', { variant })}</p>
                         )}
                         <p className="text-sm text-gray-500">
-                          Stock: {item.quantity_available} | Reorder: {item.reorder_point}
+                          {t('stockReorder', { stock: item.quantity_available, reorder: item.reorder_point })}
                         </p>
                       </div>
                       <button className="text-blue-600 hover:text-blue-800 font-medium">
-                        Add
+                        {t('add')}
                       </button>
                     </div>
                   );
@@ -369,7 +371,7 @@ function PurchaseOrderFormModal({ isOpen, onClose, onSubmit }) {
                   onClick={() => setShowProductSelector(false)}
                   className="px-4 py-2 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50"
                 >
-                  Close
+                  {t('close')}
                 </button>
               </div>
             </div>
@@ -381,14 +383,16 @@ function PurchaseOrderFormModal({ isOpen, onClose, onSubmit }) {
 }
 
 export default function PurchaseOrdersPage() {
+  const t = useTranslations('PurchaseOrders');
   return (
-    <Suspense fallback={<div style={{ padding: '2rem' }}>Loading…</div>}>
+    <Suspense fallback={<div style={{ padding: '2rem' }}>{t('loading')}</div>}>
       <PurchaseOrdersContent />
     </Suspense>
   );
 }
 
 function PurchaseOrdersContent() {
+  const t = useTranslations('PurchaseOrders');
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -428,7 +432,7 @@ function PurchaseOrdersContent() {
         setPurchaseOrders(response.data.purchase_orders || []);
         setPagination(response.data.pagination || {});
       } else {
-        throw new Error(response.message || 'Failed to fetch purchase orders');
+        throw new Error(response.message || t('failedToFetchPurchaseOrders'));
       }
     } catch (err) {
       console.error('Error fetching purchase orders:', err);
@@ -436,7 +440,7 @@ function PurchaseOrdersContent() {
     } finally {
       setIsLoading(false);
     }
-  }, [filters]);
+  }, [filters, t]);
 
   // Fetch suppliers for filter
   const fetchSuppliers = useCallback(async () => {
@@ -464,31 +468,31 @@ function PurchaseOrdersContent() {
       const response = await purchaseOrderAPI.createPurchaseOrder(poData);
       if (response.success) {
         await fetchPurchaseOrders();
-        alert(`Purchase order created successfully! PO Number: ${response.data.po_number}`);
+        alert(t('poCreatedSuccess', { poNumber: response.data.po_number }));
       } else {
         throw new Error(response.message);
       }
     } catch (err) {
-      alert(`Error creating purchase order: ${getErrorMessage(err)}`);
+      alert(t('errorCreatingPo', { error: getErrorMessage(err) }));
       throw err;
     }
   };
 
   // Handle status update
   const handleStatusUpdate = async (poId, status) => {
-    const notes = prompt(`Update status to "${status}". Add notes (optional):`);
+    const notes = prompt(t('updateStatusPrompt', { status }));
     if (notes === null) return; // User cancelled
 
     try {
       const response = await purchaseOrderAPI.updatePurchaseOrderStatus(poId, status, notes);
       if (response.success) {
         await fetchPurchaseOrders();
-        alert('Purchase order status updated successfully!');
+        alert(t('statusUpdatedSuccess'));
       } else {
         throw new Error(response.message);
       }
     } catch (err) {
-      alert(`Error updating status: ${getErrorMessage(err)}`);
+      alert(t('errorUpdatingStatus', { error: getErrorMessage(err) }));
     }
   };
 
@@ -508,7 +512,7 @@ function PurchaseOrdersContent() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="admin-spinner"></div>
-        <span className="ml-2">Loading...</span>
+        <span className="ml-2">{t('loading')}</span>
       </div>
     );
   }
@@ -524,24 +528,24 @@ function PurchaseOrdersContent() {
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center space-x-4">
               <h1 className="text-xl font-semibold text-gray-900">
-                Purchase Orders
+                {t('purchaseOrders')}
               </h1>
               <nav className="flex items-center space-x-2">
-                <a 
+                <a
                   href="/"
                   className="text-sm text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md hover:bg-gray-100"
                 >
-                  Dashboard
+                  {t('dashboard')}
                 </a>
                 <span className="text-gray-400">/</span>
-                <a 
+                <a
                   href="/inventory"
                   className="text-sm text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md hover:bg-gray-100"
                 >
-                  Inventory
+                  {t('inventory')}
                 </a>
                 <span className="text-gray-400">/</span>
-                <span className="text-sm text-gray-900">Purchase Orders</span>
+                <span className="text-sm text-gray-900">{t('purchaseOrders')}</span>
               </nav>
             </div>
             <div className="flex items-center space-x-4">
@@ -549,14 +553,14 @@ function PurchaseOrdersContent() {
                 onClick={() => setPoModal({ isOpen: true })}
                 className="admin-button admin-button-primary text-sm"
               >
-                Create PO
+                {t('createPo')}
               </button>
               <button
                 onClick={fetchPurchaseOrders}
                 disabled={isLoading}
                 className="admin-button admin-button-secondary text-sm"
               >
-                {isLoading ? 'Refreshing...' : 'Refresh'}
+                {isLoading ? t('refreshing') : t('refresh')}
               </button>
             </div>
           </div>
@@ -576,32 +580,32 @@ function PurchaseOrdersContent() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Status
+                {t('status')}
               </label>
               <select
                 value={filters.status}
                 onChange={(e) => setFilters(prev => ({ ...prev, status: e.target.value, page: 1 }))}
                 className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
-                <option value="all">All Statuses</option>
-                <option value="pending">Pending</option>
-                <option value="sent">Sent</option>
-                <option value="confirmed">Confirmed</option>
-                <option value="received">Received</option>
-                <option value="cancelled">Cancelled</option>
+                <option value="all">{t('statusAll')}</option>
+                <option value="pending">{t('statusPending')}</option>
+                <option value="sent">{t('statusSent')}</option>
+                <option value="confirmed">{t('statusConfirmed')}</option>
+                <option value="received">{t('statusReceived')}</option>
+                <option value="cancelled">{t('statusCancelled')}</option>
               </select>
             </div>
             
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Supplier
+                {t('supplier')}
               </label>
               <select
                 value={filters.supplier_id}
                 onChange={(e) => setFilters(prev => ({ ...prev, supplier_id: e.target.value, page: 1 }))}
                 className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
-                <option value="">All Suppliers</option>
+                <option value="">{t('allSuppliers')}</option>
                 {suppliers.map(supplier => (
                   <option key={supplier.id} value={supplier.id}>
                     {supplier.name}
@@ -615,7 +619,7 @@ function PurchaseOrdersContent() {
                 onClick={() => setFilters(prev => ({ ...prev, page: 1 }))}
                 className="admin-button admin-button-primary w-full"
               >
-                Apply Filters
+                {t('applyFilters')}
               </button>
             </div>
           </div>
@@ -625,10 +629,10 @@ function PurchaseOrdersContent() {
         <div className="bg-white rounded-lg shadow-sm border overflow-hidden">
           <div className="px-6 py-4 border-b border-gray-200">
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold">Purchase Orders</h2>
+              <h2 className="text-lg font-semibold">{t('purchaseOrders')}</h2>
               {pagination.total && (
                 <span className="text-sm text-gray-500">
-                  {pagination.total} total orders
+                  {t('totalOrders', { total: pagination.total })}
                 </span>
               )}
             </div>
@@ -637,17 +641,17 @@ function PurchaseOrdersContent() {
           {isLoading ? (
             <div className="p-8 text-center">
               <div className="admin-spinner mx-auto mb-4"></div>
-              <p>Loading purchase orders...</p>
+              <p>{t('loadingPurchaseOrders')}</p>
             </div>
           ) : purchaseOrders.length === 0 ? (
             <div className="p-8 text-center text-gray-500">
               <span className="text-4xl mb-4 block">📋</span>
-              <p>No purchase orders found</p>
+              <p>{t('noPurchaseOrdersFound')}</p>
               <button
                 onClick={() => setPoModal({ isOpen: true })}
                 className="mt-4 admin-button admin-button-primary"
               >
-                Create Your First Purchase Order
+                {t('createYourFirstPurchaseOrder')}
               </button>
             </div>
           ) : (
@@ -656,22 +660,22 @@ function PurchaseOrdersContent() {
                 <thead className="bg-gray-50">
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      PO Number
+                      {t('poNumber')}
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Supplier
+                      {t('supplier')}
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Amount
+                      {t('amount')}
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Status
+                      {t('status')}
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Created
+                      {t('created')}
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Actions
+                      {t('actions')}
                     </th>
                   </tr>
                 </thead>
@@ -681,7 +685,7 @@ function PurchaseOrdersContent() {
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div>
                           <p className="font-medium text-gray-900">{po.po_number}</p>
-                          <p className="text-sm text-gray-500">ID: {po.id}</p>
+                          <p className="text-sm text-gray-500">{t('id', { id: po.id })}</p>
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
@@ -704,7 +708,7 @@ function PurchaseOrdersContent() {
                             {new Date(po.created_at).toLocaleDateString()}
                           </p>
                           <p className="text-sm text-gray-500">
-                            by {po.created_by_name}
+                            {t('createdBy', { name: po.created_by_name })}
                           </p>
                         </div>
                       </td>
@@ -713,14 +717,14 @@ function PurchaseOrdersContent() {
                           onClick={() => router.push(`/inventory/purchase-orders/${po.id}`)}
                           className="text-blue-600 hover:text-blue-800 font-medium"
                         >
-                          View
+                          {t('view')}
                         </button>
                         {po.status === 'pending' && (
                           <button
                             onClick={() => handleStatusUpdate(po.id, 'sent')}
                             className="text-green-600 hover:text-green-800 font-medium"
                           >
-                            Send
+                            {t('send')}
                           </button>
                         )}
                         {po.status === 'sent' && (
@@ -728,7 +732,7 @@ function PurchaseOrdersContent() {
                             onClick={() => handleStatusUpdate(po.id, 'confirmed')}
                             className="text-purple-600 hover:text-purple-800 font-medium"
                           >
-                            Confirm
+                            {t('confirm')}
                           </button>
                         )}
                         {po.status === 'confirmed' && (
@@ -736,7 +740,7 @@ function PurchaseOrdersContent() {
                             onClick={() => handleStatusUpdate(po.id, 'received')}
                             className="text-green-600 hover:text-green-800 font-medium"
                           >
-                            Receive
+                            {t('receive')}
                           </button>
                         )}
                       </td>
@@ -751,7 +755,7 @@ function PurchaseOrdersContent() {
           {pagination.pages > 1 && (
             <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
               <div className="text-sm text-gray-500">
-                Page {pagination.page} of {pagination.pages}
+                {t('pageOf', { page: pagination.page, pages: pagination.pages })}
               </div>
               <div className="flex space-x-2">
                 <button
@@ -759,14 +763,14 @@ function PurchaseOrdersContent() {
                   disabled={pagination.page <= 1}
                   className="px-3 py-1 text-sm border border-gray-300 rounded disabled:opacity-50"
                 >
-                  Previous
+                  {t('previous')}
                 </button>
                 <button
                   onClick={() => setFilters(prev => ({ ...prev, page: prev.page + 1 }))}
                   disabled={pagination.page >= pagination.pages}
                   className="px-3 py-1 text-sm border border-gray-300 rounded disabled:opacity-50"
                 >
-                  Next
+                  {t('next')}
                 </button>
               </div>
             </div>

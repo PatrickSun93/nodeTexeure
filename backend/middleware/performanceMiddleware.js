@@ -63,10 +63,13 @@ class PerformanceMiddleware {
       if (cachedResponse) {
         logger.debug(`Cache hit for ${cacheKey}`);
         
-        // Set cache headers
+        // Set cache headers. Cached responses can vary by the NEXT_LOCALE cookie
+        // (localized content), so cache privately in the browser and vary on Cookie
+        // to avoid serving one locale's response for another.
         res.set('X-Cache', 'HIT');
-        res.set('Cache-Control', `public, max-age=${ttl}`);
-        
+        res.set('Cache-Control', `private, max-age=${ttl}`);
+        res.vary('Cookie');
+
         return res.json(cachedResponse);
       }
 
@@ -81,9 +84,10 @@ class PerformanceMiddleware {
           logger.debug(`Cached response for ${cacheKey}`);
         }
 
-        // Set cache headers
+        // Set cache headers (private + Vary: Cookie — see the HIT path above).
         res.set('X-Cache', 'MISS');
-        res.set('Cache-Control', `public, max-age=${ttl}`);
+        res.set('Cache-Control', `private, max-age=${ttl}`);
+        res.vary('Cookie');
 
         // Call original json method
         return originalJson.call(this, data);

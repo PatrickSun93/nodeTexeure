@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
+import { useTranslations } from 'next-intl';
 
 export default function PromotionModal({ isOpen, onClose, promotion }) {
+    const t = useTranslations('PromotionModal');
     if (!isOpen) return null;
 
     const getTodayDate = () => {
@@ -71,11 +73,11 @@ export default function PromotionModal({ isOpen, onClose, promotion }) {
             if (response.status === 'SUCCESS') {
                 onClose();
             } else {
-                alert('Failed to create promotion');
+                alert(t('failedToCreate'));
             }
         } catch (e) {
             console.error('Create promo failed', e);
-            alert('Error creating promotion');
+            alert(t('errorCreating'));
         } finally {
             setIsSaving(false);
         }
@@ -87,8 +89,8 @@ export default function PromotionModal({ isOpen, onClose, promotion }) {
                 {/* Header */}
                 <div className="flex justify-between items-center p-6 border-b border-gray-100">
                     <div>
-                        <h2 className="text-xl font-bold text-gray-900">Create New Promotion</h2>
-                        <p className="text-sm text-gray-500 mt-1">Configure the details for your new promotional offer.</p>
+                        <h2 className="text-xl font-bold text-gray-900">{t('title')}</h2>
+                        <p className="text-sm text-gray-500 mt-1">{t('subtitle')}</p>
                     </div>
                     <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
                         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
@@ -100,27 +102,27 @@ export default function PromotionModal({ isOpen, onClose, promotion }) {
 
                     {/* Promotion Details */}
                     <div>
-                        <h3 className="text-sm font-bold text-gray-900 mb-4">Promotion Details</h3>
+                        <h3 className="text-sm font-bold text-gray-900 mb-4">{t('promotionDetails')}</h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
-                                <label className="block text-xs font-medium text-gray-700 mb-1">Promotion Name</label>
+                                <label className="block text-xs font-medium text-gray-700 mb-1">{t('promotionName')}</label>
                                 <input
                                     type="text"
                                     name="name"
                                     value={formData.name}
                                     onChange={handleChange}
-                                    placeholder="e.g., Summer Silk Sale"
+                                    placeholder={t('promotionNamePlaceholder')}
                                     className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#C5A572]"
                                 />
                             </div>
                             <div>
-                                <label className="block text-xs font-medium text-gray-700 mb-1">Description (Optional)</label>
+                                <label className="block text-xs font-medium text-gray-700 mb-1">{t('descriptionLabel')}</label>
                                 <input
                                     type="text"
                                     name="description"
                                     value={formData.description}
                                     onChange={handleChange}
-                                    placeholder="A brief description for internal reference"
+                                    placeholder={t('descriptionPlaceholder')}
                                     className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#C5A572]"
                                 />
                             </div>
@@ -130,18 +132,18 @@ export default function PromotionModal({ isOpen, onClose, promotion }) {
                     {/* Discount Code */}
                     <div>
                         <div className="flex justify-between items-center mb-1">
-                            <label className="block text-xs font-medium text-gray-700">Discount Code (Optional)</label>
+                            <label className="block text-xs font-medium text-gray-700">{t('discountCodeLabel')}</label>
                             <div className="flex items-center gap-2">
-                                <span className="text-xs text-gray-500">Status</span>
+                                <span className="text-xs text-gray-500">{t('status')}</span>
                                 <div className="flex items-center gap-2">
-                                    <span className={`text-xs ${formData.status === 'Draft' ? 'font-bold text-gray-900' : 'text-gray-500'}`}>Draft</span>
+                                    <span className={`text-xs ${formData.status === 'Draft' ? 'font-bold text-gray-900' : 'text-gray-500'}`}>{t('draft')}</span>
                                     <button
                                         onClick={() => setFormData(prev => ({ ...prev, status: prev.status === 'Active' ? 'Draft' : 'Active' }))}
                                         className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-[#C5A572] focus:ring-offset-2 ${formData.status === 'Active' ? 'bg-[#C5A572]' : 'bg-gray-200'}`}
                                     >
                                         <span className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${formData.status === 'Active' ? 'translate-x-5' : 'translate-x-1'}`} />
                                     </button>
-                                    <span className={`text-xs ${formData.status === 'Active' ? 'font-bold text-gray-900' : 'text-gray-500'}`}>Active</span>
+                                    <span className={`text-xs ${formData.status === 'Active' ? 'font-bold text-gray-900' : 'text-gray-500'}`}>{t('active')}</span>
                                 </div>
                             </div>
                         </div>
@@ -151,37 +153,37 @@ export default function PromotionModal({ isOpen, onClose, promotion }) {
                                 name="code"
                                 value={formData.code}
                                 onChange={handleChange}
-                                placeholder="e.g., SUMMER20"
+                                placeholder={t('discountCodePlaceholder')}
                                 className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#C5A572]"
                             />
                             <button
                                 onClick={handleGenerateCode}
                                 className="absolute right-2 top-1/2 transform -translate-y-1/2 px-3 py-1 bg-gray-100 text-gray-600 text-xs font-medium rounded hover:bg-gray-200"
                             >
-                                Generate
+                                {t('generate')}
                             </button>
                         </div>
                     </div>
 
                     {/* Discount Type */}
                     <div>
-                        <h3 className="text-sm font-bold text-gray-900 mb-4">Discount Type</h3>
+                        <h3 className="text-sm font-bold text-gray-900 mb-4">{t('discountType')}</h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
-                                <label className="block text-xs font-medium text-gray-700 mb-1">Discount Type</label>
+                                <label className="block text-xs font-medium text-gray-700 mb-1">{t('discountType')}</label>
                                 <select
                                     name="type"
                                     value={formData.type}
                                     onChange={handleChange}
                                     className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#C5A572] bg-white"
                                 >
-                                    <option value="Percentage">Percentage</option>
-                                    <option value="Fixed Amount">Fixed Amount</option>
-                                    <option value="Free Shipping">Free Shipping</option>
+                                    <option value="Percentage">{t('percentage')}</option>
+                                    <option value="Fixed Amount">{t('fixedAmount')}</option>
+                                    <option value="Free Shipping">{t('freeShipping')}</option>
                                 </select>
                             </div>
                             <div>
-                                <label className="block text-xs font-medium text-gray-700 mb-1">Discount Value</label>
+                                <label className="block text-xs font-medium text-gray-700 mb-1">{t('discountValue')}</label>
                                 <div className="relative">
                                     <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-500 text-sm">
                                         {formData.type === 'Fixed Amount' ? '$' : '%'}
@@ -202,32 +204,32 @@ export default function PromotionModal({ isOpen, onClose, promotion }) {
 
                     {/* Applicability */}
                     <div>
-                        <h3 className="text-sm font-bold text-gray-900 mb-4">Applicability</h3>
+                        <h3 className="text-sm font-bold text-gray-900 mb-4">{t('applicability')}</h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
-                                <label className="block text-xs font-medium text-gray-700 mb-1">Minimum Requirements</label>
+                                <label className="block text-xs font-medium text-gray-700 mb-1">{t('minimumRequirements')}</label>
                                 <select
                                     name="minRequirements"
                                     value={formData.minRequirements}
                                     onChange={handleChange}
                                     className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#C5A572] bg-white"
                                 >
-                                    <option value="None">None</option>
-                                    <option value="Minimum Purchase Amount">Minimum Purchase Amount</option>
-                                    <option value="Minimum Quantity">Minimum Quantity</option>
+                                    <option value="None">{t('none')}</option>
+                                    <option value="Minimum Purchase Amount">{t('minimumPurchaseAmount')}</option>
+                                    <option value="Minimum Quantity">{t('minimumQuantity')}</option>
                                 </select>
                             </div>
                             <div>
-                                <label className="block text-xs font-medium text-gray-700 mb-1">Applies to</label>
+                                <label className="block text-xs font-medium text-gray-700 mb-1">{t('appliesTo')}</label>
                                 <select
                                     name="appliesTo"
                                     value={formData.appliesTo}
                                     onChange={handleChange}
                                     className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#C5A572] bg-white"
                                 >
-                                    <option value="All products">All products</option>
-                                    <option value="Specific collections">Specific collections</option>
-                                    <option value="Specific products">Specific products</option>
+                                    <option value="All products">{t('allProducts')}</option>
+                                    <option value="Specific collections">{t('specificCollections')}</option>
+                                    <option value="Specific products">{t('specificProducts')}</option>
                                 </select>
                             </div>
                         </div>
@@ -235,10 +237,10 @@ export default function PromotionModal({ isOpen, onClose, promotion }) {
 
                     {/* Limits & Thresholds */}
                     <div>
-                        <h3 className="text-sm font-bold text-gray-900 mb-4">Limits & Thresholds</h3>
+                        <h3 className="text-sm font-bold text-gray-900 mb-4">{t('limitsAndThresholds')}</h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
-                                <label className="block text-xs font-medium text-gray-700 mb-1">Minimum Order Amount</label>
+                                <label className="block text-xs font-medium text-gray-700 mb-1">{t('minimumOrderAmount')}</label>
                                 <div className="relative">
                                     <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-500 text-sm">$</span>
                                     <input
@@ -252,7 +254,7 @@ export default function PromotionModal({ isOpen, onClose, promotion }) {
                                 </div>
                             </div>
                             <div>
-                                <label className="block text-xs font-medium text-gray-700 mb-1">Maximum Discount Cap</label>
+                                <label className="block text-xs font-medium text-gray-700 mb-1">{t('maximumDiscountCap')}</label>
                                 <div className="relative">
                                     <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-500 text-sm">$</span>
                                     <input
@@ -266,24 +268,24 @@ export default function PromotionModal({ isOpen, onClose, promotion }) {
                                 </div>
                             </div>
                             <div>
-                                <label className="block text-xs font-medium text-gray-700 mb-1">Total Usage Limit</label>
+                                <label className="block text-xs font-medium text-gray-700 mb-1">{t('totalUsageLimit')}</label>
                                 <input
                                     type="number"
                                     name="usage_limit"
                                     value={formData.usage_limit}
                                     onChange={handleChange}
-                                    placeholder="Unlimited"
+                                    placeholder={t('unlimited')}
                                     className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#C5A572]"
                                 />
                             </div>
                             <div>
-                                <label className="block text-xs font-medium text-gray-700 mb-1">Limit Per Customer</label>
+                                <label className="block text-xs font-medium text-gray-700 mb-1">{t('limitPerCustomer')}</label>
                                 <input
                                     type="number"
                                     name="usage_limit_per_customer"
                                     value={formData.usage_limit_per_customer}
                                     onChange={handleChange}
-                                    placeholder="Unlimited"
+                                    placeholder={t('unlimited')}
                                     className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#C5A572]"
                                 />
                             </div>
@@ -292,10 +294,10 @@ export default function PromotionModal({ isOpen, onClose, promotion }) {
 
                     {/* Active Dates */}
                     <div>
-                        <h3 className="text-sm font-bold text-gray-900 mb-4">Active Dates</h3>
+                        <h3 className="text-sm font-bold text-gray-900 mb-4">{t('activeDates')}</h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
-                                <label className="block text-xs font-medium text-gray-700 mb-1">Start Date</label>
+                                <label className="block text-xs font-medium text-gray-700 mb-1">{t('startDate')}</label>
                                 <input
                                     type="date"
                                     name="startDate"
@@ -305,7 +307,7 @@ export default function PromotionModal({ isOpen, onClose, promotion }) {
                                 />
                             </div>
                             <div>
-                                <label className="block text-xs font-medium text-gray-700 mb-1">End Date (Optional)</label>
+                                <label className="block text-xs font-medium text-gray-700 mb-1">{t('endDate')}</label>
                                 <input
                                     type="date"
                                     name="endDate"
@@ -322,14 +324,14 @@ export default function PromotionModal({ isOpen, onClose, promotion }) {
                 {/* Footer */}
                 <div className="p-6 border-t border-gray-100 flex justify-end gap-3 bg-gray-50 rounded-b-xl">
                     <button onClick={onClose} className="px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 font-medium text-sm transition-colors">
-                        Cancel
+                        {t('cancel')}
                     </button>
                     <button
                         onClick={handleSave}
                         disabled={isSaving}
                         className="px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 font-medium text-sm transition-colors shadow-sm disabled:opacity-50"
                     >
-                        {isSaving ? 'Saving...' : 'Save Promotion'}
+                        {isSaving ? t('saving') : t('savePromotion')}
                     </button>
                 </div>
             </div>

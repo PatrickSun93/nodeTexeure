@@ -3,8 +3,10 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { adminCustomers, getErrorMessage } from '../../../lib/api';
+import { useTranslations } from 'next-intl';
 
 export default function CustomerSupportPage() {
+  const t = useTranslations('CustomerSupport');
   const router = useRouter();
   const [customers, setCustomers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -42,7 +44,7 @@ export default function CustomerSupportPage() {
         setCustomers(response.keyValueTable.customers || []);
         setPagination(response.keyValueTable.pagination || {});
       } else {
-        throw new Error(response.message || 'Failed to fetch customers');
+        throw new Error(response.message || t('fetchError'));
       }
     } catch (err) {
       setError(getErrorMessage(err));
@@ -50,7 +52,7 @@ export default function CustomerSupportPage() {
     } finally {
       setLoading(false);
     }
-  }, [filters]);
+  }, [filters, t]);
 
   // Load customers on component mount and filter changes
   useEffect(() => {
@@ -180,26 +182,26 @@ export default function CustomerSupportPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <h1 className="text-xl font-semibold text-gray-900">
-              Customer Support Dashboard
+              {t('title')}
             </h1>
             <nav className="flex items-center space-x-4">
-              <a 
+              <a
                 href="/"
                 className="text-sm text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md hover:bg-gray-100"
               >
-                Dashboard
+                {t('navDashboard')}
               </a>
-              <a 
+              <a
                 href="/customers"
                 className="text-sm text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md hover:bg-gray-100"
               >
-                Customers
+                {t('navCustomers')}
               </a>
-              <a 
+              <a
                 href="/customers/support"
                 className="text-sm text-blue-600 px-3 py-2 rounded-md bg-blue-50"
               >
-                Support
+                {t('navSupport')}
               </a>
             </nav>
           </div>
@@ -208,8 +210,8 @@ export default function CustomerSupportPage() {
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-6">
-          <h2 className="text-2xl font-bold text-gray-900">Customer Support Dashboard</h2>
-          <p className="text-gray-600">Manage customer support requests and communications</p>
+          <h2 className="text-2xl font-bold text-gray-900">{t('title')}</h2>
+          <p className="text-gray-600">{t('subtitle')}</p>
         </div>
 
         {/* Support Statistics */}
@@ -222,7 +224,7 @@ export default function CustomerSupportPage() {
                 </div>
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">High Priority</p>
+                <p className="text-sm font-medium text-gray-600">{t('highPriority')}</p>
                 <p className="text-2xl font-semibold text-gray-900">
                   {customers.filter(c => getPriorityLevel(c) === 'High').length}
                 </p>
@@ -238,7 +240,7 @@ export default function CustomerSupportPage() {
                 </div>
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Medium Priority</p>
+                <p className="text-sm font-medium text-gray-600">{t('mediumPriority')}</p>
                 <p className="text-2xl font-semibold text-gray-900">
                   {customers.filter(c => getPriorityLevel(c) === 'Medium').length}
                 </p>
@@ -254,7 +256,7 @@ export default function CustomerSupportPage() {
                 </div>
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Suspended</p>
+                <p className="text-sm font-medium text-gray-600">{t('suspended')}</p>
                 <p className="text-2xl font-semibold text-gray-900">
                   {customers.filter(c => c.status === 'suspended').length}
                 </p>
@@ -270,7 +272,7 @@ export default function CustomerSupportPage() {
                 </div>
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">VIP Customers</p>
+                <p className="text-sm font-medium text-gray-600">{t('vipCustomers')}</p>
                 <p className="text-2xl font-semibold text-gray-900">
                   {customers.filter(c => c.segment === 'VIP').length}
                 </p>
@@ -284,54 +286,54 @@ export default function CustomerSupportPage() {
           <form onSubmit={handleSearch} className="grid grid-cols-1 md:grid-cols-5 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Search Customers
+                {t('searchCustomers')}
               </label>
               <input
                 type="text"
                 value={filters.search}
                 onChange={(e) => handleFilterChange('search', e.target.value)}
-                placeholder="Search by name or email..."
+                placeholder={t('searchPlaceholder')}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Status
+                {t('status')}
               </label>
               <select
                 value={filters.status}
                 onChange={(e) => handleFilterChange('status', e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
-                <option value="">All Statuses</option>
-                <option value="active">Active</option>
-                <option value="inactive">Inactive</option>
-                <option value="suspended">Suspended</option>
+                <option value="">{t('allStatuses')}</option>
+                <option value="active">{t('statusActive')}</option>
+                <option value="inactive">{t('statusInactive')}</option>
+                <option value="suspended">{t('statusSuspended')}</option>
               </select>
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Segment
+                {t('segment')}
               </label>
               <select
                 value={filters.segment}
                 onChange={(e) => handleFilterChange('segment', e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
-                <option value="">All Segments</option>
-                <option value="VIP">VIP</option>
-                <option value="Loyal">Loyal</option>
-                <option value="Returning">Returning</option>
-                <option value="One-time">One-time</option>
-                <option value="New">New</option>
+                <option value="">{t('allSegments')}</option>
+                <option value="VIP">{t('segmentVIP')}</option>
+                <option value="Loyal">{t('segmentLoyal')}</option>
+                <option value="Returning">{t('segmentReturning')}</option>
+                <option value="One-time">{t('segmentOneTime')}</option>
+                <option value="New">{t('segmentNew')}</option>
               </select>
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Sort By
+                {t('sortBy')}
               </label>
               <select
                 value={`${filters.sortBy}_${filters.sortOrder}`}
@@ -342,10 +344,10 @@ export default function CustomerSupportPage() {
                 }}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
-                <option value="last_login_desc">Last Login</option>
-                <option value="created_at_desc">Newest First</option>
-                <option value="first_name_asc">Name A-Z</option>
-                <option value="total_spent_desc">Highest Spender</option>
+                <option value="last_login_desc">{t('lastLogin')}</option>
+                <option value="created_at_desc">{t('sortNewest')}</option>
+                <option value="first_name_asc">{t('sortNameAsc')}</option>
+                <option value="total_spent_desc">{t('sortHighestSpender')}</option>
               </select>
             </div>
 
@@ -354,7 +356,7 @@ export default function CustomerSupportPage() {
                 type="submit"
                 className="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
-                Search
+                {t('searchButton')}
               </button>
             </div>
           </form>
@@ -374,25 +376,25 @@ export default function CustomerSupportPage() {
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Customer
+                    {t('columnCustomer')}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Priority
+                    {t('columnPriority')}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Status
+                    {t('status')}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Segment
+                    {t('segment')}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Total Spent
+                    {t('totalSpent')}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Last Login
+                    {t('lastLogin')}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Support Actions
+                    {t('supportActions')}
                   </th>
                 </tr>
               </thead>
@@ -400,13 +402,13 @@ export default function CustomerSupportPage() {
                 {loading ? (
                   <tr>
                     <td colSpan="7" className="px-6 py-12 text-center text-gray-500">
-                      Loading customers...
+                      {t('loading')}
                     </td>
                   </tr>
                 ) : customers.length === 0 ? (
                   <tr>
                     <td colSpan="7" className="px-6 py-12 text-center text-gray-500">
-                      No customers found
+                      {t('noCustomers')}
                     </td>
                   </tr>
                 ) : (
@@ -452,7 +454,7 @@ export default function CustomerSupportPage() {
                           {formatCurrency(customer.total_spent)}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {customer.last_login ? formatDate(customer.last_login) : 'Never'}
+                          {customer.last_login ? formatDate(customer.last_login) : t('never')}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                           <div className="flex space-x-2">
@@ -460,20 +462,20 @@ export default function CustomerSupportPage() {
                               onClick={() => router.push(`/customers/${customer.id}`)}
                               className="text-blue-600 hover:text-blue-900"
                             >
-                              View Profile
+                              {t('viewProfile')}
                             </button>
                             <button
                               onClick={() => openNoteModal(customer)}
                               className="text-green-600 hover:text-green-900"
                             >
-                              Add Note
+                              {t('addNote')}
                             </button>
                             {customer.status === 'active' && (
                               <button
                                 onClick={() => handleStatusUpdate(customer.id, 'suspended', 'Support action')}
                                 className="text-red-600 hover:text-red-900"
                               >
-                                Suspend
+                                {t('suspend')}
                               </button>
                             )}
                             {customer.status === 'suspended' && (
@@ -481,7 +483,7 @@ export default function CustomerSupportPage() {
                                 onClick={() => handleStatusUpdate(customer.id, 'active', 'Support action')}
                                 className="text-green-600 hover:text-green-900"
                               >
-                                Activate
+                                {t('activate')}
                               </button>
                             )}
                           </div>
@@ -503,40 +505,35 @@ export default function CustomerSupportPage() {
                   disabled={pagination.page <= 1}
                   className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Previous
+                  {t('previous')}
                 </button>
                 <button
                   onClick={() => handleFilterChange('page', Math.min(pagination.totalPages, pagination.page + 1))}
                   disabled={pagination.page >= pagination.totalPages}
                   className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Next
+                  {t('next')}
                 </button>
               </div>
               <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
                 <div>
                   <p className="text-sm text-gray-700">
-                    Showing{' '}
-                    <span className="font-medium">
-                      {((pagination.page - 1) * pagination.limit) + 1}
-                    </span>{' '}
-                    to{' '}
-                    <span className="font-medium">
-                      {Math.min(pagination.page * pagination.limit, pagination.total)}
-                    </span>{' '}
-                    of{' '}
-                    <span className="font-medium">{pagination.total}</span>{' '}
-                    results
+                    {t.rich('showingResults', {
+                      from: ((pagination.page - 1) * pagination.limit) + 1,
+                      to: Math.min(pagination.page * pagination.limit, pagination.total),
+                      total: pagination.total,
+                      medium: (chunks) => <span className="font-medium">{chunks}</span>
+                    })}
                   </p>
                 </div>
                 <div>
-                  <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                  <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label={t('paginationAriaLabel')}>
                     <button
                       onClick={() => handleFilterChange('page', Math.max(1, pagination.page - 1))}
                       disabled={pagination.page <= 1}
                       className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      Previous
+                      {t('previous')}
                     </button>
                     
                     {/* Page numbers */}
@@ -562,7 +559,7 @@ export default function CustomerSupportPage() {
                       disabled={pagination.page >= pagination.totalPages}
                       className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      Next
+                      {t('next')}
                     </button>
                   </nav>
                 </div>
@@ -578,32 +575,32 @@ export default function CustomerSupportPage() {
           <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
             <div className="mt-3">
               <h3 className="text-lg font-medium text-gray-900 mb-4">
-                Add Support Note for {selectedCustomer?.first_name} {selectedCustomer?.last_name}
+                {t('addSupportNoteFor', { name: `${selectedCustomer?.first_name} ${selectedCustomer?.last_name}` })}
               </h3>
               <form onSubmit={handleAddNote} className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Note Type
+                    {t('noteType')}
                   </label>
                   <select
                     value={noteType}
                     onChange={(e) => setNoteType(e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
-                    <option value="support">Support</option>
-                    <option value="billing">Billing</option>
-                    <option value="general">General</option>
+                    <option value="support">{t('noteTypeSupport')}</option>
+                    <option value="billing">{t('noteTypeBilling')}</option>
+                    <option value="general">{t('noteTypeGeneral')}</option>
                   </select>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Note
+                    {t('note')}
                   </label>
                   <textarea
                     value={newNote}
                     onChange={(e) => setNewNote(e.target.value)}
                     rows={4}
-                    placeholder="Enter support note..."
+                    placeholder={t('notePlaceholder')}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     required
                   />
@@ -614,14 +611,14 @@ export default function CustomerSupportPage() {
                     onClick={closeNoteModal}
                     className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
                   >
-                    Cancel
+                    {t('cancel')}
                   </button>
                   <button
                     type="submit"
                     disabled={!newNote.trim() || addingNote}
                     className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    {addingNote ? 'Adding...' : 'Add Note'}
+                    {addingNote ? t('adding') : t('addNote')}
                   </button>
                 </div>
               </form>

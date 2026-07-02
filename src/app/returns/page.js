@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import Header from '../../components/Header';
 import Footer from '../../components/Footer';
@@ -36,6 +37,7 @@ const RTN_STYLES = `
 `;
 
 export default function ReturnsPage() {
+  const t = useTranslations('Returns');
   const { data: session, status: authStatus } = useSession();
   const router = useRouter();
   const [returns, setReturns] = useState([]);
@@ -79,20 +81,20 @@ export default function ReturnsPage() {
       <main style={{ padding: '2rem 0 4.5rem' }}>
         <div className="aesop-container">
           <nav className="nt-breadcrumb">
-            <Link href="/">Home</Link><span className="nt-breadcrumb-sep">/</span><span>My Returns</span>
+            <Link href="/">{t('home')}</Link><span className="nt-breadcrumb-sep">/</span><span>{t('myReturns')}</span>
           </nav>
 
-          <h1 className="noirae-heading-hero" style={{ margin: '1.25rem 0 0.5rem' }}>My Returns</h1>
+          <h1 className="noirae-heading-hero" style={{ margin: '1.25rem 0 0.5rem' }}>{t('myReturns')}</h1>
           <p style={{ fontFamily: 'var(--noirae-font-sans)', color: 'var(--noirae-text-secondary)', fontSize: '0.95rem', marginBottom: '2.25rem' }}>
-            Track and manage your return requests.
+            {t('subtitle')}
           </p>
 
           {returns.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '4.5rem 1.5rem', background: 'var(--noirae-bg-white)', border: '1px solid var(--noirae-border-medium)' }}>
               <p style={{ fontFamily: 'var(--noirae-font-sans)', color: 'var(--noirae-text-secondary)', marginBottom: '1.75rem' }}>
-                You have no return requests.
+                {t('empty')}
               </p>
-              <Link href="/orders" className="rtn-btn rtn-btn-dark">View Orders</Link>
+              <Link href="/orders" className="rtn-btn rtn-btn-dark">{t('viewOrders')}</Link>
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
@@ -102,9 +104,9 @@ export default function ReturnsPage() {
                   <Link key={ret.id} href={`/returns/${ret.id}`} className="rtn-row-link">
                     <div className="rtn-row">
                       <div>
-                        <p style={{ fontFamily: 'var(--noirae-font-serif)', fontSize: '1.4rem', lineHeight: 1.15, color: 'var(--noirae-text-primary)', marginBottom: '0.4rem' }}>Return {ret.return_number}</p>
-                        <p className="rtn-meta">Order: {ret.order_number}</p>
-                        <p className="rtn-meta" style={{ textTransform: 'capitalize' }}>Reason: {ret.reason?.replace(/_/g, ' ')}</p>
+                        <p style={{ fontFamily: 'var(--noirae-font-serif)', fontSize: '1.4rem', lineHeight: 1.15, color: 'var(--noirae-text-primary)', marginBottom: '0.4rem' }}>{t('returnLabel', { number: ret.return_number })}</p>
+                        <p className="rtn-meta">{t('orderLabel', { number: ret.order_number })}</p>
+                        <p className="rtn-meta" style={{ textTransform: 'capitalize' }}>{t('reasonLabel', { reason: ret.reason?.replace(/_/g, ' ') || '' })}</p>
                       </div>
                       <div style={{ textAlign: 'right' }}>
                         <span className="rtn-badge" style={{ color: s.color, backgroundColor: s.bg }}>

@@ -1,8 +1,10 @@
 'use client';
 
 import ReactECharts from 'echarts-for-react';
+import { useTranslations } from 'next-intl';
 
 export default function RevenueChart({ data = [] }) {
+    const t = useTranslations('Charts');
     const option = {
         tooltip: {
             trigger: 'axis',
@@ -29,7 +31,7 @@ export default function RevenueChart({ data = [] }) {
         },
         series: [
             {
-                name: 'Revenue',
+                name: t('revenue'),
                 type: 'line',
                 smooth: true,
                 areaStyle: {
@@ -59,7 +61,7 @@ export default function RevenueChart({ data = [] }) {
 
     return (
         <div className="bg-white rounded-lg shadow p-6">
-            <h3 className="text-lg font-semibold mb-4">Revenue Over Time</h3>
+            <h3 className="text-lg font-semibold mb-4">{t('revenueOverTime')}</h3>
             <ReactECharts option={option} style={{ height: '300px' }} />
         </div>
     );
