@@ -38,6 +38,21 @@
     "en": "English",
     "zh": "中文"
   },
+  "Cart": {
+    "loading": "Loading your cart...",
+    "tryAgain": "Try Again",
+    "empty": "Your cart is empty",
+    "emptyDesc": "Discover our curated collection of premium products.",
+    "continueShopping": "Continue Shopping",
+    "cartItems": "Cart Items",
+    "decreaseQty": "Decrease quantity",
+    "increaseQty": "Increase quantity",
+    "remove": "Remove",
+    "orderSummary": "Order Summary",
+    "subtotal": "Subtotal",
+    "taxNote": "Shipping and taxes calculated at checkout",
+    "proceedToCheckout": "Proceed to Checkout"
+  },
   "Product": {
     "loading": "Loading...",
     "notFound": "Product not found",

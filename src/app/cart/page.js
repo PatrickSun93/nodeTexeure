@@ -2,12 +2,14 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import Header from '../../components/Header';
 import Footer from '../../components/Footer';
 import { apiRequest, extractResponseData } from '../../lib/api';
 
 
 export default function Cart() {
+  const t = useTranslations('Cart');
   const [cart, setCart] = useState({ id: null, items: [] });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -87,7 +89,7 @@ export default function Cart() {
       <div className="aesop-page">
         <Header />
         <div className="aesop-container">
-          <div className="aesop-loading-state">Loading your cart...</div>
+          <div className="aesop-loading-state">{t('loading')}</div>
         </div>
         <Footer />
       </div>
@@ -101,7 +103,7 @@ export default function Cart() {
         <div className="aesop-container">
           <div className="aesop-error-state">
             <p>{error}</p>
-            <button className="aesop-button-primary" onClick={fetchCart}>Try Again</button>
+            <button className="aesop-button-primary" onClick={fetchCart}>{t('tryAgain')}</button>
           </div>
         </div>
         <Footer />
@@ -115,9 +117,9 @@ export default function Cart() {
         <Header />
         <div className="aesop-container">
           <div className="aesop-empty-state">
-            <h2>Your cart is empty</h2>
-            <p>Discover our curated collection of premium products.</p>
-            <Link href="/shop" className="aesop-button-primary">Continue Shopping</Link>
+            <h2>{t('empty')}</h2>
+            <p>{t('emptyDesc')}</p>
+            <Link href="/shop" className="aesop-button-primary">{t('continueShopping')}</Link>
           </div>
         </div>
         <Footer />
@@ -180,7 +182,7 @@ export default function Cart() {
           <div className="aesop-cart-content">
             {/* Cart Items Column */}
             <div className="aesop-cart-items-section">
-              <h2 className="aesop-section-title">Cart Items</h2>
+              <h2 className="aesop-section-title">{t('cartItems')}</h2>
               <ul className="aesop-cart-page-items" aria-live="polite">
                 {cart.items.map((item) => {
                   const price = Number(item.base_price) || 0;
@@ -200,7 +202,7 @@ export default function Cart() {
                               className="aesop-qty-btn"
                               onClick={() => updateQuantity(item.id, Math.max(1, qty - 1))}
                               disabled={!!updating[item.id] || qty <= 1}
-                              aria-label="Decrease quantity"
+                              aria-label={t('decreaseQty')}
                             >
                               −
                             </button>
@@ -221,7 +223,7 @@ export default function Cart() {
                               className="aesop-qty-btn"
                               onClick={() => updateQuantity(item.id, qty + 1)}
                               disabled={!!updating[item.id]}
-                              aria-label="Increase quantity"
+                              aria-label={t('increaseQty')}
                             >
                               +
                             </button>
@@ -231,7 +233,7 @@ export default function Cart() {
                             onClick={() => removeItem(item.id)}
                             disabled={!!updating[item.id]}
                           >
-                            Remove
+                            {t('remove')}
                           </button>
                         </div>
                       </div>
@@ -247,22 +249,22 @@ export default function Cart() {
             {/* Cart Summary Column */}
             <div className="aesop-cart-summary-section">
               <div className="aesop-cart-summary-card">
-                <h2 className="aesop-section-title">Order Summary</h2>
+                <h2 className="aesop-section-title">{t('orderSummary')}</h2>
                 <div className="aesop-cart-summary-details">
                   <div className="aesop-cart-subtotal">
-                    <span>Subtotal</span>
+                    <span>{t('subtotal')}</span>
                     <strong>${subtotal.toFixed(2)}</strong>
                   </div>
                   <div className="aesop-cart-summary-note">
-                    <p>Shipping and taxes calculated at checkout</p>
+                    <p>{t('taxNote')}</p>
                   </div>
                 </div>
                 <div className="aesop-cart-summary-actions">
                   <button className="aesop-button-primary aesop-checkout-btn">
-                    Proceed to Checkout
+                    {t('proceedToCheckout')}
                   </button>
                   <Link href="/shop" className="aesop-button-secondary">
-                    Continue Shopping
+                    {t('continueShopping')}
                   </Link>
                 </div>
               </div>

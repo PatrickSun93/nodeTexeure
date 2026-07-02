@@ -110,5 +110,20 @@
     "customerReviews": "Avis clients",
     "cancel": "Annuler",
     "writeReview": "Écrire un avis"
+  },
+  "Cart": {
+    "loading": "Chargement de votre panier...",
+    "tryAgain": "Réessayer",
+    "empty": "Votre panier est vide",
+    "emptyDesc": "Découvrez notre collection de produits premium.",
+    "continueShopping": "Continuer vos achats",
+    "cartItems": "Articles du panier",
+    "decreaseQty": "Diminuer la quantité",
+    "increaseQty": "Augmenter la quantité",
+    "remove": "Supprimer",
+    "orderSummary": "Résumé de la commande",
+    "subtotal": "Sous-total",
+    "taxNote": "Les frais de livraison et taxes sont calculés à la caisse",
+    "proceedToCheckout": "Procéder à la caisse"
   }
 }

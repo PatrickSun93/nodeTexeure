@@ -110,5 +110,20 @@
     "customerReviews": "客户评价",
     "cancel": "取消",
     "writeReview": "撰写评价"
+  },
+  "Cart": {
+    "loading": "正在加载购物车...",
+    "tryAgain": "重试",
+    "empty": "购物车为空",
+    "emptyDesc": "探索我们的精选高级系列。",
+    "continueShopping": "继续购物",
+    "cartItems": "购物车商品",
+    "decreaseQty": "减少数量",
+    "increaseQty": "增加数量",
+    "remove": "移除",
+    "orderSummary": "订单摘要",
+    "subtotal": "小计",
+    "taxNote": "运费和税款将在结账时计算",
+    "proceedToCheckout": "前往结账"
   }
 }
