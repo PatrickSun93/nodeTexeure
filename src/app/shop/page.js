@@ -3,6 +3,7 @@
 import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import Header from '../../components/Header';
 import Footer from '../../components/Footer';
 import Pagination from '../../components/common/Pagination';
@@ -39,6 +40,7 @@ export function ProductCard({ product, onAddToCart }) {
 
 // Main Shop Component
 function Shop() {
+  const t = useTranslations('Shop');
   const router = useRouter();
   const searchParams = useSearchParams();
   const searchQuery = searchParams.get('search') || '';
@@ -202,22 +204,22 @@ function Shop() {
           <div className="noirae-shop-container">
             {/* Filter Sidebar */}
             <aside className="noirae-shop-sidebar">
-              <h3 className="noirae-shop-sidebar-title">Filter by</h3>
-              
+              <h3 className="noirae-shop-sidebar-title">{t('filterBy')}</h3>
+
               {/* Material Filter */}
               <div className="noirae-filter-group">
-                <h4 className="noirae-filter-group-title">Material</h4>
+                <h4 className="noirae-filter-group-title">{t('material')}</h4>
                 <div className="noirae-filter-options">
-                  {['Silk', 'Cashmere', 'Blends'].map((material) => (
-                    <label key={material} className="noirae-filter-option">
+                  {[{ value: 'Silk', key: 'silk' }, { value: 'Cashmere', key: 'cashmere' }, { value: 'Blends', key: 'blends' }].map(({ value, key }) => (
+                    <label key={value} className="noirae-filter-option">
                       <input
                         type="radio"
                         name="material"
-                        value={material}
-                        checked={filters.material === material}
+                        value={value}
+                        checked={filters.material === value}
                         onChange={(e) => handleFilterChange('material', e.target.value)}
                       />
-                      <span>{material}</span>
+                      <span>{t(key)}</span>
                     </label>
                   ))}
                 </div>
@@ -225,7 +227,7 @@ function Shop() {
 
               {/* Color Filter */}
               <div className="noirae-filter-group">
-                <h4 className="noirae-filter-group-title">Color</h4>
+                <h4 className="noirae-filter-group-title">{t('color')}</h4>
                 <div className="noirae-color-swatches">
                   {[
                     { name: 'Ivory', color: '#FFFFF0' },
@@ -259,7 +261,7 @@ function Shop() {
 
               {/* Price Range Filter */}
               <div className="noirae-filter-group">
-                <h4 className="noirae-filter-group-title">Price Range</h4>
+                <h4 className="noirae-filter-group-title">{t('priceRange')}</h4>
                 <div className="noirae-price-value">${filters.priceRange}</div>
                 <input
                   type="range"
@@ -274,21 +276,21 @@ function Shop() {
 
               {/* Size Filter */}
               <div className="noirae-filter-group">
-                <h4 className="noirae-filter-group-title">Size</h4>
+                <h4 className="noirae-filter-group-title">{t('size')}</h4>
                 <div className="noirae-filter-options">
-                  {['Twin', 'Queen', 'King', 'California King'].map((size) => (
-                    <label key={size} className="noirae-filter-option">
+                  {[{ value: 'Twin', key: 'twin' }, { value: 'Queen', key: 'queen' }, { value: 'King', key: 'king' }, { value: 'California King', key: 'californiaKing' }].map(({ value, key }) => (
+                    <label key={value} className="noirae-filter-option">
                       <input
                         type="checkbox"
-                        checked={filters.sizes.includes(size)}
+                        checked={filters.sizes.includes(value)}
                         onChange={(e) => {
                           const newSizes = e.target.checked
-                            ? [...filters.sizes, size]
-                            : filters.sizes.filter(s => s !== size);
+                            ? [...filters.sizes, value]
+                            : filters.sizes.filter(s => s !== value);
                           handleFilterChange('sizes', newSizes);
                         }}
                       />
-                      <span>{size}</span>
+                      <span>{t(key)}</span>
                     </label>
                   ))}
                 </div>
@@ -296,7 +298,7 @@ function Shop() {
 
               {/* Brand Filter */}
               <div className="noirae-filter-group">
-                <h4 className="noirae-filter-group-title">Brand</h4>
+                <h4 className="noirae-filter-group-title">{t('brand')}</h4>
                 <div className="noirae-filter-options">
                   {['Siken Dream', 'Sishmere Comfort', 'Cloud Weave'].map((brand) => (
                     <label key={brand} className="noirae-filter-option">
@@ -318,7 +320,7 @@ function Shop() {
 
               {/* Thread Count Filter */}
               <div className="noirae-filter-group">
-                <h4 className="noirae-filter-group-title">Thread Count</h4>
+                <h4 className="noirae-filter-group-title">{t('threadCount')}</h4>
                 <div className="noirae-price-value">{filters.threadCount} - 1230+</div>
                 <input
                   type="range"
@@ -336,19 +338,19 @@ function Shop() {
             <div className="noirae-shop-main">
               {/* Header with Title and Sort */}
               <div className="noirae-shop-header">
-                <h1 className="noirae-shop-title">The Collection</h1>
+                <h1 className="noirae-shop-title">{t('theCollection')}</h1>
                 <div className="noirae-shop-sort">
-                  <label htmlFor="sort">Sort by:</label>
-                  <select 
+                  <label htmlFor="sort">{t('sortBy')}</label>
+                  <select
                     id="sort"
-                    value={sortBy} 
+                    value={sortBy}
                     onChange={(e) => setSortBy(e.target.value)}
                     className="noirae-sort-select"
                   >
-                    <option value="newest">Newest</option>
-                    <option value="price-low">Price: Low to High</option>
-                    <option value="price-high">Price: High to Low</option>
-                    <option value="name">Name: A to Z</option>
+                    <option value="newest">{t('sortNewest')}</option>
+                    <option value="price-low">{t('sortPriceLow')}</option>
+                    <option value="price-high">{t('sortPriceHigh')}</option>
+                    <option value="name">{t('sortName')}</option>
                   </select>
                 </div>
               </div>
@@ -371,7 +373,7 @@ function Shop() {
               {loading ? (
                 <div className="noirae-loading">
                   <div className="aesop-loading-spinner"></div>
-                  <p>Loading products...</p>
+                  <p>{t('loading')}</p>
                 </div>
               ) : (
                 <>
@@ -389,7 +391,7 @@ function Shop() {
                         {/* Empty grid cells to maintain 3-column layout */}
                         <div className="noirae-empty-grid-cell"></div>
                         <div className="noirae-empty-grid-cell noirae-no-products-cell">
-                          <p>No products found matching your criteria.</p>
+                          <p>{t('noProducts')}</p>
                         </div>
                         <div className="noirae-empty-grid-cell"></div>
                       </>

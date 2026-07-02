@@ -37,5 +37,29 @@
     "label": "Idioma",
     "en": "English",
     "zh": "中文"
+  },
+  "Shop": {
+    "filterBy": "Filtrar por",
+    "material": "Material",
+    "silk": "Seda",
+    "cashmere": "Cachemira",
+    "blends": "Mezclas",
+    "color": "Color",
+    "priceRange": "Rango de Precio",
+    "size": "Tamaño",
+    "twin": "Individual",
+    "queen": "Doble",
+    "king": "Extra Grande",
+    "californiaKing": "California Extra Grande",
+    "brand": "Marca",
+    "threadCount": "Densidad de Hilos",
+    "theCollection": "La Colección",
+    "sortBy": "Ordenar por:",
+    "sortNewest": "Más reciente",
+    "sortPriceLow": "Precio: Menor a Mayor",
+    "sortPriceHigh": "Precio: Mayor a Menor",
+    "sortName": "Nombre: A a Z",
+    "loading": "Cargando productos...",
+    "noProducts": "No se encontraron productos que coincidan con sus criterios."
   }
 }

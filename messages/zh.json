@@ -37,5 +37,29 @@
     "label": "语言",
     "en": "English",
     "zh": "中文"
+  },
+  "Shop": {
+    "filterBy": "筛选",
+    "material": "面料",
+    "silk": "真丝",
+    "cashmere": "羊绒",
+    "blends": "混纺",
+    "color": "颜色",
+    "priceRange": "价格范围",
+    "size": "规格",
+    "twin": "单人床",
+    "queen": "双人床",
+    "king": "特大床",
+    "californiaKing": "加州特大床",
+    "brand": "品牌",
+    "threadCount": "支数",
+    "theCollection": "精选系列",
+    "sortBy": "排序：",
+    "sortNewest": "最新",
+    "sortPriceLow": "价格：低到高",
+    "sortPriceHigh": "价格：高到低",
+    "sortName": "名称：A 至 Z",
+    "loading": "加载产品中...",
+    "noProducts": "未找到符合条件的产品。"
   }
 }

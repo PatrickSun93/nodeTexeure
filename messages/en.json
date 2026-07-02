@@ -37,5 +37,29 @@
     "label": "Language",
     "en": "English",
     "zh": "中文"
+  },
+  "Shop": {
+    "filterBy": "Filter by",
+    "material": "Material",
+    "silk": "Silk",
+    "cashmere": "Cashmere",
+    "blends": "Blends",
+    "color": "Color",
+    "priceRange": "Price Range",
+    "size": "Size",
+    "twin": "Twin",
+    "queen": "Queen",
+    "king": "King",
+    "californiaKing": "California King",
+    "brand": "Brand",
+    "threadCount": "Thread Count",
+    "theCollection": "The Collection",
+    "sortBy": "Sort by:",
+    "sortNewest": "Newest",
+    "sortPriceLow": "Price: Low to High",
+    "sortPriceHigh": "Price: High to Low",
+    "sortName": "Name: A to Z",
+    "loading": "Loading products...",
+    "noProducts": "No products found matching your criteria."
   }
 }
