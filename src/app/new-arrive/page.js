@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useTranslations } from "next-intl";
 import Link from "next/link";
 import Header from "../../components/Header";
 import Footer from "../../components/Footer";
@@ -15,6 +16,7 @@ import { ProductCard } from "../shop/page";
  * - Reuses existing ProductCard styles for consistency
  */
 export default function NewArrivePage() {
+  const t = useTranslations('NewArrive');
   const [products, setProducts] = useState([]);
   const [settings, setSettings] = useState({});
   const [loading, setLoading] = useState(true);
@@ -157,12 +159,12 @@ export default function NewArrivePage() {
       {/* Hero Section */}
       <section className="noirae-hero">
         <div className="aesop-container">
-          <h1 className="noirae-hero-title">New Arrive</h1>
+          <h1 className="noirae-hero-title">{t('heroTitle')}</h1>
           <p className="noirae-hero-subtitle">
-            Recent additions to the range and formulations everyone should know about—be they much-adored or gravely unsung.
+            {t('heroSubtitle')}
           </p>
           <div>
-            <Link href="#banner" className="aesop-button-primary">Discover</Link>
+            <Link href="#banner" className="aesop-button-primary">{t('discover')}</Link>
           </div>
         </div>
       </section>
@@ -170,21 +172,21 @@ export default function NewArrivePage() {
       {/* Full-width banner between Discover and New Additions */}
       <section id="banner" className="aesop-section" style={{padding: 0}}>
         <div className="aesop-fullwidth-image" style={{width: '100%', overflow: 'hidden'}}>
-          <img src="/file.svg" alt="New Arrivals banner" style={{display: 'block', width: '100%', height: 'auto'}} />
+          <img src="/file.svg" alt={t('bannerAlt')} style={{display: 'block', width: '100%', height: 'auto'}} />
         </div>
       </section>
 
       {/* New Additions (alternating layout: single list per row) */}
       <section id="new-additions" className="aesop-section">
         <div className="aesop-container">
-          <h2 className="aesop-section-title">New additions</h2>
+          <h2 className="aesop-section-title">{t('newAdditionsTitle')}</h2>
           {loading ? (
             <div className="aesop-loading">
               <div className="aesop-loading-spinner"></div>
-              <p>Loading products...</p>
+              <p>{t('loading')}</p>
             </div>
           ) : items.length === 0 ? (
-            <p>No products configured in settings.newarrival.</p>
+            <p>{t('emptyState')}</p>
           ) : (
             <div className="aesop-alternating-list">
               {items.map((product, index) => {
@@ -202,14 +204,14 @@ export default function NewArrivePage() {
                       </div>
                     ) : (
                       <div>
-                        <img src="/globe.svg" alt={`${product.name} showcase`} style={{width:'100%', height:'auto', display:'block'}} />
+                        <img src="/globe.svg" alt={t('showcaseAlt', { name: product.name })} style={{width:'100%', height:'auto', display:'block'}} />
                       </div>
                     )}
 
                     {/* Right column */}
                     {!isEven ? (
                       <div>
-                        <img src="/window.svg" alt={`${product.name} detail visual`} style={{width:'100%', height:'auto', display:'block'}} />
+                        <img src="/window.svg" alt={t('detailAlt', { name: product.name })} style={{width:'100%', height:'auto', display:'block'}} />
                       </div>
                     ) : (
                       <div>
@@ -231,22 +233,22 @@ export default function NewArrivePage() {
       {/* Featured Highlights remains */}
       <section className="aesop-section">
         <div className="aesop-container">
-          <h2 className="aesop-section-title">Featured highlights</h2>
+          <h2 className="aesop-section-title">{t('featuredHighlightsTitle')}</h2>
           <div className="aesop-features-grid">
             <div className="aesop-feature-card">
               <h3 className="aesop-feature-title">Above Us, Steorra</h3>
-              <p className="aesop-feature-description">Premium fragrance with celestial nuance.</p>
-              <Link href="#new-additions" className="aesop-button-secondary">Explore</Link>
+              <p className="aesop-feature-description">{t('featuredDesc1')}</p>
+              <Link href="#new-additions" className="aesop-button-secondary">{t('explore')}</Link>
             </div>
             <div className="aesop-feature-card">
               <h3 className="aesop-feature-title">Eleos Nourishing Body Cleanser</h3>
-              <p className="aesop-feature-description">Aromatic, gentle cleanse for daily ritual.</p>
-              <Link href="#new-additions" className="aesop-button-secondary">Shop now</Link>
+              <p className="aesop-feature-description">{t('featuredDesc2')}</p>
+              <Link href="#new-additions" className="aesop-button-secondary">{t('shopNow')}</Link>
             </div>
             <div className="aesop-feature-card">
               <h3 className="aesop-feature-title">Lucent Duo</h3>
-              <p className="aesop-feature-description">A refined skincare combination set.</p>
-              <Link href="#new-additions" className="aesop-button-secondary">Discover</Link>
+              <p className="aesop-feature-description">{t('featuredDesc3')}</p>
+              <Link href="#new-additions" className="aesop-button-secondary">{t('discover')}</Link>
             </div>
           </div>
         </div>
@@ -257,14 +259,14 @@ export default function NewArrivePage() {
         <div className="aesop-container aesop-features">
           <div className="aesop-features-grid">
             <div className="aesop-feature-card">
-              <h3 className="aesop-feature-title">Consultation</h3>
-              <p className="aesop-feature-description">Speak to a real consultant to personalize your regimen.</p>
-              <Link href="/contact" className="aesop-button-primary">Speak with us</Link>
+              <h3 className="aesop-feature-title">{t('consultationTitle')}</h3>
+              <p className="aesop-feature-description">{t('consultationDesc')}</p>
+              <Link href="/contact" className="aesop-button-primary">{t('speakWithUs')}</Link>
             </div>
             <div className="aesop-feature-card">
-              <h3 className="aesop-feature-title">Recommended reading</h3>
-              <p className="aesop-feature-description">Editorial content, ingredient stories and regimen guidance.</p>
-              <Link href="/blog" className="aesop-button-secondary">Read articles</Link>
+              <h3 className="aesop-feature-title">{t('recommendedReadingTitle')}</h3>
+              <p className="aesop-feature-description">{t('recommendedReadingDesc')}</p>
+              <Link href="/blog" className="aesop-button-secondary">{t('readArticles')}</Link>
             </div>
           </div>
         </div>

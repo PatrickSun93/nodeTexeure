@@ -2,10 +2,12 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { apiRequest, isSuccessResponse } from '../../lib/api';
 
 export default function Register() {
+  const t = useTranslations('Register');
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -38,25 +40,25 @@ export default function Register() {
 
     // Validation
     if (!formData.firstName || !formData.lastName || !formData.email || !formData.password) {
-      setError('All fields are required');
+      setError(t('errorAllFields'));
       setLoading(false);
       return;
     }
 
     if (!termsAccepted) {
-      setError('You must agree to the Terms of Service and Privacy Policy');
+      setError(t('errorTermsRequired'));
       setLoading(false);
       return;
     }
 
     if (formData.password !== formData.confirmPassword) {
-      setError('Passwords do not match');
+      setError(t('errorPasswordMatch'));
       setLoading(false);
       return;
     }
 
     if (formData.password.length < 6) {
-      setError('Password must be at least 6 characters long');
+      setError(t('errorPasswordLength'));
       setLoading(false);
       return;
     }
@@ -77,11 +79,11 @@ export default function Register() {
         router.push('/signin?message=Registration successful! Please check your email to verify your account.');
       } else {
         // Registration failed
-        setError(response.message || 'Registration failed. Please try again.');
+        setError(response.message || t('errorRegistrationFailed'));
       }
     } catch (error) {
       console.error('Registration error:', error);
-      setError('Network error. Please check your connection and try again.');
+      setError(t('errorNetwork'));
     } finally {
       setLoading(false);
     }
@@ -96,21 +98,21 @@ export default function Register() {
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
               <polyline points="14 6 8 12 14 18" />
             </svg>
-            Back to store
+            {t('backToStore')}
           </Link>
         </div>
 
         <div className="na-form-inner">
-          <div className="na-eyebrow">Join Noiraé</div>
-          <h1 className="na-title">Create account</h1>
+          <div className="na-eyebrow">{t('eyebrow')}</div>
+          <h1 className="na-title">{t('title')}</h1>
           <p className="na-subtitle">
-            Save your details, track orders and enjoy early access to new collections.
+            {t('subtitle')}
           </p>
 
           <form className="na-form" onSubmit={handleSubmit}>
             <div className="na-grid-2">
               <div className="na-field">
-                <label htmlFor="firstName" className="na-label">First name</label>
+                <label htmlFor="firstName" className="na-label">{t('firstNameLabel')}</label>
                 <input
                   id="firstName"
                   name="firstName"
@@ -119,11 +121,11 @@ export default function Register() {
                   className="na-input"
                   value={formData.firstName}
                   onChange={handleChange}
-                  placeholder="First name"
+                  placeholder={t('firstNamePlaceholder')}
                 />
               </div>
               <div className="na-field">
-                <label htmlFor="lastName" className="na-label">Last name</label>
+                <label htmlFor="lastName" className="na-label">{t('lastNameLabel')}</label>
                 <input
                   id="lastName"
                   name="lastName"
@@ -132,13 +134,13 @@ export default function Register() {
                   className="na-input"
                   value={formData.lastName}
                   onChange={handleChange}
-                  placeholder="Last name"
+                  placeholder={t('lastNamePlaceholder')}
                 />
               </div>
             </div>
 
             <div className="na-field">
-              <label htmlFor="email" className="na-label">Email</label>
+              <label htmlFor="email" className="na-label">{t('emailLabel')}</label>
               <input
                 id="email"
                 name="email"
@@ -147,12 +149,12 @@ export default function Register() {
                 className="na-input"
                 value={formData.email}
                 onChange={handleChange}
-                placeholder="you@example.com"
+                placeholder={t('emailPlaceholder')}
               />
             </div>
 
             <div className="na-field">
-              <label htmlFor="password" className="na-label">Password</label>
+              <label htmlFor="password" className="na-label">{t('passwordLabel')}</label>
               <input
                 id="password"
                 name="password"
@@ -161,12 +163,12 @@ export default function Register() {
                 className="na-input"
                 value={formData.password}
                 onChange={handleChange}
-                placeholder="At least 6 characters"
+                placeholder={t('passwordPlaceholder')}
               />
             </div>
 
             <div className="na-field">
-              <label htmlFor="confirmPassword" className="na-label">Confirm password</label>
+              <label htmlFor="confirmPassword" className="na-label">{t('confirmPasswordLabel')}</label>
               <input
                 id="confirmPassword"
                 name="confirmPassword"
@@ -175,7 +177,7 @@ export default function Register() {
                 className="na-input"
                 value={formData.confirmPassword}
                 onChange={handleChange}
-                placeholder="Re-enter your password"
+                placeholder={t('confirmPasswordPlaceholder')}
               />
             </div>
 
@@ -188,10 +190,10 @@ export default function Register() {
                 className="na-checkbox"
               />
               <span>
-                I agree to the{' '}
-                <Link href="/terms" className="na-inline-link">Terms of Service</Link>{' '}
-                and{' '}
-                <Link href="/privacy" className="na-inline-link">Privacy Policy</Link>
+                {t('termsAgree')}{' '}
+                <Link href="/terms" className="na-inline-link">{t('termsOfService')}</Link>{' '}
+                {t('termsAnd')}{' '}
+                <Link href="/privacy" className="na-inline-link">{t('privacyPolicy')}</Link>
               </span>
             </label>
 
@@ -200,13 +202,13 @@ export default function Register() {
             )}
 
             <button type="submit" disabled={loading} className="na-submit">
-              {loading ? 'Creating account…' : 'Create account'}
+              {loading ? t('creatingAccount') : t('submit')}
             </button>
           </form>
 
           <div className="na-footer">
-            Already have an account?{' '}
-            <Link href="/login" className="na-inline-link">Sign in</Link>
+            {t('haveAccount')}{' '}
+            <Link href="/login" className="na-inline-link">{t('signIn')}</Link>
           </div>
         </div>
       </div>
@@ -222,7 +224,7 @@ export default function Register() {
         <Link href="/" className="na-wordmark">Noiraé</Link>
         <div className="na-caption">
           <div className="na-caption-quote">
-            Become a member for 30-night trials, early access and a note from our founders.
+            {t('captionQuote')}
           </div>
           <div className="na-caption-kicker">The Noiraé Atelier</div>
         </div>

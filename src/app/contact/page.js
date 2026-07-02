@@ -1,10 +1,12 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import { useTranslations } from 'next-intl';
 import Header from '../../components/Header';
 import Footer from '../../components/Footer';
 
 export default function ContactPage() {
+  const t = useTranslations('Contact');
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
@@ -69,9 +71,9 @@ export default function ContactPage() {
         <div className="aesop-container">
           {/* Header Section */}
           <div className="noirae-contact-header">
-            <h1 className="noirae-contact-title">Get in Touch</h1>
+            <h1 className="noirae-contact-title">{t('title')}</h1>
             <p className="noirae-contact-subtitle">
-              We would love to hear from you. For inquiries, support, or feedback, please use the form below or reach out via our other channels.
+              {t('subtitle')}
             </p>
           </div>
 
@@ -79,18 +81,18 @@ export default function ContactPage() {
           <div className="noirae-contact-grid">
             {/* Left Column - Send a Message */}
             <div className="noirae-contact-form-section">
-              <h2 className="noirae-contact-section-title">Send a Message</h2>
-              
+              <h2 className="noirae-contact-section-title">{t('formHeading')}</h2>
+
               {submitStatus === 'success' && (
                 <div className="noirae-contact-success" role="alert">
-                  Thank you for your message! We&apos;ll get back to you within 24 hours.
+                  {t('successMessage')}
                 </div>
               )}
               
               <form onSubmit={handleSubmit} className="noirae-contact-form">
                 <div className="noirae-contact-form-group">
                   <label htmlFor="fullName" className="noirae-contact-label">
-                    Full Name
+                    {t('fullNameLabel')}
                   </label>
                   <input
                     id="fullName"
@@ -101,13 +103,13 @@ export default function ContactPage() {
                     onChange={handleChange}
                     disabled={isSubmitting}
                     className="noirae-contact-input"
-                    placeholder="Enter your full name"
+                    placeholder={t('fullNamePlaceholder')}
                   />
                 </div>
 
                 <div className="noirae-contact-form-group">
                   <label htmlFor="email" className="noirae-contact-label">
-                    Email Address
+                    {t('emailLabel')}
                   </label>
                   <input
                     id="email"
@@ -118,13 +120,13 @@ export default function ContactPage() {
                     onChange={handleChange}
                     disabled={isSubmitting}
                     className="noirae-contact-input"
-                    placeholder="Enter your email address"
+                    placeholder={t('emailPlaceholder')}
                   />
                 </div>
 
                 <div className="noirae-contact-form-group">
                   <label htmlFor="subject" className="noirae-contact-label">
-                    Subject
+                    {t('subjectLabel')}
                   </label>
                   <input
                     id="subject"
@@ -135,13 +137,13 @@ export default function ContactPage() {
                     onChange={handleChange}
                     disabled={isSubmitting}
                     className="noirae-contact-input"
-                    placeholder="How can we help?"
+                    placeholder={t('subjectPlaceholder')}
                   />
                 </div>
 
                 <div className="noirae-contact-form-group">
                   <label htmlFor="message" className="noirae-contact-label">
-                    Message
+                    {t('messageLabel')}
                   </label>
                   <textarea
                     id="message"
@@ -152,7 +154,7 @@ export default function ContactPage() {
                     disabled={isSubmitting}
                     rows={6}
                     className="noirae-contact-textarea"
-                    placeholder="Write your message here..."
+                    placeholder={t('messagePlaceholder')}
                   ></textarea>
                 </div>
 
@@ -161,14 +163,14 @@ export default function ContactPage() {
                   disabled={isSubmitting}
                   className="noirae-contact-button"
                 >
-                  {isSubmitting ? 'Sending...' : 'Send Message'}
+                  {isSubmitting ? t('sending') : t('submit')}
                 </button>
               </form>
             </div>
 
             {/* Right Column - Other Ways to Connect */}
             <div className="noirae-contact-info-section">
-              <h2 className="noirae-contact-section-title">Other Ways to Connect</h2>
+              <h2 className="noirae-contact-section-title">{t('otherWaysHeading')}</h2>
               
               <div className="noirae-contact-info-cards">
                 {/* Email Us */}
@@ -179,9 +181,9 @@ export default function ContactPage() {
                     </svg>
                   </div>
                   <div className="noirae-contact-info-content">
-                    <h3 className="noirae-contact-info-title">Email Us</h3>
+                    <h3 className="noirae-contact-info-title">{t('emailUsTitle')}</h3>
                     <p className="noirae-contact-info-text">
-                      For general inquiries, support, or feedback.
+                      {t('emailUsText')}
                     </p>
                     <a href="mailto:support@noirae.com" className="noirae-contact-info-link">
                       support@noirae.com
@@ -197,15 +199,15 @@ export default function ContactPage() {
                     </svg>
                   </div>
                   <div className="noirae-contact-info-content">
-                    <h3 className="noirae-contact-info-title">Call Us</h3>
+                    <h3 className="noirae-contact-info-title">{t('callUsTitle')}</h3>
                     <p className="noirae-contact-info-text">
-                      Our team is available to help during business hours.
+                      {t('callUsText')}
                     </p>
                     <a href="tel:+15551234567" className="noirae-contact-info-link">
                       +1 (555) 123-4567
                     </a>
                     <p className="noirae-contact-info-hours">
-                      Mon-Fri, 9am - 5pm EST
+                      {t('callUsHours')}
                     </p>
                   </div>
                 </div>
@@ -218,9 +220,9 @@ export default function ContactPage() {
                     </svg>
                   </div>
                   <div className="noirae-contact-info-content">
-                    <h3 className="noirae-contact-info-title">Visit Our Showroom</h3>
+                    <h3 className="noirae-contact-info-title">{t('showroomTitle')}</h3>
                     <p className="noirae-contact-info-text">
-                      Experience the luxury of Noirae products in person.
+                      {t('showroomText')}
                     </p>
                     <p className="noirae-contact-info-address">
                       123 Silk Avenue, Cashmere City, 10001
