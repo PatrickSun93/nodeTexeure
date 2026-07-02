@@ -2132,5 +2132,23 @@
     "readyToUpload": "Listo para cargar {count} productos. Esta acción no se puede deshacer.",
     "uploading": "Cargando…",
     "uploadProducts": "Cargar productos"
+  },
+  "Charts": {
+    "revenueOverTime": "Ingresos a lo largo del tiempo",
+    "revenue": "Ingresos",
+    "salesDashboard": "Panel de ventas",
+    "sales": "Ventas",
+    "salesDistribution": "Distribución de ventas",
+    "siteVisitors": "Visitantes del sitio",
+    "customerBrands": "Marcas de clientes",
+    "salesByRegion": "Ventas por región (mapa de EE. UU.)",
+    "loadingMap": "Cargando mapa…",
+    "high": "Alto",
+    "low": "Bajo"
+  },
+  "ExportButton": {
+    "exportCsv": "Exportar CSV",
+    "exporting": "Exportando…",
+    "exportFailed": "Error al exportar. Inténtelo de nuevo."
   }
 }

@@ -1,8 +1,10 @@
 'use client';
 
 import ReactECharts from 'echarts-for-react';
+import { useTranslations } from 'next-intl';
 
 export default function SalesByRegionChart({ data = [] }) {
+    const t = useTranslations('Charts');
     const option = {
         tooltip: {
             trigger: 'axis',
@@ -29,7 +31,7 @@ export default function SalesByRegionChart({ data = [] }) {
         },
         series: [
             {
-                name: 'Sales',
+                name: t('sales'),
                 type: 'bar',
                 data: data.map(d => d.value) || [120, 150, 180, 200, 250],
                 itemStyle: {
@@ -43,7 +45,7 @@ export default function SalesByRegionChart({ data = [] }) {
 
     return (
         <div className="bg-white rounded-lg shadow p-6">
-            <h3 className="text-lg font-semibold mb-4">Sales Dashboard</h3>
+            <h3 className="text-lg font-semibold mb-4">{t('salesDashboard')}</h3>
             <ReactECharts option={option} style={{ height: '300px' }} />
         </div>
     );

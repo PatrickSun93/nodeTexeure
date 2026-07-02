@@ -2,8 +2,10 @@
 
 import ReactECharts from 'echarts-for-react';
 import { useEffect, useState } from 'react';
+import { useTranslations } from 'next-intl';
 
 export default function USMapChart({ data = [] }) {
+    const t = useTranslations('Charts');
     const [mapReady, setMapReady] = useState(false);
 
     useEffect(() => {
@@ -33,7 +35,7 @@ export default function USMapChart({ data = [] }) {
         visualMap: {
             min: 0,
             max: 500,
-            text: ['High', 'Low'],
+            text: [t('high'), t('low')],
             realtime: false,
             calculable: true,
             inRange: {
@@ -44,7 +46,7 @@ export default function USMapChart({ data = [] }) {
         },
         series: [
             {
-                name: 'Sales',
+                name: t('sales'),
                 type: 'map',
                 map: 'USA',
                 roam: true,
@@ -72,9 +74,9 @@ export default function USMapChart({ data = [] }) {
     if (!mapReady) {
         return (
             <div className="bg-white rounded-lg shadow p-6">
-                <h3 className="text-lg font-semibold mb-4">Sales by Region (US Map)</h3>
+                <h3 className="text-lg font-semibold mb-4">{t('salesByRegion')}</h3>
                 <div className="h-[400px] flex items-center justify-center text-gray-400">
-                    Loading map...
+                    {t('loadingMap')}
                 </div>
             </div>
         );
@@ -82,7 +84,7 @@ export default function USMapChart({ data = [] }) {
 
     return (
         <div className="bg-white rounded-lg shadow p-6">
-            <h3 className="text-lg font-semibold mb-4">Sales by Region (US Map)</h3>
+            <h3 className="text-lg font-semibold mb-4">{t('salesByRegion')}</h3>
             <ReactECharts option={option} style={{ height: '400px' }} />
         </div>
     );

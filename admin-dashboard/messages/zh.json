@@ -2132,5 +2132,23 @@
     "readyToUpload": "准备上传 {count} 个产品。此操作无法撤销。",
     "uploading": "上传中…",
     "uploadProducts": "上传产品"
+  },
+  "Charts": {
+    "revenueOverTime": "收入趋势",
+    "revenue": "收入",
+    "salesDashboard": "销售仪表板",
+    "sales": "销售额",
+    "salesDistribution": "销售分布",
+    "siteVisitors": "网站访客",
+    "customerBrands": "客户品牌",
+    "salesByRegion": "各地区销售（美国地图）",
+    "loadingMap": "地图加载中…",
+    "high": "高",
+    "low": "低"
+  },
+  "ExportButton": {
+    "exportCsv": "导出 CSV",
+    "exporting": "导出中…",
+    "exportFailed": "导出失败，请重试。"
   }
 }
