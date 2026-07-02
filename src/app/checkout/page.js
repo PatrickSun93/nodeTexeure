@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, Suspense } from 'react';
+import { useSession } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Header from '../../components/Header';
@@ -109,7 +110,14 @@ export default function CheckoutPage() {
 function CheckoutContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { data: session } = useSession();
   const paymentCancelled = searchParams.get('cancelled') === 'true';
+
+  // When signed in, forward the bearer token so the cart/profile/order tie to the
+  // account (all these routes are protectOptional — no token just means guest).
+  const authHeaders = session?.accessToken
+    ? { Authorization: `Bearer ${session.accessToken}` }
+    : {};
 
   // Auth state
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -156,7 +164,7 @@ function CheckoutContent() {
   useEffect(() => {
     const init = async () => {
       try {
-        const profileData = await apiRequest('/users/profile');
+        const profileData = await apiRequest('/users/profile', { headers: authHeaders });
         if (profileData?.status === 'SUCCESS') {
           setIsLoggedIn(true);
           const kvt = profileData.keyValueTable || {};
@@ -169,7 +177,7 @@ function CheckoutContent() {
       } catch { setIsLoggedIn(false); }
 
       try {
-        const cartData = await apiRequest('/cart');
+        const cartData = await apiRequest('/cart', { headers: authHeaders });
         if (cartData?.status === 'SUCCESS') {
           const kvt = cartData.keyValueTable || {};
           setCartId(kvt.cartId || kvt.cart_id);
@@ -184,7 +192,8 @@ function CheckoutContent() {
       setPageLoading(false);
     };
     init();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session]);
 
   // Fetch tax rate from backend when shipping address changes
   useEffect(() => {
@@ -336,6 +345,7 @@ function CheckoutContent() {
 
       const data = await apiRequest('/orders/create', {
         method: 'POST',
+        headers: authHeaders,
         body: JSON.stringify(payload),
       });
 
@@ -349,6 +359,7 @@ function CheckoutContent() {
         try {
           const paymentData = await apiRequest('/payments/create-checkout-session', {
             method: 'POST',
+            headers: authHeaders,
             body: JSON.stringify({ orderId }),
           });
           if (paymentData?.status === 'SUCCESS' && paymentData.keyValueTable?.url) {

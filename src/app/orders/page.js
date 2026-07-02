@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Header from '../../components/Header';
 import Footer from '../../components/Footer';
@@ -20,15 +21,23 @@ const STATUS_COLORS = {
 };
 
 export default function OrdersPage() {
+  const { data: session, status } = useSession();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const router = useRouter();
 
   useEffect(() => {
+    if (status === 'loading') return;
+    if (!session) {
+      router.push('/signin?redirect=/orders');
+      return;
+    }
     const fetchOrders = async () => {
       try {
-        const data = await apiRequest('/orders/my-orders');
+        const data = await apiRequest('/orders/my-orders', {
+          headers: { Authorization: `Bearer ${session.accessToken}` },
+        });
         if (data?.status === 'SUCCESS') {
           const extracted = data.keyValueTable?.orders || [];
           setOrders(extracted);
@@ -44,7 +53,7 @@ export default function OrdersPage() {
       }
     };
     fetchOrders();
-  }, [router]);
+  }, [status, session, router]);
 
   return (
     <div className="aesop-page" style={{ background: 'var(--noirae-bg-cream)', minHeight: '100vh' }}>
