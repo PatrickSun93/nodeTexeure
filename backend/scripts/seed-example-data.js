@@ -404,6 +404,55 @@ async function printCounts() {
 }
 
 // ---------------------------------------------------------------------------
+// Demo product translations (generated with Claude Haiku) so the storefront shows
+// localized content out of the box. Keyed by English product name, so it applies
+// regardless of the generated product id. For real catalogs, `npm run translate:content`
+// auto-translates new products via the model.
+const PRODUCT_TRANSLATIONS = {
+  'RND Ultra-Soft Cotton Bed Sheet Set': {
+    zh: { name: 'RND 超柔软棉布床单套装', short: 'RND 超柔软棉布床单套装 - 优质R&D测试款。', desc: 'RND 超柔软棉布床单套装 - 优质R&D测试款。' },
+    fr: { name: 'RND Ensemble de Draps en Coton Ultra-Doux', short: 'RND Ensemble de Draps en Coton Ultra-Doux - article R&D de qualité premium pour test.', desc: 'RND Ensemble de Draps en Coton Ultra-Doux - article R&D de qualité premium pour test.' },
+    es: { name: 'RND Juego de Sábanas de Algodón Ultra Suave', short: 'RND Juego de Sábanas de Algodón Ultra Suave - artículo R&D de calidad premium para pruebas.', desc: 'RND Juego de Sábanas de Algodón Ultra Suave - artículo R&D de calidad premium para pruebas.' },
+  },
+  'RND Premium Silk Pillowcases (Pair)': {
+    zh: { name: 'RND 高级丝绸枕套（一对）', short: 'RND 高级丝绸枕套（一对）', desc: 'RND 高级丝绸枕套（一对） - 优质R&D测试款。' },
+    fr: { name: "RND Taies d'Oreiller en Soie Premium (Paire)", short: "RND Taies d'Oreiller en Soie Premium (Paire)", desc: "RND Taies d'Oreiller en Soie Premium (Paire) - article R&D de qualité premium pour test." },
+    es: { name: 'RND Fundas de Almohada de Seda Premium (Par)', short: 'RND Fundas de Almohada de Seda Premium (Par)', desc: 'RND Fundas de Almohada de Seda Premium (Par) - artículo R&D de calidad premium para pruebas.' },
+  },
+  'RND Cozy Knit Blanket': {
+    zh: { name: 'RND 舒适针织毛毯', short: 'RND 舒适针织毛毯', desc: 'RND 舒适针织毛毯 - 优质R&D测试款。' },
+    fr: { name: 'RND Couverture Tricotée Douillette', short: 'RND Couverture Tricotée Douillette', desc: 'RND Couverture Tricotée Douillette - article R&D de qualité premium pour test.' },
+    es: { name: 'RND Manta de Punto Acogedora', short: 'RND Manta de Punto Acogedora', desc: 'RND Manta de Punto Acogedora - artículo R&D de calidad premium para pruebas.' },
+  },
+};
+
+async function seedProductTranslations() {
+  // Self-sufficient for plain `npm run db:init` (docker init.sql / migration 003 also create this).
+  await q(`CREATE TABLE IF NOT EXISTS product_translations (
+    product_id VARCHAR(50) NOT NULL, locale VARCHAR(10) NOT NULL,
+    name VARCHAR(255), short_description TEXT, description TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (product_id, locale),
+    FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE)`);
+  const rows = (await q('SELECT id, name FROM products')).data || [];
+  let n = 0;
+  for (const p of rows) {
+    const tr = PRODUCT_TRANSLATIONS[p.name];
+    if (!tr) continue;
+    for (const loc of Object.keys(tr)) {
+      await q(
+        `INSERT INTO product_translations (product_id, locale, name, short_description, description)
+         VALUES (?, ?, ?, ?, ?)
+         ON DUPLICATE KEY UPDATE name=VALUES(name), short_description=VALUES(short_description), description=VALUES(description)`,
+        [p.id, loc, tr[loc].name, tr[loc].short, tr[loc].desc]
+      );
+      n++;
+    }
+  }
+  console.log(`Seeded ${n} product translation row(s).`);
+}
+
 async function main() {
   console.log('=== Example Data Seeding ===');
   await registerPrefixes();
@@ -414,6 +463,7 @@ async function main() {
   const deliveredItems = await seedOrders(catalog);
   await seedReviews(deliveredItems);
   await seedWishlist();
+  await seedProductTranslations();
   const counts = await printCounts();
   console.log('=== Example Data Seeding Completed ===');
   return counts;

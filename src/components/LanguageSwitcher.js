@@ -8,8 +8,10 @@ import { useTransition } from 'react';
 // Setting it + router.refresh() re-renders the server tree in the new language,
 // with no URL change and no page restructure.
 const LOCALES = [
-  { code: 'en', short: 'EN' },
-  { code: 'zh', short: '中' },
+  { code: 'en', short: 'EN', title: 'English' },
+  { code: 'zh', short: '中', title: '中文' },
+  { code: 'fr', short: 'FR', title: 'Français' },
+  { code: 'es', short: 'ES', title: 'Español' },
 ];
 
 export default function LanguageSwitcher() {
@@ -30,7 +32,7 @@ export default function LanguageSwitcher() {
       aria-label="Language"
       style={{ display: 'inline-flex', alignItems: 'center', gap: 2 }}
     >
-      {LOCALES.map(({ code, short }, i) => (
+      {LOCALES.map(({ code, short, title }, i) => (
         <span key={code} style={{ display: 'inline-flex', alignItems: 'center' }}>
           {i > 0 && (
             <span aria-hidden style={{ color: 'var(--noirae-border-dark)', fontSize: 11 }}>/</span>
@@ -40,7 +42,7 @@ export default function LanguageSwitcher() {
             onClick={() => choose(code)}
             aria-pressed={locale === code}
             disabled={isPending}
-            title={code === 'en' ? 'English' : '中文'}
+            title={title}
             style={{
               background: 'transparent',
               border: 'none',

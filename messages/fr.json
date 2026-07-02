@@ -1,0 +1,41 @@
+{
+  "Nav": {
+    "shop": "Boutique",
+    "ourStory": "Notre Histoire",
+    "journal": "Journal",
+    "signIn": "Se connecter",
+    "account": "Compte",
+    "cart": "Panier",
+    "search": "Rechercher",
+    "silk": "Soie",
+    "cashmere": "Cachemire",
+    "allProducts": "Tous les produits",
+    "profile": "Profil",
+    "wishlist": "Liste de souhaits",
+    "signOut": "Se déconnecter"
+  },
+  "Footer": {
+    "tagline": "Literie de luxe en soie & cachemire, conçue pour le repos profond et faite pour durer une vie.",
+    "shop": "Boutique",
+    "company": "Entreprise",
+    "support": "Assistance",
+    "allBedding": "Toute la literie",
+    "silk": "Soie",
+    "cashmere": "Cachemire",
+    "newArrivals": "Nouveautés",
+    "ourStory": "Notre Histoire",
+    "journal": "Journal",
+    "contactUs": "Nous contacter",
+    "faq": "FAQ",
+    "shippingReturns": "Livraison & Retours",
+    "myOrders": "Mes commandes",
+    "trackOrder": "Suivre ma commande",
+    "termsOfService": "Conditions d'utilisation",
+    "rights": "Tous droits réservés."
+  },
+  "LanguageSwitcher": {
+    "label": "Langue",
+    "en": "English",
+    "zh": "中文"
+  }
+}

@@ -1,0 +1,41 @@
+{
+  "Nav": {
+    "shop": "Tienda",
+    "ourStory": "Nuestra Historia",
+    "journal": "Revista",
+    "signIn": "Iniciar sesión",
+    "account": "Cuenta",
+    "cart": "Carrito",
+    "search": "Buscar",
+    "silk": "Seda",
+    "cashmere": "Cachemira",
+    "allProducts": "Todos los productos",
+    "profile": "Perfil",
+    "wishlist": "Lista de deseos",
+    "signOut": "Cerrar sesión"
+  },
+  "Footer": {
+    "tagline": "Ropa de cama de lujo en seda & cachemira, diseñada para el descanso profundo y hecha para durar toda la vida.",
+    "shop": "Tienda",
+    "company": "Empresa",
+    "support": "Atención al cliente",
+    "allBedding": "Toda la ropa de cama",
+    "silk": "Seda",
+    "cashmere": "Cachemira",
+    "newArrivals": "Novedades",
+    "ourStory": "Nuestra Historia",
+    "journal": "Revista",
+    "contactUs": "Contáctenos",
+    "faq": "FAQ",
+    "shippingReturns": "Envío & Devoluciones",
+    "myOrders": "Mis pedidos",
+    "trackOrder": "Rastrear pedido",
+    "termsOfService": "Términos de servicio",
+    "rights": "Todos los derechos reservados."
+  },
+  "LanguageSwitcher": {
+    "label": "Idioma",
+    "en": "English",
+    "zh": "中文"
+  }
+}
