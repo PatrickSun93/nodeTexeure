@@ -2,10 +2,12 @@
 
 import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import Header from '../../../components/Header';
 import Footer from '../../../components/Footer';
 
 function CheckoutSuccessContent() {
+  const t = useTranslations('CheckoutSuccess');
   const [orderDetails, setOrderDetails] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -20,10 +22,10 @@ function CheckoutSuccessContent() {
     if (paymentIntent && redirectStatus === 'succeeded') {
       fetchOrderDetails();
     } else if (redirectStatus === 'failed') {
-      setError('Payment failed. Please try again.');
+      setError(t('paymentFailed'));
       setLoading(false);
     } else {
-      setError('Invalid payment status.');
+      setError(t('invalidStatus'));
       setLoading(false);
     }
   }, [paymentIntent, redirectStatus]);
@@ -37,10 +39,10 @@ function CheckoutSuccessContent() {
       if (data.status === 'success') {
         setOrderDetails(data.data);
       } else {
-        setError('Failed to load order details.');
+        setError(t('loadFailed'));
       }
     } catch (err) {
-      setError('Error loading order details.');
+      setError(t('loadError'));
     } finally {
       setLoading(false);
     }
@@ -62,7 +64,7 @@ function CheckoutSuccessContent() {
         <Header />
         <div className="checkout-loading-page">
           <div className="checkout-spinner"></div>
-          <p>Loading order details...</p>
+          <p>{t('loadingDetails')}</p>
         </div>
         <Footer />
       </div>
@@ -80,14 +82,14 @@ function CheckoutSuccessContent() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </div>
-            <h1>Payment Error</h1>
+            <h1>{t('paymentError')}</h1>
             <p>{error}</p>
             <div className="checkout-error-actions">
               <button onClick={() => router.push('/checkout')} className="checkout-btn-primary">
-                Try Again
+                {t('tryAgain')}
               </button>
               <button onClick={handleContinueShopping} className="checkout-btn-secondary">
-                Continue Shopping
+                {t('continueShopping')}
               </button>
             </div>
           </div>
@@ -108,31 +110,31 @@ function CheckoutSuccessContent() {
             </svg>
           </div>
           
-          <h1>Payment Successful!</h1>
+          <h1>{t('paymentSuccessful')}</h1>
           <p className="checkout-success-message">
-            Thank you for your order. Your payment has been processed successfully.
+            {t('successMessage')}
           </p>
 
           {orderDetails && (
             <div className="checkout-success-details">
               <div className="checkout-success-card">
-                <h3>Order Details</h3>
+                <h3>{t('orderDetails')}</h3>
                 <div className="checkout-success-info">
                   <div className="checkout-success-row">
-                    <span>Payment ID:</span>
+                    <span>{t('paymentId')}</span>
                     <span>{orderDetails.paymentIntentId}</span>
                   </div>
                   <div className="checkout-success-row">
-                    <span>Amount:</span>
+                    <span>{t('amount')}</span>
                     <span>${(orderDetails.amount / 100).toFixed(2)} {orderDetails.currency.toUpperCase()}</span>
                   </div>
                   <div className="checkout-success-row">
-                    <span>Status:</span>
+                    <span>{t('status')}</span>
                     <span className="checkout-success-status">{orderDetails.status}</span>
                   </div>
                   {orderDetails.metadata?.orderId && (
                     <div className="checkout-success-row">
-                      <span>Order ID:</span>
+                      <span>{t('orderId')}</span>
                       <span>{orderDetails.metadata.orderId}</span>
                     </div>
                   )}
@@ -144,20 +146,20 @@ function CheckoutSuccessContent() {
           <div className="checkout-success-actions">
             {orderDetails?.metadata?.orderId && (
               <button onClick={handleViewOrder} className="checkout-btn-primary">
-                View Order Details
+                {t('viewOrder')}
               </button>
             )}
             <button onClick={handleContinueShopping} className="checkout-btn-secondary">
-              Continue Shopping
+              {t('continueShopping')}
             </button>
           </div>
 
           <div className="checkout-success-next-steps">
-            <h3>What's Next?</h3>
+            <h3>{t('whatsNext')}</h3>
             <ul>
-              <li>You will receive an order confirmation email shortly</li>
-              <li>We'll send you shipping updates as your order is processed</li>
-              <li>You can track your order status in your account</li>
+              <li>{t('nextStep1')}</li>
+              <li>{t('nextStep2')}</li>
+              <li>{t('nextStep3')}</li>
             </ul>
           </div>
         </div>
@@ -168,13 +170,14 @@ function CheckoutSuccessContent() {
 }
 
 function CheckoutSuccessPage() {
+  const t = useTranslations('CheckoutSuccess');
   return (
     <Suspense fallback={
       <div className="aesop-page">
         <Header />
         <div className="checkout-loading-page">
           <div className="checkout-spinner"></div>
-          <p>Loading...</p>
+          <p>{t('loading')}</p>
         </div>
         <Footer />
       </div>

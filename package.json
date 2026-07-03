@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "npm run pm2:stop && npm run clean && npm run dev:full",
+    "dev": "echo 'Storefront only. For the full stack (mysql + backend + admin), run: docker compose up' && npm run dev:frontend",
     "dev:full": "./start-dev.sh",
     "dev:frontend": "next dev",
     "dev:backend": "cd backend && npm run dev",

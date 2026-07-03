@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useTranslations } from 'next-intl';
 import ReviewCard from './ReviewCard';
 import RatingStars from './RatingStars';
 
@@ -13,6 +14,7 @@ import RatingStars from './RatingStars';
  * - showSummary: Show rating summary (default: true)
  */
 export default function ReviewList({ productId, showSummary = true }) {
+    const t = useTranslations('Reviews');
     const [reviews, setReviews] = useState([]);
     const [summary, setSummary] = useState(null);
     const [pagination, setPagination] = useState({ page: 1, limit: 10, total: 0 });
@@ -42,11 +44,11 @@ export default function ReviewList({ productId, showSummary = true }) {
                     total: data.keyValueTable.summary?.total || 0
                 });
             } else {
-                setError('Failed to load reviews');
+                setError(t('failedToLoad'));
             }
         } catch (err) {
             console.error('Error fetching reviews:', err);
-            setError('Network error. Please try again.');
+            setError(t('networkError'));
         } finally {
             setIsLoading(false);
         }
@@ -82,7 +84,7 @@ export default function ReviewList({ productId, showSummary = true }) {
         return (
             <div className="text-center py-12">
                 <div className="inline-block w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-                <p className="mt-4 text-gray-600">Loading reviews...</p>
+                <p className="mt-4 text-gray-600">{t('loading')}</p>
             </div>
         );
     }
@@ -100,7 +102,7 @@ export default function ReviewList({ productId, showSummary = true }) {
                             </div>
                             <RatingStars rating={parseFloat(summary.average_rating)} readonly size="md" />
                             <p className="text-sm text-gray-600 mt-2">
-                                Based on {summary.total} {summary.total === 1 ? 'review' : 'reviews'}
+                                {t('basedOn', { count: summary.total })}
                             </p>
                         </div>
 
@@ -137,11 +139,11 @@ export default function ReviewList({ productId, showSummary = true }) {
             {/* Sort Controls */}
             <div className="flex items-center justify-between border-b border-gray-200 pb-4">
                 <h3 className="text-lg font-semibold text-gray-900">
-                    Customer Reviews {summary && `(${summary.total})`}
+                    {t('customerReviews')} {summary && `(${summary.total})`}
                 </h3>
                 <div className="flex items-center gap-2">
                     <label htmlFor="sort-reviews" className="text-sm text-gray-600">
-                        Sort by:
+                        {t('sortBy')}
                     </label>
                     <select
                         id="sort-reviews"
@@ -149,10 +151,10 @@ export default function ReviewList({ productId, showSummary = true }) {
                         onChange={(e) => setSortBy(e.target.value)}
                         className="px-3 py-1.5 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     >
-                        <option value="recent">Most Recent</option>
-                        <option value="helpful">Most Helpful</option>
-                        <option value="rating_high">Highest Rating</option>
-                        <option value="rating_low">Lowest Rating</option>
+                        <option value="recent">{t('sortRecent')}</option>
+                        <option value="helpful">{t('sortHelpful')}</option>
+                        <option value="rating_high">{t('sortRatingHigh')}</option>
+                        <option value="rating_low">{t('sortRatingLow')}</option>
                     </select>
                 </div>
             </div>
@@ -181,7 +183,7 @@ export default function ReviewList({ productId, showSummary = true }) {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
                     </svg>
                     <p className="mt-4 text-gray-600">
-                        No reviews yet. Be the first to review this product!
+                        {t('empty')}
                     </p>
                 </div>
             )}
@@ -194,7 +196,7 @@ export default function ReviewList({ productId, showSummary = true }) {
                         disabled={pagination.page === 1}
                         className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                        Previous
+                        {t('previous')}
                     </button>
 
                     <div className="flex items-center gap-1">
@@ -233,7 +235,7 @@ export default function ReviewList({ productId, showSummary = true }) {
                         disabled={pagination.page === totalPages}
                         className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                        Next
+                        {t('next')}
                     </button>
                 </div>
             )}

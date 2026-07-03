@@ -85,10 +85,24 @@ router.get('/', PerformanceMiddleware.responseCache({
       filterParams.push(...materials);
     }
 
-    // Fulltext or LIKE search
+    // Search: match the English base columns OR the resolved-locale translation,
+    // so Chinese/French/Spanish queries find products via product_translations while
+    // English search keeps working against the base columns. LIKE (not MATCH) is used
+    // consistently: product_translations has no FULLTEXT index and MySQL's default
+    // parser can't tokenize CJK text. The EXISTS subquery keeps the predicate
+    // self-contained so it stays valid in the count query, which does not join
+    // product_translations.
     if (search) {
-      whereClauses.push('MATCH(p.name, p.description, p.short_description) AGAINST (? IN NATURAL LANGUAGE MODE)');
-      filterParams.push(search);
+      const like = `%${search}%`;
+      whereClauses.push(`(
+        p.name LIKE ? OR p.description LIKE ? OR p.short_description LIKE ?
+        OR EXISTS (
+          SELECT 1 FROM product_translations pts
+          WHERE pts.product_id = p.id AND pts.locale = ?
+            AND (pts.name LIKE ? OR pts.description LIKE ?)
+        )
+      )`);
+      filterParams.push(like, like, like, locale, like, like);
     }
 
     if (whereClauses.length > 0) {

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useTranslations } from 'next-intl';
 import RatingStars from './RatingStars';
 
 /**
@@ -13,6 +14,7 @@ import RatingStars from './RatingStars';
  * - onCancel: Callback to cancel form
  */
 export default function ReviewForm({ productId, onSuccess, onCancel }) {
+    const t = useTranslations('Reviews');
     const [formData, setFormData] = useState({
         rating: 0,
         title: '',
@@ -27,12 +29,12 @@ export default function ReviewForm({ productId, onSuccess, onCancel }) {
 
         // Validation
         if (formData.rating === 0) {
-            setError('Please select a star rating');
+            setError(t('errorRatingRequired'));
             return;
         }
 
         if (formData.review_text.trim().length < 10) {
-            setError('Review must be at least 10 characters');
+            setError(t('errorTooShort'));
             return;
         }
 
@@ -60,11 +62,11 @@ export default function ReviewForm({ productId, onSuccess, onCancel }) {
                 // Reset form
                 setFormData({ rating: 0, title: '', review_text: '' });
             } else {
-                setError(data.message || 'Failed to submit review');
+                setError(data.message || t('errorSubmitFailed'));
             }
         } catch (err) {
             console.error('Error submitting review:', err);
-            setError('Network error. Please try again.');
+            setError(t('networkError'));
         } finally {
             setIsSubmitting(false);
         }
@@ -72,7 +74,7 @@ export default function ReviewForm({ productId, onSuccess, onCancel }) {
 
     return (
         <div className="bg-white rounded-lg border border-gray-200 p-6">
-            <h3 className="text-xl font-semibold mb-4">Write a Review</h3>
+            <h3 className="text-xl font-semibold mb-4">{t('writeReview')}</h3>
 
             {error && (
                 <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md text-red-700 text-sm">
@@ -84,7 +86,7 @@ export default function ReviewForm({ productId, onSuccess, onCancel }) {
                 {/* Rating Selection */}
                 <div className="mb-4">
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Your Rating *
+                        {t('yourRating')} *
                     </label>
                     <RatingStars
                         rating={formData.rating}
@@ -96,39 +98,39 @@ export default function ReviewForm({ productId, onSuccess, onCancel }) {
                 {/* Review Title */}
                 <div className="mb-4">
                     <label htmlFor="review-title" className="block text-sm font-medium text-gray-700 mb-2">
-                        Review Title (Optional)
+                        {t('reviewTitle')}
                     </label>
                     <input
                         id="review-title"
                         type="text"
                         value={formData.title}
                         onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                        placeholder="Sum up your experience"
+                        placeholder={t('titlePlaceholder')}
                         maxLength={100}
                         className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     />
                     <p className="text-xs text-gray-500 mt-1">
-                        {formData.title.length}/100 characters
+                        {t('charCount', { count: formData.title.length, max: 100 })}
                     </p>
                 </div>
 
                 {/* Review Text */}
                 <div className="mb-6">
                     <label htmlFor="review-text" className="block text-sm font-medium text-gray-700 mb-2">
-                        Your Review *
+                        {t('yourReview')} *
                     </label>
                     <textarea
                         id="review-text"
                         value={formData.review_text}
                         onChange={(e) => setFormData({ ...formData, review_text: e.target.value })}
-                        placeholder="Tell us what you think about this product..."
+                        placeholder={t('reviewPlaceholder')}
                         rows={6}
                         maxLength={2000}
                         required
                         className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
                     />
                     <p className="text-xs text-gray-500 mt-1">
-                        {formData.review_text.length}/2000 characters (minimum 10)
+                        {t('charCountMin', { count: formData.review_text.length, max: 2000, min: 10 })}
                     </p>
                 </div>
 
@@ -139,7 +141,7 @@ export default function ReviewForm({ productId, onSuccess, onCancel }) {
                         disabled={isSubmitting}
                         className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
                     >
-                        {isSubmitting ? 'Submitting...' : 'Submit Review'}
+                        {isSubmitting ? t('submitting') : t('submit')}
                     </button>
                     {onCancel && (
                         <button
@@ -148,13 +150,13 @@ export default function ReviewForm({ productId, onSuccess, onCancel }) {
                             disabled={isSubmitting}
                             className="px-6 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 disabled:opacity-50 transition-colors"
                         >
-                            Cancel
+                            {t('cancel')}
                         </button>
                     )}
                 </div>
 
                 <p className="text-xs text-gray-500 mt-3">
-                    * Your review will be published after moderation
+                    * {t('moderationNote')}
                 </p>
             </form>
         </div>

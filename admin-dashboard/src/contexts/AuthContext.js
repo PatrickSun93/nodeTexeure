@@ -107,8 +107,12 @@ export function AuthProvider({ children }) {
 
       // Backend envelope uses status: 'SUCCESS' (not success: true).
       if (response.status === 'SUCCESS' && response.keyValueTable) {
-        if (!response.keyValueTable.isAdmin) {
-          throw new Error('Access denied. Admin privileges required.');
+        // Allow both admins and staff into the dashboard. Staff have isAdmin=false
+        // (so admin-only routes and UI stay gated) but isStaff=true. The dispatched
+        // payload carries role + isAdmin + isStaff for downstream gating.
+        const { isAdmin, isStaff } = response.keyValueTable;
+        if (!isAdmin && !isStaff) {
+          throw new Error('Access denied. Staff or admin privileges required.');
         }
         dispatch({
           type: AUTH_ACTIONS.LOGIN_SUCCESS,

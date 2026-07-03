@@ -42,38 +42,11 @@ const navigationItems = [
     ]
   },
   {
-    key: 'reports', href: '/reports', icon: '📈', hasDesc: true,
-    children: [
-      { key: 'financialReports', href: '/reports' },
-      { key: 'paymentAnalytics', href: '/reports/payment-analytics' },
-      { key: 'taxAnalytics', href: '/reports/tax-analytics' },
-      { key: 'scheduledReports', href: '/reports/scheduled' }
-    ]
-  },
-  {
-    key: 'content', href: '/content', icon: '📝', hasDesc: true,
-    children: [
-      { key: 'pages', href: '/content/pages' },
-      { key: 'mediaLibrary', href: '/content/media' },
-      { key: 'menus', href: '/content/menus' },
-      { key: 'banners', href: '/content/banners' },
-      { key: 'seoSettings', href: '/content/seo' }
-    ]
-  },
-  {
     key: 'settingsNav', href: '/settings', icon: '⚙️', hasDesc: true,
     children: [
       { key: 'generalSettings', href: '/settings' },
       { key: 'emailTemplates', href: '/email-templates' },
       { key: 'userManagement', href: '/users' }
-    ]
-  },
-  {
-    key: 'security', href: '/security', icon: '🔒', hasDesc: true,
-    children: [
-      { key: 'securityOverview', href: '/security' },
-      { key: 'auditLogs', href: '/security/audit' },
-      { key: 'backupManagement', href: '/security/backup' }
     ]
   }
 ];

@@ -27,6 +27,6 @@ export default function CartRecoveryPage() {
 }
 
 export const metadata = {
-  title: 'Cart Recovery - Bed Texture Store',
+  title: 'Cart Recovery - Noiraé Store',
   description: 'Restore your abandoned cart and complete your purchase',
 };

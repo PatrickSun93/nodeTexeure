@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { useSession } from 'next-auth/react';
+import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import Header from '../../../components/Header';
 import Footer from '../../../components/Footer';
@@ -42,6 +43,7 @@ const RTN_STYLES = `
 `;
 
 export default function ReturnDetailPage() {
+  const t = useTranslations('ReturnFlow');
   const { id } = useParams();
   const { data: session } = useSession();
   const [returnData, setReturnData] = useState(null);
@@ -58,10 +60,10 @@ export default function ReturnDetailPage() {
         if (data?.status === 'SUCCESS') {
           setReturnData(data.keyValueTable?.return || data.keyValueTable);
         } else {
-          setError('Return not found');
+          setError(t('returnNotFound'));
         }
       } catch (err) {
-        setError(err.message || 'Failed to load return');
+        setError(err.message || t('failedToLoadReturn'));
       } finally {
         setLoading(false);
       }
@@ -84,8 +86,8 @@ export default function ReturnDetailPage() {
     return (
       <div className="aesop-page rtn-scope"><Header />
         <main style={{ padding: '4rem 1.5rem', textAlign: 'center' }}>
-          <p style={{ fontFamily: 'var(--noirae-font-sans)', color: 'var(--noirae-text-secondary)' }}>{error || 'Return not found'}</p>
-          <Link href="/returns" className="rtn-btn rtn-btn-dark" style={{ marginTop: '1.5rem' }}>Back to Returns</Link>
+          <p style={{ fontFamily: 'var(--noirae-font-sans)', color: 'var(--noirae-text-secondary)' }}>{error || t('returnNotFound')}</p>
+          <Link href="/returns" className="rtn-btn rtn-btn-dark" style={{ marginTop: '1.5rem' }}>{t('backToReturns')}</Link>
         </main><Footer />
         <style>{RTN_STYLES}</style>
       </div>
@@ -103,16 +105,16 @@ export default function ReturnDetailPage() {
       <main style={{ padding: '2rem 0 4.5rem' }}>
         <div className="aesop-container" style={{ maxWidth: '800px', margin: '0 auto' }}>
           <nav className="nt-breadcrumb">
-            <Link href="/">Home</Link><span className="nt-breadcrumb-sep">/</span>
-            <Link href="/returns">My Returns</Link><span className="nt-breadcrumb-sep">/</span>
+            <Link href="/">{t('breadcrumbHome')}</Link><span className="nt-breadcrumb-sep">/</span>
+            <Link href="/returns">{t('breadcrumbMyReturns')}</Link><span className="nt-breadcrumb-sep">/</span>
             <span>{returnData.return_number}</span>
           </nav>
 
           <h1 className="noirae-heading-hero" style={{ margin: '1.25rem 0 0.5rem' }}>
-            Return {returnData.return_number}
+            {t('returnHeading', { number: returnData.return_number })}
           </h1>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.9rem', flexWrap: 'wrap', marginBottom: '2.25rem' }}>
-            <p style={{ fontFamily: 'var(--noirae-font-sans)', color: 'var(--noirae-text-secondary)', fontSize: '0.95rem' }}>Order: {returnData.order_number}</p>
+            <p style={{ fontFamily: 'var(--noirae-font-sans)', color: 'var(--noirae-text-secondary)', fontSize: '0.95rem' }}>{t('orderLabel', { order: returnData.order_number })}</p>
             <span className="rtn-badge" style={{ color: badge.color, backgroundColor: badge.bg }}>
               <span className="rtn-badge-dot"></span>{returnData.status?.replace(/_/g, ' ')}
             </span>
@@ -143,7 +145,7 @@ export default function ReturnDetailPage() {
 
           {isRejected && (
             <div style={{ padding: '1.1rem 1.25rem', backgroundColor: 'var(--noirae-error-bg)', border: '1px solid var(--noirae-error)', marginBottom: '1.5rem' }}>
-              <p style={{ fontFamily: 'var(--noirae-font-sans)', color: 'var(--noirae-error)', fontWeight: 500 }}>Return request was rejected.</p>
+              <p style={{ fontFamily: 'var(--noirae-font-sans)', color: 'var(--noirae-error)', fontWeight: 500 }}>{t('rejectedMessage')}</p>
               {returnData.return_details?.admin_notes && (
                 <p style={{ fontFamily: 'var(--noirae-font-sans)', color: 'var(--noirae-text-secondary)', marginTop: '0.5rem', fontSize: '0.85rem' }}>{returnData.return_details.admin_notes}</p>
               )}
@@ -152,13 +154,13 @@ export default function ReturnDetailPage() {
 
           {/* Details */}
           <div className="rtn-card" style={{ padding: '1.75rem', marginBottom: '1.25rem' }}>
-            <h2 style={{ fontFamily: 'var(--noirae-font-serif)', fontSize: '1.5rem', color: 'var(--noirae-text-primary)', marginBottom: '1.35rem' }}>Return Details</h2>
+            <h2 style={{ fontFamily: 'var(--noirae-font-serif)', fontSize: '1.5rem', color: 'var(--noirae-text-primary)', marginBottom: '1.35rem' }}>{t('returnDetailsHeading')}</h2>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem' }}>
-              <div><div className="rtn-flabel">Reason</div><div className="rtn-fvalue" style={{ textTransform: 'capitalize' }}>{returnData.reason?.replace(/_/g, ' ')}</div></div>
-              <div><div className="rtn-flabel">Status</div><div className="rtn-fvalue" style={{ textTransform: 'capitalize' }}>{returnData.status?.replace(/_/g, ' ')}</div></div>
-              <div><div className="rtn-flabel">Submitted</div><div className="rtn-fvalue">{new Date(returnData.created_at).toLocaleDateString()}</div></div>
-              {returnData.refund_amount && <div><div className="rtn-flabel">Refund Amount</div><div className="rtn-fvalue">${parseFloat(returnData.refund_amount).toFixed(2)}</div></div>}
-              {returnData.return_tracking_number && <div><div className="rtn-flabel">Tracking</div><div className="rtn-fvalue">{returnData.return_tracking_number}</div></div>}
+              <div><div className="rtn-flabel">{t('reasonFieldLabel')}</div><div className="rtn-fvalue" style={{ textTransform: 'capitalize' }}>{returnData.reason?.replace(/_/g, ' ')}</div></div>
+              <div><div className="rtn-flabel">{t('statusFieldLabel')}</div><div className="rtn-fvalue" style={{ textTransform: 'capitalize' }}>{returnData.status?.replace(/_/g, ' ')}</div></div>
+              <div><div className="rtn-flabel">{t('submittedLabel')}</div><div className="rtn-fvalue">{new Date(returnData.created_at).toLocaleDateString()}</div></div>
+              {returnData.refund_amount && <div><div className="rtn-flabel">{t('refundAmountLabel')}</div><div className="rtn-fvalue">${parseFloat(returnData.refund_amount).toFixed(2)}</div></div>}
+              {returnData.return_tracking_number && <div><div className="rtn-flabel">{t('trackingLabel')}</div><div className="rtn-fvalue">{returnData.return_tracking_number}</div></div>}
             </div>
             {returnData.return_details?.description && (
               <p style={{ marginTop: '1.35rem', paddingTop: '1.35rem', borderTop: '1px solid var(--noirae-border-light)', fontFamily: 'var(--noirae-font-sans)', fontSize: '0.88rem', color: 'var(--noirae-text-secondary)', lineHeight: 1.7 }}>{returnData.return_details.description}</p>
@@ -168,12 +170,12 @@ export default function ReturnDetailPage() {
           {/* Return Items */}
           {returnData.items && returnData.items.length > 0 && (
             <div className="rtn-card" style={{ padding: '1.75rem' }}>
-              <h2 style={{ fontFamily: 'var(--noirae-font-serif)', fontSize: '1.5rem', color: 'var(--noirae-text-primary)', marginBottom: '1.1rem' }}>Items Being Returned</h2>
+              <h2 style={{ fontFamily: 'var(--noirae-font-serif)', fontSize: '1.5rem', color: 'var(--noirae-text-primary)', marginBottom: '1.1rem' }}>{t('itemsBeingReturnedHeading')}</h2>
               {returnData.items.map(item => (
                 <div key={item.id} className="rtn-item">
                   <div>
                     <p style={{ fontFamily: 'var(--noirae-font-sans)', fontSize: '0.92rem', fontWeight: 500, color: 'var(--noirae-text-primary)' }}>{item.product_name}</p>
-                    <p className="rtn-meta">Qty: {item.quantity}</p>
+                    <p className="rtn-meta">{t('itemQty', { qty: item.quantity })}</p>
                     {item.reason && <p className="rtn-meta" style={{ textTransform: 'capitalize' }}>{item.reason?.replace(/_/g, ' ')}</p>}
                   </div>
                   <p style={{ fontFamily: 'var(--noirae-font-sans)', fontSize: '0.92rem', fontWeight: 500, color: 'var(--noirae-text-primary)', whiteSpace: 'nowrap' }}>${parseFloat(item.unit_price).toFixed(2)}</p>
@@ -183,7 +185,7 @@ export default function ReturnDetailPage() {
           )}
 
           <div style={{ marginTop: '2rem' }}>
-            <Link href="/returns" className="rtn-btn rtn-btn-ghost">Back to Returns</Link>
+            <Link href="/returns" className="rtn-btn rtn-btn-ghost">{t('backToReturns')}</Link>
           </div>
         </div>
       </main>

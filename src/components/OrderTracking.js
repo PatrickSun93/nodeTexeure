@@ -1,8 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useTranslations } from 'next-intl';
 
 export default function OrderTracking({ trackingNumber, orderId }) {
+  const t = useTranslations('OrderTracking');
   const [trackingData, setTrackingData] = useState(null);
   const [trackingEvents, setTrackingEvents] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -26,7 +28,7 @@ export default function OrderTracking({ trackingNumber, orderId }) {
       if (trackingResult.success) {
         setTrackingData(trackingResult.data);
       } else {
-        setError(trackingResult.message || 'Failed to fetch tracking information');
+        setError(trackingResult.message || t('fetchError'));
       }
 
       // Fetch detailed tracking events
@@ -37,7 +39,7 @@ export default function OrderTracking({ trackingNumber, orderId }) {
         setTrackingEvents(eventsResult.data);
       }
     } catch (err) {
-      setError('Failed to fetch tracking information');
+      setError(t('fetchError'));
       console.error('Tracking fetch error:', err);
     } finally {
       setLoading(false);
@@ -45,7 +47,7 @@ export default function OrderTracking({ trackingNumber, orderId }) {
   };
 
   const formatDate = (dateString) => {
-    if (!dateString) return 'N/A';
+    if (!dateString) return t('notAvailable');
     return new Date(dateString).toLocaleString();
   };
 
@@ -73,14 +75,14 @@ export default function OrderTracking({ trackingNumber, orderId }) {
     return (
       <div className="bg-white rounded-lg shadow-md p-6">
         <div className="text-red-600 mb-4">
-          <h3 className="text-lg font-semibold">Tracking Error</h3>
+          <h3 className="text-lg font-semibold">{t('errorTitle')}</h3>
           <p>{error}</p>
         </div>
         <button
           onClick={fetchTrackingInfo}
           className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
         >
-          Retry
+          {t('retry')}
         </button>
       </div>
     );
@@ -89,7 +91,7 @@ export default function OrderTracking({ trackingNumber, orderId }) {
   if (!trackingData && !trackingNumber) {
     return (
       <div className="bg-gray-50 rounded-lg p-6 text-center">
-        <p className="text-gray-600">No tracking information available</p>
+        <p className="text-gray-600">{t('noTracking')}</p>
       </div>
     );
   }
@@ -97,29 +99,29 @@ export default function OrderTracking({ trackingNumber, orderId }) {
   return (
     <div className="bg-white rounded-lg shadow-md p-6">
       <div className="mb-6">
-        <h3 className="text-xl font-semibold text-gray-900 mb-2">Package Tracking</h3>
+        <h3 className="text-xl font-semibold text-gray-900 mb-2">{t('title')}</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <p className="text-sm text-gray-600">Tracking Number</p>
+            <p className="text-sm text-gray-600">{t('trackingNumber')}</p>
             <p className="font-mono text-lg">{trackingNumber}</p>
           </div>
           {trackingData && (
             <>
               <div>
-                <p className="text-sm text-gray-600">Status</p>
+                <p className="text-sm text-gray-600">{t('status')}</p>
                 <p className={`font-semibold ${getStatusColor(trackingData.status)}`}>
                   {trackingData.status}
                 </p>
               </div>
               {trackingData.estimatedDelivery && (
                 <div>
-                  <p className="text-sm text-gray-600">Estimated Delivery</p>
+                  <p className="text-sm text-gray-600">{t('estimatedDelivery')}</p>
                   <p className="font-semibold">{formatDate(trackingData.estimatedDelivery)}</p>
                 </div>
               )}
               {trackingData.actualDelivery && (
                 <div>
-                  <p className="text-sm text-gray-600">Delivered</p>
+                  <p className="text-sm text-gray-600">{t('delivered')}</p>
                   <p className="font-semibold text-green-600">{formatDate(trackingData.actualDelivery)}</p>
                 </div>
               )}
@@ -130,7 +132,7 @@ export default function OrderTracking({ trackingNumber, orderId }) {
 
       {trackingData?.location && (
         <div className="mb-6">
-          <h4 className="text-lg font-semibold text-gray-900 mb-2">Current Location</h4>
+          <h4 className="text-lg font-semibold text-gray-900 mb-2">{t('currentLocation')}</h4>
           <p className="text-gray-700">
             {trackingData.location.city && `${trackingData.location.city}, `}
             {trackingData.location.stateOrProvinceCode && `${trackingData.location.stateOrProvinceCode} `}
@@ -141,7 +143,7 @@ export default function OrderTracking({ trackingNumber, orderId }) {
 
       {trackingEvents.length > 0 && (
         <div>
-          <h4 className="text-lg font-semibold text-gray-900 mb-4">Tracking History</h4>
+          <h4 className="text-lg font-semibold text-gray-900 mb-4">{t('trackingHistory')}</h4>
           <div className="space-y-4">
             {trackingEvents.map((event, index) => (
               <div key={index} className="border-l-4 border-blue-200 pl-4 pb-4">
@@ -174,7 +176,7 @@ export default function OrderTracking({ trackingNumber, orderId }) {
           onClick={fetchTrackingInfo}
           className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition-colors"
         >
-          Refresh Tracking
+          {t('refresh')}
         </button>
       </div>
     </div>

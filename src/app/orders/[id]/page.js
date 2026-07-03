@@ -5,6 +5,7 @@ import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import OrderTracking from '../../../components/OrderTracking';
 
 // Champagne & Charcoal restyle — scoped remap of the page's raw Tailwind color
@@ -54,6 +55,7 @@ const DETAIL_CSS = `
 `;
 
 export default function OrderDetailsPage() {
+  const t = useTranslations('OrderDetail');
   const { data: session, status } = useSession();
   const router = useRouter();
   const params = useParams();
@@ -88,10 +90,10 @@ export default function OrderDetailsPage() {
       if (result.success) {
         setOrder(result.data);
       } else {
-        setError(result.message || 'Failed to fetch order details');
+        setError(result.message || t('fetchFailed'));
       }
     } catch (err) {
-      setError('Failed to fetch order details');
+      setError(t('fetchFailed'));
       console.error('Error fetching order:', err);
     } finally {
       setLoading(false);
@@ -121,6 +123,19 @@ export default function OrderDetailsPage() {
     });
   };
 
+  const getStatusLabel = (value) => {
+    const labels = {
+      pending: t('statusPending'),
+      confirmed: t('statusConfirmed'),
+      processing: t('statusProcessing'),
+      shipped: t('statusShipped'),
+      delivered: t('statusDelivered'),
+      cancelled: t('statusCancelled'),
+      refunded: t('statusRefunded'),
+    };
+    return labels[value] || (value ? value.charAt(0).toUpperCase() + value.slice(1) : '');
+  };
+
   if (status === 'loading' || loading) {
     return (
       <div className="noirae-order-detail min-h-screen py-8">
@@ -145,20 +160,20 @@ export default function OrderDetailsPage() {
         <style>{DETAIL_CSS}</style>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="bg-red-50 border border-red-200 rounded-lg p-6">
-            <h3 className="text-lg font-semibold text-red-800 mb-2">Error</h3>
+            <h3 className="text-lg font-semibold text-red-800 mb-2">{t('error')}</h3>
             <p className="text-red-600">{error}</p>
             <div className="mt-4 space-x-4">
               <button
                 onClick={fetchOrderDetails}
                 className="od-btn-primary"
               >
-                Try Again
+                {t('tryAgain')}
               </button>
               <Link
                 href="/orders"
                 className="od-btn-secondary"
               >
-                Back to Orders
+                {t('backToOrders')}
               </Link>
             </div>
           </div>
@@ -173,12 +188,12 @@ export default function OrderDetailsPage() {
         <style>{DETAIL_CSS}</style>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Order not found</h3>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">{t('orderNotFound')}</h3>
             <Link
               href="/orders"
               className="od-link"
             >
-              Back to Orders
+              {t('backToOrders')}
             </Link>
           </div>
         </div>
@@ -192,11 +207,11 @@ export default function OrderDetailsPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="mb-8">
-          <nav className="flex" aria-label="Breadcrumb">
+          <nav className="flex" aria-label={t('breadcrumb')}>
             <ol className="flex items-center space-x-4">
               <li>
                 <Link href="/orders" className="text-gray-400 hover:text-gray-500">
-                  Orders
+                  {t('orders')}
                 </Link>
               </li>
               <li>
@@ -205,7 +220,7 @@ export default function OrderDetailsPage() {
                     <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
                   </svg>
                   <span className="ml-4 text-sm font-medium text-gray-500">
-                    Order #{order.order_number}
+                    {t('orderNumber', { number: order.order_number })}
                   </span>
                 </div>
               </li>
@@ -215,14 +230,14 @@ export default function OrderDetailsPage() {
           <div className="mt-4 flex items-center justify-between">
             <div>
               <h1 className="text-3xl font-bold text-gray-900">
-                Order #{order.order_number}
+                {t('orderNumber', { number: order.order_number })}
               </h1>
               <p className="mt-2 text-gray-600">
-                Placed on {formatDate(order.created_at)}
+                {t('placedOn', { date: formatDate(order.created_at) })}
               </p>
             </div>
             <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(order.status)}`}>
-              {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+              {getStatusLabel(order.status)}
             </span>
           </div>
         </div>
@@ -232,7 +247,7 @@ export default function OrderDetailsPage() {
           <div className="lg:col-span-2">
             <div className="bg-white rounded-lg shadow">
               <div className="px-6 py-4 border-b border-gray-200">
-                <h2 className="text-lg font-semibold text-gray-900">Order Items</h2>
+                <h2 className="text-lg font-semibold text-gray-900">{t('orderItems')}</h2>
               </div>
               <div className="p-6">
                 <div className="space-y-6">
@@ -257,11 +272,11 @@ export default function OrderDetailsPage() {
                         <h3 className="text-sm font-medium text-gray-900">
                           {item.product_name}
                         </h3>
-                        <p className="text-sm text-gray-500">SKU: {item.product_sku}</p>
+                        <p className="text-sm text-gray-500">{t('sku', { sku: item.product_sku })}</p>
                         {item.variant_details && (
                           <p className="text-sm text-gray-500">
-                            {JSON.parse(item.variant_details).size && `Size: ${JSON.parse(item.variant_details).size}`}
-                            {JSON.parse(item.variant_details).color && `, Color: ${JSON.parse(item.variant_details).color}`}
+                            {JSON.parse(item.variant_details).size && t('size', { size: JSON.parse(item.variant_details).size })}
+                            {JSON.parse(item.variant_details).color && t('color', { color: JSON.parse(item.variant_details).color })}
                           </p>
                         )}
                       </div>
@@ -270,7 +285,7 @@ export default function OrderDetailsPage() {
                           ${item.unit_price.toFixed(2)} × {item.quantity}
                         </p>
                         <p className="text-sm text-gray-500">
-                          Total: ${item.total_price.toFixed(2)}
+                          {t('lineTotal', { total: `$${item.total_price.toFixed(2)}` })}
                         </p>
                       </div>
                     </div>
@@ -283,7 +298,7 @@ export default function OrderDetailsPage() {
             {order.status_history && order.status_history.length > 0 && (
               <div className="mt-8 bg-white rounded-lg shadow">
                 <div className="px-6 py-4 border-b border-gray-200">
-                  <h2 className="text-lg font-semibold text-gray-900">Order Timeline</h2>
+                  <h2 className="text-lg font-semibold text-gray-900">{t('orderTimeline')}</h2>
                 </div>
                 <div className="p-6">
                   <div className="flow-root">
@@ -305,7 +320,7 @@ export default function OrderDetailsPage() {
                               <div className="min-w-0 flex-1 pt-1.5 flex justify-between space-x-4">
                                 <div>
                                   <p className="text-sm text-gray-900 font-medium">
-                                    {entry.status.charAt(0).toUpperCase() + entry.status.slice(1)}
+                                    {getStatusLabel(entry.status)}
                                   </p>
                                   {entry.status_details?.notes && (
                                     <p className="text-sm text-gray-500 mt-1">
@@ -314,7 +329,7 @@ export default function OrderDetailsPage() {
                                   )}
                                   {entry.status_details?.changed_by_name && (
                                     <p className="text-xs text-gray-400 mt-1">
-                                      Updated by {entry.status_details.changed_by_name}
+                                      {t('updatedBy', { name: entry.status_details.changed_by_name })}
                                     </p>
                                   )}
                                 </div>
@@ -338,35 +353,35 @@ export default function OrderDetailsPage() {
             {/* Order Summary */}
             <div className="bg-white rounded-lg shadow">
               <div className="px-6 py-4 border-b border-gray-200">
-                <h2 className="text-lg font-semibold text-gray-900">Order Summary</h2>
+                <h2 className="text-lg font-semibold text-gray-900">{t('orderSummary')}</h2>
               </div>
               <div className="p-6">
                 <div className="space-y-3">
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Subtotal</span>
+                    <span className="text-gray-600">{t('subtotal')}</span>
                     <span className="font-medium">${order.subtotal.toFixed(2)}</span>
                   </div>
                   {order.tax_amount > 0 && (
                     <div className="flex justify-between">
-                      <span className="text-gray-600">Tax</span>
+                      <span className="text-gray-600">{t('tax')}</span>
                       <span className="font-medium">${order.tax_amount.toFixed(2)}</span>
                     </div>
                   )}
                   {order.shipping_amount > 0 && (
                     <div className="flex justify-between">
-                      <span className="text-gray-600">Shipping</span>
+                      <span className="text-gray-600">{t('shipping')}</span>
                       <span className="font-medium">${order.shipping_amount.toFixed(2)}</span>
                     </div>
                   )}
                   {order.discount_amount > 0 && (
                     <div className="flex justify-between">
-                      <span className="text-green-600">Discount</span>
+                      <span className="text-green-600">{t('discount')}</span>
                       <span className="font-medium text-green-600">-${order.discount_amount.toFixed(2)}</span>
                     </div>
                   )}
                   <div className="border-t border-gray-200 pt-3">
                     <div className="flex justify-between">
-                      <span className="text-lg font-semibold text-gray-900">Total</span>
+                      <span className="text-lg font-semibold text-gray-900">{t('total')}</span>
                       <span className="text-lg font-semibold text-gray-900">${order.total_amount.toFixed(2)}</span>
                     </div>
                   </div>
@@ -378,7 +393,7 @@ export default function OrderDetailsPage() {
             {order.shipping_address && (
               <div className="bg-white rounded-lg shadow">
                 <div className="px-6 py-4 border-b border-gray-200">
-                  <h2 className="text-lg font-semibold text-gray-900">Shipping Address</h2>
+                  <h2 className="text-lg font-semibold text-gray-900">{t('shippingAddress')}</h2>
                 </div>
                 <div className="p-6">
                   <div className="text-sm text-gray-900">
@@ -397,7 +412,7 @@ export default function OrderDetailsPage() {
                     </p>
                     <p>{order.shipping_address.country}</p>
                     {order.shipping_address.phone && (
-                      <p className="mt-2">Phone: {order.shipping_address.phone}</p>
+                      <p className="mt-2">{t('phone', { phone: order.shipping_address.phone })}</p>
                     )}
                   </div>
                 </div>

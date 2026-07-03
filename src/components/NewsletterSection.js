@@ -1,8 +1,10 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import { useTranslations } from 'next-intl';
 
 export default function NewsletterSection() {
+  const t = useTranslations('Newsletter');
   const [email, setEmail] = useState('');
   const [status, setStatus] = useState(''); // 'success', 'error', or ''
   const statusTimeoutRef = useRef(null);
@@ -29,9 +31,9 @@ export default function NewsletterSection() {
     <section className="noirae-newsletter-section">
       <div className="aesop-container">
         <div className="noirae-newsletter-content">
-          <h2 className="noirae-heading-2">Join Our Community</h2>
+          <h2 className="noirae-heading-2">{t('heading')}</h2>
           <p className="noirae-newsletter-description">
-            Subscribe to receive exclusive offers, styling tips, and early access to new collections
+            {t('description')}
           </p>
 
           <form onSubmit={handleSubmit} className="noirae-newsletter-form">
@@ -39,17 +41,17 @@ export default function NewsletterSection() {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="Enter your email address"
+              placeholder={t('emailPlaceholder')}
               className="noirae-newsletter-input"
               required
             />
             <button type="submit" className="noirae-btn-primary">
-              Subscribe
+              {t('subscribe')}
             </button>
           </form>
 
           {status === 'success' && (
-            <p className="noirae-newsletter-success">Thank you for subscribing!</p>
+            <p className="noirae-newsletter-success">{t('successMessage')}</p>
           )}
         </div>
       </div>

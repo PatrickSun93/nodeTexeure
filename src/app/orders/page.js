@@ -9,16 +9,17 @@ import Header from '../../components/Header';
 import Footer from '../../components/Footer';
 import { apiRequest } from '../../lib/api';
 
-// Champagne & Charcoal semantic status colors (hex mirrors of --noirae-* tokens
-// so we can derive a soft tinted pill background via alpha concatenation)
+// Champagne & Charcoal semantic status colors, mapped to --noirae-* design
+// tokens so the badges stay theme-aware (light + dark). The soft tinted pill
+// background is derived from the same token via color-mix at render.
 const STATUS_COLORS = {
-  pending: '#8C7A3F',    // --noirae-warning
-  confirmed: '#4A5578',  // --noirae-info
-  processing: '#4A5578', // --noirae-info
-  shipped: '#A8863F',    // --noirae-accent-gold
-  delivered: '#4A7A46',  // --noirae-success
-  cancelled: '#B5654D',  // --noirae-error
-  refunded: '#9C9284',   // --noirae-text-muted
+  pending: 'var(--noirae-warning)',
+  confirmed: 'var(--noirae-info)',
+  processing: 'var(--noirae-info)',
+  shipped: 'var(--noirae-accent-gold)',
+  delivered: 'var(--noirae-success)',
+  cancelled: 'var(--noirae-error)',
+  refunded: 'var(--noirae-text-muted)',
 };
 
 export default function OrdersPage() {
@@ -138,13 +139,13 @@ export default function OrdersPage() {
                     <span
                       className="nt-status-badge"
                       style={{
-                        backgroundColor: `${STATUS_COLORS[order.status] || '#9C9284'}22`,
-                        color: STATUS_COLORS[order.status] || '#9C9284',
+                        backgroundColor: `color-mix(in srgb, ${STATUS_COLORS[order.status] || 'var(--noirae-text-muted)'} 13%, transparent)`,
+                        color: STATUS_COLORS[order.status] || 'var(--noirae-text-muted)',
                       }}
                     >
                       <span
                         className="nt-status-dot"
-                        style={{ backgroundColor: STATUS_COLORS[order.status] || '#9C9284' }}
+                        style={{ backgroundColor: STATUS_COLORS[order.status] || 'var(--noirae-text-muted)' }}
                       />
                       {t.has(`statuses.${order.status}`) ? t(`statuses.${order.status}`) : (order.status.charAt(0).toUpperCase() + order.status.slice(1))}
                     </span>

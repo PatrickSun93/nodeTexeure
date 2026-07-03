@@ -3,18 +3,19 @@
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
+import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import Header from '../../../../components/Header';
 import Footer from '../../../../components/Footer';
 import { apiRequest } from '../../../../lib/api';
 
 const REASON_OPTIONS = [
-  { value: 'defective', label: 'Defective product' },
-  { value: 'wrong_item', label: 'Wrong item received' },
-  { value: 'not_as_described', label: 'Not as described' },
-  { value: 'changed_mind', label: 'Changed my mind' },
-  { value: 'damaged_shipping', label: 'Damaged during shipping' },
-  { value: 'other', label: 'Other' },
+  { value: 'defective', key: 'reasonDefective' },
+  { value: 'wrong_item', key: 'reasonWrongItem' },
+  { value: 'not_as_described', key: 'reasonNotAsDescribed' },
+  { value: 'changed_mind', key: 'reasonChangedMind' },
+  { value: 'damaged_shipping', key: 'reasonDamagedShipping' },
+  { value: 'other', key: 'reasonOther' },
 ];
 
 const RTN_STYLES = `
@@ -41,6 +42,7 @@ const RTN_STYLES = `
 `;
 
 export default function ReturnRequestPage() {
+  const t = useTranslations('ReturnFlow');
   const { orderId } = useParams();
   const { data: session } = useSession();
   const router = useRouter();
@@ -68,10 +70,10 @@ export default function ReturnRequestPage() {
           items.forEach(item => { sel[item.id] = { selected: true, quantity: item.quantity }; });
           setSelectedItems(sel);
         } else {
-          setError('Order not found');
+          setError(t('orderNotFound'));
         }
       } catch (err) {
-        setError(err.message || 'Failed to load order');
+        setError(err.message || t('failedToLoadOrder'));
       } finally {
         setLoading(false);
       }
@@ -88,13 +90,13 @@ export default function ReturnRequestPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!reason) { setError('Please select a reason'); return; }
+    if (!reason) { setError(t('pleaseSelectReason')); return; }
 
     const items = Object.entries(selectedItems)
       .filter(([, v]) => v.selected)
       .map(([itemId, v]) => ({ orderItemId: itemId, quantity: v.quantity || 1 }));
 
-    if (items.length === 0) { setError('Please select at least one item'); return; }
+    if (items.length === 0) { setError(t('pleaseSelectItem')); return; }
 
     setSubmitting(true);
     setError('');
@@ -109,10 +111,10 @@ export default function ReturnRequestPage() {
         const returnId = data.keyValueTable?.returnId;
         router.push(`/returns/${returnId}`);
       } else {
-        setError(data?.message || 'Failed to submit return request');
+        setError(data?.message || t('failedToSubmit'));
       }
     } catch (err) {
-      setError(err.message || 'Something went wrong');
+      setError(err.message || t('somethingWentWrong'));
     } finally {
       setSubmitting(false);
     }
@@ -135,20 +137,20 @@ export default function ReturnRequestPage() {
       <main style={{ padding: '2rem 0 4.5rem' }}>
         <div className="aesop-container" style={{ maxWidth: '700px', margin: '0 auto' }}>
           <nav className="nt-breadcrumb">
-            <Link href="/">Home</Link><span className="nt-breadcrumb-sep">/</span>
-            <Link href="/orders">Orders</Link><span className="nt-breadcrumb-sep">/</span>
-            <span>Return Request</span>
+            <Link href="/">{t('breadcrumbHome')}</Link><span className="nt-breadcrumb-sep">/</span>
+            <Link href="/orders">{t('breadcrumbOrders')}</Link><span className="nt-breadcrumb-sep">/</span>
+            <span>{t('breadcrumbReturnRequest')}</span>
           </nav>
 
-          <h1 className="noirae-heading-hero" style={{ margin: '1.25rem 0 0.5rem' }}>Request a Return</h1>
-          <p style={{ fontFamily: 'var(--noirae-font-sans)', color: 'var(--noirae-text-secondary)', fontSize: '0.95rem', marginBottom: '2.25rem' }}>Order: {order?.order_number || orderId}</p>
+          <h1 className="noirae-heading-hero" style={{ margin: '1.25rem 0 0.5rem' }}>{t('title')}</h1>
+          <p style={{ fontFamily: 'var(--noirae-font-sans)', color: 'var(--noirae-text-secondary)', fontSize: '0.95rem', marginBottom: '2.25rem' }}>{t('orderLabel', { order: order?.order_number || orderId })}</p>
 
           {error && <div className="nt-error-banner" style={{ marginBottom: '1.5rem' }}>{error}</div>}
 
           <form onSubmit={handleSubmit}>
             {/* Select items */}
             <div className="rtn-card" style={{ padding: '1.75rem', marginBottom: '1.5rem' }}>
-              <h2 style={{ fontFamily: 'var(--noirae-font-serif)', fontSize: '1.5rem', color: 'var(--noirae-text-primary)', marginBottom: '0.75rem' }}>Select Items to Return</h2>
+              <h2 style={{ fontFamily: 'var(--noirae-font-serif)', fontSize: '1.5rem', color: 'var(--noirae-text-primary)', marginBottom: '0.75rem' }}>{t('selectItemsHeading')}</h2>
               {(order?.items || []).map(item => (
                 <label key={item.id} className="rtn-check">
                   <input
@@ -159,7 +161,7 @@ export default function ReturnRequestPage() {
                   />
                   <div style={{ flex: 1 }}>
                     <p style={{ fontFamily: 'var(--noirae-font-sans)', fontSize: '0.92rem', fontWeight: 500, color: 'var(--noirae-text-primary)' }}>{item.product_name}</p>
-                    <p className="rtn-meta">Qty: {item.quantity} &middot; ${parseFloat(item.unit_price).toFixed(2)} each</p>
+                    <p className="rtn-meta">{t('itemQtyPrice', { qty: item.quantity, price: parseFloat(item.unit_price).toFixed(2) })}</p>
                   </div>
                 </label>
               ))}
@@ -167,30 +169,30 @@ export default function ReturnRequestPage() {
 
             {/* Reason */}
             <div style={{ marginBottom: '1.5rem' }}>
-              <label className="rtn-form-label">Reason for Return</label>
+              <label className="rtn-form-label">{t('reasonLabel')}</label>
               <select
                 value={reason}
                 onChange={e => setReason(e.target.value)}
                 required
                 className="rtn-field"
               >
-                <option value="">Select a reason...</option>
+                <option value="">{t('selectReasonPlaceholder')}</option>
                 {REASON_OPTIONS.map(opt => (
-                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                  <option key={opt.value} value={opt.value}>{t(opt.key)}</option>
                 ))}
               </select>
             </div>
 
             {/* Description */}
             <div style={{ marginBottom: '2rem' }}>
-              <label className="rtn-form-label">Additional Details (optional)</label>
+              <label className="rtn-form-label">{t('additionalDetailsLabel')}</label>
               <textarea
                 value={description}
                 onChange={e => setDescription(e.target.value)}
                 rows={4}
                 className="rtn-field"
                 style={{ resize: 'vertical' }}
-                placeholder="Describe the issue in detail..."
+                placeholder={t('descriptionPlaceholder')}
               />
             </div>
 
@@ -200,9 +202,9 @@ export default function ReturnRequestPage() {
                 disabled={submitting}
                 className="rtn-btn rtn-btn-dark"
               >
-                {submitting ? 'Submitting...' : 'Submit Return Request'}
+                {submitting ? t('submitting') : t('submitButton')}
               </button>
-              <Link href="/orders" className="rtn-btn rtn-btn-ghost">Cancel</Link>
+              <Link href="/orders" className="rtn-btn rtn-btn-ghost">{t('cancel')}</Link>
             </div>
           </form>
         </div>

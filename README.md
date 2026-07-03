@@ -25,6 +25,17 @@ images) — no mock data.
 
 ---
 
+## Multi-language
+
+The storefront ships in four languages — **English**, **中文**, **Français**, and
+**Español** — switched from a `LanguageSwitcher` in the header. Localization is
+cookie-based `next-intl`: the switcher sets a `NEXT_LOCALE` cookie that's read
+server-side, so there's deliberately **no `[locale]` URL segment**. Product copy is
+localized too — the backend serves translated names and descriptions from the
+`product_translations` table. (Transactional emails stay English by design.)
+
+---
+
 ## Quick start
 
 ### With Docker (recommended)
