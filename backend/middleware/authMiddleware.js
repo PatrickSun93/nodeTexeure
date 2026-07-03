@@ -59,6 +59,23 @@ exports.admin = (req, res, next) => {
     .json(ResponseFormatter.failure('Not authorized as an admin', keyValueTable));
 };
 
+// Middleware for staff OR admin access. Allows role 'admin' (isAdmin) or 'staff'
+// (isStaff). Must run after `protect` so req.user is populated from the verified
+// JWT. Admin-only routes must keep using `admin`, not this middleware.
+exports.staffOrAdmin = (req, res, next) => {
+  if (req.user && (req.user.isAdmin || req.user.isStaff)) {
+    return next();
+  }
+  console.error(
+    'StaffOrAdmin Middleware Denied:',
+    req.user ? `User ${req.user.id} is neither staff nor admin` : 'No user'
+  );
+  const keyValueTable = { error: 'Staff or admin access required' };
+  return res
+    .status(401)
+    .json(ResponseFormatter.failure('Not authorized as staff or admin', keyValueTable));
+};
+
 // Optional protect middleware
 exports.protectOptional = (req, res, next) => {
   const token = extractAuthToken(req);

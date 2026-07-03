@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
+import { ensureCsrfToken } from '../utils/api';
 
 /**
  * BulkUploadView Component
@@ -36,10 +37,14 @@ export default function BulkUploadView() {
 
     const handleDownloadTemplate = async () => {
         try {
-            const token = localStorage.getItem('token');
-            const response = await fetch('http://localhost:6666/api/admin/bulk/products/template', {
-                headers: { 'Authorization': `Bearer ${token}` }
+            // Cookie-based auth via the /api proxy (port 6666 is browser-blocked).
+            const response = await fetch('/api/admin/bulk/products/template', {
+                credentials: 'include'
             });
+
+            if (!response.ok) {
+                throw new Error('Failed to download template');
+            }
 
             const blob = await response.blob();
             const url = window.URL.createObjectURL(blob);
@@ -66,13 +71,14 @@ export default function BulkUploadView() {
         setError('');
 
         try {
-            const token = localStorage.getItem('token');
             const formData = new FormData();
             formData.append('file', file);
 
-            const response = await fetch('http://localhost:6666/api/admin/bulk/products/validate', {
+            // Cookie-based auth via the /api proxy. The validate route does not
+            // mutate data, so it requires no CSRF token (see bulkOperationsRoutes).
+            const response = await fetch('/api/admin/bulk/products/validate', {
                 method: 'POST',
-                headers: { 'Authorization': `Bearer ${token}` },
+                credentials: 'include',
                 body: formData
             });
 
@@ -101,17 +107,20 @@ export default function BulkUploadView() {
         setError('');
 
         try {
-            const token = localStorage.getItem('token');
-            const csrfToken = localStorage.getItem('csrfToken');
+            // Cookie-based auth via the /api proxy. Upload mutates data, so the
+            // backend requires a double-submit CSRF token (X-CSRF-Token header +
+            // csrf_token cookie). FormData is sent raw so the browser can set the
+            // multipart boundary — do not force a JSON Content-Type here.
+            const csrfToken = await ensureCsrfToken();
             const formData = new FormData();
             formData.append('file', file);
 
-            const response = await fetch('http://localhost:6666/api/admin/bulk/products/upload', {
+            const response = await fetch('/api/admin/bulk/products/upload', {
                 method: 'POST',
                 headers: {
-                    'Authorization': `Bearer ${token}`,
                     'X-CSRF-Token': csrfToken
                 },
+                credentials: 'include',
                 body: formData
             });
 

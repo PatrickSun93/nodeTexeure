@@ -31,7 +31,7 @@ try {
 }
 
 const FROM_EMAIL = process.env.AWS_SES_FROM_EMAIL || 'noreply@yourdomain.com';
-const FROM_NAME = process.env.AWS_SES_FROM_NAME || 'Bed Texture Store';
+const FROM_NAME = process.env.AWS_SES_FROM_NAME || 'Noiraé Store';
 const REPLY_TO = process.env.AWS_SES_REPLY_TO_EMAIL || 'support@yourdomain.com';
 
 /**

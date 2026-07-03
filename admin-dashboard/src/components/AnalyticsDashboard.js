@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, BarElement, ArcElement, Title, Tooltip, Legend } from 'chart.js';
 import { Line, Bar, Pie } from 'react-chartjs-2';
+import { apiFetch } from '../utils/api';
 
 // Register ChartJS components
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, ArcElement, Title, Tooltip, Legend);
@@ -36,24 +37,19 @@ export default function AnalyticsDashboard() {
         setError('');
 
         try {
-            const token = localStorage.getItem('token');
-            const headers = {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-            };
-
             const params = period === 'custom' && dateRange.start && dateRange.end
                 ? `period=custom&start_date=${dateRange.start}&end_date=${dateRange.end}`
                 : `period=${period}`;
 
-            // Fetch all analytics in parallel
+            // Fetch all analytics in parallel (apiFetch sends the admin_auth cookie
+            // via credentials:'include' and returns parsed JSON)
             const [summary, trend, products, customers, inventory, categories] = await Promise.all([
-                fetch(`http://localhost:6666/api/admin/analytics/sales-summary?${params}`, { headers }).then(r => r.json()),
-                fetch(`http://localhost:6666/api/admin/analytics/revenue-trend?${params}&group_by=day`, { headers }).then(r => r.json()),
-                fetch(`http://localhost:6666/api/admin/analytics/top-products?${params}&limit=10`, { headers }).then(r => r.json()),
-                fetch(`http://localhost:6666/api/admin/analytics/customer-stats?${params}`, { headers }).then(r => r.json()),
-                fetch(`http://localhost:6666/api/admin/analytics/inventory-status`, { headers }).then(r => r.json()),
-                fetch(`http://localhost:6666/api/admin/analytics/revenue-by-category?${params}`, { headers }).then(r => r.json())
+                apiFetch(`/api/admin/analytics/sales-summary?${params}`),
+                apiFetch(`/api/admin/analytics/revenue-trend?${params}&group_by=day`),
+                apiFetch(`/api/admin/analytics/top-products?${params}&limit=10`),
+                apiFetch(`/api/admin/analytics/customer-stats?${params}`),
+                apiFetch(`/api/admin/analytics/inventory-status`),
+                apiFetch(`/api/admin/analytics/revenue-by-category?${params}`)
             ]);
 
             if (summary.status === 'SUCCESS') setSalesSummary(summary.keyValueTable);
@@ -73,13 +69,15 @@ export default function AnalyticsDashboard() {
 
     const handleExportCSV = async (type) => {
         try {
-            const token = localStorage.getItem('token');
             const params = period === 'custom' && dateRange.start && dateRange.end
                 ? `?period=custom&start_date=${dateRange.start}&end_date=${dateRange.end}`
                 : `?period=${period}`;
 
-            const response = await fetch(`http://localhost:6666/api/admin/bulk/${type}/export${params}`, {
-                headers: { 'Authorization': `Bearer ${token}` }
+            // Relative URL via the /api proxy; credentials:'include' sends the
+            // admin_auth cookie. Plain fetch (not apiFetch) because the response
+            // is a CSV blob, not JSON.
+            const response = await fetch(`/api/admin/bulk/${type}/export${params}`, {
+                credentials: 'include'
             });
 
             const blob = await response.blob();

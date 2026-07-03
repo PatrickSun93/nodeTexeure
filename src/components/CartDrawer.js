@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, useCallback } from "react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { apiRequest, extractResponseData } from "../lib/api";
 
 /**
@@ -11,6 +12,7 @@ import { apiRequest, extractResponseData } from "../lib/api";
  * - Integrates with existing cart APIs and dispatches 'cart:updated' on changes
  */
 export default function CartDrawer({ isOpen, onClose }) {
+  const t = useTranslations("CartDrawer");
   const drawerRef = useRef(null);
   const previouslyFocusedElement = useRef(null);
   const [loading, setLoading] = useState(false);
@@ -27,14 +29,14 @@ export default function CartDrawer({ isOpen, onClose }) {
       if (parsed.status === "SUCCESS") {
         setCart({ id: parsed.cartId || null, items: Array.isArray(parsed.items) ? parsed.items : [] });
       } else {
-        setError(parsed.message || "Failed to fetch cart");
+        setError(parsed.message || t("fetchError"));
       }
     } catch (e) {
-      setError(e?.message || "Failed to fetch cart");
+      setError(e?.message || t("fetchError"));
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     if (isOpen) {
@@ -149,8 +151,8 @@ export default function CartDrawer({ isOpen, onClose }) {
         aria-labelledby="cart-drawer-title"
       >
         <div className="aesop-cart-drawer-header">
-          <h2 id="cart-drawer-title" className="aesop-cart-drawer-title">Your Cart</h2>
-          <button className="aesop-icon-button" data-close onClick={() => onClose?.()} aria-label="Close cart">
+          <h2 id="cart-drawer-title" className="aesop-cart-drawer-title">{t("title")}</h2>
+          <button className="aesop-icon-button" data-close onClick={() => onClose?.()} aria-label={t("closeAria")}>
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
             </svg>
@@ -159,14 +161,14 @@ export default function CartDrawer({ isOpen, onClose }) {
 
         <div className="aesop-cart-drawer-body">
           {loading ? (
-            <div className="aesop-cart-loading">Loading…</div>
+            <div className="aesop-cart-loading">{t("loading")}</div>
           ) : error ? (
             <div className="aesop-cart-error">{error}</div>
           ) : cart.items.length === 0 ? (
             <div className="aesop-cart-empty">
-              <p>Your cart is empty.</p>
+              <p>{t("empty")}</p>
               <Link href="/shop" className="aesop-button-primary" onClick={() => onClose?.()}>
-                Continue Shopping
+                {t("continueShopping")}
               </Link>
             </div>
           ) : (
@@ -182,12 +184,12 @@ export default function CartDrawer({ isOpen, onClose }) {
                       <div className="aesop-cart-item-price">${price.toFixed(2)}</div>
                     </div>
                     <div className="aesop-cart-item-controls">
-                      <div className="aesop-qty-control" aria-label={`Quantity for ${item.name || item.product_id}`}>
+                      <div className="aesop-qty-control" aria-label={t("quantityFor", { name: item.name || item.product_id })}>
                         <button
                           className="aesop-qty-btn"
                           onClick={() => updateQuantity(item.id, Math.max(1, qty - 1))}
                           disabled={!!updating[item.id] || qty <= 1}
-                          aria-label="Decrease quantity"
+                          aria-label={t("decreaseQuantity")}
                         >
                           −
                         </button>
@@ -208,7 +210,7 @@ export default function CartDrawer({ isOpen, onClose }) {
                           className="aesop-qty-btn"
                           onClick={() => updateQuantity(item.id, qty + 1)}
                           disabled={!!updating[item.id]}
-                          aria-label="Increase quantity"
+                          aria-label={t("increaseQuantity")}
                         >
                           +
                         </button>
@@ -218,7 +220,7 @@ export default function CartDrawer({ isOpen, onClose }) {
                         onClick={() => removeItem(item.id)}
                         disabled={!!updating[item.id]}
                       >
-                        Remove
+                        {t("remove")}
                       </button>
                       <div className="aesop-cart-line">${line.toFixed(2)}</div>
                     </div>
@@ -231,15 +233,15 @@ export default function CartDrawer({ isOpen, onClose }) {
 
         <div className="aesop-cart-drawer-footer">
           <div className="aesop-cart-subtotal">
-            <span>Subtotal</span>
+            <span>{t("subtotal")}</span>
             <strong>${subtotal.toFixed(2)}</strong>
           </div>
           <div className="aesop-cart-actions">
             <Link href="/cart" className="aesop-button-secondary" onClick={() => onClose?.()}>
-              View Cart
+              {t("viewCart")}
             </Link>
             <button className="aesop-button-primary" onClick={() => { onClose?.(); }}>
-              Checkout
+              {t("checkout")}
             </button>
           </div>
         </div>

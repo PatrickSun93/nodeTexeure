@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
+import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import Header from '../../../components/Header';
 import Footer from '../../../components/Footer';
@@ -8,6 +9,7 @@ import { ProductCard } from '../../shop/page';
 import Pagination from '../../../components/common/Pagination';
 
 export default function SilkCollectionPage() {
+  const t = useTranslations('Collections');
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
@@ -47,27 +49,25 @@ export default function SilkCollectionPage() {
       <main className="aesop-container">
         {/* Collection Hero */}
         <div className="noirae-collection-hero">
-          <h1 className="noirae-heading-hero">Silk Collection</h1>
+          <h1 className="noirae-heading-hero">{t('silkTitle')}</h1>
           <p className="noirae-collection-hero-description">
-            Experience the ultimate luxury with our premium mulberry silk bedding. 
-            Naturally hypoallergenic, temperature-regulating, and incredibly soft, 
-            silk offers an unparalleled sleeping experience.
+            {t('silkDescription')}
           </p>
         </div>
 
         {/* Collection Features */}
         <div className="noirae-collection-features">
           <div className="noirae-collection-feature">
-            <h3>100% Mulberry Silk</h3>
-            <p>The finest grade silk, carefully sourced and ethically produced</p>
+            <h3>{t('silkFeature1Title')}</h3>
+            <p>{t('silkFeature1Desc')}</p>
           </div>
           <div className="noirae-collection-feature">
-            <h3>Temperature Regulating</h3>
-            <p>Naturally adapts to keep you cool in summer, warm in winter</p>
+            <h3>{t('silkFeature2Title')}</h3>
+            <p>{t('silkFeature2Desc')}</p>
           </div>
           <div className="noirae-collection-feature">
-            <h3>Hypoallergenic</h3>
-            <p>Resistant to dust mites, mold, and allergens</p>
+            <h3>{t('silkFeature3Title')}</h3>
+            <p>{t('silkFeature3Desc')}</p>
           </div>
         </div>
 
@@ -75,13 +75,13 @@ export default function SilkCollectionPage() {
         {loading ? (
           <div className="noirae-loading">
             <div className="aesop-loading-spinner"></div>
-            <p>Loading silk products...</p>
+            <p>{t('silkLoading')}</p>
           </div>
         ) : (
           <>
             <div className="noirae-collection-results">
-              <h2 className="noirae-heading-2">All Silk Products</h2>
-              <span className="noirae-results-count">{products.length} products</span>
+              <h2 className="noirae-heading-2">{t('silkAllProducts')}</h2>
+              <span className="noirae-results-count">{t('productsCount', { count: products.length })}</span>
             </div>
 
             <div className="noirae-product-grid">

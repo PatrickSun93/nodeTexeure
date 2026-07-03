@@ -347,44 +347,51 @@ router.get('/customer-stats', protect, admin, async (req, res) => {
 router.get('/inventory-status', protect, admin, async (req, res) => {
     try {
         // Overall inventory stats
+        // Stock lives in the `inventory` table (per variant); products has no
+        // stock_quantity/is_active — "live" products are status = 'approved'.
         const statsQuery = `
-            SELECT 
-                COUNT(*) as total_products,
-                SUM(stock_quantity) as total_stock,
-                SUM(CASE WHEN stock_quantity <= low_stock_threshold THEN 1 ELSE 0 END) as low_stock_items,
-                SUM(CASE WHEN stock_quantity = 0 THEN 1 ELSE 0 END) as out_of_stock_items,
-                AVG(stock_quantity) as avg_stock_per_product
-            FROM products
-            WHERE is_active = TRUE
+            SELECT
+                COUNT(DISTINCT p.id) as total_products,
+                COALESCE(SUM(i.quantity_available), 0) as total_stock,
+                SUM(CASE WHEN i.quantity_available <= i.reorder_point THEN 1 ELSE 0 END) as low_stock_items,
+                SUM(CASE WHEN i.quantity_available = 0 THEN 1 ELSE 0 END) as out_of_stock_items,
+                AVG(i.quantity_available) as avg_stock_per_product
+            FROM inventory i
+            JOIN products p ON i.product_id = p.id
+            WHERE p.status = 'approved'
         `;
 
         const statsResult = await DatabaseUtil.executeQuery(statsQuery);
 
         // Low stock products
         const lowStockQuery = `
-            SELECT 
-                id,
-                name,
-                sku,
-                stock_quantity,
-                low_stock_threshold,
-                base_price
-            FROM products
-            WHERE is_active = TRUE 
-            AND stock_quantity <= low_stock_threshold
-            ORDER BY stock_quantity ASC
+            SELECT
+                p.id,
+                p.name,
+                p.sku,
+                i.quantity_available AS stock_quantity,
+                i.reorder_point AS low_stock_threshold,
+                p.base_price
+            FROM inventory i
+            JOIN products p ON i.product_id = p.id
+            WHERE p.status = 'approved'
+            AND i.quantity_available <= i.reorder_point
+            ORDER BY i.quantity_available ASC
             LIMIT 20
         `;
 
         const lowStockResult = await DatabaseUtil.executeQuery(lowStockQuery);
 
         // Stock value
+        // No cost_price column exists; report retail value from base_price and
+        // leave cost value at 0 rather than querying a phantom column.
         const valueQuery = `
-            SELECT 
-                SUM(stock_quantity * cost_price) as total_cost_value,
-                SUM(stock_quantity * base_price) as total_retail_value
-            FROM products
-            WHERE is_active = TRUE AND cost_price IS NOT NULL
+            SELECT
+                0 as total_cost_value,
+                COALESCE(SUM(i.quantity_available * p.base_price), 0) as total_retail_value
+            FROM inventory i
+            JOIN products p ON i.product_id = p.id
+            WHERE p.status = 'approved'
         `;
 
         const valueResult = await DatabaseUtil.executeQuery(valueQuery);

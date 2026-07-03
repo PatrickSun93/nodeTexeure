@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import Head from 'next/head';
 import Header from '../../../components/Header';
 import Footer from '../../../components/Footer';
@@ -19,15 +20,8 @@ const categoryMapping = {
   'accessories': 'Accessories'
 };
 
-const categoryDescriptions = {
-  'sheets': 'Premium bed sheets made from the finest materials including Egyptian cotton, bamboo, and linen. Transform your sleep experience with our luxury sheet collection.',
-  'pillows': 'Comfortable and supportive pillows including memory foam, down alternative, and silk pillowcases. Find the perfect pillow for your sleep style.',
-  'blankets': 'Cozy blankets and throws for every season. From lightweight summer throws to warm winter comforters in premium materials.',
-  'mattresses': 'High-quality mattresses designed for optimal comfort and support. Memory foam, hybrid, and organic options available.',
-  'accessories': 'Complete your bedroom with our collection of bed accessories including mattress protectors, bed skirts, and decorative pillows.'
-};
-
 export default function CategoryPage() {
+  const t = useTranslations('CategoryPage');
   const { slug } = useParams();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -35,7 +29,14 @@ export default function CategoryPage() {
   const [sortBy, setSortBy] = useState('featured');
 
   const categoryName = categoryMapping[slug] || slug;
-  const categoryDescription = categoryDescriptions[slug] || `Shop our ${categoryName} collection`;
+  const categoryDescriptions = {
+    'sheets': t('descSheets'),
+    'pillows': t('descPillows'),
+    'blankets': t('descBlankets'),
+    'mattresses': t('descMattresses'),
+    'accessories': t('descAccessories'),
+  };
+  const categoryDescription = categoryDescriptions[slug] || t('descFallback', { category: categoryName });
 
   useEffect(() => {
     const fetchCategoryProducts = async () => {
@@ -54,11 +55,11 @@ export default function CategoryPage() {
         if (data.status === 'SUCCESS') {
           setProducts(data.keyValueTable.products || []);
         } else {
-          setError('Failed to load products');
+          setError(t('loadError'));
         }
       } catch (err) {
         console.error('Error fetching category products:', err);
-        setError('Failed to load products');
+        setError(t('loadError'));
       } finally {
         setLoading(false);
       }
@@ -67,7 +68,7 @@ export default function CategoryPage() {
     if (slug) {
       fetchCategoryProducts();
     }
-  }, [slug, categoryName]);
+  }, [slug, categoryName, t]);
 
   const handleAddToCart = async (product) => {
     try {
@@ -137,7 +138,7 @@ export default function CategoryPage() {
         <Header />
         <div className="aesop-loading">
           <div className="aesop-loading-spinner"></div>
-          <p>Loading {categoryName} products...</p>
+          <p>{t('loading', { category: categoryName })}</p>
         </div>
         <Footer />
       </div>
@@ -195,23 +196,23 @@ export default function CategoryPage() {
           <div className="category-toolbar">
             <div className="category-results">
               <span className="results-count">
-                {sortedProducts.length} {categoryName} products
+                {t('resultsCount', { count: sortedProducts.length, category: categoryName })}
               </span>
             </div>
             
             <div className="category-sort">
-              <label htmlFor="category-sort-select">Sort by:</label>
+              <label htmlFor="category-sort-select">{t('sortBy')}</label>
               <select 
                 id="category-sort-select"
                 value={sortBy} 
                 onChange={(e) => setSortBy(e.target.value)}
                 className="sort-select"
               >
-                <option value="featured">Featured</option>
-                <option value="newest">Newest</option>
-                <option value="price-low">Price: Low to High</option>
-                <option value="price-high">Price: High to Low</option>
-                <option value="name">Name: A to Z</option>
+                <option value="featured">{t('sortFeatured')}</option>
+                <option value="newest">{t('sortNewest')}</option>
+                <option value="price-low">{t('sortPriceLow')}</option>
+                <option value="price-high">{t('sortPriceHigh')}</option>
+                <option value="name">{t('sortName')}</option>
               </select>
             </div>
           </div>
@@ -228,9 +229,9 @@ export default function CategoryPage() {
               ))
             ) : (
               <div className="no-products">
-                <h2>No {categoryName} Found</h2>
-                <p>We don't have any {categoryName.toLowerCase()} products available at the moment.</p>
-                <a href="/shop" className="back-to-shop-btn">Browse All Products</a>
+                <h2>{t('noProductsTitle', { category: categoryName })}</h2>
+                <p>{t('noProductsText', { category: categoryName.toLowerCase() })}</p>
+                <a href="/shop" className="back-to-shop-btn">{t('browseAll')}</a>
               </div>
             )}
           </div>

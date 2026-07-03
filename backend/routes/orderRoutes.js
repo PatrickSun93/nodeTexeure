@@ -219,27 +219,109 @@ router.post('/create', protectOptional, async (req, res) => {
     // Generate a non-sequential, unguessable order number (see generateOrderNumber).
     const orderNumber = await generateOrderNumber();
 
-    // Create order
     const orderId = uuidv4();
-    const orderQuery = `
-      INSERT INTO orders (id, order_number, user_id, guest_email, status, subtotal, tax_amount, shipping_amount, discount_amount, total_amount, shipping_address_json, billing_address_json)
-      VALUES (?, ?, ?, ?, 'pending', ?, ?, ?, ?, ?, ?, ?)
-    `;
-    await db.executeQuery(orderQuery, [orderId, orderNumber, userId, guestEmail, subtotal, taxAmount, shippingAmount, discountAmount, totalAmount, JSON.stringify(shippingAddress), JSON.stringify(billingAddress)]);
 
-    // Create order items
-    for (const item of cartItems) {
-      const orderItemId = uuidv4();
-      const orderItemQuery = `
-        INSERT INTO order_items (id, order_id, product_id, variant_id, product_name, product_sku, quantity, unit_price, total_price)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `;
-      await db.executeQuery(orderItemQuery, [orderItemId, orderId, item.product_id, item.variant_id, item.name, item.sku || '', item.quantity, item.price, item.price * item.quantity]);
+    // Attribute the inventory movement (audit trail). inventory_movements.created_by
+    // is NOT NULL with an FK to users(id): use the buyer when logged in, else fall
+    // back to a system/admin user so guest orders still log. If neither resolves we
+    // skip the movement log (never block the sale on the audit row).
+    let movementCreatedBy = userId;
+    if (!movementCreatedBy) {
+      const sysUser = await db.executeQuery(
+        "SELECT id FROM users WHERE role = 'admin' AND status = 'active' ORDER BY created_at ASC LIMIT 1"
+      );
+      movementCreatedBy = Array.isArray(sysUser?.data) && sysUser.data.length > 0 ? sysUser.data[0].id : null;
     }
 
-    // Clear cart
-    await db.executeQuery('DELETE FROM cart_items WHERE cart_id = ?', [cartId]);
-    await db.executeQuery('DELETE FROM shopping_carts WHERE id = ?', [cartId]);
+    // Order + items + inventory decrement must be one atomic unit so a stock race
+    // rolls the whole order back. executeQuery() autocommits per call on its own
+    // pooled connection, so we drive a single connection/transaction by hand here.
+    const connection = await db.getConnection();
+    try {
+      await connection.beginTransaction();
+
+      // Create order
+      await connection.execute(
+        `INSERT INTO orders (id, order_number, user_id, guest_email, status, subtotal, tax_amount, shipping_amount, discount_amount, total_amount, shipping_address_json, billing_address_json)
+         VALUES (?, ?, ?, ?, 'pending', ?, ?, ?, ?, ?, ?, ?)`,
+        [orderId, orderNumber, userId, guestEmail, subtotal, taxAmount, shippingAmount, discountAmount, totalAmount, JSON.stringify(shippingAddress), JSON.stringify(billingAddress)]
+      );
+
+      // Create order items
+      for (const item of cartItems) {
+        await connection.execute(
+          `INSERT INTO order_items (id, order_id, product_id, variant_id, product_name, product_sku, quantity, unit_price, total_price)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [uuidv4(), orderId, item.product_id, item.variant_id ?? null, item.name, item.sku || '', item.quantity, item.price, item.price * item.quantity]
+        );
+      }
+
+      // Decrement stock for each ordered line, guarded against oversell. The
+      // `quantity_available >= ?` predicate makes check-and-decrement a single
+      // atomic statement: if a concurrent order already claimed the last units,
+      // 0 rows change and we roll the entire order back (fail closed). We target
+      // the exact inventory row via null-safe equality (variant_id <=> ?), matching
+      // the unique (product_id, variant_id) key.
+      for (const item of cartItems) {
+        const variantId = item.variant_id ?? null;
+        const [decrement] = await connection.execute(
+          `UPDATE inventory
+             SET quantity_available = quantity_available - ?,
+                 quantity_sold = quantity_sold + ?,
+                 updated_at = CURRENT_TIMESTAMP
+           WHERE product_id = ? AND variant_id <=> ? AND quantity_available >= ?`,
+          [item.quantity, item.quantity, item.product_id, variantId, item.quantity]
+        );
+
+        if (decrement.affectedRows === 0) {
+          await connection.rollback();
+          return res.status(409).json(ResponseFormatter.failure(
+            `Insufficient stock for "${item.name}". Another order may have just taken the last units — please review your cart.`
+          ));
+        }
+
+        // Record a 'sale' movement for the audit trail (best-effort — a failure
+        // here must never undo a valid sale, so it is caught and logged).
+        if (movementCreatedBy) {
+          try {
+            const [invRows] = await connection.execute(
+              'SELECT id FROM inventory WHERE product_id = ? AND variant_id <=> ?',
+              [item.product_id, variantId]
+            );
+            const inventoryId = invRows[0]?.id;
+            if (inventoryId) {
+              const [idRows] = await connection.execute("SELECT get_next_id('INVMOV') AS id");
+              await connection.execute(
+                `INSERT INTO inventory_movements
+                   (id, inventory_id, movement_type, quantity_change, reference_type, reference_id, movement_details, created_by)
+                 VALUES (?, ?, 'sale', ?, 'order', ?, ?, ?)`,
+                [
+                  idRows[0].id,
+                  inventoryId,
+                  -item.quantity,
+                  orderId,
+                  JSON.stringify({ order_number: orderNumber, product_name: item.name, quantity: item.quantity }),
+                  movementCreatedBy,
+                ]
+              );
+            }
+          } catch (movementErr) {
+            console.error('Non-fatal: inventory movement log failed:', movementErr.message);
+          }
+        }
+      }
+
+      // Clear cart
+      await connection.execute('DELETE FROM cart_items WHERE cart_id = ?', [cartId]);
+      await connection.execute('DELETE FROM shopping_carts WHERE id = ?', [cartId]);
+
+      await connection.commit();
+    } catch (txError) {
+      try { await connection.rollback(); } catch (rollbackErr) { console.error('Rollback error:', rollbackErr.message); }
+      throw txError;
+    } finally {
+      connection.release();
+    }
 
     // Send order confirmation email (non-blocking)
     const customerEmail = guestEmail || (req.user ? req.user.email : null);

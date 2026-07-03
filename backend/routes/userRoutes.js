@@ -12,8 +12,13 @@ const emailQueueProducer = require('../services/emailQueueProducer');
 
 const router = express.Router();
 
+// Roles with back-office access to the admin dashboard. Membership issues the
+// HttpOnly admin_auth cookie and skips the guest-cart merge on login; it does
+// NOT by itself grant admin privilege. isAdmin is true only for role 'admin'
+// (staff get a separate isStaff flag and cannot pass the admin-only middleware).
+const BACKOFFICE_ROLES = ['admin', 'staff'];
+
 // Rate limiters
-const ADMIN_ROLES = ['admin', 'staff', 'superadmin', 'owner'];
 
 // Auth rate limits are enforced only in production. Outside production (local dev,
 // automated tests, screenshot capture) they are skipped so repeated logins aren't
@@ -212,9 +217,12 @@ router.post('/login', loginLimiter, async (req, res) => {
     const userRole = user.role.toLowerCase();
 
     if (await bcrypt.compare(password, user.password_hash)) {
-      // Compute isAdmin from role field
-      const isAdmin = ADMIN_ROLES.includes(userRole);
-      const accessToken = jwt.sign({ id: user.id, email: user.email, isAdmin }, process.env.JWT_SECRET, { algorithm: 'HS256', expiresIn: '24h' });
+      // Admin privilege is granted ONLY to the 'admin' role. Staff are NOT admins
+      // (isAdmin=false) so they cannot pass the admin-only middleware; they get a
+      // separate isStaff flag for staff-or-admin routes.
+      const isAdmin = userRole === 'admin';
+      const isStaff = userRole === 'staff';
+      const accessToken = jwt.sign({ id: user.id, email: user.email, isAdmin, isStaff }, process.env.JWT_SECRET, { algorithm: 'HS256', expiresIn: '24h' });
       const refreshToken = crypto.randomBytes(64).toString('hex');
       const refreshExpiry = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
 
@@ -224,9 +232,10 @@ router.post('/login', loginLimiter, async (req, res) => {
 
       await DatabaseUtil.executeQuery('INSERT INTO refresh_tokens (id, user_id, token, expiry) VALUES (?, ?, ?, ?)', [refreshId, user.id, refreshToken, refreshExpiry]);
 
-      // Issue HttpOnly authentication cookie for admin logins
+      // Issue the HttpOnly admin_auth cookie for back-office logins (admin + staff)
+      // so they can use the dashboard (which authenticates via this cookie).
       // Secure in production, SameSite=Strict, Path=/, configurable TTL via ADMIN_AUTH_COOKIE_TTL_MS (default: 24h)
-      if (isAdmin) {
+      if (BACKOFFICE_ROLES.includes(userRole)) {
         const ttlMs = Number.parseInt(process.env.ADMIN_AUTH_COOKIE_TTL_MS || '86400000', 10);
         const isProd = process.env.NODE_ENV === 'production';
         res.cookie('admin_auth', accessToken, {
@@ -239,7 +248,7 @@ router.post('/login', loginLimiter, async (req, res) => {
       }
 
       // Handle cart merge - skip for admin/staff users
-      if (req.cookies.sessionId && !ADMIN_ROLES.includes(userRole)) {
+      if (req.cookies.sessionId && !BACKOFFICE_ROLES.includes(userRole)) {
         const sessionId = req.cookies.sessionId;
         const guestCartResult = await DatabaseUtil.executeQuery('SELECT id FROM shopping_carts WHERE session_id = ?', [sessionId]);
         if (guestCartResult.success && guestCartResult.data.length > 0) {
@@ -280,11 +289,11 @@ router.post('/login', loginLimiter, async (req, res) => {
         }
         // Clear session cookie for regular users
         res.clearCookie('sessionId');
-      } else if (req.cookies.sessionId && ADMIN_ROLES.includes(userRole)) {
+      } else if (req.cookies.sessionId && BACKOFFICE_ROLES.includes(userRole)) {
         // For admin/staff users, just clear the session cookie without cart operations
         res.clearCookie('sessionId');
       }
-      const keyValueTable = { userId: user.id, email: user.email, accessToken, refreshToken, role: user.role, isAdmin };
+      const keyValueTable = { userId: user.id, email: user.email, accessToken, refreshToken, role: user.role, isAdmin, isStaff };
       res.json(ResponseFormatter.success('Login successful', keyValueTable));
     } else {
       const keyValueTable = { error: 'Invalid email or password' };
@@ -313,10 +322,12 @@ router.post('/refresh', refreshLimiter, async (req, res) => {
       return res.status(404).json(ResponseFormatter.failure('User not found'));
     }
     const user = userResult.data[0];
-    // Compute isAdmin from role field
+    // Admin privilege is granted ONLY to the 'admin' role; staff get isStaff. Keep
+    // the same flags in refreshed tokens so role gating survives a token refresh.
     const userRole = user.role.toLowerCase();
-    const isAdmin = ADMIN_ROLES.includes(userRole);
-    const newAccessToken = jwt.sign({ id: user.id, email: user.email, isAdmin }, process.env.JWT_SECRET, { algorithm: 'HS256', expiresIn: '24h' });
+    const isAdmin = userRole === 'admin';
+    const isStaff = userRole === 'staff';
+    const newAccessToken = jwt.sign({ id: user.id, email: user.email, isAdmin, isStaff }, process.env.JWT_SECRET, { algorithm: 'HS256', expiresIn: '24h' });
     res.json(ResponseFormatter.success('Token refreshed', { accessToken: newAccessToken }));
   } catch (error) {
     console.error('Refresh token error:', error);

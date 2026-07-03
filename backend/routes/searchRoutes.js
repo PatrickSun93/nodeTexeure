@@ -30,7 +30,11 @@ router.get('/autocomplete', async (req, res) => {
                 name,
                 slug,
                 base_price,
-                thumbnail_small_url,
+                (SELECT pi.thumbnail_small_url
+                    FROM product_images pi
+                    WHERE pi.product_id = products.id
+                    ORDER BY pi.is_primary DESC, pi.sort_order ASC
+                    LIMIT 1) AS thumbnail_small_url,
                 CASE
                     WHEN name LIKE ? THEN 100
                     WHEN name LIKE ? THEN 90
@@ -40,7 +44,7 @@ router.get('/autocomplete', async (req, res) => {
                 END as relevance_score
             FROM products
             WHERE 
-                is_active = 1
+                status = 'approved'
                 AND (
                     name LIKE ?
                     OR description LIKE ?
@@ -70,12 +74,13 @@ router.get('/autocomplete', async (req, res) => {
         // Search categories
         const categoryQuery = `
             SELECT DISTINCT
-                category_id,
-                category_name
-            FROM products
+                c.id AS category_id,
+                c.name AS category_name
+            FROM categories c
+            JOIN products p ON p.category_id = c.id AND p.status = 'approved'
             WHERE 
-                is_active = 1
-                AND category_name LIKE ?
+                c.is_active = 1
+                AND c.name LIKE ?
             LIMIT 5
         `;
 
@@ -139,9 +144,13 @@ router.get('/suggestions', async (req, res) => {
                 name,
                 slug,
                 base_price,
-                thumbnail_small_url
+                (SELECT pi.thumbnail_small_url
+                    FROM product_images pi
+                    WHERE pi.product_id = products.id
+                    ORDER BY pi.is_primary DESC, pi.sort_order ASC
+                    LIMIT 1) AS thumbnail_small_url
             FROM products
-            WHERE is_active = 1
+            WHERE status = 'approved'
             ORDER BY created_at DESC
             LIMIT 6
         `;
@@ -197,7 +206,11 @@ router.get('/recent', async (req, res) => {
                 name,
                 slug,
                 base_price,
-                thumbnail_small_url
+                (SELECT pi.thumbnail_small_url
+                    FROM product_images pi
+                    WHERE pi.product_id = products.id
+                    ORDER BY pi.is_primary DESC, pi.sort_order ASC
+                    LIMIT 1) AS thumbnail_small_url
             FROM products
             WHERE id IN (${placeholders})
             ORDER BY FIELD(id, ${orderPlaceholders})

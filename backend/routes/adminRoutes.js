@@ -1,6 +1,12 @@
 const express = require('express');
 const rateLimit = require('express-rate-limit');
 const { csrfProtection } = require('../middleware/csrfMiddleware');
+const authMiddleware = require('../middleware/authMiddleware');
+const { admin } = authMiddleware;
+// `staffOrAdmin` is introduced by a coordinated change to authMiddleware. Fall back to
+// admin-only until it lands so the router never registers an undefined middleware.
+const staffOrAdmin = authMiddleware.staffOrAdmin || admin;
+const InventoryService = require('../services/inventoryService');
 const DatabaseUtil = require('../utils/database');
 const ResponseFormatter = require('../utils/responseFormatter');
 const path = require('path');
@@ -46,7 +52,7 @@ router.use(adminLimiter);
 router.use(csrfProtection);
 
 // Admin logout
-router.post('/logout', async (req, res) => {
+router.post('/logout', admin, async (req, res) => {
   try {
     // Implement your logout logic here
     res.json(ResponseFormatter.success('Logged out successfully'));
@@ -56,7 +62,7 @@ router.post('/logout', async (req, res) => {
 });
 
 // Add new product
-router.post('/products', adminWriteLimiter, csrfProtection, async (req, res) => {
+router.post('/products', staffOrAdmin, adminWriteLimiter, csrfProtection, async (req, res) => {
   try {
     const { variants, stock, ...productData } = req.body; // Extract non-DB columns
     const { sku, name, slug, description, short_description, category_id, base_price, product_details, meta_title, meta_description, meta_keywords } = productData;
@@ -106,7 +112,7 @@ router.post('/products', adminWriteLimiter, csrfProtection, async (req, res) => 
 });
 
 // Update product
-router.put('/products/:id', adminWriteLimiter, csrfProtection, async (req, res) => {
+router.put('/products/:id', admin, adminWriteLimiter, csrfProtection, async (req, res) => {
   try {
     const { id } = req.params;
     const { variants, ...updates } = req.body; // Extract variants to prevent column error
@@ -189,7 +195,7 @@ router.put('/products/:id', adminWriteLimiter, csrfProtection, async (req, res) 
 });
 
 // Delete product
-router.delete('/products/:id', adminWriteLimiter, csrfProtection, async (req, res) => {
+router.delete('/products/:id', admin, adminWriteLimiter, csrfProtection, async (req, res) => {
   try {
     const { id } = req.params;
     const deleteResult = await DatabaseUtil.executeQuery('DELETE FROM products WHERE id = ?', [id]);
@@ -201,9 +207,68 @@ router.delete('/products/:id', adminWriteLimiter, csrfProtection, async (req, re
   }
 });
 
+// Update product status (approval workflow)
+// Called by the admin product-approval UI: PUT /api/admin/products/:id/status
+// Sets products.status and appends an entry to products.approval_details (JSON).
+router.put('/products/:id/status', admin, adminWriteLimiter, csrfProtection, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status, notes } = req.body;
+
+    const ALLOWED_STATUSES = ['draft', 'pending_approval', 'approved', 'rejected'];
+    if (!ALLOWED_STATUSES.includes(status)) {
+      return res.status(400).json(
+        ResponseFormatter.failure(`Invalid status. Allowed: ${ALLOWED_STATUSES.join(', ')}`)
+      );
+    }
+
+    // Load current approval_details so we can preserve the approval history.
+    const currentRes = await DatabaseUtil.executeQuery('SELECT approval_details FROM products WHERE id = ?', [id]);
+    if (!currentRes.success) throw new Error(currentRes.error);
+    if (!currentRes.data || currentRes.data.length === 0) {
+      return res.status(404).json(ResponseFormatter.failure('Product not found'));
+    }
+
+    // approval_details is a JSON column: the driver may hand it back as an object or a string.
+    let details = {};
+    const rawDetails = currentRes.data[0].approval_details;
+    if (rawDetails) {
+      try {
+        details = typeof rawDetails === 'string' ? JSON.parse(rawDetails) : rawDetails;
+      } catch (e) {
+        details = {};
+      }
+    }
+
+    const history = Array.isArray(details.history) ? details.history : [];
+    const changedAt = new Date().toISOString();
+    history.push({ status, notes: notes || '', changed_by: req.user.id, changed_at: changedAt });
+
+    const approvalDetails = {
+      ...details,
+      status,
+      notes: notes || '',
+      approved_by: req.user.id,
+      approved_at: changedAt,
+      history,
+    };
+
+    const updateResult = await DatabaseUtil.executeQuery(
+      'UPDATE products SET status = ?, approval_details = ?, updated_at = NOW() WHERE id = ?',
+      [status, JSON.stringify(approvalDetails), id]
+    );
+    if (!updateResult.success) throw new Error(updateResult.error);
+
+    res.json(ResponseFormatter.success('Product status updated', [{ id, status }]));
+  } catch (error) {
+    console.error(error);
+    res.status(500).json(ResponseFormatter.failure('Server error', { error: error.message }));
+  }
+});
+
 // Category Management
 // List categories
-router.get('/categories', adminReadLimiter, async (req, res) => {
+router.get('/categories', admin, adminReadLimiter, async (req, res) => {
   try {
     const listResult = await DatabaseUtil.executeQuery('SELECT * FROM categories ORDER BY sort_order ASC, name ASC');
     if (!listResult.success) throw new Error(listResult.error);
@@ -216,7 +281,7 @@ router.get('/categories', adminReadLimiter, async (req, res) => {
 
 // Coupon Management
 // Add new coupon
-router.post('/coupons', adminWriteLimiter, csrfProtection, async (req, res) => {
+router.post('/coupons', admin, adminWriteLimiter, csrfProtection, async (req, res) => {
   try {
     const { code, name, discount_details, type, value, minimum_order_amount, maximum_discount_amount, usage_limit, usage_limit_per_customer, starts_at, expires_at } = req.body;
     const idResult = await DatabaseUtil.executeQuery('SELECT get_next_id("DISC") as id');
@@ -250,7 +315,7 @@ router.post('/coupons', adminWriteLimiter, csrfProtection, async (req, res) => {
 });
 
 // Update coupon
-router.put('/coupons/:id', adminWriteLimiter, csrfProtection, async (req, res) => {
+router.put('/coupons/:id', admin, adminWriteLimiter, csrfProtection, async (req, res) => {
   try {
     const { id } = req.params;
     const updates = req.body;
@@ -281,7 +346,7 @@ router.put('/coupons/:id', adminWriteLimiter, csrfProtection, async (req, res) =
 });
 
 // Delete coupon
-router.delete('/coupons/:id', adminWriteLimiter, csrfProtection, async (req, res) => {
+router.delete('/coupons/:id', admin, adminWriteLimiter, csrfProtection, async (req, res) => {
   try {
     const { id } = req.params;
     const deleteResult = await DatabaseUtil.executeQuery('DELETE FROM discount_codes WHERE id = ?', [id]);
@@ -295,7 +360,7 @@ router.delete('/coupons/:id', adminWriteLimiter, csrfProtection, async (req, res
 
 // Inventory Management
 // Update inventory
-router.put('/inventory/:id', adminWriteLimiter, csrfProtection, async (req, res) => {
+router.put('/inventory/:id', admin, adminWriteLimiter, csrfProtection, async (req, res) => {
   try {
     const { id } = req.params;
     const { quantity_available, quantity_reserved, reorder_point, reorder_quantity } = req.body;
@@ -311,9 +376,134 @@ router.put('/inventory/:id', adminWriteLimiter, csrfProtection, async (req, res)
   }
 });
 
+// Stock adjustment (single) — POST /api/admin/inventory/adjust
+// Thin wrapper over InventoryService.updateInventoryWithLogging (records a movement + audit trail).
+// quantity_change is a signed delta (positive = add stock, negative = remove).
+router.post('/inventory/adjust', admin, adminWriteLimiter, csrfProtection, async (req, res) => {
+  try {
+    const { product_id, variant_id, quantity_change, reason, notes } = req.body;
+    const qty = Number(quantity_change);
+    if (!product_id || quantity_change === undefined || quantity_change === null || Number.isNaN(qty)) {
+      return res.status(400).json(ResponseFormatter.failure('product_id and a numeric quantity_change are required'));
+    }
+
+    const result = await InventoryService.updateInventoryWithLogging(
+      product_id,
+      variant_id || null,
+      qty,
+      'adjustment',
+      'manual',
+      null,
+      req.user.id,
+      { reason: reason || null, notes: notes || null }
+    );
+
+    if (!result.success) {
+      return res.status(400).json(ResponseFormatter.failure(result.error || 'Stock adjustment failed'));
+    }
+    res.json(ResponseFormatter.success('Stock adjusted successfully', [{ adjustment: result.data }]));
+  } catch (error) {
+    console.error(error);
+    res.status(500).json(ResponseFormatter.failure('Server error', { error: error.message }));
+  }
+});
+
+// Bulk stock adjustment — POST /api/admin/inventory/bulk-adjust
+// Applies InventoryService.updateInventoryWithLogging to each item (no dedicated bulk method exists).
+router.post('/inventory/bulk-adjust', admin, adminWriteLimiter, csrfProtection, async (req, res) => {
+  try {
+    const { adjustments, reason, notes } = req.body;
+    if (!Array.isArray(adjustments) || adjustments.length === 0) {
+      return res.status(400).json(ResponseFormatter.failure('adjustments must be a non-empty array'));
+    }
+
+    const results = [];
+    for (const adj of adjustments) {
+      const qty = Number(adj.quantity_change);
+      if (!adj.product_id || Number.isNaN(qty)) {
+        results.push({ product_id: adj.product_id || null, success: false, error: 'Invalid adjustment (product_id and numeric quantity_change required)' });
+        continue;
+      }
+      const result = await InventoryService.updateInventoryWithLogging(
+        adj.product_id,
+        adj.variant_id || null,
+        qty,
+        'adjustment',
+        'manual',
+        null,
+        req.user.id,
+        { reason: adj.reason || reason || null, notes: adj.notes || notes || null }
+      );
+      results.push({ product_id: adj.product_id, variant_id: adj.variant_id || null, success: result.success, error: result.error || null });
+    }
+
+    const successful = results.filter(r => r.success).length;
+    const failed = results.length - successful;
+    res.json(ResponseFormatter.success('Bulk stock adjustment processed', [{ successful, failed, total: results.length, results }]));
+  } catch (error) {
+    console.error(error);
+    res.status(500).json(ResponseFormatter.failure('Server error', { error: error.message }));
+  }
+});
+
+// Update reorder points — PUT /api/admin/inventory/:id/reorder-points
+// Uses InventoryService.updateInventory, re-passing current quantities so only the
+// reorder thresholds change (updateInventory rewrites all quantity columns).
+router.put('/inventory/:id/reorder-points', admin, adminWriteLimiter, csrfProtection, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { reorder_point, reorder_quantity } = req.body;
+
+    const currentRes = await DatabaseUtil.executeQuery(
+      'SELECT quantity_available, quantity_reserved FROM inventory WHERE id = ?',
+      [id]
+    );
+    if (!currentRes.success) throw new Error(currentRes.error);
+    if (!currentRes.data || currentRes.data.length === 0) {
+      return res.status(404).json(ResponseFormatter.failure('Inventory record not found'));
+    }
+    const current = currentRes.data[0];
+
+    const result = await InventoryService.updateInventory(id, {
+      quantity_available: current.quantity_available,
+      quantity_reserved: current.quantity_reserved,
+      reorder_point,
+      reorder_quantity,
+    });
+    if (!result.success) {
+      return res.status(400).json(ResponseFormatter.failure(result.error || 'Failed to update reorder points'));
+    }
+    res.json(ResponseFormatter.success('Reorder points updated successfully', [{ id }]));
+  } catch (error) {
+    console.error(error);
+    res.status(500).json(ResponseFormatter.failure('Server error', { error: error.message }));
+  }
+});
+
+// Inventory movement history — GET /api/admin/inventory/movements
+// Thin wrapper over InventoryService.getMovementHistory (supports optional filters).
+router.get('/inventory/movements', admin, adminReadLimiter, async (req, res) => {
+  try {
+    const { inventory_id, product_id, movement_type, reference_type, date_from, date_to, limit } = req.query;
+    const result = await InventoryService.getMovementHistory(inventory_id || null, {
+      product_id,
+      movement_type,
+      reference_type,
+      date_from,
+      date_to,
+      limit,
+    });
+    if (!result.success) throw new Error(result.error);
+    res.json(ResponseFormatter.success('Inventory movements fetched successfully', [{ movements: result.data }]));
+  } catch (error) {
+    console.error(error);
+    res.status(500).json(ResponseFormatter.failure('Server error', { error: error.message }));
+  }
+});
+
 // User Management
 // List users (read-only; CSRF not required)
-router.get('/users', adminReadLimiter, async (req, res) => {
+router.get('/users', admin, adminReadLimiter, async (req, res) => {
   try {
     const query = `
       SELECT u.id, u.email, u.first_name, u.last_name, u.role, u.status,
@@ -349,7 +539,7 @@ router.get('/users', adminReadLimiter, async (req, res) => {
 
 
 // Create user
-router.post('/users', adminWriteLimiter, csrfProtection, async (req, res) => {
+router.post('/users', admin, adminWriteLimiter, csrfProtection, async (req, res) => {
   try {
     const { email, password, first_name, last_name, role, status, phone } = req.body;
 
@@ -384,7 +574,7 @@ router.post('/users', adminWriteLimiter, csrfProtection, async (req, res) => {
 });
 
 // Update user
-router.put('/users/:id', adminWriteLimiter, csrfProtection, async (req, res) => {
+router.put('/users/:id', admin, adminWriteLimiter, csrfProtection, async (req, res) => {
   try {
     const { id } = req.params;
     const updates = req.body;
@@ -405,7 +595,7 @@ router.put('/users/:id', adminWriteLimiter, csrfProtection, async (req, res) => 
 });
 
 // Delete user
-router.delete('/users/:id', adminWriteLimiter, csrfProtection, async (req, res) => {
+router.delete('/users/:id', admin, adminWriteLimiter, csrfProtection, async (req, res) => {
   try {
     const { id } = req.params;
     const deleteResult = await DatabaseUtil.executeQuery('DELETE FROM users WHERE id = ?', [id]);
@@ -419,7 +609,7 @@ router.delete('/users/:id', adminWriteLimiter, csrfProtection, async (req, res) 
 
 // List products (read-only; CSRF not required)
 // List products (public/admin shared logic, but this is admin route)
-router.get('/products', adminReadLimiter, async (req, res) => {
+router.get('/products', admin, adminReadLimiter, async (req, res) => {
   try {
     const query = `
       SELECT 
@@ -467,7 +657,7 @@ router.get('/products', adminReadLimiter, async (req, res) => {
 });
 
 // Get single product with variants
-router.get('/products/:id', adminReadLimiter, async (req, res) => {
+router.get('/products/:id', admin, adminReadLimiter, async (req, res) => {
   try {
     const { id } = req.params;
 
@@ -510,7 +700,7 @@ router.get('/products/:id', adminReadLimiter, async (req, res) => {
 });
 
 // List coupons (read-only; CSRF not required)
-router.get('/coupons', adminReadLimiter, async (req, res) => {
+router.get('/coupons', admin, adminReadLimiter, async (req, res) => {
   try {
     const listResult = await DatabaseUtil.executeQuery('SELECT * FROM discount_codes');
     if (!listResult.success) throw new Error(listResult.error);
@@ -548,7 +738,7 @@ router.get('/coupons', adminReadLimiter, async (req, res) => {
 
 // Staff Management
 // List staff
-router.get('/staff', adminReadLimiter, async (req, res) => {
+router.get('/staff', admin, adminReadLimiter, async (req, res) => {
   try {
     const query = `
             SELECT id, email, first_name, last_name, role, status, last_login 
@@ -575,7 +765,7 @@ router.get('/staff', adminReadLimiter, async (req, res) => {
 });
 
 // List inventory (read-only; CSRF not required)
-router.get('/inventory', adminReadLimiter, async (req, res) => {
+router.get('/inventory', admin, adminReadLimiter, async (req, res) => {
   try {
     const listResult = await DatabaseUtil.executeQuery('SELECT * FROM inventory');
     if (!listResult.success) throw new Error(listResult.error);
@@ -588,7 +778,7 @@ router.get('/inventory', adminReadLimiter, async (req, res) => {
 
 // Order Management
 // List orders
-router.get('/orders', adminReadLimiter, async (req, res) => {
+router.get('/orders', admin, adminReadLimiter, async (req, res) => {
   try {
     // Basic listing. In real app, add pagination/filters.
     const query = `
@@ -630,7 +820,7 @@ router.get('/orders', adminReadLimiter, async (req, res) => {
 });
 
 // Get Order Details
-router.get('/orders/:id', adminReadLimiter, async (req, res) => {
+router.get('/orders/:id', admin, adminReadLimiter, async (req, res) => {
   try {
     const { id } = req.params;
     // Fetch order, items, user
@@ -660,7 +850,7 @@ router.get('/orders/:id', adminReadLimiter, async (req, res) => {
 });
 
 // Update Order Status
-router.put('/orders/:id/status', adminWriteLimiter, csrfProtection, async (req, res) => {
+router.put('/orders/:id/status', staffOrAdmin, adminWriteLimiter, csrfProtection, async (req, res) => {
   try {
     const { id } = req.params;
     const { status, notes } = req.body;
@@ -761,7 +951,7 @@ function createMulterForProduct(productId) {
 }
 
 // POST /api/admin/products/:id/image - upload a single primary thumbnail and store URL in products.thumbnail_small_url
-router.post('/products/:id/image', adminWriteLimiter, csrfProtection, async (req, res) => {
+router.post('/products/:id/image', admin, adminWriteLimiter, csrfProtection, async (req, res) => {
   try {
     const productId = req.params.id;
     // Accept alphanumeric IDs (e.g., PROD0000000001) with dashes/underscores
@@ -816,7 +1006,7 @@ router.post('/products/:id/image', adminWriteLimiter, csrfProtection, async (req
 });
 
 // Analytics & Dashboard
-router.get('/analytics/summary', adminReadLimiter, async (req, res) => {
+router.get('/analytics/summary', admin, adminReadLimiter, async (req, res) => {
   try {
     // Parallel queries for performance
     const [revenueResult, ordersResult, customersResult, visitorsResult, paidOrdersResult] = await Promise.all([
@@ -860,7 +1050,7 @@ router.get('/analytics/summary', adminReadLimiter, async (req, res) => {
   }
 });
 
-router.get('/analytics/revenue', adminReadLimiter, async (req, res) => {
+router.get('/analytics/revenue', admin, adminReadLimiter, async (req, res) => {
   try {
     // Last 7 days
     const query = `
@@ -887,7 +1077,7 @@ router.get('/analytics/revenue', adminReadLimiter, async (req, res) => {
   }
 });
 
-router.get('/analytics/sales-by-region', adminReadLimiter, async (req, res) => {
+router.get('/analytics/sales-by-region', admin, adminReadLimiter, async (req, res) => {
   try {
     // Simplified: using shipping_address_json text search or just mock for now as schema parsing varies
     // Assuming US states for now
@@ -915,7 +1105,7 @@ router.get('/analytics/sales-by-region', adminReadLimiter, async (req, res) => {
 
 
 // Settings
-router.get('/settings/general', adminReadLimiter, async (req, res) => {
+router.get('/settings/general', admin, adminReadLimiter, async (req, res) => {
   try {
     const result = await DatabaseUtil.executeQuery("SELECT * FROM system_settings");
     const settings = {};
@@ -935,7 +1125,7 @@ router.get('/settings/general', adminReadLimiter, async (req, res) => {
   }
 });
 
-router.put('/settings/general', adminWriteLimiter, csrfProtection, async (req, res) => {
+router.put('/settings/general', admin, adminWriteLimiter, csrfProtection, async (req, res) => {
   try {
     const { storeName, supportEmail, currency, timezone } = req.body;
     // Upsert logic
@@ -955,7 +1145,7 @@ router.put('/settings/general', adminWriteLimiter, csrfProtection, async (req, r
 
 
 // Email Templates
-router.get('/email-templates', adminReadLimiter, async (req, res) => {
+router.get('/email-templates', admin, adminReadLimiter, async (req, res) => {
   try {
     const result = await DatabaseUtil.executeQuery("SELECT * FROM email_templates ORDER BY created_at DESC");
     // Map to frontend format if needed, but schema seems aligned (id, name, subject...)
@@ -966,7 +1156,7 @@ router.get('/email-templates', adminReadLimiter, async (req, res) => {
   }
 });
 
-router.post('/email-templates', adminWriteLimiter, csrfProtection, async (req, res) => {
+router.post('/email-templates', admin, adminWriteLimiter, csrfProtection, async (req, res) => {
   try {
     const { name, subject, type, content, status } = req.body;
     const idResult = await DatabaseUtil.executeQuery('SELECT UUID() as id');
@@ -985,7 +1175,7 @@ router.post('/email-templates', adminWriteLimiter, csrfProtection, async (req, r
   }
 });
 
-router.put('/email-templates/:id', adminWriteLimiter, csrfProtection, async (req, res) => {
+router.put('/email-templates/:id', admin, adminWriteLimiter, csrfProtection, async (req, res) => {
   try {
     const { id } = req.params;
     const { name, subject, type, content, status } = req.body;

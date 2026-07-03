@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 
 /**
  * Enhanced Search Bar with Autocomplete
@@ -13,11 +14,12 @@ import { useRouter } from 'next/navigation';
  * - Recently viewed products
  * - Keyboard navigation (arrow keys, enter, escape)
  */
-export default function SearchBar({ 
-    placeholder = "Search for luxury bedding...",
+export default function SearchBar({
+    placeholder,
     className = "",
-    autoFocus = false 
+    autoFocus = false
 }) {
+    const t = useTranslations('SearchBar');
     const router = useRouter();
     const [query, setQuery] = useState('');
     const [isOpen, setIsOpen] = useState(false);
@@ -209,7 +211,7 @@ export default function SearchBar({
                         onChange={handleInputChange}
                         onFocus={handleFocus}
                         onKeyDown={handleKeyDown}
-                        placeholder={placeholder}
+                        placeholder={placeholder || t('placeholder')}
                         className="search-bar-input"
                         autoFocus={autoFocus}
                         autoComplete="off"
@@ -245,7 +247,7 @@ export default function SearchBar({
                 </div>
 
                 <button type="submit" className="search-bar-submit">
-                    Search
+                    {t('search')}
                 </button>
             </form>
 
@@ -255,7 +257,7 @@ export default function SearchBar({
                     {/* Search Suggestions */}
                     {suggestions.suggestions.length > 0 && (
                         <div className="search-dropdown-section">
-                            <h4 className="search-dropdown-title">Suggestions</h4>
+                            <h4 className="search-dropdown-title">{t('suggestions')}</h4>
                             <ul className="search-dropdown-list">
                                 {suggestions.suggestions.map((suggestion, index) => (
                                     <li
@@ -276,7 +278,7 @@ export default function SearchBar({
                     {/* Product Suggestions */}
                     {suggestions.products.length > 0 && (
                         <div className="search-dropdown-section">
-                            <h4 className="search-dropdown-title">Products</h4>
+                            <h4 className="search-dropdown-title">{t('products')}</h4>
                             <ul className="search-dropdown-list">
                                 {suggestions.products.map((product, index) => {
                                     const itemIndex = suggestions.suggestions.length + index;
@@ -305,7 +307,7 @@ export default function SearchBar({
                     {/* Categories */}
                     {suggestions.categories.length > 0 && (
                         <div className="search-dropdown-section">
-                            <h4 className="search-dropdown-title">Categories</h4>
+                            <h4 className="search-dropdown-title">{t('categories')}</h4>
                             <ul className="search-dropdown-list">
                                 {suggestions.categories.map((category) => (
                                     <li
@@ -326,7 +328,7 @@ export default function SearchBar({
                     {/* Popular Terms */}
                     {query.trim().length < 2 && suggestions.popularTerms.length > 0 && (
                         <div className="search-dropdown-section">
-                            <h4 className="search-dropdown-title">Popular Searches</h4>
+                            <h4 className="search-dropdown-title">{t('popularSearches')}</h4>
                             <ul className="search-dropdown-list">
                                 {suggestions.popularTerms.map((term, index) => (
                                     <li
@@ -347,7 +349,7 @@ export default function SearchBar({
                     {/* Trending Products */}
                     {query.trim().length < 2 && suggestions.trending.length > 0 && (
                         <div className="search-dropdown-section">
-                            <h4 className="search-dropdown-title">Trending Now</h4>
+                            <h4 className="search-dropdown-title">{t('trendingNow')}</h4>
                             <ul className="search-dropdown-list">
                                 {suggestions.trending.map((product) => (
                                     <li
@@ -377,8 +379,8 @@ export default function SearchBar({
                      suggestions.categories.length === 0 && 
                      !isLoading && (
                         <div className="search-dropdown-empty">
-                            <p>No results found for "{query}"</p>
-                            <p className="search-dropdown-empty-hint">Try a different search term</p>
+                            <p>{t('noResults', { query })}</p>
+                            <p className="search-dropdown-empty-hint">{t('tryDifferent')}</p>
                         </div>
                     )}
                 </div>

@@ -12,8 +12,8 @@ import IntegrationTest from '@/components/IntegrationTest'
 import { GlobalLoadingOverlay } from '@/components/LoadingStateManager'
 
 export const metadata = {
-  title: 'Admin Dashboard - Bed Texture',
-  description: 'Administrative interface for Bed Texture e-commerce platform',
+  title: 'Admin Dashboard - Noiraé Admin',
+  description: 'Administrative interface for Noiraé Admin e-commerce platform',
 }
 
 export default async function RootLayout({ children }) {
