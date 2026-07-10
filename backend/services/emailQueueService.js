@@ -2,6 +2,7 @@ const emailService = require('./emailService');
 const ErrorUtils = require('../utils/errorUtils');
 const logger = require('../utils/logger');
 const db = require('../utils/database');
+const { isMarketingCategory, isEmailSuppressed } = require('../utils/emailSuppression');
 
 class EmailQueueService {
   constructor() {
@@ -26,6 +27,15 @@ class EmailQueueService {
    */
   async queueEmail(type, recipient, data, priority = 3, scheduledAt = null) {
     try {
+      // Suppression gate — only for MARKETING queue types (e.g. 'abandoned_cart').
+      // Transactional types (order_confirmation, shipping_notification, welcome_email,
+      // low_stock_alert, email_failure_alert) are never gated. Fail-open: a suppression
+      // check error returns false and the email still queues.
+      if (isMarketingCategory(type) && (await isEmailSuppressed(recipient))) {
+        logger.info('Marketing email suppressed (recipient unsubscribed)', { type, recipient });
+        return null;
+      }
+
       const queueId = `email_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       const now = new Date();
       const sendAt = scheduledAt || now;

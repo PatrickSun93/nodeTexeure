@@ -17,16 +17,20 @@ app.use(helmet({
   crossOriginEmbedderPolicy: false, // Allow cross-origin for image serving
 }));
 
+// Default-deny env gate: protection is ACTIVE unless we are explicitly in
+// development or test. An unset/misconfigured NODE_ENV is treated as production.
+const isDev = process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test';
+
 // Global rate limiter for all API routes (configurable via RATE_LIMIT_* env vars).
-// Enforced only in production; skipped in dev/test (or when DISABLE_RATE_LIMIT=true)
-// so local dev, automated tests, and screenshot capture aren't throttled.
+// Enforced everywhere except dev/test (or when DISABLE_RATE_LIMIT=true) so local
+// dev, automated tests, and screenshot capture aren't throttled.
 const globalLimiter = rateLimit({
   windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 60 * 1000,
   max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 100,
   standardHeaders: true,
   legacyHeaders: false,
   message: { status: 'FAIL', message: 'Too many requests, please try again later' },
-  skip: () => process.env.NODE_ENV !== 'production' || process.env.DISABLE_RATE_LIMIT === 'true',
+  skip: () => isDev || process.env.DISABLE_RATE_LIMIT === 'true',
 });
 app.use('/api', globalLimiter);
 
@@ -98,8 +102,17 @@ app.use('/api/search', require('./routes/searchRoutes'));
 // Review routes
 app.use('/api/reviews', require('./routes/reviewRoutes'));
 
+// Journal (editorial blog) routes — public
+app.use('/api/journal', require('./routes/journalRoutes'));
+
+// Unsubscribe / email-suppression routes — public (one-click email links)
+app.use('/api/unsubscribe', require('./routes/unsubscribeRoutes'));
+
 // Analytics routes (admin only - protected in routes file)
 app.use('/api/admin/analytics', require('./routes/analyticsRoutes'));
+
+// Email queue routes (admin only - protected in routes file)
+app.use('/api/admin/email-queue', require('./routes/emailQueueRoutes'));
 
 // Bulk operations routes (admin only)
 app.use('/api/admin/bulk', protect, admin, require('./routes/bulkOperationsRoutes'));

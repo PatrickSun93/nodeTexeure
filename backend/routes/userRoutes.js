@@ -20,11 +20,14 @@ const BACKOFFICE_ROLES = ['admin', 'staff'];
 
 // Rate limiters
 
-// Auth rate limits are enforced only in production. Outside production (local dev,
-// automated tests, screenshot capture) they are skipped so repeated logins aren't
-// throttled; set DISABLE_RATE_LIMIT=true to skip them explicitly in any environment.
+// Default-deny env gate: auth rate limits are ACTIVE unless we are explicitly in
+// development or test. An unset/misconfigured NODE_ENV is treated as production, so
+// login/register/forgot-password stay protected. In dev/test they are skipped so
+// repeated logins aren't throttled; set DISABLE_RATE_LIMIT=true to skip them in any
+// environment.
+const isDev = process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test';
 const skipRateLimit = () =>
-  process.env.NODE_ENV !== 'production' || process.env.DISABLE_RATE_LIMIT === 'true';
+  isDev || process.env.DISABLE_RATE_LIMIT === 'true';
 
 const registerLimiter = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hour
@@ -825,7 +828,12 @@ router.post('/reset-password', async (req, res) => {
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(newPassword, salt);
 
-    await DatabaseUtil.executeQuery('UPDATE users SET password = ?, resetToken = NULL, resetTokenExpiry = NULL WHERE id = ?', [hashedPassword, userId]);
+    const updateResult = await DatabaseUtil.executeQuery('UPDATE users SET password_hash = ?, resetToken = NULL, resetTokenExpiry = NULL WHERE id = ?', [hashedPassword, userId]);
+
+    if (!updateResult.success || (updateResult.affectedRows || 0) === 0) {
+      const keyValueTable = { error: 'Password could not be updated' };
+      return res.status(500).json(ResponseFormatter.failure('Failed to reset password', keyValueTable));
+    }
 
     const keyValueTable = { message: 'Password has been reset' };
     res.json(ResponseFormatter.success('Password reset successful', keyValueTable));

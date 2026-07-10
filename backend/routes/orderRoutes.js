@@ -80,6 +80,38 @@ async function getCartDetails(cartId) {
   return Array.isArray(result?.data) ? result.data : [];
 }
 
+// Ownership guard shared by apply-coupon and create. Cart IDs are sequential and
+// enumerable (CART0000000001…), so we must confirm the caller actually owns the
+// cart before reading its totals, converting it to an order, or deleting it.
+// Ownership mirrors cartRoutes.getOrCreateCart exactly:
+//   - logged-in users own the cart whose shopping_carts.user_id equals their id;
+//   - guests own the cart whose user_id IS NULL and whose session_id matches the
+//     'sessionId' HttpOnly cookie set by cartRoutes.
+// A cart owned by a real user_id can never be used by an unauthenticated caller.
+// Returns false for a missing cart too, so we never leak cart existence.
+async function ownsCart(cartId, req) {
+  if (!cartId) return false;
+  const result = await db.executeQuery(
+    'SELECT user_id, session_id FROM shopping_carts WHERE id = ?',
+    [cartId]
+  );
+  const cart = Array.isArray(result?.data) ? result.data[0] : undefined;
+  if (!cart) return false;
+
+  const authUserId = req.user ? req.user.id : null;
+  if (authUserId) {
+    // Authenticated request: the cart must belong to this account.
+    return cart.user_id === authUserId;
+  }
+
+  // Unauthenticated (guest): a cart owned by a registered account is off-limits.
+  if (cart.user_id) return false;
+
+  // Guest cart: require a positive match on the same session cookie cartRoutes uses.
+  const sessionId = req.cookies ? req.cookies.sessionId : null;
+  return Boolean(sessionId) && cart.session_id === sessionId;
+}
+
 // Helper function to validate coupon
 async function validateCoupon(code, subtotal) {
   const couponQuery = `
@@ -101,10 +133,15 @@ async function validateCoupon(code, subtotal) {
 }
 
 // POST /api/orders/apply-coupon
-router.post('/apply-coupon', async (req, res) => {
+router.post('/apply-coupon', protectOptional, async (req, res) => {
   const { cartId, couponCode } = req.body;
 
   try {
+    if (!(await ownsCart(cartId, req))) {
+      // Do not leak whether the cart exists — same response as a real mismatch.
+      return res.status(403).json(ResponseFormatter.failure('Access denied'));
+    }
+
     const cartItems = await getCartDetails(cartId);
     if (cartItems.length === 0) {
       return res.status(400).json(ResponseFormatter.failure('Cart is empty'));
@@ -149,6 +186,13 @@ router.post('/create', protectOptional, async (req, res) => {
   const guestEmail = req.body.guestEmail || null;
 
   try {
+    // Enforce cart ownership before reading totals, converting the cart to an
+    // order, decrementing inventory, or deleting it (IDOR guard).
+    if (!(await ownsCart(cartId, req))) {
+      // Do not leak whether the cart exists — same response as a real mismatch.
+      return res.status(403).json(ResponseFormatter.failure('Access denied'));
+    }
+
     // Get cart details
     const cartItems = await getCartDetails(cartId);
     if (cartItems.length === 0) {

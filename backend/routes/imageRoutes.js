@@ -6,6 +6,7 @@
 const express = require('express');
 const router = express.Router();
 const multer = require('multer');
+const path = require('path');
 const { v4: uuidv4 } = require('uuid');
 const ResponseFormatter = require('../utils/responseFormatter');
 const DatabaseUtil = require('../utils/database');
@@ -37,9 +38,15 @@ router.post('/upload', protect, upload.single('image'), async (req, res) => {
       return res.status(400).json(ResponseFormatter.failure('No image file provided'));
     }
 
+    // Build the key from a uuid + sanitized extension only — never the raw
+    // client filename (path-traversal guard).
+    const ext = path.extname(req.file.originalname).toLowerCase().replace(/[^a-z0-9.]/g, '');
+    const safeExt = ['.jpg', '.jpeg', '.png', '.gif', '.webp'].includes(ext) ? ext : '.jpg';
+    const key = `general/${uuidv4()}${safeExt}`;
+
     const result = await s3Service.uploadFile(
       req.file.buffer,
-      `general/${uuidv4()}-${req.file.originalname}`,
+      key,
       req.file.mimetype
     );
 

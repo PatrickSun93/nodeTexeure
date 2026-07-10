@@ -5,10 +5,6 @@ import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { ensureCsrfToken } from '../../utils/api';
 import MetricsCard from '../../components/MetricsCard';
-// import RevenueChart from '../../components/RevenueChart';
-// import SalesDistributionChart from '../../components/SalesDistributionChart';
-// import SalesByRegionChart from '../../components/SalesByRegionChart';
-// import USMapChart from '../../components/USMapChart';
 import RecentOrdersTable from '../../components/RecentOrdersTable';
 import ProductDetailView from '../../components/ProductDetailView';
 import CustomerDetailView from '../../components/CustomerDetailView';
@@ -19,6 +15,8 @@ import SettingsView from '../../components/SettingsView';
 import EmailTemplatesView from '../../components/EmailTemplatesView';
 import AnalyticsDashboard from '../../components/AnalyticsDashboard';
 import BulkUploadView from '../../components/BulkUploadView';
+import ReviewModerationView from '../../components/ReviewModerationView';
+import EmailQueueView from '../../components/EmailQueueView';
 
 export default function Dashboard() {
   const t = useTranslations('Dashboard');
@@ -34,6 +32,8 @@ export default function Dashboard() {
     conversionRate: 0
   });
   const [recentOrders, setRecentOrders] = useState([]);
+  // Period-over-period change percentages for the metric badges (null until loaded / when unavailable)
+  const [growth, setGrowth] = useState(null);
 
   useEffect(() => {
     if (activeTab === 'dashboard') {
@@ -46,6 +46,25 @@ export default function Dashboard() {
           }
         } catch (e) {
           console.error("Failed to load analytics", e);
+        }
+
+        // Period-over-period change % for the metric badges (revenue / orders / AOV)
+        try {
+          const { apiFetch } = await import('../../utils/api');
+          const response = await apiFetch('/api/admin/analytics/revenue-shortfall');
+          if (response.status === 'SUCCESS') {
+            const kvt = response.keyValueTable;
+            const payload = Array.isArray(kvt) ? kvt[0] : kvt;
+            if (payload && payload.change) {
+              setGrowth({
+                revenue_pct: payload.change.revenue_pct,
+                orders_pct: payload.change.orders_pct,
+                aov_pct: payload.change.aov_pct
+              });
+            }
+          }
+        } catch (e) {
+          console.error("Failed to load growth metrics", e);
         }
 
         // Also fetch recent orders
@@ -146,6 +165,12 @@ export default function Dashboard() {
           >
             🎟️ {t('navPromotions')}
           </button>
+          <button
+            onClick={() => setActiveTab('reviews')}
+            className={`block w-full text-left px-6 py-3 hover:bg-blue-50 transition ${activeTab === 'reviews' ? 'bg-blue-50 text-blue-600 border-r-2 border-blue-600' : ''}`}
+          >
+            ⭐ {t('navReviews')}
+          </button>
 
           <button
             onClick={() => setActiveTab('analytics')}
@@ -159,6 +184,12 @@ export default function Dashboard() {
           >
             📤 {t('navBulkUpload')}
           </button>
+          <button
+            onClick={() => setActiveTab('email-queue')}
+            className={`block w-full text-left px-6 py-3 hover:bg-blue-50 transition ${activeTab === 'email-queue' ? 'bg-blue-50 text-blue-600 border-r-2 border-blue-600' : ''}`}
+          >
+            ✉️ {t('navEmailQueue')}
+          </button>
         </nav>
         <div className="p-6 border-t">
           <button onClick={handleLogout} className="w-full px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition">
@@ -169,7 +200,7 @@ export default function Dashboard() {
 
       {/* Main content */}
       <div className="flex-1 overflow-auto">
-        {activeTab === 'dashboard' && <DashboardView timePeriod={timePeriod} setTimePeriod={setTimePeriod} metrics={metrics} recentOrders={recentOrders} />}
+        {activeTab === 'dashboard' && <DashboardView timePeriod={timePeriod} setTimePeriod={setTimePeriod} metrics={metrics} recentOrders={recentOrders} growth={growth} />}
         {activeTab === 'orders' && <OrdersView />}
         {activeTab === 'products' && <ProductsView />}
         {activeTab === 'email-templates' && <EmailTemplatesView />}
@@ -177,16 +208,37 @@ export default function Dashboard() {
         {activeTab === 'staff' && <StaffView />}
         {activeTab === 'settings' && <SettingsView />}
         {activeTab === 'promotions' && <PromotionsView />}
+        {activeTab === 'reviews' && <ReviewModerationView />}
 
         {activeTab === 'analytics' && <AnalyticsDashboard />}
         {activeTab === 'bulk-upload' && <BulkUploadView />}
+        {activeTab === 'email-queue' && <EmailQueueView />}
       </div>
     </div>
   );
 }
 
-function DashboardView({ timePeriod, setTimePeriod, metrics, recentOrders }) {
+function DashboardView({ timePeriod, setTimePeriod, metrics, recentOrders, growth }) {
   const t = useTranslations('Dashboard');
+
+  // Turn a period-over-period percentage into a badge (real value, +/- sign, up/down color).
+  // Unavailable metrics (null/undefined/NaN) render a neutral dash rather than a fake number.
+  const badge = (pct) => {
+    const n = Number(pct);
+    if (pct === null || pct === undefined || pct === '' || Number.isNaN(n)) {
+      return { change: '--%', trend: 'neutral' };
+    }
+    if (n > 0) return { change: `+${n}%`, trend: 'up' };
+    if (n < 0) return { change: `${n}%`, trend: 'down' };
+    return { change: '0%', trend: 'neutral' };
+  };
+
+  const revenueBadge = badge(growth?.revenue_pct);
+  const ordersBadge = badge(growth?.orders_pct);
+  const aovBadge = badge(growth?.aov_pct);
+  // No conversion-rate change is exposed by the analytics endpoints -> neutral dash.
+  const conversionBadge = badge(growth?.conversion_pct);
+
   return (
     <div className="p-8">
       {/* Header */}
@@ -219,23 +271,11 @@ function DashboardView({ timePeriod, setTimePeriod, metrics, recentOrders }) {
 
       {/* Metrics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <MetricsCard title={t('totalRevenue')} value={new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(metrics.totalRevenue)} change="--%" trend="up" />
-        <MetricsCard title={t('totalOrders')} value={metrics.activeOrders} change="--%" trend="up" />
-        <MetricsCard title={t('avgOrderValue')} value={new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(metrics.avgOrderValue)} change="--%" trend="up" />
-        <MetricsCard title={t('conversionRate')} value={`${metrics.conversionRate}%`} change="--%" trend="down" />
+        <MetricsCard title={t('totalRevenue')} value={new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(metrics.totalRevenue)} change={revenueBadge.change} trend={revenueBadge.trend} />
+        <MetricsCard title={t('totalOrders')} value={metrics.activeOrders} change={ordersBadge.change} trend={ordersBadge.trend} />
+        <MetricsCard title={t('avgOrderValue')} value={new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(metrics.avgOrderValue)} change={aovBadge.change} trend={aovBadge.trend} />
+        <MetricsCard title={t('conversionRate')} value={`${metrics.conversionRate}%`} change={conversionBadge.change} trend={conversionBadge.trend} />
       </div>
-
-
-      {/* Charts Grid - Temporarily disabled */}
-      {/* <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-        <RevenueChart />
-        <SalesDistributionChart />
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-        <SalesByRegionChart />
-        <USMapChart />
-      </div> */}
 
       {/* Recent Orders */}
       <RecentOrdersTable orders={recentOrders} />
@@ -251,6 +291,8 @@ function OrdersView() {
   const [orders, setOrders] = useState([]);
   const [selectedStatus, setSelectedStatus] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
+  const [dateInput, setDateInput] = useState(''); // draft value in the date picker
+  const [appliedDate, setAppliedDate] = useState(''); // committed by the "Filters" button
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -277,11 +319,44 @@ function OrdersView() {
     fetchOrders();
   }, [selectedOrder]); // Re-fetch when returning from detail view (in case status changed)
 
+  // Local YYYY-MM-DD for a timestamp, matching the value produced by the <input type="date">.
+  const toLocalYMD = (d) => {
+    if (!d) return '';
+    try { return new Date(d).toLocaleDateString('en-CA'); } catch { return ''; }
+  };
+
   const filteredOrders = orders.filter(order =>
     (selectedStatus === 'All' || order.status === selectedStatus) &&
+    (!appliedDate || toLocalYMD(order.date) === appliedDate) &&
     ((order.id && String(order.id).toLowerCase().includes(searchQuery.toLowerCase())) ||
       (order.customer && order.customer.toLowerCase().includes(searchQuery.toLowerCase())))
   );
+
+  // Client-side CSV export of the currently displayed (filtered) orders.
+  const handleExport = () => {
+    const escape = (val) => {
+      const s = (val === null || val === undefined) ? '' : String(val);
+      return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+    };
+    const header = [t('colOrderId'), t('colDate'), t('colCustomerName'), t('colStatus'), t('colTotalAmount')];
+    const rows = filteredOrders.map(o => [
+      o.id,
+      o.date ? new Date(o.date).toLocaleDateString() : '',
+      o.customer,
+      o.status,
+      Number(o.amount || 0).toFixed(2)
+    ].map(escape).join(','));
+    const csv = [header.map(escape).join(','), ...rows].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `orders-${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
 
   const statuses = ['All', 'Pending', 'Processing', 'Shipped', 'Delivered', 'Cancelled'];
 
@@ -294,7 +369,11 @@ function OrdersView() {
       {/* Header */}
       <div className="flex justify-between items-center mb-8">
         <h2 className="text-3xl font-bold text-gray-900">{t('orderQueueTitle')}</h2>
-        <button className="px-4 py-2 bg-[#C5A572] text-white rounded-md hover:bg-[#b09060] transition shadow-sm font-medium">
+        <button
+          onClick={handleExport}
+          disabled={filteredOrders.length === 0}
+          className="px-4 py-2 bg-[#C5A572] text-white rounded-md hover:bg-[#b09060] transition shadow-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+        >
           {t('exportOrders')}
         </button>
       </div>
@@ -317,9 +396,17 @@ function OrdersView() {
         </div>
         <div className="flex gap-2">
           <div className="relative">
-            <input type="date" className="px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C5A572] bg-white text-gray-600" />
+            <input
+              type="date"
+              value={dateInput}
+              onChange={(e) => setDateInput(e.target.value)}
+              className="px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C5A572] bg-white text-gray-600"
+            />
           </div>
-          <button className="px-4 py-2 bg-white border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-50 flex items-center gap-2 font-medium">
+          <button
+            onClick={() => setAppliedDate(dateInput)}
+            className="px-4 py-2 bg-white border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-50 flex items-center gap-2 font-medium"
+          >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" /></svg>
             {t('filters')}
           </button>
@@ -874,6 +961,9 @@ function PromotionsView() {
   const [promotions, setPromotions] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [typeFilter, setTypeFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
 
   useEffect(() => {
     const fetchPromotions = async () => {
@@ -911,6 +1001,34 @@ function PromotionsView() {
     setSelectedPromotion(null);
   };
 
+  const handleDelete = async (promo) => {
+    if (!promo?.id) return;
+    if (!confirm(t('confirmDeletePromotion', { name: promo.name || promo.code || '' }))) return;
+    try {
+      const { apiFetch } = await import('../../utils/api');
+      const response = await apiFetch(`/api/admin/coupons/${promo.id}`, { method: 'DELETE' });
+      if (response.status === 'SUCCESS') {
+        setPromotions((prev) => prev.filter((p) => p.id !== promo.id));
+      } else {
+        alert(t('deletePromotionError'));
+      }
+    } catch (e) {
+      console.error('Delete promotion failed', e);
+      alert(t('deletePromotionError'));
+    }
+  };
+
+  // Filter the loaded list client-side (search by name/code, plus type & status selects).
+  const filteredPromotions = promotions.filter((promo) => {
+    const q = searchQuery.trim().toLowerCase();
+    const matchesSearch = !q ||
+      (promo.name && promo.name.toLowerCase().includes(q)) ||
+      (promo.code && promo.code.toLowerCase().includes(q));
+    const matchesType = !typeFilter || promo.type === typeFilter;
+    const matchesStatus = !statusFilter || promo.status === statusFilter;
+    return matchesSearch && matchesType && matchesStatus;
+  });
+
   if (viewMode === 'edit') {
     return <PromotionDetailView promotion={selectedPromotion} onBack={handleBack} />;
   }
@@ -942,21 +1060,31 @@ function PromotionsView() {
             <input
               type="text"
               placeholder={t('searchPromotionsPlaceholder')}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C5A572] focus:border-transparent text-gray-700"
             />
           </div>
           <div className="flex gap-4">
-            <select className="px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C5A572] text-gray-600 min-w-[160px]">
-              <option>{t('allTypes')}</option>
-              <option>{t('typePercentage')}</option>
-              <option>{t('typeFixedAmount')}</option>
-              <option>{t('typeFreeShipping')}</option>
+            <select
+              value={typeFilter}
+              onChange={(e) => setTypeFilter(e.target.value)}
+              className="px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C5A572] text-gray-600 min-w-[160px]"
+            >
+              <option value="">{t('allTypes')}</option>
+              <option value="percentage">{t('typePercentage')}</option>
+              <option value="fixed_amount">{t('typeFixedAmount')}</option>
+              <option value="free_shipping">{t('typeFreeShipping')}</option>
             </select>
-            <select className="px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C5A572] text-gray-600 min-w-[160px]">
-              <option>{t('allStatuses')}</option>
-              <option>{t('statusActive')}</option>
-              <option>{t('statusDraft')}</option>
-              <option>{t('statusExpired')}</option>
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C5A572] text-gray-600 min-w-[160px]"
+            >
+              <option value="">{t('allStatuses')}</option>
+              <option value="Active">{t('statusActive')}</option>
+              <option value="Draft">{t('statusDraft')}</option>
+              <option value="Expired">{t('statusExpired')}</option>
             </select>
           </div>
         </div>
@@ -981,10 +1109,10 @@ function PromotionsView() {
                 <tr><td colSpan="8" className="px-6 py-10 text-center text-gray-500">{t('loadingPromotions')}</td></tr>
               ) : error ? (
                 <tr><td colSpan="8" className="px-6 py-10 text-center text-red-500">{error}</td></tr>
-              ) : promotions.length === 0 ? (
+              ) : filteredPromotions.length === 0 ? (
                 <tr><td colSpan="8" className="px-6 py-10 text-center text-gray-500">{t('noPromotionsFound')}</td></tr>
               ) : (
-                promotions.map((promo) => (
+                filteredPromotions.map((promo) => (
                   <tr key={promo.id} className="hover:bg-gray-50 transition-colors group">
                     <td className="px-6 py-6 text-sm font-medium text-gray-900">{promo.name}</td>
                     <td className="px-6 py-6 text-sm text-gray-500 font-mono">{promo.code}</td>
@@ -1006,7 +1134,7 @@ function PromotionsView() {
                         <button onClick={() => handleEdit(promo)} className="text-gray-400 hover:text-gray-600">
                           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
                         </button>
-                        <button className="text-gray-400 hover:text-red-600">
+                        <button onClick={() => handleDelete(promo)} className="text-gray-400 hover:text-red-600">
                           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                         </button>
                       </div>

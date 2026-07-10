@@ -319,9 +319,16 @@ router.put('/coupons/:id', admin, adminWriteLimiter, csrfProtection, async (req,
   try {
     const { id } = req.params;
     const updates = req.body;
+    // Whitelist updatable columns to prevent column-name injection & mass assignment
+    const ALLOWED_COUPON_COLUMNS = [
+      'code', 'name', 'discount_details', 'type', 'value',
+      'minimum_order_amount', 'maximum_discount_amount', 'usage_limit',
+      'usage_limit_per_customer', 'is_active', 'starts_at', 'expires_at',
+    ];
     const updateFields = [];
     const updateValues = [];
     for (const [key, value] of Object.entries(updates)) {
+      if (!ALLOWED_COUPON_COLUMNS.includes(key)) continue;
       if (key === 'discount_details') {
         updateFields.push(`${key} = ?`);
         updateValues.push(JSON.stringify(value || {}));
@@ -334,6 +341,9 @@ router.put('/coupons/:id', admin, adminWriteLimiter, csrfProtection, async (req,
           updateValues.push(value);
         }
       }
+    }
+    if (updateFields.length === 0) {
+      return res.status(400).json(ResponseFormatter.failure('No valid fields to update'));
     }
     updateValues.push(id);
     const updateResult = await DatabaseUtil.executeQuery(`UPDATE discount_codes SET ${updateFields.join(', ')} WHERE id = ?`, updateValues);
@@ -578,11 +588,17 @@ router.put('/users/:id', admin, adminWriteLimiter, csrfProtection, async (req, r
   try {
     const { id } = req.params;
     const updates = req.body;
+    // Whitelist updatable columns to prevent column-name injection & mass assignment
+    const ALLOWED_USER_COLUMNS = ['first_name', 'last_name', 'email', 'phone', 'role', 'status'];
     const updateFields = [];
     const updateValues = [];
     for (const [key, value] of Object.entries(updates)) {
+      if (!ALLOWED_USER_COLUMNS.includes(key)) continue;
       updateFields.push(`${key} = ?`);
       updateValues.push(value);
+    }
+    if (updateFields.length === 0) {
+      return res.status(400).json(ResponseFormatter.failure('No valid fields to update'));
     }
     updateValues.push(id);
     const updateResult = await DatabaseUtil.executeQuery(`UPDATE users SET ${updateFields.join(', ')} WHERE id = ?`, updateValues);
@@ -781,16 +797,20 @@ router.get('/inventory', admin, adminReadLimiter, async (req, res) => {
 router.get('/orders', admin, adminReadLimiter, async (req, res) => {
   try {
     // Basic listing. In real app, add pagination/filters.
+    const queryParams = [];
     const query = `
       SELECT o.id, o.order_number, o.created_at, o.status, o.total_amount,
              COALESCE(u.first_name, o.guest_email) as customer_name,
              o.shipping_address_json
       FROM orders o
       LEFT JOIN users u ON o.user_id = u.id
-      ${req.query.user_id ? `WHERE o.user_id = '${req.query.user_id}'` : ''}
+      ${req.query.user_id ? 'WHERE o.user_id = ?' : ''}
       ORDER BY o.created_at DESC
     `;
-    const listResult = await DatabaseUtil.executeQuery(query);
+    if (req.query.user_id) {
+      queryParams.push(req.query.user_id);
+    }
+    const listResult = await DatabaseUtil.executeQuery(query, queryParams);
     if (!listResult.success) throw new Error(listResult.error);
 
     // Process rows to match frontend expectation if needed

@@ -2,6 +2,77 @@ const fs = require('fs').promises;
 const path = require('path');
 
 /**
+ * Keys whose values must never be written to logs (case-insensitive match).
+ * Covers plaintext credentials, session/refresh tokens, CSRF/reset tokens and
+ * generic secrets that can appear in request bodies or response payloads.
+ */
+const SENSITIVE_KEYS = new Set([
+  'password',
+  'newpassword',
+  'currentpassword',
+  'oldpassword',
+  'confirmpassword',
+  'accesstoken',
+  'refreshtoken',
+  'token',
+  'csrftoken',
+  'resettoken',
+  'password_reset_token',
+  'secret',
+  'apikey',
+  'authorization'
+]);
+
+const REDACTED = '[REDACTED]';
+
+/**
+ * True only for plain objects ({} / Object.create(null)); arrays, Dates,
+ * Buffers, class instances, etc. are handled/left alone separately.
+ */
+function isPlainObject(value) {
+  if (value === null || typeof value !== 'object') return false;
+  const proto = Object.getPrototypeOf(value);
+  return proto === Object.prototype || proto === null;
+}
+
+/**
+ * Deep-clone `input`, replacing any value whose key matches SENSITIVE_KEYS
+ * (case-insensitive) with '[REDACTED]'. Pure: the original object is never
+ * mutated — a fresh copy is returned for objects/arrays and only that copy is
+ * redacted, so callers can safely pass live req.body / response objects.
+ *
+ * Handles nested objects, arrays (incl. the keyValueTable array-of-objects
+ * shape), null/undefined and primitives (returned as-is). The `depth` guard
+ * (~6) caps recursion and also breaks any circular references, since depth
+ * strictly increases on every step.
+ */
+function redactSensitive(input, depth = 0) {
+  // Primitives, null and undefined are safe to pass through unchanged.
+  if (input === null || typeof input !== 'object') return input;
+
+  // Depth cap: also breaks circular references without mutating originals.
+  if (depth > 6) return REDACTED;
+
+  if (Array.isArray(input)) {
+    return input.map((item) => redactSensitive(item, depth + 1));
+  }
+
+  // Non-plain objects (Date, Buffer, class instances, etc.) are left as-is so
+  // formatting/serialization behaviour stays identical to before.
+  if (!isPlainObject(input)) return input;
+
+  const clone = {};
+  for (const key of Object.keys(input)) {
+    if (SENSITIVE_KEYS.has(key.toLowerCase())) {
+      clone[key] = REDACTED;
+    } else {
+      clone[key] = redactSensitive(input[key], depth + 1);
+    }
+  }
+  return clone;
+}
+
+/**
  * Logger utility for API request/response logging
  * Logs to daily files in YYYY-MM-DD format with automatic rotation at 100MB
  */
@@ -143,7 +214,9 @@ class Logger {
       }
     };
 
-    const logEntry = this.formatLogEntry('REQUEST', requestInfo, apiPath, requestData);
+    // Redact sensitive values (passwords, tokens, secrets) from the logged
+    // copy only — requestData/req.body themselves are left untouched.
+    const logEntry = this.formatLogEntry('REQUEST', requestInfo, apiPath, redactSensitive(requestData));
     await this.writeLog(logEntry);
   }
 
@@ -163,7 +236,9 @@ class Logger {
       responseTime: res.get('X-Response-Time')
     };
 
-    const logEntry = this.formatLogEntry('RESPONSE', requestInfo, apiPath, logData);
+    // Redact sensitive values (e.g. accessToken/refreshToken inside
+    // keyValueTable) from the logged copy only — responseData is not mutated.
+    const logEntry = this.formatLogEntry('RESPONSE', requestInfo, apiPath, redactSensitive(logData));
     await this.writeLog(logEntry);
   }
 
@@ -399,3 +474,5 @@ class Logger {
 
 // Export singleton instance
 module.exports = new Logger();
+// Also expose the pure redaction helper for reuse by other log sinks.
+module.exports.redactSensitive = redactSensitive;

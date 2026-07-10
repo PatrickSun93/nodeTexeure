@@ -75,6 +75,13 @@ async function uploadFile(buffer, key, contentType) {
 async function saveLocally(buffer, key) {
   const uploadsDir = path.join(__dirname, '..', 'uploads');
   const filePath = path.join(uploadsDir, key);
+
+  // Reject keys that escape the uploads dir (path-traversal guard)
+  const resolved = path.resolve(filePath);
+  if (!resolved.startsWith(path.resolve(uploadsDir) + path.sep)) {
+    throw new Error('Invalid upload path');
+  }
+
   const dir = path.dirname(filePath);
 
   // Ensure directory exists
