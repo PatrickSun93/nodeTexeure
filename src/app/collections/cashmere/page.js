@@ -39,7 +39,6 @@ export default function CashmereCollectionPage() {
 
   const handleAddToCart = async (product) => {
     // Add to cart logic
-    console.log('Adding to cart:', product);
   };
 
   return (

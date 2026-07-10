@@ -64,14 +64,14 @@ export default function RatingStars({
                         className={`
                             ${readonly ? 'cursor-default' : 'cursor-pointer hover:scale-110'}
                             transition-transform
-                            ${!readonly ? 'focus:outline-none focus:ring-2 focus:ring-yellow-400 rounded' : ''}
+                            ${!readonly ? 'focus:outline-none focus:ring-2 focus:ring-[color:var(--noirae-accent-gold)] rounded' : ''}
                         `}
                         aria-label={`Rate ${value} stars`}
                     >
                         <svg
                             className={`${sizeClass} transition-colors`}
-                            fill={value <= displayRating ? '#fbbf24' : 'none'}
-                            stroke={value <= displayRating ? '#fbbf24' : '#d1d5db'}
+                            fill={value <= displayRating ? 'var(--noirae-accent-gold)' : 'none'}
+                            stroke={value <= displayRating ? 'var(--noirae-accent-gold)' : 'var(--noirae-border-medium)'}
                             strokeWidth="1.5"
                             viewBox="0 0 24 24"
                         >
@@ -86,13 +86,13 @@ export default function RatingStars({
             </div>
             
             {showCount && reviewCount > 0 && (
-                <span className="text-sm text-gray-600 ml-2">
+                <span className="text-sm ml-2" style={{ color: 'var(--noirae-text-muted)' }}>
                     ({reviewCount} {reviewCount === 1 ? 'review' : 'reviews'})
                 </span>
             )}
             
             {!readonly && !showCount && (
-                <span className="text-sm text-gray-600 ml-2">
+                <span className="text-sm ml-2" style={{ color: 'var(--noirae-text-muted)' }}>
                     {hoverRating > 0 ? hoverRating : rating || 0}/5
                 </span>
             )}

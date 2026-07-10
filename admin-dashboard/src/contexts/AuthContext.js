@@ -93,7 +93,6 @@ export function AuthProvider({ children }) {
         dispatch({ type: AUTH_ACTIONS.LOGOUT });
       }
     } catch (error) {
-      console.log('Auth check failed:', error.message);
       dispatch({ type: AUTH_ACTIONS.LOGOUT });
     }
   };

@@ -73,11 +73,11 @@ export default function ReviewForm({ productId, onSuccess, onCancel }) {
     };
 
     return (
-        <div className="bg-white rounded-lg border border-gray-200 p-6">
-            <h3 className="text-xl font-semibold mb-4">{t('writeReview')}</h3>
+        <div className="rounded-lg border p-6" style={{ background: 'var(--noirae-bg-white)', borderColor: 'var(--noirae-border-light)' }}>
+            <h3 className="text-xl font-semibold mb-4" style={{ color: 'var(--noirae-charcoal)' }}>{t('writeReview')}</h3>
 
             {error && (
-                <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md text-red-700 text-sm">
+                <div className="mb-4 p-3 border rounded-md text-sm" style={{ background: 'var(--noirae-error-bg)', borderColor: 'var(--noirae-error)', color: 'var(--noirae-error)' }}>
                     {error}
                 </div>
             )}
@@ -85,7 +85,7 @@ export default function ReviewForm({ productId, onSuccess, onCancel }) {
             <form onSubmit={handleSubmit}>
                 {/* Rating Selection */}
                 <div className="mb-4">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium mb-2" style={{ color: 'var(--noirae-text-secondary)' }}>
                         {t('yourRating')} *
                     </label>
                     <RatingStars
@@ -97,7 +97,7 @@ export default function ReviewForm({ productId, onSuccess, onCancel }) {
 
                 {/* Review Title */}
                 <div className="mb-4">
-                    <label htmlFor="review-title" className="block text-sm font-medium text-gray-700 mb-2">
+                    <label htmlFor="review-title" className="block text-sm font-medium mb-2" style={{ color: 'var(--noirae-text-secondary)' }}>
                         {t('reviewTitle')}
                     </label>
                     <input
@@ -107,16 +107,16 @@ export default function ReviewForm({ productId, onSuccess, onCancel }) {
                         onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                         placeholder={t('titlePlaceholder')}
                         maxLength={100}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        className="nt-review-input"
                     />
-                    <p className="text-xs text-gray-500 mt-1">
+                    <p className="text-xs mt-1" style={{ color: 'var(--noirae-text-muted)' }}>
                         {t('charCount', { count: formData.title.length, max: 100 })}
                     </p>
                 </div>
 
                 {/* Review Text */}
                 <div className="mb-6">
-                    <label htmlFor="review-text" className="block text-sm font-medium text-gray-700 mb-2">
+                    <label htmlFor="review-text" className="block text-sm font-medium mb-2" style={{ color: 'var(--noirae-text-secondary)' }}>
                         {t('yourReview')} *
                     </label>
                     <textarea
@@ -127,9 +127,9 @@ export default function ReviewForm({ productId, onSuccess, onCancel }) {
                         rows={6}
                         maxLength={2000}
                         required
-                        className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                        className="nt-review-input resize-none"
                     />
-                    <p className="text-xs text-gray-500 mt-1">
+                    <p className="text-xs mt-1" style={{ color: 'var(--noirae-text-muted)' }}>
                         {t('charCountMin', { count: formData.review_text.length, max: 2000, min: 10 })}
                     </p>
                 </div>
@@ -139,7 +139,8 @@ export default function ReviewForm({ productId, onSuccess, onCancel }) {
                     <button
                         type="submit"
                         disabled={isSubmitting}
-                        className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+                        className="px-6 py-2 rounded-md transition-opacity hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+                        style={{ background: 'var(--noirae-accent-gold)', color: 'var(--noirae-bg-white)' }}
                     >
                         {isSubmitting ? t('submitting') : t('submit')}
                     </button>
@@ -148,14 +149,15 @@ export default function ReviewForm({ productId, onSuccess, onCancel }) {
                             type="button"
                             onClick={onCancel}
                             disabled={isSubmitting}
-                            className="px-6 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 disabled:opacity-50 transition-colors"
+                            className="px-6 py-2 rounded-md transition-opacity hover:opacity-80 disabled:opacity-50"
+                            style={{ background: 'var(--noirae-bg-light-gray)', color: 'var(--noirae-text-secondary)' }}
                         >
                             {t('cancel')}
                         </button>
                     )}
                 </div>
 
-                <p className="text-xs text-gray-500 mt-3">
+                <p className="text-xs mt-3" style={{ color: 'var(--noirae-text-muted)' }}>
                     * {t('moderationNote')}
                 </p>
             </form>

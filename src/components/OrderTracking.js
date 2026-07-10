@@ -53,19 +53,19 @@ export default function OrderTracking({ trackingNumber, orderId }) {
 
   const getStatusColor = (status) => {
     const statusLower = status?.toLowerCase() || '';
-    if (statusLower.includes('delivered')) return 'text-green-600';
-    if (statusLower.includes('transit') || statusLower.includes('shipped')) return 'text-blue-600';
-    if (statusLower.includes('exception') || statusLower.includes('delayed')) return 'text-red-600';
-    return 'text-gray-600';
+    if (statusLower.includes('delivered')) return 'var(--noirae-success)';
+    if (statusLower.includes('transit') || statusLower.includes('shipped')) return 'var(--noirae-info)';
+    if (statusLower.includes('exception') || statusLower.includes('delayed')) return 'var(--noirae-error)';
+    return 'var(--noirae-text-secondary)';
   };
 
   if (loading) {
     return (
-      <div className="bg-white rounded-lg shadow-md p-6">
+      <div className="rounded-lg shadow-md p-6" style={{ background: 'var(--noirae-bg-white)' }}>
         <div className="animate-pulse">
-          <div className="h-4 bg-gray-200 rounded w-1/4 mb-4"></div>
-          <div className="h-4 bg-gray-200 rounded w-1/2 mb-2"></div>
-          <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+          <div className="h-4 rounded w-1/4 mb-4" style={{ background: 'var(--noirae-bg-sand)' }}></div>
+          <div className="h-4 rounded w-1/2 mb-2" style={{ background: 'var(--noirae-bg-sand)' }}></div>
+          <div className="h-4 rounded w-3/4" style={{ background: 'var(--noirae-bg-sand)' }}></div>
         </div>
       </div>
     );
@@ -73,14 +73,15 @@ export default function OrderTracking({ trackingNumber, orderId }) {
 
   if (error) {
     return (
-      <div className="bg-white rounded-lg shadow-md p-6">
-        <div className="text-red-600 mb-4">
+      <div className="rounded-lg shadow-md p-6" style={{ background: 'var(--noirae-bg-white)' }}>
+        <div className="mb-4" style={{ color: 'var(--noirae-error)' }}>
           <h3 className="text-lg font-semibold">{t('errorTitle')}</h3>
           <p>{error}</p>
         </div>
         <button
           onClick={fetchTrackingInfo}
-          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+          className="px-4 py-2 rounded"
+          style={{ background: 'var(--noirae-charcoal)', color: 'var(--noirae-bg-white)' }}
         >
           {t('retry')}
         </button>
@@ -90,39 +91,39 @@ export default function OrderTracking({ trackingNumber, orderId }) {
 
   if (!trackingData && !trackingNumber) {
     return (
-      <div className="bg-gray-50 rounded-lg p-6 text-center">
-        <p className="text-gray-600">{t('noTracking')}</p>
+      <div className="rounded-lg p-6 text-center" style={{ background: 'var(--noirae-bg-light-gray)' }}>
+        <p style={{ color: 'var(--noirae-text-secondary)' }}>{t('noTracking')}</p>
       </div>
     );
   }
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-6">
+    <div className="rounded-lg shadow-md p-6" style={{ background: 'var(--noirae-bg-white)' }}>
       <div className="mb-6">
-        <h3 className="text-xl font-semibold text-gray-900 mb-2">{t('title')}</h3>
+        <h3 className="text-xl font-semibold mb-2" style={{ color: 'var(--noirae-charcoal)' }}>{t('title')}</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <p className="text-sm text-gray-600">{t('trackingNumber')}</p>
+            <p className="text-sm" style={{ color: 'var(--noirae-text-secondary)' }}>{t('trackingNumber')}</p>
             <p className="font-mono text-lg">{trackingNumber}</p>
           </div>
           {trackingData && (
             <>
               <div>
-                <p className="text-sm text-gray-600">{t('status')}</p>
-                <p className={`font-semibold ${getStatusColor(trackingData.status)}`}>
+                <p className="text-sm" style={{ color: 'var(--noirae-text-secondary)' }}>{t('status')}</p>
+                <p className="font-semibold" style={{ color: getStatusColor(trackingData.status) }}>
                   {trackingData.status}
                 </p>
               </div>
               {trackingData.estimatedDelivery && (
                 <div>
-                  <p className="text-sm text-gray-600">{t('estimatedDelivery')}</p>
+                  <p className="text-sm" style={{ color: 'var(--noirae-text-secondary)' }}>{t('estimatedDelivery')}</p>
                   <p className="font-semibold">{formatDate(trackingData.estimatedDelivery)}</p>
                 </div>
               )}
               {trackingData.actualDelivery && (
                 <div>
-                  <p className="text-sm text-gray-600">{t('delivered')}</p>
-                  <p className="font-semibold text-green-600">{formatDate(trackingData.actualDelivery)}</p>
+                  <p className="text-sm" style={{ color: 'var(--noirae-text-secondary)' }}>{t('delivered')}</p>
+                  <p className="font-semibold" style={{ color: 'var(--noirae-success)' }}>{formatDate(trackingData.actualDelivery)}</p>
                 </div>
               )}
             </>
@@ -132,8 +133,8 @@ export default function OrderTracking({ trackingNumber, orderId }) {
 
       {trackingData?.location && (
         <div className="mb-6">
-          <h4 className="text-lg font-semibold text-gray-900 mb-2">{t('currentLocation')}</h4>
-          <p className="text-gray-700">
+          <h4 className="text-lg font-semibold mb-2" style={{ color: 'var(--noirae-charcoal)' }}>{t('currentLocation')}</h4>
+          <p style={{ color: 'var(--noirae-text-secondary)' }}>
             {trackingData.location.city && `${trackingData.location.city}, `}
             {trackingData.location.stateOrProvinceCode && `${trackingData.location.stateOrProvinceCode} `}
             {trackingData.location.countryCode}
@@ -143,15 +144,15 @@ export default function OrderTracking({ trackingNumber, orderId }) {
 
       {trackingEvents.length > 0 && (
         <div>
-          <h4 className="text-lg font-semibold text-gray-900 mb-4">{t('trackingHistory')}</h4>
+          <h4 className="text-lg font-semibold mb-4" style={{ color: 'var(--noirae-charcoal)' }}>{t('trackingHistory')}</h4>
           <div className="space-y-4">
             {trackingEvents.map((event, index) => (
-              <div key={index} className="border-l-4 border-blue-200 pl-4 pb-4">
+              <div key={index} className="border-l-4 pl-4 pb-4" style={{ borderColor: 'var(--noirae-border-medium)' }}>
                 <div className="flex justify-between items-start">
                   <div>
-                    <p className="font-semibold text-gray-900">{event.event_description}</p>
+                    <p className="font-semibold" style={{ color: 'var(--noirae-charcoal)' }}>{event.event_description}</p>
                     {event.event_location && (
-                      <p className="text-sm text-gray-600">
+                      <p className="text-sm" style={{ color: 'var(--noirae-text-secondary)' }}>
                         {event.event_location.city && `${event.event_location.city}, `}
                         {event.event_location.stateOrProvinceCode && `${event.event_location.stateOrProvinceCode} `}
                         {event.event_location.countryCode}
@@ -159,9 +160,9 @@ export default function OrderTracking({ trackingNumber, orderId }) {
                     )}
                   </div>
                   <div className="text-right">
-                    <p className="text-sm text-gray-600">{formatDate(event.event_timestamp)}</p>
+                    <p className="text-sm" style={{ color: 'var(--noirae-text-secondary)' }}>{formatDate(event.event_timestamp)}</p>
                     {event.event_type && (
-                      <p className="text-xs text-gray-500">{event.event_type}</p>
+                      <p className="text-xs" style={{ color: 'var(--noirae-text-muted)' }}>{event.event_type}</p>
                     )}
                   </div>
                 </div>
@@ -171,10 +172,11 @@ export default function OrderTracking({ trackingNumber, orderId }) {
         </div>
       )}
 
-      <div className="mt-6 pt-4 border-t border-gray-200">
+      <div className="mt-6 pt-4 border-t" style={{ borderColor: 'var(--noirae-border-light)' }}>
         <button
           onClick={fetchTrackingInfo}
-          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition-colors"
+          className="px-4 py-2 rounded transition-colors"
+          style={{ background: 'var(--noirae-charcoal)', color: 'var(--noirae-bg-white)' }}
         >
           {t('refresh')}
         </button>

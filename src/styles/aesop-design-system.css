@@ -4215,6 +4215,41 @@ p {
   padding: var(--space-4);
 }
 
+/* Full-width empty state — replaces the fragile fake-grid-cell hack that
+   distorted the shop layout when a filter returned no products. */
+.noirae-no-products {
+  width: 100%;
+  min-height: 320px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: var(--space-10, 2.5rem);
+  color: var(--noirae-text-muted);
+  font-family: var(--noirae-font-editorial, var(--noirae-font-serif, serif));
+  font-size: var(--noirae-text-lg, 1.125rem);
+  letter-spacing: 0.02em;
+}
+
+/* Review inputs, styled with champagne tokens (used by ReviewForm) */
+.nt-review-input {
+  width: 100%;
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--noirae-border-medium);
+  border-radius: var(--radius-md, 8px);
+  background: var(--noirae-bg-white);
+  color: var(--noirae-charcoal);
+  font-family: inherit;
+  font-size: var(--noirae-text-sm, 0.875rem);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.nt-review-input:focus {
+  outline: none;
+  border-color: var(--noirae-accent-gold);
+  box-shadow: 0 0 0 3px rgba(168, 134, 63, 0.18);
+}
+.nt-review-input::placeholder { color: var(--noirae-text-muted); }
+
 /* Responsive Shop Layout */
 @media (max-width: 1200px) {
   .noirae-shop-grid {

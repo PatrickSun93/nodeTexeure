@@ -28,7 +28,6 @@ export default function Login() {
       });
 
       const data = await res.json();
-      console.log(data);
       if (data.status === 'SUCCESS' && data.keyValueTable.isAdmin) {
         // Auth cookies are set; no localStorage anymore
         router.push('/dashboard');

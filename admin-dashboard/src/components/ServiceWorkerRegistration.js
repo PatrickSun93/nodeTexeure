@@ -18,7 +18,24 @@ export default function ServiceWorkerRegistration({
 
   // Register service worker
   useEffect(() => {
-    if (!enabled || typeof window === 'undefined' || !('serviceWorker' in navigator)) {
+    if (typeof window === 'undefined' || !('serviceWorker' in navigator)) {
+      return;
+    }
+
+    // Development / disabled: proactively remove any service worker + caches
+    // left from a previous (production) build. A stale service worker serves
+    // outdated cached HTML/JS chunks, so the page renders but fails to hydrate
+    // (looks fine, but you can't type or click) and survives normal refreshes.
+    if (!enabled) {
+      navigator.serviceWorker.getRegistrations()
+        .then((regs) => Promise.all(regs.map((r) => r.unregister())))
+        .then((results) => {
+          if (results.some(Boolean) && typeof caches !== 'undefined') {
+            return caches.keys().then((keys) => Promise.all(keys.map((k) => caches.delete(k))));
+          }
+          return undefined;
+        })
+        .catch(() => {});
       return;
     }
 

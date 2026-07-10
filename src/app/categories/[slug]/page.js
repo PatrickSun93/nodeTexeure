@@ -92,7 +92,6 @@ export default function CategoryPage() {
   };
 
   const handleToggleWishlist = (product, isWishlisted) => {
-    console.log(`${isWishlisted ? 'Added to' : 'Removed from'} wishlist:`, product.name);
   };
 
   // Sort products
