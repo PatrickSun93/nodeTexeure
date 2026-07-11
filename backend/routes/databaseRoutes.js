@@ -140,8 +140,12 @@ router.get('/transno', dbProtect, dbAdmin, async (req, res) => {
  */
 const { protect, admin } = require('../middleware/authMiddleware');
 router.post('/query', protect, admin, async (req, res) => {
-  if (process.env.NODE_ENV === 'production') {
-    return res.status(403).json(ResponseFormatter.failure('Query endpoint disabled in production'));
+  // Default-deny: this arbitrary-SELECT endpoint is disabled unless we are explicitly
+  // in development/test AND it is opted in via ENABLE_RAW_SQL=true. An unset/misconfigured
+  // NODE_ENV (treated as production) or a missing flag keeps it off.
+  const isDev = process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test';
+  if (!isDev || process.env.ENABLE_RAW_SQL !== 'true') {
+    return res.status(403).json(ResponseFormatter.failure('Query endpoint disabled'));
   }
   try {
     const { query, params = [] } = req.body;

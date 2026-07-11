@@ -375,29 +375,18 @@ function Shop() {
                   <div className="aesop-loading-spinner"></div>
                   <p>{t('loading')}</p>
                 </div>
-              ) : (
+              ) : paginatedProducts.length > 0 ? (
                 <>
                   <div className="noirae-shop-grid">
-                    {paginatedProducts.length > 0 ? (
-                      paginatedProducts.map(product => (
-                        <ProductCard 
-                          key={product.id} 
-                          product={product} 
-                          onAddToCart={handleAddToCart}
-                        />
-                      ))
-                    ) : (
-                      <>
-                        {/* Empty grid cells to maintain 3-column layout */}
-                        <div className="noirae-empty-grid-cell"></div>
-                        <div className="noirae-empty-grid-cell noirae-no-products-cell">
-                          <p>{t('noProducts')}</p>
-                        </div>
-                        <div className="noirae-empty-grid-cell"></div>
-                      </>
-                    )}
+                    {paginatedProducts.map(product => (
+                      <ProductCard
+                        key={product.id}
+                        product={product}
+                        onAddToCart={handleAddToCart}
+                      />
+                    ))}
                   </div>
-                  
+
                   {/* Pagination */}
                   {totalPages > 1 && (
                     <Pagination
@@ -407,6 +396,10 @@ function Shop() {
                     />
                   )}
                 </>
+              ) : (
+                <div className="noirae-no-products">
+                  <p>{t('noProducts')}</p>
+                </div>
               )}
             </div>
           </div>

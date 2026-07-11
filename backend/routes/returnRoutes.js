@@ -2,6 +2,7 @@ const express = require('express');
 const DatabaseUtil = require('../utils/database');
 const ResponseFormatter = require('../utils/responseFormatter');
 const { protect, admin } = require('../middleware/authMiddleware');
+const { csrfProtection } = require('../middleware/csrfMiddleware');
 
 const router = express.Router();
 const db = new DatabaseUtil();
@@ -23,10 +24,12 @@ router.post('/request', protect, async (req, res) => {
       'SELECT id, status, user_id FROM orders WHERE id = ? AND user_id = ?',
       [orderId, req.user.id]
     );
-    if (!orderResult || orderResult.length === 0) {
+    // executeQuery may return a rows array or a {success, data} wrapper — normalize.
+    const orderRows = Array.isArray(orderResult) ? orderResult : (orderResult && orderResult.data) || [];
+    if (orderRows.length === 0) {
       return res.status(404).json(ResponseFormatter.failure('Order not found'));
     }
-    if (orderResult[0].status !== 'delivered') {
+    if (orderRows[0].status !== 'delivered') {
       return res.status(400).json(ResponseFormatter.failure('Returns can only be requested for delivered orders'));
     }
 
@@ -35,8 +38,23 @@ router.post('/request', protect, async (req, res) => {
       "SELECT id FROM returns WHERE order_id = ? AND status NOT IN ('rejected','closed')",
       [orderId]
     );
-    if (existingReturn && existingReturn.length > 0) {
+    const existingReturnRows = Array.isArray(existingReturn) ? existingReturn : (existingReturn && existingReturn.data) || [];
+    if (existingReturnRows.length > 0) {
       return res.status(409).json(ResponseFormatter.failure('A return request already exists for this order'));
+    }
+
+    // Validate that every submitted orderItemId actually belongs to this order, so a
+    // client cannot attach return_items from another order to their own return.
+    const orderItemsResult = await DatabaseUtil.executeQuery(
+      'SELECT id FROM order_items WHERE order_id = ?',
+      [orderId]
+    );
+    const orderItemRows = Array.isArray(orderItemsResult) ? orderItemsResult : (orderItemsResult && orderItemsResult.data) || [];
+    const validOrderItemIds = new Set(orderItemRows.map((row) => row.id));
+    for (const item of items) {
+      if (!item.orderItemId || !validOrderItemIds.has(item.orderItemId)) {
+        return res.status(400).json(ResponseFormatter.failure('One or more return items do not belong to this order'));
+      }
     }
 
     // Generate return ID and number
@@ -138,7 +156,7 @@ router.get('/:id', protect, async (req, res) => {
  * PUT /api/returns/:id/status
  * Admin updates return status
  */
-router.put('/:id/status', protect, admin, async (req, res) => {
+router.put('/:id/status', protect, admin, csrfProtection, async (req, res) => {
   try {
     const { id } = req.params;
     const { status, admin_notes, refund_amount, return_tracking_number } = req.body;

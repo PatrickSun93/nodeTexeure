@@ -206,7 +206,7 @@ router.delete('/:id', protect, csrfProtection, async (req, res) => {
     try {
         const { id } = req.params;
         const user_id = req.user.id;
-        const is_admin = req.user.role === 'admin';
+        const is_admin = req.user.isAdmin;
 
         // Check ownership or admin
         const checkQuery = 'SELECT user_id FROM product_reviews WHERE id = ?';
@@ -264,7 +264,7 @@ router.get('/user/:userId', protect, async (req, res) => {
     try {
         const { userId } = req.params;
         const requestingUserId = req.user.id;
-        const isAdmin = req.user.role === 'admin';
+        const isAdmin = req.user.isAdmin;
 
         // Check permissions
         if (userId !== requestingUserId && !isAdmin) {

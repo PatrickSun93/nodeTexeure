@@ -6,6 +6,7 @@
 
 const { v4: uuidv4 } = require('uuid');
 const DatabaseUtil = require('../utils/database');
+const { isMarketingCategory, isEmailSuppressed } = require('../utils/emailSuppression');
 
 /**
  * Enqueue an email using a named template from `email_templates`.
@@ -20,6 +21,16 @@ const DatabaseUtil = require('../utils/database');
  */
 async function enqueue(toEmail, toName, templateName, variables = {}, scheduledAt = null) {
   try {
+    // Suppression gate — only for MARKETING templates (abandoned/newsletter/promo/…).
+    // Transactional templates (order_confirmation, welcome_user, email_verification,
+    // password_reset, …) are never gated so they always send. Fail-open by design:
+    // isEmailSuppressed() returns false on any DB error, so a check failure can never
+    // block a send.
+    if (isMarketingCategory(templateName) && (await isEmailSuppressed(toEmail))) {
+      console.log(`🔕 Suppressed marketing email '${templateName}' → ${toEmail} (recipient unsubscribed).`);
+      return { queued: false, reason: 'recipient_unsubscribed' };
+    }
+
     // Look up the template by name
     const result = await DatabaseUtil.executeQuery(
       'SELECT * FROM email_templates WHERE name = ? AND is_active = 1',

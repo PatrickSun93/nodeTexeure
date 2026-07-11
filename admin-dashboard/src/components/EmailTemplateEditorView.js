@@ -349,7 +349,6 @@ export default function EmailTemplateEditorView({ onBack, initialData = null }) 
                     <div className="pt-4 border-t border-gray-100">
                         <VariablesPalette onInsertVariable={(variable) => {
                             // Could implement direct insertion here
-                            console.log('Insert variable:', variable);
                         }} />
                     </div>
                 </div>

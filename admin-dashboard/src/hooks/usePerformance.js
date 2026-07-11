@@ -45,11 +45,6 @@ export function usePerformance(name, options = {}) {
     if (onMetricsUpdate) {
       onMetricsUpdate(newMetrics);
     }
-
-    // Log to console in development
-    if (process.env.NODE_ENV === 'development') {
-      console.log(`Performance [${name}]:`, newMetrics);
-    }
   }, [name, metrics.interactionTime, trackMemory, onMetricsUpdate]);
 
   // Track interaction time
@@ -64,10 +59,6 @@ export function usePerformance(name, options = {}) {
         ...prev,
         interactionTime: prev.interactionTime + interactionTime
       }));
-
-      if (process.env.NODE_ENV === 'development') {
-        console.log(`Interaction [${interactionName}]: ${interactionTime.toFixed(2)}ms`);
-      }
     };
   }, [trackInteractions]);
 

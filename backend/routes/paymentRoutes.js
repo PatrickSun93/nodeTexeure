@@ -9,6 +9,7 @@ const ResponseFormatter = require('../utils/responseFormatter');
 const DatabaseUtil = require('../utils/database');
 const stripeService = require('../services/stripeService');
 const { protect, admin, protectOptional } = require('../middleware/authMiddleware');
+const { csrfProtection } = require('../middleware/csrfMiddleware');
 const db = DatabaseUtil; // executeQuery et al. are static — reference the class, not an instance
 
 /**
@@ -35,13 +36,24 @@ router.post('/create-checkout-session', protectOptional, async (req, res) => {
       JOIN order_items oi ON o.id = oi.order_id
       WHERE o.id = ?
     `;
-    const orderItems = await db.executeQuery(orderQuery, [orderId]);
+    const orderResult = await db.executeQuery(orderQuery, [orderId]);
+    // executeQuery may return a rows array or a {success, data} wrapper — normalize.
+    const orderItems = Array.isArray(orderResult) ? orderResult : (orderResult && orderResult.data) || [];
 
     if (!orderItems || orderItems.length === 0) {
       return res.status(404).json(ResponseFormatter.failure('Order not found'));
     }
 
     const order = orderItems[0];
+
+    // Ownership: orders that belong to a registered account require that account
+    // (or an admin). Guest orders (no user_id) stay accessible via their unguessable
+    // id so guest checkout works without an account.
+    if (order.user_id) {
+      if (!req.user || (req.user.id !== order.user_id && !req.user.isAdmin)) {
+        return res.status(403).json(ResponseFormatter.failure('Access denied'));
+      }
+    }
 
     // Build line items for Stripe
     const lineItems = orderItems.map(item => ({
@@ -115,9 +127,21 @@ router.post('/create-payment-intent', protectOptional, async (req, res) => {
     }
 
     // Fetch order total
-    const [order] = await db.executeQuery('SELECT * FROM orders WHERE id = ?', [orderId]);
+    const orderResult = await db.executeQuery('SELECT * FROM orders WHERE id = ?', [orderId]);
+    // executeQuery may return a rows array or a {success, data} wrapper — normalize.
+    const orderRows = Array.isArray(orderResult) ? orderResult : (orderResult && orderResult.data) || [];
+    const order = orderRows[0];
     if (!order) {
       return res.status(404).json(ResponseFormatter.failure('Order not found'));
+    }
+
+    // Ownership: orders that belong to a registered account require that account
+    // (or an admin). Guest orders (no user_id) stay accessible via their unguessable
+    // id so guest checkout works without an account.
+    if (order.user_id) {
+      if (!req.user || (req.user.id !== order.user_id && !req.user.isAdmin)) {
+        return res.status(403).json(ResponseFormatter.failure('Access denied'));
+      }
     }
 
     const paymentIntent = await stripeService.createPaymentIntent(
@@ -233,7 +257,7 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
  * Process a refund (admin only)
  * Body: { orderId, amount (optional, in dollars) }
  */
-router.post('/refund', protect, admin, async (req, res) => {
+router.post('/refund', protect, admin, csrfProtection, async (req, res) => {
   try {
     const { orderId, amount } = req.body;
 
@@ -278,13 +302,30 @@ router.post('/refund', protect, admin, async (req, res) => {
  * GET /api/payments/session/:sessionId
  * Check the status of a checkout session
  */
-router.get('/session/:sessionId', async (req, res) => {
+router.get('/session/:sessionId', protectOptional, async (req, res) => {
   try {
     if (!stripeService.isAvailable()) {
       return res.status(503).json(ResponseFormatter.failure('Payment service is not configured'));
     }
 
     const session = await stripeService.getCheckoutSession(req.params.sessionId);
+
+    // Ownership: if this session's order belongs to a registered account, require
+    // that account (or an admin) before exposing customer email/amount. Guest orders
+    // (no user_id) stay viewable via their unguessable Stripe session id so guest
+    // checkout confirmation works without an account.
+    const orderId = session && session.metadata ? session.metadata.orderId : null;
+    if (orderId) {
+      const orderResult = await db.executeQuery('SELECT user_id FROM orders WHERE id = ?', [orderId]);
+      // executeQuery may return a rows array or a {success, data} wrapper — normalize.
+      const orderRows = Array.isArray(orderResult) ? orderResult : (orderResult && orderResult.data) || [];
+      const order = orderRows[0];
+      if (order && order.user_id) {
+        if (!req.user || (req.user.id !== order.user_id && !req.user.isAdmin)) {
+          return res.status(403).json(ResponseFormatter.failure('Access denied'));
+        }
+      }
+    }
 
     res.json(ResponseFormatter.success('Session retrieved', {
       id: session.id,
