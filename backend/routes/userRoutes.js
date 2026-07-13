@@ -5,7 +5,7 @@ const nodemailer = require('nodemailer');
 const rateLimit = require('express-rate-limit');
 const DatabaseUtil = require('../utils/database');
 const ResponseFormatter = require('../utils/responseFormatter');
-const { protect, admin } = require('../middleware/authMiddleware');
+const { protect, admin, protectOptional } = require('../middleware/authMiddleware');
 const { generateCSRFToken } = require('../middleware/csrfMiddleware');
 const crypto = require('crypto');
 const emailQueueProducer = require('../services/emailQueueProducer');
@@ -385,6 +385,37 @@ router.get('/profile', protect, async (req, res) => {
     console.error('Get profile error:', error);
     const keyValueTable = { error: error.message };
     res.status(500).json(ResponseFormatter.failure('Failed to get profile', keyValueTable));
+  }
+});
+
+/**
+ * GET /api/users/session
+ * Lightweight auth-status probe. Returns 200 whether or not the caller is
+ * authenticated, so the admin app's on-load auth check never logs a 401 when no
+ * session cookie exists yet. protectOptional reads the admin_auth cookie / Bearer
+ * token when present and populates req.user; otherwise it proceeds unauthenticated.
+ * Declared before GET /:id so it isn't shadowed by the param route.
+ */
+router.get('/session', protectOptional, async (req, res) => {
+  if (!req.user) {
+    return res.json(ResponseFormatter.success('No active session', { authenticated: false }));
+  }
+  const base = {
+    authenticated: true,
+    id: req.user.id,
+    isAdmin: !!req.user.isAdmin,
+    isStaff: !!req.user.isStaff,
+  };
+  try {
+    const result = await DatabaseUtil.executeQuery(
+      'SELECT id, first_name, last_name, email, phone, role FROM users WHERE id = ?',
+      [req.user.id]
+    );
+    const profile = (result.success && result.data && result.data[0]) ? result.data[0] : {};
+    return res.json(ResponseFormatter.success('Authenticated', { ...base, ...profile }));
+  } catch (error) {
+    console.error('Session check error:', error);
+    return res.json(ResponseFormatter.success('Authenticated', base));
   }
 });
 
