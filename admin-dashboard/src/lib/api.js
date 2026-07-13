@@ -113,9 +113,9 @@ export const adminAuth = {
    * @returns {Promise<object>} - Verification response
    */
   async verify() {
-    // Verify the session via a protected endpoint using the admin_auth cookie
-    // (there is no /api/admin/auth/verify). A 200 means the cookie is valid.
-    return apiRequest('users/profile');
+    // Lightweight session probe: returns 200 with { authenticated } whether or not
+    // a session cookie exists, so the on-load auth check never logs a 401.
+    return apiRequest('users/session');
   },
 
   /**

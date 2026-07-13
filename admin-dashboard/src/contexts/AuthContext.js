@@ -84,7 +84,7 @@ export function AuthProvider({ children }) {
       
       const response = await adminAuth.verify();
 
-      if (response.status === 'SUCCESS' && response.keyValueTable) {
+      if (response.status === 'SUCCESS' && response.keyValueTable && response.keyValueTable.authenticated) {
         dispatch({
           type: AUTH_ACTIONS.LOGIN_SUCCESS,
           payload: response.keyValueTable,
