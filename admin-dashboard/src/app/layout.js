@@ -4,7 +4,6 @@ import { getLocale, getMessages } from 'next-intl/server'
 import { AuthProvider } from '@/contexts/AuthContext'
 import { AdminProvider } from '@/contexts/AdminContext'
 import NotificationSystem from '@/components/NotificationSystem'
-import PerformanceMonitor from '@/components/PerformanceMonitor'
 import ServiceWorkerRegistration from '@/components/ServiceWorkerRegistration'
 import GlobalErrorHandler from '@/components/GlobalErrorHandler'
 import SessionManager from '@/components/SessionManager'
@@ -31,10 +30,6 @@ export default async function RootLayout({ children }) {
             <GlobalErrorHandler />
             <SessionManager />
             <IntegrationTest />
-            <PerformanceMonitor 
-              enabled={process.env.NODE_ENV === 'development'} 
-              showWidget={false}
-            />
             <ServiceWorkerRegistration 
               enabled={process.env.NODE_ENV === 'production'}
             />
