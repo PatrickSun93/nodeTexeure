@@ -7,7 +7,6 @@ import NotificationSystem from '@/components/NotificationSystem'
 import ServiceWorkerRegistration from '@/components/ServiceWorkerRegistration'
 import GlobalErrorHandler from '@/components/GlobalErrorHandler'
 import SessionManager from '@/components/SessionManager'
-import IntegrationTest from '@/components/IntegrationTest'
 import { GlobalLoadingOverlay } from '@/components/LoadingStateManager'
 
 export const metadata = {
@@ -29,7 +28,6 @@ export default async function RootLayout({ children }) {
             <GlobalLoadingOverlay />
             <GlobalErrorHandler />
             <SessionManager />
-            <IntegrationTest />
             <ServiceWorkerRegistration 
               enabled={process.env.NODE_ENV === 'production'}
             />
