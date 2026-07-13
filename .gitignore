@@ -183,3 +183,7 @@ ds-bundle/
 .design-sync/.cache/
 .design-sync/learnings/
 .design-sync/node_modules
+
+# test/email artifacts
+backend/email-outbox/
+backend/uploads/general/

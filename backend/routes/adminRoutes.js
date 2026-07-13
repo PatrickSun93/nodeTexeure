@@ -14,6 +14,7 @@ const fs = require('fs');
 const bcrypt = require('bcryptjs');
 const { v4: uuidv4 } = require('uuid');
 const emailQueueProducer = require('../services/emailQueueProducer');
+const emailService = require('../services/emailService');
 
 // Multer setup (installed separately). Using disk storage inside backend/uploads
 let multer;
@@ -67,14 +68,22 @@ router.post('/products', staffOrAdmin, adminWriteLimiter, csrfProtection, async 
     const { variants, stock, ...productData } = req.body; // Extract non-DB columns
     const { sku, name, slug, description, short_description, category_id, base_price, product_details, meta_title, meta_description, meta_keywords } = productData;
 
+    // Validate required fields up front (category_id is NOT NULL with an FK) —
+    // otherwise MySQL rejects the INSERT and the client gets an opaque 500.
+    if (!name || base_price == null || !category_id) {
+      return res.status(400).json(ResponseFormatter.failure('name, base_price and category_id are required'));
+    }
+
     const idResult = await DatabaseUtil.executeQuery('SELECT get_next_id("PROD") as id');
     if (!idResult.success) throw new Error(idResult.error);
     const id = idResult.data[0].id;
     const created_by = req.user.id; // From auth middleware
 
+    // Coalesce optional fields to null — mysql2 rejects undefined bind parameters.
+    const safeSlug = slug || String(name).toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
     const insertResult = await DatabaseUtil.executeQuery(
       'INSERT INTO products (id, sku, name, slug, description, short_description, category_id, base_price, product_details, created_by, meta_title, meta_description, meta_keywords) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-      [id, sku, name, slug, description, short_description, category_id, base_price, JSON.stringify(product_details), created_by, meta_title, meta_description, meta_keywords]
+      [id, sku || null, name, safeSlug, description || null, short_description || null, category_id, base_price, JSON.stringify(product_details || {}), created_by, meta_title || null, meta_description || null, meta_keywords || null]
     );
     if (!insertResult.success) throw new Error(insertResult.error);
 
@@ -107,6 +116,9 @@ router.post('/products', staffOrAdmin, adminWriteLimiter, csrfProtection, async 
     res.status(201).json(ResponseFormatter.success('Product added successfully', [{ id }]));
   } catch (error) {
     console.error(error);
+    if (error.message && error.message.includes('Duplicate entry')) {
+      return res.status(409).json(ResponseFormatter.failure('A product with this SKU or slug already exists'));
+    }
     res.status(500).json(ResponseFormatter.failure('Server error', { error: error.message }));
   }
 });
@@ -310,6 +322,9 @@ router.post('/coupons', admin, adminWriteLimiter, csrfProtection, async (req, re
     res.status(201).json(ResponseFormatter.success('Coupon added successfully', [{ id }]));
   } catch (error) {
     console.error(error);
+    if (error.message && error.message.includes('Duplicate entry')) {
+      return res.status(409).json(ResponseFormatter.failure('A coupon with this code already exists'));
+    }
     res.status(500).json(ResponseFormatter.failure('Server error', { error: error.message }));
   }
 });
@@ -888,8 +903,11 @@ router.put('/orders/:id/status', staffOrAdmin, adminWriteLimiter, csrfProtection
       [historyId, id, normalizedStatus, statusDetails, req.user.id]
     );
 
-    // Look up customer email and enqueue status notification
-    const [order] = await DatabaseUtil.executeQuery(
+    // Look up customer email and enqueue status notification.
+    // executeQuery returns a { success, data } wrapper (not a rows array), so
+    // normalize before indexing — array-destructuring the wrapper throws
+    // ("is not iterable") and 500s the whole status update.
+    const orderRes = await DatabaseUtil.executeQuery(
       `SELECT o.order_number, o.guest_email, u.email as user_email,
               COALESCE(u.first_name, 'Valued Customer') as customer_name,
               o.tracking_number
@@ -897,10 +915,25 @@ router.put('/orders/:id/status', staffOrAdmin, adminWriteLimiter, csrfProtection
        WHERE o.id = ?`,
       [id]
     );
+    const order = (Array.isArray(orderRes) ? orderRes : (orderRes && orderRes.data) || [])[0];
 
     if (order) {
       const customerEmail = order.user_email || order.guest_email;
       if (customerEmail) {
+        // For "shipped", send a direct shipping notification — reliable inline HTML
+        // captured by the dev email sink (the queue path below needs a DB template + daemon).
+        if (normalizedStatus === 'shipped') {
+          emailService.sendShippingNotification(
+            {
+              order_number: order.order_number,
+              guest_email: order.guest_email,
+              user_email: order.user_email,
+              customer_name: order.customer_name,
+            },
+            order.tracking_number || ('TRK' + Date.now()),
+            'FedEx'
+          ).catch((err) => console.error('Non-fatal: shipping email failed:', err.message));
+        }
         // Map status to template name
         const templateMap = {
           confirmed: 'order_confirmed',

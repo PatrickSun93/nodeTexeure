@@ -171,6 +171,9 @@ router.post('/apply-coupon', protectOptional, async (req, res) => {
     } else if (coupon.type === 'fixed_amount') {
       discountAmount = coupon.value;
     }
+    // Never discount below zero or beyond what's actually in the cart — an
+    // oversized fixed_amount coupon must not produce a negative total.
+    discountAmount = Math.max(0, Math.min(discountAmount, subtotal));
 
     res.json(ResponseFormatter.success('Coupon applied', { discount: discountAmount }));
   } catch (error) {
@@ -223,12 +226,14 @@ router.post('/create', protectOptional, async (req, res) => {
     });
 
     let discountAmount = 0;
+    let appliedCoupon = null; // coupon row (id, usage_limit) for usage accounting inside the order transaction
     if (couponCode) {
       const validation = await validateCoupon(couponCode, subtotal);
       if (!validation.valid) {
         return res.status(400).json(ResponseFormatter.failure(validation.message));
       }
       const coupon = validation.coupon;
+      appliedCoupon = coupon;
       if (coupon.type === 'percentage') {
         discountAmount = subtotal * (coupon.value / 100);
         if (coupon.maximum_discount_amount && discountAmount > coupon.maximum_discount_amount) {
@@ -237,6 +242,9 @@ router.post('/create', protectOptional, async (req, res) => {
       } else if (coupon.type === 'fixed_amount') {
         discountAmount = coupon.value;
       }
+      // Never discount below zero or beyond what's actually in the cart — an
+      // oversized fixed_amount coupon must not produce a negative total.
+      discountAmount = Math.max(0, Math.min(discountAmount, subtotal));
     }
 
     // Calculate tax from tax_rates table (falls back to default)
@@ -258,7 +266,9 @@ router.post('/create', protectOptional, async (req, res) => {
       shippingAmount = 0;
     }
 
-    const totalAmount = subtotal + taxAmount + shippingAmount - discountAmount;
+    // Discount is already clamped to the subtotal above; the Math.max floor is a
+    // hard guarantee that a stored order total can never go negative.
+    const totalAmount = Math.max(0, subtotal + taxAmount + shippingAmount - discountAmount);
 
     // Generate a non-sequential, unguessable order number (see generateOrderNumber).
     const orderNumber = await generateOrderNumber();
@@ -290,6 +300,26 @@ router.post('/create', protectOptional, async (req, res) => {
          VALUES (?, ?, ?, ?, 'pending', ?, ?, ?, ?, ?, ?, ?)`,
         [orderId, orderNumber, userId, guestEmail, subtotal, taxAmount, shippingAmount, discountAmount, totalAmount, JSON.stringify(shippingAddress), JSON.stringify(billingAddress)]
       );
+
+      // Record the coupon redemption atomically with the order. The WHERE guard
+      // only increments while under usage_limit (a NULL limit always passes, so
+      // unlimited coupons still count redemptions for reporting); this single
+      // atomic UPDATE stops two concurrent checkouts from both taking the last use.
+      if (appliedCoupon) {
+        const [couponUpdate] = await connection.execute(
+          `UPDATE discount_codes
+              SET usage_count = usage_count + 1
+            WHERE id = ? AND (usage_limit IS NULL OR usage_count < usage_limit)`,
+          [appliedCoupon.id]
+        );
+        if (couponUpdate.affectedRows === 0) {
+          await connection.rollback();
+          return res.status(409).json(ResponseFormatter.failure('Coupon usage limit reached'));
+        }
+        // TODO: usage_limit_per_customer cannot be enforced yet — orders do not
+        // record the coupon code, so per-customer counts need a schema change
+        // (store the applied coupon on the order first).
+      }
 
       // Create order items
       for (const item of cartItems) {
