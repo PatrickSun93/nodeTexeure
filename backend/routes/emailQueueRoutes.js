@@ -191,8 +191,9 @@ router.get('/', protect, admin, adminReadLimiter, async (req, res) => {
     const offset = Math.max(parseInt(req.query.offset, 10) || 0, 0);
 
     const where = hasFilter ? 'WHERE eq.status = ?' : '';
-    const params = hasFilter ? [dbStatus, limit, offset] : [limit, offset];
-
+    const params = hasFilter ? [dbStatus] : [];
+    // LIMIT/OFFSET are inlined from the sanitized integers above — mysql2 rejects
+    // bound params for LIMIT/OFFSET ("Incorrect arguments to mysqld_stmt_execute").
     const listRes = await DatabaseUtil.executeQuery(
       `SELECT eq.id, eq.to_email, eq.to_name, eq.subject, eq.template_id,
               eq.status, eq.attempts, eq.max_attempts, eq.scheduled_at,
@@ -202,7 +203,7 @@ router.get('/', protect, admin, adminReadLimiter, async (req, res) => {
          LEFT JOIN email_templates t ON eq.template_id = t.id
          ${where}
          ORDER BY eq.created_at DESC
-         LIMIT ? OFFSET ?`,
+         LIMIT ${limit} OFFSET ${offset}`,
       params
     );
 

@@ -577,10 +577,14 @@ CREATE TABLE email_templates (
     name VARCHAR(100) NOT NULL UNIQUE,
     subject VARCHAR(255) NOT NULL,
     template_content JSON NOT NULL COMMENT 'Contains: html_content, text_content, variables, styling, attachments, metadata',
+    category VARCHAR(100) NULL,
+    type VARCHAR(50) NULL,
+    status VARCHAR(50) NOT NULL DEFAULT 'Draft',
+    preheader VARCHAR(255) NULL,
     is_active BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    
+
     INDEX idx_name (name),
     INDEX idx_active (is_active)
 );
