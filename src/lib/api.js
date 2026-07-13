@@ -58,6 +58,23 @@ export const apiRequest = async (endpoint, options = {}) => {
       ...(customHeaders || {}),
     };
 
+    // Attach the logged-in customer's NextAuth token when the caller didn't set one,
+    // so cart/order/etc. calls operate on the USER's cart instead of a separate
+    // guest-session cart. Without this, a logged-in customer adds to a guest cart but
+    // checkout (which sends the token) reads their empty user cart — so they can never
+    // check out.
+    if (!headers.Authorization && typeof window !== 'undefined') {
+      try {
+        const { getSession } = await import('next-auth/react');
+        const session = await getSession();
+        if (session?.accessToken) {
+          headers.Authorization = `Bearer ${session.accessToken}`;
+        }
+      } catch {
+        /* not logged in / session unavailable — proceed as guest */
+      }
+    }
+
     // First try via Next.js proxy
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {
       ...rest,

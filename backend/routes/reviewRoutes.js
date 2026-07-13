@@ -96,10 +96,20 @@ router.get('/product/:productId', async (req, res) => {
 });
 
 /**
+ * Customer review write routes (create/update/delete below) authenticate via a
+ * Bearer token (`protect`), so they deliberately do NOT use `csrfProtection`:
+ * CSRF forgery relies on the browser auto-attaching credentials (cookies), and a
+ * cross-site attacker cannot read or attach a victim's Bearer token. Customers
+ * also have no way to obtain a CSRF token (the issuer endpoint is admin-only).
+ * The admin moderation routes below keep `csrfProtection` because they accept
+ * the `admin_auth` cookie.
+ */
+
+/**
  * POST /api/reviews/create
  * Create a new product review (requires authentication)
  */
-router.post('/create', protect, csrfProtection, async (req, res) => {
+router.post('/create', protect, async (req, res) => {
     try {
         const { product_id, rating, title, review_text } = req.body;
         const user_id = req.user.id;
@@ -163,7 +173,7 @@ router.post('/create', protect, csrfProtection, async (req, res) => {
  * PUT /api/reviews/:id
  * Update user's own review
  */
-router.put('/:id', protect, csrfProtection, async (req, res) => {
+router.put('/:id', protect, async (req, res) => {
     try {
         const { id } = req.params;
         const { rating, title, review_text } = req.body;
@@ -202,7 +212,7 @@ router.put('/:id', protect, csrfProtection, async (req, res) => {
  * DELETE /api/reviews/:id
  * Delete review (user's own or admin)
  */
-router.delete('/:id', protect, csrfProtection, async (req, res) => {
+router.delete('/:id', protect, async (req, res) => {
     try {
         const { id } = req.params;
         const user_id = req.user.id;

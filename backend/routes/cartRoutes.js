@@ -92,7 +92,17 @@ router.get('/', protectOptional, async (req, res) => {
 // POST /api/cart/add - Add item to cart
 router.post('/add', protectOptional, async (req, res) => {
   try {
-    const { product_id, variant_id, quantity = 1 } = req.body;
+    const { product_id, variant_id } = req.body;
+
+    // Validate quantity: must be a positive integer (capped to prevent abuse)
+    const quantity = Number.parseInt(req.body.quantity ?? 1, 10);
+    if (!Number.isInteger(quantity) || quantity < 1) {
+      return res.status(400).json(ResponseFormatter.failure('Quantity must be a positive integer'));
+    }
+    if (quantity > 999) {
+      return res.status(400).json(ResponseFormatter.failure('Quantity cannot exceed 999'));
+    }
+
     const cartId = await getOrCreateCart(req, res);
     
     // Check inventory availability
@@ -173,9 +183,13 @@ router.post('/add', protectOptional, async (req, res) => {
 // PUT /api/cart/update/:itemId - Update item quantity
 router.put('/update/:itemId', protectOptional, async (req, res) => {
   try {
-    const { quantity } = req.body;
-    if (quantity <= 0) {
-      return res.status(400).json(ResponseFormatter.failure('Quantity must be positive'));
+    // Validate quantity: must be a positive integer (to remove an item, use DELETE /remove)
+    const quantity = Number.parseInt(req.body.quantity, 10);
+    if (!Number.isInteger(quantity) || quantity < 1) {
+      return res.status(400).json(ResponseFormatter.failure('Quantity must be a positive integer'));
+    }
+    if (quantity > 999) {
+      return res.status(400).json(ResponseFormatter.failure('Quantity cannot exceed 999'));
     }
     
     const cartId = await getOrCreateCart(req, res);

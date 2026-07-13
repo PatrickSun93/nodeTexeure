@@ -49,7 +49,25 @@ async function sendEmail(to, subject, htmlBody, textBody = '') {
     console.log(`   To: ${recipients.join(', ')}`);
     console.log(`   Subject: ${subject}`);
     console.log(`   Body preview: ${textBody || htmlBody.substring(0, 200)}...`);
-    return { messageId: 'local-log-' + Date.now(), logged: true };
+    // Dev sink: persist the full email as an HTML file so it can be reviewed
+    // (e.g. by the Playwright test harness). Only active when SES is unconfigured.
+    try {
+      const fs = require('fs');
+      const path = require('path');
+      const outDir = path.join(__dirname, '..', 'email-outbox');
+      fs.mkdirSync(outDir, { recursive: true });
+      const slug = (s) => String(s || '').replace(/[^a-zA-Z0-9]+/g, '_').slice(0, 40);
+      const fileName = `${Date.now()}_${slug(recipients[0])}_${slug(subject)}.html`;
+      const doc = `<!doctype html><html><head><meta charset="utf-8"><title>${subject}</title></head>`
+        + `<body style="margin:0"><div style="font:13px/1.5 system-ui,sans-serif;padding:12px 16px;background:#2A2621;color:#F3EBDD">`
+        + `<div><b>To:</b> ${recipients.join(', ')}</div><div><b>Subject:</b> ${subject}</div></div>`
+        + `<div style="padding:16px">${htmlBody || '<pre>' + (textBody || '') + '</pre>'}</div></body></html>`;
+      fs.writeFileSync(path.join(outDir, fileName), doc);
+      console.log(`   💾 Saved: email-outbox/${fileName}`);
+    } catch (e) {
+      console.warn('   (email-outbox write failed:', e.message, ')');
+    }
+    return { messageId: 'local-log-' + Date.now(), logged: true, savedHtml: true };
   }
 
   const params = {
@@ -77,6 +95,17 @@ async function sendEmail(to, subject, htmlBody, textBody = '') {
 }
 
 /**
+ * Known caller-slug → stored template `name` mismatches. Callers pass
+ * hyphenated slugs; the seeded `email_templates.name` values are
+ * 'order_confirmation', 'order_shipped' and 'abandoned_cart_1'.
+ * Hyphen→underscore normalization covers most, but 'shipping-notification'
+ * maps to a differently-named template. Extend here if new ones diverge.
+ */
+const TEMPLATE_NAME_ALIASES = {
+  'shipping-notification': 'order_shipped',
+};
+
+/**
  * Send a templated email by loading template from the database
  * @param {string|string[]} to - Recipient email(s)
  * @param {string} templateSlug - Template slug (e.g. 'order-confirmation')
@@ -84,21 +113,49 @@ async function sendEmail(to, subject, htmlBody, textBody = '') {
  */
 async function sendTemplatedEmail(to, templateSlug, variables = {}) {
   try {
-    // Load template from database
-    const [template] = await db.executeQuery(
-      'SELECT * FROM email_templates WHERE slug = ? AND is_active = 1',
-      [templateSlug]
+    // Load template from database. The table has no `slug` column — match on
+    // `name`, accepting the raw slug, its underscore form (seeded names use
+    // underscores, e.g. 'order_confirmation'), a known alias, or a display
+    // name normalized to snake_case (e.g. 'Order Confirmation').
+    const underscored = String(templateSlug).replace(/-/g, '_').toLowerCase();
+    const aliased = TEMPLATE_NAME_ALIASES[templateSlug] || underscored;
+    const result = await db.executeQuery(
+      `SELECT * FROM email_templates
+        WHERE (name = ? OR name = ? OR name = ? OR LOWER(REPLACE(name, ' ', '_')) IN (?, ?))
+          AND is_active = 1
+        LIMIT 1`,
+      [templateSlug, underscored, aliased, underscored, aliased]
     );
+    if (result && result.success === false) {
+      throw new Error(result.error || 'email_templates lookup failed');
+    }
+    const rows = Array.isArray(result) ? result : (result && result.data) || [];
+    const template = rows[0];
 
     if (!template) {
-      console.warn(`⚠️  Email template '${templateSlug}' not found. Skipping send.`);
-      return null;
+      // Throw (rather than return null) so callers' inline-HTML fallback
+      // still sends the email when no DB template matches (e.g. 'password-reset').
+      console.warn(`⚠️  Email template '${templateSlug}' not found. Falling back to inline HTML.`);
+      throw new Error(`Email template '${templateSlug}' not found`);
     }
 
+    // Content lives in the `template_content` JSON column
+    // ({ html_content, text_content, variables }). mysql2 usually returns it
+    // pre-parsed; handle a raw JSON string too, then fall back to legacy fields.
+    let content = template.template_content;
+    if (typeof content === 'string') {
+      try {
+        content = JSON.parse(content);
+      } catch {
+        content = { html_content: content };
+      }
+    }
+    content = content && typeof content === 'object' ? content : {};
+
     // Interpolate variables in subject and body
-    let subject = template.subject;
-    let htmlBody = template.html_content || template.body || '';
-    let textBody = template.text_content || '';
+    let subject = template.subject || '';
+    let htmlBody = content.html_content || content.html || template.html_content || template.body || '';
+    let textBody = content.text_content || content.text || template.text_content || '';
 
     Object.entries(variables).forEach(([key, value]) => {
       const regex = new RegExp(`{{\\s*${key}\\s*}}`, 'g');

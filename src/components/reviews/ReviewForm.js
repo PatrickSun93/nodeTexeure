@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
+import { apiRequest } from '../../lib/api';
 import RatingStars from './RatingStars';
 
 /**
@@ -41,13 +42,11 @@ export default function ReviewForm({ productId, onSuccess, onCancel }) {
         setIsSubmitting(true);
 
         try {
-            const response = await fetch('/api/reviews/create', {
+            // apiRequest auto-attaches the logged-in customer's NextAuth token
+            // (session.accessToken) as the Bearer Authorization header — customers
+            // do not keep a token in localStorage.
+            const data = await apiRequest('/reviews/create', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    // Add auth token from session/cookie
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`
-                },
                 credentials: 'include',
                 body: JSON.stringify({
                     product_id: productId,
@@ -55,18 +54,18 @@ export default function ReviewForm({ productId, onSuccess, onCancel }) {
                 })
             });
 
-            const data = await response.json();
-
-            if (data.status === 'SUCCESS') {
-                if (onSuccess) onSuccess(data);
-                // Reset form
-                setFormData({ rating: 0, title: '', review_text: '' });
-            } else {
-                setError(data.message || t('errorSubmitFailed'));
-            }
+            if (onSuccess) onSuccess(data);
+            // Reset form
+            setFormData({ rating: 0, title: '', review_text: '' });
         } catch (err) {
             console.error('Error submitting review:', err);
-            setError(t('networkError'));
+            // apiRequest throws with the backend's message on FAIL responses;
+            // a TypeError means the request itself never reached the server.
+            setError(
+                err instanceof TypeError
+                    ? t('networkError')
+                    : err.message || t('errorSubmitFailed')
+            );
         } finally {
             setIsSubmitting(false);
         }
