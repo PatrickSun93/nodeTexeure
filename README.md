@@ -20,8 +20,48 @@ direction: **"Champagne & Charcoal"** (warm, editorial, with a light + dark them
 | **Admin dashboard** | `admin-dashboard/` | Next.js 14, React 18 | 3005 |
 
 The frontend never touches the DB directly — it proxies `/api/*` to the backend.
-The DB (MySQL 8.0) is seeded with **real example data** (orders, reviews, product
-images) — no mock data.
+The DB (MySQL 8.0, ~42 tables) is seeded with **real example data** (orders, reviews,
+product images, journal articles) — no mock data.
+
+---
+
+## Features
+
+### Storefront (`:3000`)
+- **Browse** — shop with filters, product detail with variants, collections, new
+  arrivals, and search.
+- **Cart & checkout** — multi-step checkout, coupon codes, tax + shipping, and an
+  order-confirmation page. (Logged-in and guest carts both supported.)
+- **Account** — register / sign in, profile + saved addresses, order history +
+  order tracking, wishlist, and returns.
+- **Reviews** — read and submit star-rated product reviews.
+- **Content** — Journal (editorial blog, DB-backed with article pages), About,
+  Contact, FAQ, Shipping & Returns, Terms, and an email **Unsubscribe** landing.
+- **4 languages + dark mode** (see below).
+
+### Admin dashboard (`:3005`)
+- **Dashboard & analytics** — KPI tiles plus revenue trends vs. target, day-of-week
+  share, best/worst sellers, a conversion funnel, new-vs-returning revenue, and
+  "revenue drivers" shortfall analysis.
+- **Orders** — list, detail, status updates (which email the customer), and refunds.
+- **Products** — create / edit with variants and inventory, plus bulk upload.
+- **Promotions** — coupon CRUD (percentage / fixed / free-shipping) with minimum
+  order, usage limits, and expiry.
+- **Reviews moderation** — approve / reject queue.
+- **Email** — template editor and a queue monitor (queued / sent / failed counts,
+  retry).
+- **Customers**, **Staff & roles**, and **Settings**.
+
+### Backend (`:6666`)
+- REST API for everything above; **JWT + `admin_auth` cookie** auth, **CSRF** on
+  admin writes, rate limiting, and prepared statements throughout.
+- **Coupons** with minimum-order and usage-limit enforcement and discounts clamped
+  to the subtotal (no negative totals).
+- **Transactional emails** — order confirmation, shipping notification, welcome,
+  password reset — via AWS SES, with a console/HTML fallback when SES isn't
+  configured, plus a DB-backed email queue.
+- **Inventory** with atomic stock decrement; **returns**; **Stripe** payments and
+  **FedEx** shipping (both degrade gracefully to sensible defaults without keys).
 
 ---
 
@@ -84,6 +124,10 @@ npm run smoke    # health-check the running stack
 npm run db:reset # drop + recreate schema (dev only)
 ```
 
+New DB columns/tables ship as ordered migrations under
+[`database/migrations/`](database/migrations/) (applied automatically on a fresh
+Docker volume via `docker/mysql/init.sql`; run them manually against an existing DB).
+
 ---
 
 ## The design — Champagne & Charcoal
@@ -110,10 +154,26 @@ Browser ─► Storefront (Next.js, :3000)
 
 - **API proxy:** the browser only talks to `:3000`; the backend port `6666` is a
   browser-blocked port, so all API access goes through the proxy.
-- **Auth:** JWT + an `admin_auth` cookie; three middleware levels; admin writes
-  require a CSRF token.
+- **Auth:** JWT + an `admin_auth` cookie; three middleware levels (`protect`,
+  `admin`, `protectOptional`); admin writes require a CSRF token. Customer/customer
+  and admin auth flows are separate.
 - **IDs:** human-readable prefixed IDs (`PROD0000000001`) via a `get_next_id` SQL
   function.
+
+---
+
+## Testing & quality
+
+- **`npm run test`** — ESLint + production `next build` (the CI gate).
+- **`npm run smoke`** — checks the running stack (storefront pages + backend via
+  the proxy).
+- **End-to-end** — the customer purchase flow, coupon/abuse cases, admin
+  operations, and email delivery have been validated headless against the running
+  stack with Playwright.
+- **Security posture verified** — privilege escalation, IDOR, SQL injection, JWT
+  forgery (incl. `alg:none`), missing-CSRF, and upload path-traversal are all
+  blocked. New admin routes go under `protect, admin` (+ CSRF for writes) to keep
+  it that way.
 
 ---
 
@@ -138,4 +198,5 @@ blocked-port. Use the storefront proxy (`:3000/api/*`).
 
 **Port already in use** — `lsof -ti:3000 | xargs kill -9` (or `:6666`, `:3005`).
 
-**Stale build** — `npm run clean`.
+**Admin page renders but won't respond** — hard-refresh once; a stale dev service
+worker can serve outdated chunks. **Stale build** — `npm run clean`.
