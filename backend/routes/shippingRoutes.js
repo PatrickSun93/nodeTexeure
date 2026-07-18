@@ -73,7 +73,7 @@ router.post('/create-label', protect, admin, async (req, res) => {
     }
 
     // Fetch order details
-    const [order] = await db.executeQuery('SELECT * FROM orders WHERE id = ?', [orderId]);
+    const order = db.first(await db.executeQuery('SELECT * FROM orders WHERE id = ?', [orderId]));
     if (!order) {
       return res.status(404).json(ResponseFormatter.failure('Order not found'));
     }

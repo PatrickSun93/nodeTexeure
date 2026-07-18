@@ -183,7 +183,7 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
         const orderId = session.metadata.orderId;
         if (orderId) {
           // Verify payment amount matches order total
-          const [order] = await db.executeQuery('SELECT total_amount FROM orders WHERE id = ?', [orderId]);
+          const order = db.first(await db.executeQuery('SELECT total_amount FROM orders WHERE id = ?', [orderId]));
           if (order) {
             const paidCents = session.amount_total; // Stripe amount in cents
             const expectedCents = Math.round(parseFloat(order.total_amount) * 100);
@@ -206,7 +206,7 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
         const orderId = paymentIntent.metadata.orderId;
         if (orderId) {
           // Verify payment amount matches order total
-          const [order] = await db.executeQuery('SELECT total_amount FROM orders WHERE id = ?', [orderId]);
+          const order = db.first(await db.executeQuery('SELECT total_amount FROM orders WHERE id = ?', [orderId]));
           if (order) {
             const paidCents = paymentIntent.amount_received; // Stripe amount in cents
             const expectedCents = Math.round(parseFloat(order.total_amount) * 100);
@@ -227,10 +227,10 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
       case 'charge.refunded': {
         const charge = event.data.object;
         // Find order by payment intent
-        const [order] = await db.executeQuery(
+        const order = db.first(await db.executeQuery(
           'SELECT id FROM orders WHERE stripe_payment_intent_id = ?',
           [charge.payment_intent]
-        );
+        ));
         if (order) {
           await db.executeQuery(
             "UPDATE orders SET status = 'refunded', payment_status = 'refunded' WHERE id = ?",
@@ -269,7 +269,7 @@ router.post('/refund', protect, admin, csrfProtection, async (req, res) => {
       return res.status(503).json(ResponseFormatter.failure('Payment service is not configured'));
     }
 
-    const [order] = await db.executeQuery('SELECT * FROM orders WHERE id = ?', [orderId]);
+    const order = db.first(await db.executeQuery('SELECT * FROM orders WHERE id = ?', [orderId]));
     if (!order) {
       return res.status(404).json(ResponseFormatter.failure('Order not found'));
     }

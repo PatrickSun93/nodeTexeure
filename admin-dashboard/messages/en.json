@@ -188,7 +188,24 @@
     "staffLoadFailed": "Failed to load staff",
     "staffLoadError": "Error loading staff.",
     "navReviews": "Reviews",
-    "navEmailQueue": "Email Queue"
+    "navEmailQueue": "Email Queue",
+    "bulkSelected": "{count} selected",
+    "bulkChooseStatus": "Choose status…",
+    "bulkApply": "Apply",
+    "bulkUpdating": "Updating…",
+    "bulkClear": "Clear selection",
+    "bulkSelectStatusFirst": "Please choose a status first.",
+    "bulkOrdersUpdated": "Updated {count} order(s).",
+    "bulkOrdersUpdateFailed": "Failed to update orders.",
+    "bulkDelete": "Delete",
+    "bulkDeleting": "Deleting…",
+    "bulkConfirmDeleteProducts": "Delete {count} selected product(s)? This cannot be undone.",
+    "bulkProductsDeleted": "Deleted {count} product(s).",
+    "bulkProductsDeleteFailed": "Failed to delete products.",
+    "confirmDeleteProduct": "Delete this product? This action cannot be undone.",
+    "deleteProductError": "Failed to delete product.",
+    "selectRow": "Select row",
+    "selectAll": "Select all"
   },
   "Products": {
     "title": "Product Management",
@@ -1463,7 +1480,8 @@
     "testDataLabel": "Test Data (JSON)",
     "testDataPlaceholder": "'{'\"customer_name\": \"John Doe\", \"order_number\": \"ORD001\"'}'",
     "sending": "Sending...",
-    "sendTest": "Send Test"
+    "sendTest": "Send Test",
+    "confirmDeleteNamed": "Delete the \"{name}\" template? This cannot be undone."
   },
   "Users": {
     "title": "User Management",
@@ -1937,7 +1955,28 @@
     "savedSuccess": "Settings saved successfully",
     "saveFailed": "Failed to save settings",
     "saveError": "Error saving settings",
-    "loadingSettings": "Loading settings..."
+    "loadingSettings": "Loading settings...",
+    "gatewayUpdateFailed": "Failed to update payment gateway.",
+    "configureUnavailable": "Gateway configuration is not available yet.",
+    "status": "Status",
+    "zoneStatusActive": "Active",
+    "zoneStatusInactive": "Inactive",
+    "noZonesConfigured": "No shipping zones configured.",
+    "editZone": "Edit zone",
+    "deleteZone": "Delete zone",
+    "confirmDeleteZone": "Delete the \"{name}\" zone? This cannot be undone.",
+    "zoneSaveFailed": "Failed to save shipping zone.",
+    "zoneDeleteFailed": "Failed to delete shipping zone.",
+    "addZoneTitle": "Add Shipping Zone",
+    "editZoneTitle": "Edit Shipping Zone",
+    "zoneNamePlaceholder": "e.g., Domestic (US)",
+    "countriesLabel": "Countries",
+    "countriesPlaceholder": "US, CA, MX",
+    "countriesHelp": "Separate country codes with commas.",
+    "zoneActiveLabel": "Active (available at checkout)",
+    "cancel": "Cancel",
+    "save": "Save",
+    "zoneNameRequired": "Zone name is required."
   },
   "OrderDetailView": {
     "orderTitle": "Order {orderNumber}",
@@ -2011,7 +2050,17 @@
     "columnStatus": "Status",
     "loadingOrders": "Loading orders...",
     "noOrdersFound": "No orders found for this customer.",
-    "of": "of"
+    "of": "of",
+    "missingCustomerId": "Cannot save: missing customer ID.",
+    "customerUpdated": "Customer updated.",
+    "updateFailed": "Failed to update customer.",
+    "saving": "Saving…",
+    "addresses": "Addresses",
+    "addressTypeLabel": "{type} Address",
+    "addressLabelFallback": "Address",
+    "defaultBadge": "Default",
+    "addressPhone": "Phone: {phone}",
+    "noAddressOnFile": "No address on file."
   },
   "AnalyticsDashboard": {
     "title": "Analytics Dashboard",
@@ -2246,5 +2295,19 @@
     "retry": "Retry",
     "retrying": "Retrying…",
     "footerNote": "Showing the {count} most recent jobs. Failed jobs auto-retry up to their attempt limit before pausing."
+  },
+  "AddCustomerModal": {
+    "title": "Add New Customer",
+    "close": "Close",
+    "firstName": "First Name",
+    "lastName": "Last Name",
+    "email": "Email",
+    "phoneOptional": "Phone (optional)",
+    "temporaryPassword": "Temporary Password",
+    "cancel": "Cancel",
+    "creating": "Creating…",
+    "createCustomer": "Create Customer",
+    "requiredFields": "First name, last name, email, and a temporary password are required.",
+    "createFailed": "Failed to create customer."
   }
 }

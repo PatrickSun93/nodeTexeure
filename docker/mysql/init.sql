@@ -1115,6 +1115,12 @@ INSERT IGNORE INTO transno (prefix, count, details) VALUES ('RMAITEM', 0, 'Retur
 INSERT IGNORE INTO transno (prefix, count, details) VALUES ('CARTITEM', 0, 'Cart item ID counter');
 INSERT IGNORE INTO transno (prefix, count, details) VALUES ('INVMOV', 0, 'Inventory movement ID counter');
 
+-- Product variant + inventory ID prefixes. The admin "create product variant" path
+-- (adminRoutes.js) generates these IDs via get_next_id('VAR') / get_next_id('INV');
+-- without these rows get_next_id() returns NULL and the variant/inventory inserts fail.
+INSERT IGNORE INTO transno (prefix, count, details) VALUES ('VAR', 0, 'Product variant ID counter');
+INSERT IGNORE INTO transno (prefix, count, details) VALUES ('INV', 0, 'Inventory ID counter');
+
 -- Localized product content (see database/migrations/003_product_translations.sql).
 CREATE TABLE IF NOT EXISTS product_translations (
   product_id VARCHAR(50) NOT NULL,
@@ -1166,3 +1172,29 @@ CREATE TABLE IF NOT EXISTS email_unsubscribes (
   INDEX idx_email_unsub_email (email)
 );
 INSERT IGNORE INTO transno (prefix, count, details) VALUES ('UNSB', 0, 'Email unsubscribe / suppression ID counter');
+
+-- Migration 007: review_helpful_votes (one vote per user+review) — backs
+-- POST /api/reviews/:id/helpful. The aggregate tally lives in
+-- product_reviews.review_details ($.helpful_count); this table is the dedup
+-- identity. See database/migrations/007_review_helpful_votes.sql.
+CREATE TABLE IF NOT EXISTS review_helpful_votes (
+  user_id    VARCHAR(50) NOT NULL,
+  review_id  VARCHAR(50) NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (user_id, review_id),
+  FOREIGN KEY (user_id)   REFERENCES users(id)           ON DELETE CASCADE,
+  FOREIGN KEY (review_id) REFERENCES product_reviews(id) ON DELETE CASCADE,
+  INDEX idx_review_id (review_id)
+);
+
+-- Migration 008: newsletter_subscribers — backs the storefront newsletter signup
+-- (POST /api/newsletter/subscribe). Idempotent via UNIQUE(email). See
+-- database/migrations/008_newsletter_subscribers.sql.
+CREATE TABLE IF NOT EXISTS newsletter_subscribers (
+  id          BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  email       VARCHAR(255) NOT NULL,
+  status      VARCHAR(32)  NOT NULL DEFAULT 'subscribed',
+  created_at  TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY uq_newsletter_email (email),
+  INDEX idx_newsletter_email (email)
+);

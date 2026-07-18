@@ -15,17 +15,18 @@ export default function CartRecovery() {
 
   useEffect(() => {
     const recoveryToken = searchParams.get('recovery');
-    const cartId = searchParams.get('cart');
 
-    if (recoveryToken && cartId) {
-      handleCartRecovery(recoveryToken, cartId);
+    // The backend recovery endpoint is authorized by the token alone (the
+    // recovery link is /checkout?recovery=<token>), so only the token is required.
+    if (recoveryToken) {
+      handleCartRecovery(recoveryToken);
     } else {
       setRecoveryStatus('error');
       setMessage('Invalid recovery link. Please check your email and try again.');
     }
   }, [searchParams]);
 
-  const handleCartRecovery = async (recoveryToken, cartId) => {
+  const handleCartRecovery = async (recoveryToken) => {
     try {
       setRecoveryStatus('processing');
       setMessage('Restoring your cart...');

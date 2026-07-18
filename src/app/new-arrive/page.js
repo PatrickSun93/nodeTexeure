@@ -265,7 +265,7 @@ export default function NewArrivePage() {
             <div className="aesop-feature-card">
               <h3 className="aesop-feature-title">{t('recommendedReadingTitle')}</h3>
               <p className="aesop-feature-description">{t('recommendedReadingDesc')}</p>
-              <Link href="/blog" className="aesop-button-secondary">{t('readArticles')}</Link>
+              <Link href="/journal" className="aesop-button-secondary">{t('readArticles')}</Link>
             </div>
           </div>
         </div>

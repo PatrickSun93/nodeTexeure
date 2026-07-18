@@ -905,7 +905,7 @@ class InventoryService {
         reorder_quantity: inventoryItem.reorder_quantity
       };
       
-      for (const admin of adminResult.data) {
+      for (const admin of staffResult.data) {
         const insertQuery = `
           INSERT INTO email_queue 
           (id, to_email, to_name, subject, email_content, template_data, status)

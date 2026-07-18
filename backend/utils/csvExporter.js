@@ -7,6 +7,27 @@ const Papa = require('papaparse');
 
 class CSVExporter {
     /**
+     * Neutralize CSV formula injection ("CSV injection"). A cell whose text
+     * begins with =, +, -, @, or a leading tab / carriage return can be
+     * executed as a formula by Excel / Google Sheets / LibreOffice when the
+     * exported file is opened. Prefixing such a value with a single quote forces
+     * the spreadsheet to treat it as literal text. Non-string values (numbers,
+     * booleans, null) are returned unchanged.
+     * @param {*} value - raw cell value
+     * @returns {*} sanitized value
+     */
+    static sanitizeCell(value) {
+        if (typeof value !== 'string' || value.length === 0) {
+            return value;
+        }
+        // eslint-disable-next-line no-control-regex
+        if (/^[=+\-@\t\r]/.test(value)) {
+            return `'${value}`;
+        }
+        return value;
+    }
+
+    /**
      * Export data to CSV string
      * @param {Array} data - Array of objects to export
      * @param {Array} fields - Fields to include (optional, defaults to all)
@@ -26,7 +47,23 @@ class CSVExporter {
             config.columns = fields;
         }
 
-        return Papa.unparse(data, config);
+        // Sanitize every exported cell value against formula injection. This is
+        // the single choke point all exportX() helpers funnel through, so every
+        // export (orders, products, customers, analytics) is covered.
+        const safeData = Array.isArray(data)
+            ? data.map((row) => {
+                if (!row || typeof row !== 'object') {
+                    return CSVExporter.sanitizeCell(row);
+                }
+                const clean = {};
+                for (const [key, val] of Object.entries(row)) {
+                    clean[key] = CSVExporter.sanitizeCell(val);
+                }
+                return clean;
+            })
+            : data;
+
+        return Papa.unparse(safeData, config);
     }
 
     /**

@@ -16,16 +16,16 @@ export async function GET() {
       }
     };
 
-    // Determine overall health status
-    const allChecksHealthy = Object.values(healthData.checks).every(
-      check => check.status === 'healthy'
-    );
+    // Determine overall health honestly:
+    //  - hard failure (unhealthy/error/timeout) => 503 "unhealthy"
+    //  - a non-measurable check (unknown/warning) => 200 "degraded" (surfaced, not faked)
+    //  - otherwise => 200 "healthy"
+    const checkStatuses = Object.values(healthData.checks).map(check => check.status);
+    const hasFailure = checkStatuses.some(s => ['unhealthy', 'error', 'timeout'].includes(s));
+    const hasDegraded = checkStatuses.some(s => ['unknown', 'warning'].includes(s));
+    healthData.status = hasFailure ? 'unhealthy' : (hasDegraded ? 'degraded' : 'healthy');
 
-    if (!allChecksHealthy) {
-      return NextResponse.json(healthData, { status: 503 });
-    }
-
-    return NextResponse.json(healthData, { status: 200 });
+    return NextResponse.json(healthData, { status: hasFailure ? 503 : 200 });
   } catch (error) {
     console.error('Health check failed:', error);
     
@@ -66,7 +66,8 @@ async function checkApiConnection() {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
 
-    const response = await fetch(`${apiUrl}/api/health`, {
+    // Hit the backend's canonical health route directly (/api/health 301-redirects here).
+    const response = await fetch(`${apiUrl}/api/status/health`, {
       signal: controller.signal,
       headers: {
         'User-Agent': 'Admin-Dashboard-Health-Check'
@@ -95,26 +96,17 @@ async function checkApiConnection() {
   }
 }
 
-// Check database connection (placeholder)
+// Check database connection.
+// The admin dashboard tier has NO direct database connection — MySQL is owned by the
+// backend API. We cannot truthfully assert DB health from here, so we report "unknown"
+// (surfaced as degraded, non-fatal) rather than a fabricated "healthy". The backend is
+// the source of truth for DB status (see backend /api/status/health).
 async function checkDatabaseConnection() {
-  try {
-    // This would typically check the database connection
-    // For now, we'll just return a healthy status
-    // In a real implementation, you would:
-    // 1. Import your database connection
-    // 2. Execute a simple query like SELECT 1
-    // 3. Return the result
-    
-    return {
-      status: 'healthy',
-      message: 'Database connection check not implemented'
-    };
-  } catch (error) {
-    return {
-      status: 'error',
-      error: error.message
-    };
-  }
+  return {
+    status: 'unknown',
+    measured: false,
+    message: 'Database is owned by the backend API and is not directly reachable from the admin dashboard; not checked here.'
+  };
 }
 
 // Handle other HTTP methods

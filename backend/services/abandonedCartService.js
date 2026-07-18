@@ -171,7 +171,7 @@ class AbandonedCartService {
           variant_details: item.variant_details
         })),
         totalAmount: parseFloat(cart_total).toFixed(2),
-        checkoutUrl: `${process.env.BASE_URL || 'http://localhost:3000'}/checkout?recovery=${recoveryToken}`,
+        checkoutUrl: `${process.env.BASE_URL || 'http://localhost:3000'}/cart-recovery?recovery=${recoveryToken}`,
         customerName: `${first_name || ''} ${last_name || ''}`.trim() || 'Customer',
         recoveryToken
       };
@@ -439,5 +439,15 @@ class AbandonedCartService {
     }
   }
 }
+
+// Shared singleton. The constructor starts background intervals (abandoned-cart
+// detection + an EmailQueueService processor), so route modules should reuse one
+// instance via getShared() instead of each calling `new AbandonedCartService()`
+// and multiplying those intervals.
+let sharedInstance = null;
+AbandonedCartService.getShared = function getShared() {
+  if (!sharedInstance) sharedInstance = new AbandonedCartService();
+  return sharedInstance;
+};
 
 module.exports = AbandonedCartService;

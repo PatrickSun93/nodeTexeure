@@ -188,7 +188,24 @@
     "staffLoadFailed": "Échec du chargement du personnel",
     "staffLoadError": "Erreur lors du chargement du personnel.",
     "navReviews": "Avis",
-    "navEmailQueue": "File d'e-mails"
+    "navEmailQueue": "File d'e-mails",
+    "bulkSelected": "{count} sélectionné(s)",
+    "bulkChooseStatus": "Choisir un statut…",
+    "bulkApply": "Appliquer",
+    "bulkUpdating": "Mise à jour…",
+    "bulkClear": "Effacer la sélection",
+    "bulkSelectStatusFirst": "Veuillez d'abord choisir un statut.",
+    "bulkOrdersUpdated": "{count} commande(s) mise(s) à jour.",
+    "bulkOrdersUpdateFailed": "Échec de la mise à jour des commandes.",
+    "bulkDelete": "Supprimer",
+    "bulkDeleting": "Suppression…",
+    "bulkConfirmDeleteProducts": "Supprimer les {count} produit(s) sélectionné(s) ? Cette action est irréversible.",
+    "bulkProductsDeleted": "{count} produit(s) supprimé(s).",
+    "bulkProductsDeleteFailed": "Échec de la suppression des produits.",
+    "confirmDeleteProduct": "Supprimer ce produit ? Cette action est irréversible.",
+    "deleteProductError": "Échec de la suppression du produit.",
+    "selectRow": "Sélectionner la ligne",
+    "selectAll": "Tout sélectionner"
   },
   "Products": {
     "title": "Gestion des produits",
@@ -1463,7 +1480,8 @@
     "testDataLabel": "Données de test (JSON)",
     "testDataPlaceholder": "'{'\"customer_name\": \"John Doe\", \"order_number\": \"ORD001\"'}'",
     "sending": "Envoi...",
-    "sendTest": "Envoyer le test"
+    "sendTest": "Envoyer le test",
+    "confirmDeleteNamed": "Supprimer le modèle « {name} » ? Cette action est irréversible."
   },
   "Users": {
     "title": "Gestion des utilisateurs",
@@ -1937,7 +1955,28 @@
     "savedSuccess": "Paramètres enregistrés avec succès",
     "saveFailed": "Échec de l'enregistrement des paramètres",
     "saveError": "Erreur lors de l'enregistrement des paramètres",
-    "loadingSettings": "Chargement des paramètres..."
+    "loadingSettings": "Chargement des paramètres...",
+    "gatewayUpdateFailed": "Échec de la mise à jour de la passerelle de paiement.",
+    "configureUnavailable": "La configuration de la passerelle n'est pas encore disponible.",
+    "status": "Statut",
+    "zoneStatusActive": "Actif",
+    "zoneStatusInactive": "Inactif",
+    "noZonesConfigured": "Aucune zone d'expédition configurée.",
+    "editZone": "Modifier la zone",
+    "deleteZone": "Supprimer la zone",
+    "confirmDeleteZone": "Supprimer la zone « {name} » ? Cette action est irréversible.",
+    "zoneSaveFailed": "Échec de l'enregistrement de la zone d'expédition.",
+    "zoneDeleteFailed": "Échec de la suppression de la zone d'expédition.",
+    "addZoneTitle": "Ajouter une zone d'expédition",
+    "editZoneTitle": "Modifier la zone d'expédition",
+    "zoneNamePlaceholder": "ex. : National (États-Unis)",
+    "countriesLabel": "Pays",
+    "countriesPlaceholder": "US, CA, MX",
+    "countriesHelp": "Séparez les codes de pays par des virgules.",
+    "zoneActiveLabel": "Actif (disponible au paiement)",
+    "cancel": "Annuler",
+    "save": "Enregistrer",
+    "zoneNameRequired": "Le nom de la zone est requis."
   },
   "OrderDetailView": {
     "orderTitle": "Commande {orderNumber}",
@@ -2011,7 +2050,17 @@
     "columnStatus": "Statut",
     "loadingOrders": "Chargement des commandes…",
     "noOrdersFound": "Aucune commande trouvée pour ce client.",
-    "of": "sur"
+    "of": "sur",
+    "missingCustomerId": "Impossible d'enregistrer : ID client manquant.",
+    "customerUpdated": "Client mis à jour.",
+    "updateFailed": "Échec de la mise à jour du client.",
+    "saving": "Enregistrement…",
+    "addresses": "Adresses",
+    "addressTypeLabel": "Adresse {type}",
+    "addressLabelFallback": "Adresse",
+    "defaultBadge": "Par défaut",
+    "addressPhone": "Téléphone : {phone}",
+    "noAddressOnFile": "Aucune adresse enregistrée."
   },
   "AnalyticsDashboard": {
     "title": "Tableau de bord analytique",
@@ -2246,5 +2295,19 @@
     "retry": "Réessayer",
     "retrying": "Nouvel essai…",
     "footerNote": "Affichage des {count} tâches les plus récentes. Les tâches en échec sont automatiquement réessayées jusqu'à leur limite avant d'être suspendues."
+  },
+  "AddCustomerModal": {
+    "title": "Ajouter un client",
+    "close": "Fermer",
+    "firstName": "Prénom",
+    "lastName": "Nom",
+    "email": "E-mail",
+    "phoneOptional": "Téléphone (facultatif)",
+    "temporaryPassword": "Mot de passe temporaire",
+    "cancel": "Annuler",
+    "creating": "Création…",
+    "createCustomer": "Créer le client",
+    "requiredFields": "Le prénom, le nom, l'e-mail et un mot de passe temporaire sont requis.",
+    "createFailed": "Échec de la création du client."
   }
 }

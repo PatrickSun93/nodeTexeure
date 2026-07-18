@@ -188,7 +188,24 @@
     "staffLoadFailed": "加载员工失败",
     "staffLoadError": "加载员工时出错。",
     "navReviews": "评价",
-    "navEmailQueue": "邮件队列"
+    "navEmailQueue": "邮件队列",
+    "bulkSelected": "已选择 {count} 项",
+    "bulkChooseStatus": "选择状态…",
+    "bulkApply": "应用",
+    "bulkUpdating": "更新中…",
+    "bulkClear": "清除选择",
+    "bulkSelectStatusFirst": "请先选择一个状态。",
+    "bulkOrdersUpdated": "已更新 {count} 个订单。",
+    "bulkOrdersUpdateFailed": "更新订单失败。",
+    "bulkDelete": "删除",
+    "bulkDeleting": "删除中…",
+    "bulkConfirmDeleteProducts": "删除选中的 {count} 个商品？此操作无法撤销。",
+    "bulkProductsDeleted": "已删除 {count} 个商品。",
+    "bulkProductsDeleteFailed": "删除商品失败。",
+    "confirmDeleteProduct": "删除此商品？此操作无法撤销。",
+    "deleteProductError": "删除商品失败。",
+    "selectRow": "选择此行",
+    "selectAll": "全选"
   },
   "Products": {
     "title": "商品管理",
@@ -1463,7 +1480,8 @@
     "testDataLabel": "测试数据（JSON）",
     "testDataPlaceholder": "'{'\"customer_name\": \"John Doe\", \"order_number\": \"ORD001\"'}'",
     "sending": "发送中...",
-    "sendTest": "发送测试"
+    "sendTest": "发送测试",
+    "confirmDeleteNamed": "删除“{name}”模板？此操作无法撤销。"
   },
   "Users": {
     "title": "用户管理",
@@ -1937,7 +1955,28 @@
     "savedSuccess": "设置保存成功",
     "saveFailed": "保存设置失败",
     "saveError": "保存设置时出错",
-    "loadingSettings": "正在加载设置..."
+    "loadingSettings": "正在加载设置...",
+    "gatewayUpdateFailed": "更新支付网关失败。",
+    "configureUnavailable": "网关配置功能尚不可用。",
+    "status": "状态",
+    "zoneStatusActive": "启用",
+    "zoneStatusInactive": "停用",
+    "noZonesConfigured": "尚未配置配送区域。",
+    "editZone": "编辑区域",
+    "deleteZone": "删除区域",
+    "confirmDeleteZone": "删除“{name}”区域？此操作无法撤销。",
+    "zoneSaveFailed": "保存配送区域失败。",
+    "zoneDeleteFailed": "删除配送区域失败。",
+    "addZoneTitle": "添加配送区域",
+    "editZoneTitle": "编辑配送区域",
+    "zoneNamePlaceholder": "例如：国内（美国）",
+    "countriesLabel": "国家/地区",
+    "countriesPlaceholder": "US, CA, MX",
+    "countriesHelp": "用逗号分隔国家/地区代码。",
+    "zoneActiveLabel": "启用（在结账时可用）",
+    "cancel": "取消",
+    "save": "保存",
+    "zoneNameRequired": "区域名称为必填项。"
   },
   "OrderDetailView": {
     "orderTitle": "订单 {orderNumber}",
@@ -2011,7 +2050,17 @@
     "columnStatus": "状态",
     "loadingOrders": "正在加载订单……",
     "noOrdersFound": "未找到该客户的订单。",
-    "of": "/"
+    "of": "/",
+    "missingCustomerId": "无法保存：缺少客户 ID。",
+    "customerUpdated": "客户已更新。",
+    "updateFailed": "更新客户失败。",
+    "saving": "保存中…",
+    "addresses": "地址",
+    "addressTypeLabel": "{type}地址",
+    "addressLabelFallback": "地址",
+    "defaultBadge": "默认",
+    "addressPhone": "电话：{phone}",
+    "noAddressOnFile": "暂无地址记录。"
   },
   "AnalyticsDashboard": {
     "title": "分析仪表板",
@@ -2246,5 +2295,19 @@
     "retry": "重试",
     "retrying": "重试中…",
     "footerNote": "显示最近的 {count} 个任务。失败的任务会在达到尝试上限前自动重试，然后暂停。"
+  },
+  "AddCustomerModal": {
+    "title": "添加新客户",
+    "close": "关闭",
+    "firstName": "名字",
+    "lastName": "姓氏",
+    "email": "电子邮箱",
+    "phoneOptional": "电话（可选）",
+    "temporaryPassword": "临时密码",
+    "cancel": "取消",
+    "creating": "创建中…",
+    "createCustomer": "创建客户",
+    "requiredFields": "名字、姓氏、电子邮箱和临时密码为必填项。",
+    "createFailed": "创建客户失败。"
   }
 }

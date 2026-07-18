@@ -58,7 +58,8 @@ router.post('/logout', admin, async (req, res) => {
     // Implement your logout logic here
     res.json(ResponseFormatter.success('Logged out successfully'));
   } catch (error) {
-    res.status(500).json(ResponseFormatter.failure('Logout failed', { error: error.message }));
+    console.error('Admin logout error:', error);
+    res.status(500).json(ResponseFormatter.failure('Logout failed'));
   }
 });
 
@@ -87,9 +88,12 @@ router.post('/products', staffOrAdmin, adminWriteLimiter, csrfProtection, async 
     );
     if (!insertResult.success) throw new Error(insertResult.error);
 
-    // 2. Base Inventory (Product Level)
+    // 2. Base Inventory (Product Level) — use the custom-ID system (collision-free,
+    // atomic) rather than an ad-hoc Date.now() string.
     if (stock) {
-      const invId = `INV-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+      const invRes = await DatabaseUtil.executeQuery("SELECT get_next_id('INV') AS id");
+      const invId = DatabaseUtil.first(invRes)?.id;
+      if (!invRes.success || !invId) throw new Error('Failed to generate inventory ID');
       await DatabaseUtil.executeQuery(
         'INSERT INTO inventory (id, product_id, quantity_available) VALUES (?, ?, ?)',
         [invId, id, stock]
@@ -99,13 +103,17 @@ router.post('/products', staffOrAdmin, adminWriteLimiter, csrfProtection, async 
     // 3. Handle Variants
     if (variants && Array.isArray(variants)) {
       for (const v of variants) {
-        const vid = `VAR-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+        const vidRes = await DatabaseUtil.executeQuery("SELECT get_next_id('VAR') AS id");
+        const vid = DatabaseUtil.first(vidRes)?.id;
+        if (!vidRes.success || !vid) throw new Error('Failed to generate product variant ID');
         await DatabaseUtil.executeQuery(
           'INSERT INTO product_variants (id, product_id, sku, size, color, price_adjustment) VALUES (?, ?, ?, ?, ?, ?)',
           [vid, id, v.sku, v.size, v.color, v.price_adjustment || 0]
         );
         // Variant Inventory
-        const vInvId = `INV-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+        const vInvRes = await DatabaseUtil.executeQuery("SELECT get_next_id('INV') AS id");
+        const vInvId = DatabaseUtil.first(vInvRes)?.id;
+        if (!vInvRes.success || !vInvId) throw new Error('Failed to generate inventory ID');
         await DatabaseUtil.executeQuery(
           'INSERT INTO inventory (id, product_id, variant_id, quantity_available) VALUES (?, ?, ?, ?)',
           [vInvId, id, vid, v.stock || 0]
@@ -119,7 +127,7 @@ router.post('/products', staffOrAdmin, adminWriteLimiter, csrfProtection, async 
     if (error.message && error.message.includes('Duplicate entry')) {
       return res.status(409).json(ResponseFormatter.failure('A product with this SKU or slug already exists'));
     }
-    res.status(500).json(ResponseFormatter.failure('Server error', { error: error.message }));
+    res.status(500).json(ResponseFormatter.failure('Server error'));
   }
 });
 
@@ -173,24 +181,26 @@ router.put('/products/:id', admin, adminWriteLimiter, csrfProtection, async (req
             );
           }
         } else {
-          // Insert New Variant
-          const vidRes = await DatabaseUtil.executeQuery('SELECT UUID() as id');
-          const vid = vidRes.data[0].id; // Simplified UUID gen or use similar logic
-          // Actually we use 'UUID()' function in SQL or generate it. 
-          // DatabaseUtil.executeQuery('SELECT UUID()') might work, or we rely on DB default? 
-          // Schema uses VARCHAR(50). We need to generate ID.
-          // Re-using get_next_id logic or UUID? Schema summary says 'uuid' or varchar.
-          // I will use simple pseudo-random for now or check if there's a helper.
-          // Assuming DatabaseUtil doesn't have uuid helper.
-          // Let's use `UUID()` if safe, or generate in JS.
-          const newVariantId = `VAR-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+          // Insert New Variant. Use the custom-ID system (get_next_id) rather than
+          // an ad-hoc `Date.now()` string so IDs are collision-free and consistent
+          // with the rest of the schema. Prefixes VAR/INV are registered in transno
+          // (docker/mysql/init.sql).
+          const vidRes = await DatabaseUtil.executeQuery("SELECT get_next_id('VAR') AS id");
+          const newVariantId = DatabaseUtil.first(vidRes)?.id;
+          if (!vidRes.success || !newVariantId) {
+            throw new Error('Failed to generate product variant ID');
+          }
 
           await DatabaseUtil.executeQuery(
             'INSERT INTO product_variants (id, product_id, sku, size, color, price_adjustment) VALUES (?, ?, ?, ?, ?, ?)',
             [newVariantId, id, v.sku, v.size, v.color, v.price_adjustment || 0]
           );
           // Insert Inventory
-          const invId = `INV-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+          const invRes = await DatabaseUtil.executeQuery("SELECT get_next_id('INV') AS id");
+          const invId = DatabaseUtil.first(invRes)?.id;
+          if (!invRes.success || !invId) {
+            throw new Error('Failed to generate inventory ID');
+          }
           await DatabaseUtil.executeQuery(
             'INSERT INTO inventory (id, product_id, variant_id, quantity_available) VALUES (?, ?, ?, ?)',
             [invId, id, newVariantId, v.stock || 0]
@@ -202,7 +212,7 @@ router.put('/products/:id', admin, adminWriteLimiter, csrfProtection, async (req
     res.json(ResponseFormatter.success('Product updated successfully'));
   } catch (error) {
     console.error(error);
-    res.status(500).json(ResponseFormatter.failure('Server error', { error: error.message }));
+    res.status(500).json(ResponseFormatter.failure('Server error'));
   }
 });
 
@@ -215,7 +225,7 @@ router.delete('/products/:id', admin, adminWriteLimiter, csrfProtection, async (
     res.json(ResponseFormatter.success('Product deleted successfully'));
   } catch (error) {
     console.error(error);
-    res.status(500).json(ResponseFormatter.failure('Server error', { error: error.message }));
+    res.status(500).json(ResponseFormatter.failure('Server error'));
   }
 });
 
@@ -274,7 +284,7 @@ router.put('/products/:id/status', admin, adminWriteLimiter, csrfProtection, asy
     res.json(ResponseFormatter.success('Product status updated', [{ id, status }]));
   } catch (error) {
     console.error(error);
-    res.status(500).json(ResponseFormatter.failure('Server error', { error: error.message }));
+    res.status(500).json(ResponseFormatter.failure('Server error'));
   }
 });
 
@@ -287,7 +297,7 @@ router.get('/categories', admin, adminReadLimiter, async (req, res) => {
     res.json(ResponseFormatter.success('Categories fetched successfully', [{ categories: listResult.data }]));
   } catch (error) {
     console.error(error);
-    res.status(500).json(ResponseFormatter.failure('Server error', { error: error.message }));
+    res.status(500).json(ResponseFormatter.failure('Server error'));
   }
 });
 
@@ -325,7 +335,7 @@ router.post('/coupons', admin, adminWriteLimiter, csrfProtection, async (req, re
     if (error.message && error.message.includes('Duplicate entry')) {
       return res.status(409).json(ResponseFormatter.failure('A coupon with this code already exists'));
     }
-    res.status(500).json(ResponseFormatter.failure('Server error', { error: error.message }));
+    res.status(500).json(ResponseFormatter.failure('Server error'));
   }
 });
 
@@ -366,7 +376,7 @@ router.put('/coupons/:id', admin, adminWriteLimiter, csrfProtection, async (req,
     res.json(ResponseFormatter.success('Coupon updated successfully'));
   } catch (error) {
     console.error(error);
-    res.status(500).json(ResponseFormatter.failure('Server error', { error: error.message }));
+    res.status(500).json(ResponseFormatter.failure('Server error'));
   }
 });
 
@@ -379,7 +389,7 @@ router.delete('/coupons/:id', admin, adminWriteLimiter, csrfProtection, async (r
     res.json(ResponseFormatter.success('Coupon deleted successfully'));
   } catch (error) {
     console.error(error);
-    res.status(500).json(ResponseFormatter.failure('Server error', { error: error.message }));
+    res.status(500).json(ResponseFormatter.failure('Server error'));
   }
 });
 
@@ -397,7 +407,7 @@ router.put('/inventory/:id', admin, adminWriteLimiter, csrfProtection, async (re
     res.json(ResponseFormatter.success('Inventory updated successfully'));
   } catch (error) {
     console.error(error);
-    res.status(500).json(ResponseFormatter.failure('Server error', { error: error.message }));
+    res.status(500).json(ResponseFormatter.failure('Server error'));
   }
 });
 
@@ -429,7 +439,7 @@ router.post('/inventory/adjust', admin, adminWriteLimiter, csrfProtection, async
     res.json(ResponseFormatter.success('Stock adjusted successfully', [{ adjustment: result.data }]));
   } catch (error) {
     console.error(error);
-    res.status(500).json(ResponseFormatter.failure('Server error', { error: error.message }));
+    res.status(500).json(ResponseFormatter.failure('Server error'));
   }
 });
 
@@ -467,7 +477,7 @@ router.post('/inventory/bulk-adjust', admin, adminWriteLimiter, csrfProtection, 
     res.json(ResponseFormatter.success('Bulk stock adjustment processed', [{ successful, failed, total: results.length, results }]));
   } catch (error) {
     console.error(error);
-    res.status(500).json(ResponseFormatter.failure('Server error', { error: error.message }));
+    res.status(500).json(ResponseFormatter.failure('Server error'));
   }
 });
 
@@ -501,7 +511,7 @@ router.put('/inventory/:id/reorder-points', admin, adminWriteLimiter, csrfProtec
     res.json(ResponseFormatter.success('Reorder points updated successfully', [{ id }]));
   } catch (error) {
     console.error(error);
-    res.status(500).json(ResponseFormatter.failure('Server error', { error: error.message }));
+    res.status(500).json(ResponseFormatter.failure('Server error'));
   }
 });
 
@@ -522,7 +532,7 @@ router.get('/inventory/movements', admin, adminReadLimiter, async (req, res) => 
     res.json(ResponseFormatter.success('Inventory movements fetched successfully', [{ movements: result.data }]));
   } catch (error) {
     console.error(error);
-    res.status(500).json(ResponseFormatter.failure('Server error', { error: error.message }));
+    res.status(500).json(ResponseFormatter.failure('Server error'));
   }
 });
 
@@ -558,7 +568,7 @@ router.get('/users', admin, adminReadLimiter, async (req, res) => {
     res.json(ResponseFormatter.success('Users fetched successfully', [{ users }]));
   } catch (error) {
     console.error(error);
-    res.status(500).json(ResponseFormatter.failure('Server error', { error: error.message }));
+    res.status(500).json(ResponseFormatter.failure('Server error'));
   }
 });
 
@@ -594,7 +604,7 @@ router.post('/users', admin, adminWriteLimiter, csrfProtection, async (req, res)
     res.status(201).json(ResponseFormatter.success('User created successfully', [{ id }]));
   } catch (error) {
     console.error(error);
-    res.status(500).json(ResponseFormatter.failure('Server error', { error: error.message }));
+    res.status(500).json(ResponseFormatter.failure('Server error'));
   }
 });
 
@@ -621,7 +631,7 @@ router.put('/users/:id', admin, adminWriteLimiter, csrfProtection, async (req, r
     res.json(ResponseFormatter.success('User updated successfully'));
   } catch (error) {
     console.error(error);
-    res.status(500).json(ResponseFormatter.failure('Server error', { error: error.message }));
+    res.status(500).json(ResponseFormatter.failure('Server error'));
   }
 });
 
@@ -634,7 +644,7 @@ router.delete('/users/:id', admin, adminWriteLimiter, csrfProtection, async (req
     res.json(ResponseFormatter.success('User deleted successfully'));
   } catch (error) {
     console.error(error);
-    res.status(500).json(ResponseFormatter.failure('Server error', { error: error.message }));
+    res.status(500).json(ResponseFormatter.failure('Server error'));
   }
 });
 
@@ -683,7 +693,7 @@ router.get('/products', admin, adminReadLimiter, async (req, res) => {
     res.json(ResponseFormatter.success('Products fetched successfully', [{ products }]));
   } catch (error) {
     console.error(error);
-    res.status(500).json(ResponseFormatter.failure('Server error', { error: error.message }));
+    res.status(500).json(ResponseFormatter.failure('Server error'));
   }
 });
 
@@ -726,7 +736,7 @@ router.get('/products/:id', admin, adminReadLimiter, async (req, res) => {
     }]));
   } catch (error) {
     console.error(error);
-    res.status(500).json(ResponseFormatter.failure('Server error', { error: error.message }));
+    res.status(500).json(ResponseFormatter.failure('Server error'));
   }
 });
 
@@ -763,7 +773,7 @@ router.get('/coupons', admin, adminReadLimiter, async (req, res) => {
     res.json(ResponseFormatter.success('Coupons fetched successfully', [{ coupons }]));
   } catch (error) {
     console.error(error);
-    res.status(500).json(ResponseFormatter.failure('Server error', { error: error.message }));
+    res.status(500).json(ResponseFormatter.failure('Server error'));
   }
 });
 
@@ -791,7 +801,7 @@ router.get('/staff', admin, adminReadLimiter, async (req, res) => {
     res.json(ResponseFormatter.success('Staff fetched successfully', [{ staff }]));
   } catch (error) {
     console.error(error);
-    res.status(500).json(ResponseFormatter.failure('Server error', { error: error.message }));
+    res.status(500).json(ResponseFormatter.failure('Server error'));
   }
 });
 
@@ -803,7 +813,7 @@ router.get('/inventory', admin, adminReadLimiter, async (req, res) => {
     res.json(ResponseFormatter.success('Inventory fetched successfully', [{ inventory: listResult.data }]));
   } catch (error) {
     console.error(error);
-    res.status(500).json(ResponseFormatter.failure('Server error', { error: error.message }));
+    res.status(500).json(ResponseFormatter.failure('Server error'));
   }
 });
 
@@ -850,7 +860,7 @@ router.get('/orders', admin, adminReadLimiter, async (req, res) => {
     res.json(ResponseFormatter.success('Orders fetched successfully', [{ orders }]));
   } catch (error) {
     console.error(error);
-    res.status(500).json(ResponseFormatter.failure('Server error', { error: error.message }));
+    res.status(500).json(ResponseFormatter.failure('Server error'));
   }
 });
 
@@ -888,11 +898,13 @@ router.get('/orders/:id', admin, adminReadLimiter, async (req, res) => {
 router.put('/orders/:id/status', staffOrAdmin, adminWriteLimiter, csrfProtection, async (req, res) => {
   try {
     const { id } = req.params;
-    const { status, notes } = req.body;
+    const { status, notes, tracking_number } = req.body;
     const normalizedStatus = status.toLowerCase();
 
-    // Update order status
-    const updateResult = await DatabaseUtil.executeQuery('UPDATE orders SET status = ? WHERE id = ?', [normalizedStatus, id]);
+    // Update order status (and the tracking number when the admin provided one)
+    const updateResult = tracking_number
+      ? await DatabaseUtil.executeQuery('UPDATE orders SET status = ?, tracking_number = ? WHERE id = ?', [normalizedStatus, tracking_number, id])
+      : await DatabaseUtil.executeQuery('UPDATE orders SET status = ? WHERE id = ?', [normalizedStatus, id]);
     if (!updateResult.success) throw new Error(updateResult.error);
 
     // Insert into order_status_history
@@ -1054,7 +1066,7 @@ router.post('/products/:id/image', admin, adminWriteLimiter, csrfProtection, asy
     });
   } catch (error) {
     console.error(error);
-    return res.status(500).json(ResponseFormatter.failure('Server error', { error: error.message }));
+    return res.status(500).json(ResponseFormatter.failure('Server error'));
   }
 });
 
@@ -1062,7 +1074,7 @@ router.post('/products/:id/image', admin, adminWriteLimiter, csrfProtection, asy
 router.get('/analytics/summary', admin, adminReadLimiter, async (req, res) => {
   try {
     // Parallel queries for performance
-    const [revenueResult, ordersResult, customersResult, visitorsResult, paidOrdersResult] = await Promise.all([
+    const [revenueResult, ordersResult, customersResult, visitorsResult, paidOrdersResult, activeOrdersResult] = await Promise.all([
       DatabaseUtil.executeQuery("SELECT SUM(total_amount) as total FROM orders WHERE status != 'cancelled'"),
       DatabaseUtil.executeQuery("SELECT COUNT(*) as count FROM orders WHERE status != 'cancelled'"),
       DatabaseUtil.executeQuery("SELECT COUNT(*) as count FROM users WHERE role = 'customer' AND status = 'active'"),
@@ -1071,13 +1083,18 @@ router.get('/analytics/summary', admin, adminReadLimiter, async (req, res) => {
       // an honest real-data proxy for unique visitors. COALESCE(..., id) guarantees every cart counts once.
       DatabaseUtil.executeQuery("SELECT COUNT(DISTINCT COALESCE(session_id, user_id, id)) as count FROM shopping_carts"),
       // Paid orders: orders with a completed payment. DISTINCT so multiple payment rows for one order count once.
-      DatabaseUtil.executeQuery("SELECT COUNT(DISTINCT order_id) as count FROM payments WHERE status = 'completed'")
+      DatabaseUtil.executeQuery("SELECT COUNT(DISTINCT order_id) as count FROM payments WHERE status = 'completed'"),
+      // Active orders: genuinely in-flight orders — non-terminal statuses only
+      // (excludes delivered / cancelled / refunded).
+      DatabaseUtil.executeQuery("SELECT COUNT(*) as count FROM orders WHERE status IN ('pending', 'confirmed', 'processing', 'shipped')")
     ]);
 
     const totalRevenue = revenueResult.data[0].total || 0;
     const totalOrders = ordersResult.data[0].count || 0;
     const avgOrderValue = totalOrders > 0 ? (totalRevenue / totalOrders) : 0;
     const activeCustomers = customersResult.data[0].count || 0;
+    // Genuinely active (in-flight) orders, not the total order count.
+    const activeOrders = Number(DatabaseUtil.first(activeOrdersResult)?.count) || 0;
 
     // Derived from real DB data (no hardcoded constants).
     // COUNT() comes back as a BIGINT string from the driver, so coerce to Number for clean arithmetic/output.
@@ -1090,7 +1107,7 @@ router.get('/analytics/summary', admin, adminReadLimiter, async (req, res) => {
     res.json(ResponseFormatter.success('Summary metrics fetched', [{
       metrics: {
         totalRevenue,
-        activeOrders: totalOrders, // Naming: using total for now
+        activeOrders, // in-flight orders (pending/confirmed/processing/shipped); excludes delivered/cancelled/refunded
         avgOrderValue,
         conversionRate, // derived: (paid orders / visitor sessions) * 100
         visitors,       // derived: distinct shopping_carts sessions (honest visitor proxy)
@@ -1099,7 +1116,7 @@ router.get('/analytics/summary', admin, adminReadLimiter, async (req, res) => {
     }]));
   } catch (error) {
     console.error(error);
-    res.status(500).json(ResponseFormatter.failure('Server error', { error: error.message }));
+    res.status(500).json(ResponseFormatter.failure('Server error'));
   }
 });
 
@@ -1126,7 +1143,7 @@ router.get('/analytics/revenue', admin, adminReadLimiter, async (req, res) => {
     res.json(ResponseFormatter.success('Revenue details fetched', [{ revenue: data }]));
   } catch (error) {
     console.error(error);
-    res.status(500).json(ResponseFormatter.failure('Server error', { error: error.message }));
+    res.status(500).json(ResponseFormatter.failure('Server error'));
   }
 });
 
@@ -1152,7 +1169,7 @@ router.get('/analytics/sales-by-region', admin, adminReadLimiter, async (req, re
     res.json(ResponseFormatter.success('Regional sales fetched', [{ salesByRegion }]));
   } catch (error) {
     console.error(error);
-    res.status(500).json(ResponseFormatter.failure('Server error', { error: error.message }));
+    res.status(500).json(ResponseFormatter.failure('Server error'));
   }
 });
 
@@ -1174,7 +1191,7 @@ router.get('/settings/general', admin, adminReadLimiter, async (req, res) => {
     res.json(ResponseFormatter.success('General settings fetched', [{ general }]));
   } catch (error) {
     console.error(error);
-    res.status(500).json(ResponseFormatter.failure('Server error', { error: error.message }));
+    res.status(500).json(ResponseFormatter.failure('Server error'));
   }
 });
 
@@ -1192,7 +1209,7 @@ router.put('/settings/general', admin, adminWriteLimiter, csrfProtection, async 
     res.json(ResponseFormatter.success('Settings updated'));
   } catch (error) {
     console.error(error);
-    res.status(500).json(ResponseFormatter.failure('Server error', { error: error.message }));
+    res.status(500).json(ResponseFormatter.failure('Server error'));
   }
 });
 
@@ -1205,7 +1222,7 @@ router.get('/email-templates', admin, adminReadLimiter, async (req, res) => {
     res.json(ResponseFormatter.success('Email templates fetched', [{ templates: result.data }]));
   } catch (error) {
     console.error(error);
-    res.status(500).json(ResponseFormatter.failure('Server error', { error: error.message }));
+    res.status(500).json(ResponseFormatter.failure('Server error'));
   }
 });
 
@@ -1224,7 +1241,7 @@ router.post('/email-templates', admin, adminWriteLimiter, csrfProtection, async 
     res.status(201).json(ResponseFormatter.success('Template created', [{ id }]));
   } catch (error) {
     console.error(error);
-    res.status(500).json(ResponseFormatter.failure('Server error', { error: error.message }));
+    res.status(500).json(ResponseFormatter.failure('Server error'));
   }
 });
 
@@ -1242,10 +1259,452 @@ router.put('/email-templates/:id', admin, adminWriteLimiter, csrfProtection, asy
     res.json(ResponseFormatter.success('Template updated'));
   } catch (error) {
     console.error(error);
-    res.status(500).json(ResponseFormatter.failure('Server error', { error: error.message }));
+    res.status(500).json(ResponseFormatter.failure('Server error'));
   }
 });
 
+
+// =====================================================
+// Customer detail (single user)
+// =====================================================
+// GET /api/admin/users/:id — customer profile + addresses + order stats.
+// Read-only (CSRF not required). Registered after the /users list route so
+// the exact `/users` path still hits the list handler.
+router.get('/users/:id', admin, adminReadLimiter, async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Core user record. `users.phone` exists in the schema, but we still fall
+    // back to a default address phone below when it is null.
+    const userRes = await DatabaseUtil.executeQuery(
+      'SELECT id, first_name, last_name, email, role, status, phone, created_at FROM users WHERE id = ?',
+      [id]
+    );
+    if (!userRes.success) throw new Error(userRes.error);
+    const userRow = DatabaseUtil.first(userRes);
+    if (!userRow) {
+      return res.status(404).json(ResponseFormatter.failure('User not found'));
+    }
+
+    // Addresses — flatten the address_json blob into top-level fields.
+    const addrRes = await DatabaseUtil.executeQuery(
+      'SELECT id, type, first_name, last_name, phone, address_json, is_default FROM user_addresses WHERE user_id = ?',
+      [id]
+    );
+    const addresses = DatabaseUtil.rows(addrRes).map((a) => {
+      let addr = {};
+      if (a.address_json) {
+        try {
+          addr = typeof a.address_json === 'string' ? JSON.parse(a.address_json) : a.address_json;
+        } catch (e) {
+          addr = {};
+        }
+      }
+      return {
+        id: a.id,
+        type: a.type,
+        first_name: a.first_name,
+        last_name: a.last_name,
+        phone: a.phone || null,
+        company: addr.company || null,
+        address_line_1: addr.address_line_1 || null,
+        address_line_2: addr.address_line_2 || null,
+        city: addr.city || null,
+        state: addr.state || null,
+        postal_code: addr.postal_code || null,
+        country: addr.country || null,
+        is_default: !!a.is_default,
+      };
+    });
+
+    // Phone: users.phone, else the default (or first) address phone, else null.
+    const defaultAddr = addresses.find((a) => a.is_default) || addresses[0] || null;
+    const phone = userRow.phone || (defaultAddr && defaultAddr.phone) || null;
+
+    // Order stats — totalSpent counts only valid (non-cancelled/refunded) orders.
+    const statsRes = await DatabaseUtil.executeQuery(
+      `SELECT COUNT(*) AS orders,
+              COALESCE(SUM(CASE WHEN status NOT IN ('cancelled', 'refunded') THEN total_amount ELSE 0 END), 0) AS totalSpent,
+              MAX(created_at) AS lastOrder
+       FROM orders WHERE user_id = ?`,
+      [id]
+    );
+    const statsRow = DatabaseUtil.first(statsRes) || {};
+    const stats = {
+      orders: Number(statsRow.orders) || 0,
+      totalSpent: Number(statsRow.totalSpent) || 0,
+      lastOrder: statsRow.lastOrder || null,
+    };
+
+    const customer = {
+      user: {
+        id: userRow.id,
+        first_name: userRow.first_name,
+        last_name: userRow.last_name,
+        email: userRow.email,
+        role: userRow.role,
+        status: userRow.status,
+        created_at: userRow.created_at,
+        phone,
+      },
+      addresses,
+      stats,
+    };
+
+    res.json(ResponseFormatter.success('Customer fetched successfully', [{ customer }]));
+  } catch (error) {
+    console.error(error);
+    res.status(500).json(ResponseFormatter.failure('Server error'));
+  }
+});
+
+// =====================================================
+// Bulk order status update
+// =====================================================
+// POST /api/admin/orders/bulk-update — apply one status to many orders and
+// mirror the single PUT /orders/:id/status handler (status history row per order).
+router.post('/orders/bulk-update', staffOrAdmin, adminWriteLimiter, csrfProtection, async (req, res) => {
+  try {
+    const { orderIds, status, notes } = req.body;
+    if (!Array.isArray(orderIds) || orderIds.length === 0) {
+      return res.status(400).json(ResponseFormatter.failure('orderIds must be a non-empty array'));
+    }
+
+    // Same status set as the orders / order_status_history ENUM the single handler writes.
+    const ALLOWED_STATUSES = ['pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled', 'refunded'];
+    const normalizedStatus = String(status || '').toLowerCase();
+    if (!ALLOWED_STATUSES.includes(normalizedStatus)) {
+      return res.status(400).json(ResponseFormatter.failure(`Invalid status. Allowed: ${ALLOWED_STATUSES.join(', ')}`));
+    }
+
+    const statusDetails = notes ? JSON.stringify({ notes }) : null;
+    let updated = 0;
+    for (const orderId of orderIds) {
+      // Skip unknown ids gracefully — also avoids a FK violation on the history insert.
+      const existsRes = await DatabaseUtil.executeQuery('SELECT id FROM orders WHERE id = ?', [orderId]);
+      if (!DatabaseUtil.first(existsRes)) continue;
+
+      const updateRes = await DatabaseUtil.executeQuery('UPDATE orders SET status = ? WHERE id = ?', [normalizedStatus, orderId]);
+      if (!updateRes.success) continue;
+
+      await DatabaseUtil.executeQuery(
+        'INSERT INTO order_status_history (id, order_id, status, status_details, changed_by) VALUES (?, ?, ?, ?, ?)',
+        [uuidv4(), orderId, normalizedStatus, statusDetails, req.user.id]
+      );
+      updated += 1;
+    }
+
+    res.json(ResponseFormatter.success('Orders updated successfully', [{ result: { updated } }]));
+  } catch (error) {
+    console.error(error);
+    res.status(500).json(ResponseFormatter.failure('Server error'));
+  }
+});
+
+// =====================================================
+// Bulk product update / delete
+// =====================================================
+// POST /api/admin/products/bulk-update — apply one set of updates to many products.
+// Column allowlist mirrors the single PUT /products/:id handler.
+router.post('/products/bulk-update', admin, adminWriteLimiter, csrfProtection, async (req, res) => {
+  try {
+    const { productIds, updates } = req.body;
+    if (!Array.isArray(productIds) || productIds.length === 0) {
+      return res.status(400).json(ResponseFormatter.failure('productIds must be a non-empty array'));
+    }
+    if (!updates || typeof updates !== 'object' || Array.isArray(updates)) {
+      return res.status(400).json(ResponseFormatter.failure('updates object is required'));
+    }
+
+    // Mirror the single product update allowlist to keep single/bulk parity.
+    const ALLOWED_PRODUCT_COLUMNS = [
+      'name', 'slug', 'sku', 'description', 'short_description', 'base_price',
+      'sale_price', 'cost_price', 'category_id', 'product_details', 'status',
+      'is_featured', 'meta_title', 'meta_description', 'meta_keywords',
+    ];
+    const updateFields = [];
+    const updateValues = [];
+    for (const [key, value] of Object.entries(updates)) {
+      if (!ALLOWED_PRODUCT_COLUMNS.includes(key)) continue;
+      if (key === 'product_details') {
+        updateFields.push(`${key} = ?`);
+        updateValues.push(JSON.stringify(value || {}));
+      } else {
+        updateFields.push(`${key} = ?`);
+        updateValues.push(value);
+      }
+    }
+    if (updateFields.length === 0) {
+      return res.status(400).json(ResponseFormatter.failure('No valid fields to update'));
+    }
+
+    let updated = 0;
+    for (const productId of productIds) {
+      const result = await DatabaseUtil.executeQuery(
+        `UPDATE products SET ${updateFields.join(', ')} WHERE id = ?`,
+        [...updateValues, productId]
+      );
+      if (result.success && result.affectedRows > 0) updated += 1;
+    }
+
+    res.json(ResponseFormatter.success('Products updated successfully', [{ result: { updated } }]));
+  } catch (error) {
+    console.error(error);
+    res.status(500).json(ResponseFormatter.failure('Server error'));
+  }
+});
+
+// POST /api/admin/products/bulk-delete — soft-delete products referenced by an
+// order (order_items.product_id has no ON DELETE CASCADE, so a hard delete would
+// fail the FK); hard-delete products that were never ordered. 'discontinued' is
+// the schema's archive-equivalent product status (there is no is_active column).
+router.post('/products/bulk-delete', admin, adminWriteLimiter, csrfProtection, async (req, res) => {
+  try {
+    const { productIds } = req.body;
+    if (!Array.isArray(productIds) || productIds.length === 0) {
+      return res.status(400).json(ResponseFormatter.failure('productIds must be a non-empty array'));
+    }
+
+    let deleted = 0;
+    for (const productId of productIds) {
+      const refRes = await DatabaseUtil.executeQuery('SELECT COUNT(*) AS cnt FROM order_items WHERE product_id = ?', [productId]);
+      const referenced = Number(DatabaseUtil.first(refRes)?.cnt) > 0;
+
+      if (referenced) {
+        const softRes = await DatabaseUtil.executeQuery(
+          "UPDATE products SET status = 'discontinued', updated_at = NOW() WHERE id = ?",
+          [productId]
+        );
+        if (softRes.success && softRes.affectedRows > 0) deleted += 1;
+      } else {
+        const hardRes = await DatabaseUtil.executeQuery('DELETE FROM products WHERE id = ?', [productId]);
+        if (hardRes.success && hardRes.affectedRows > 0) deleted += 1;
+      }
+    }
+
+    res.json(ResponseFormatter.success('Products deleted successfully', [{ result: { deleted } }]));
+  } catch (error) {
+    console.error(error);
+    res.status(500).json(ResponseFormatter.failure('Server error'));
+  }
+});
+
+// =====================================================
+// System settings (generic key/value)
+// =====================================================
+const ALLOWED_SETTING_TYPES = ['string', 'integer', 'decimal', 'boolean', 'json'];
+
+// setting_value is a TEXT column — coerce non-string values to a stable string form.
+function normalizeSettingValue(v) {
+  if (v === undefined || v === null) return null;
+  if (typeof v === 'object') return JSON.stringify(v);
+  return String(v);
+}
+
+// Upsert a single setting. When `type` is provided it is written on insert and
+// update; otherwise a new row defaults to 'string' and an existing row keeps its type.
+async function upsertSetting(key, value, type, userId) {
+  const val = normalizeSettingValue(value);
+  if (type) {
+    return DatabaseUtil.executeQuery(
+      `INSERT INTO system_settings (id, setting_key, setting_value, setting_type, updated_by)
+       VALUES (UUID(), ?, ?, ?, ?)
+       ON DUPLICATE KEY UPDATE setting_value = ?, setting_type = ?, updated_by = ?`,
+      [key, val, type, userId, val, type, userId]
+    );
+  }
+  return DatabaseUtil.executeQuery(
+    `INSERT INTO system_settings (id, setting_key, setting_value, setting_type, updated_by)
+     VALUES (UUID(), ?, ?, 'string', ?)
+     ON DUPLICATE KEY UPDATE setting_value = ?, updated_by = ?`,
+    [key, val, userId, val, userId]
+  );
+}
+
+// GET /api/admin/settings — all settings (read-only; CSRF not required).
+router.get('/settings', admin, adminReadLimiter, async (req, res) => {
+  try {
+    const result = await DatabaseUtil.executeQuery('SELECT setting_key, setting_value, setting_type FROM system_settings ORDER BY setting_key ASC');
+    if (!result.success) throw new Error(result.error);
+    const settings = DatabaseUtil.rows(result).map((s) => ({
+      setting_key: s.setting_key,
+      setting_value: s.setting_value,
+      setting_type: s.setting_type,
+    }));
+    res.json(ResponseFormatter.success('Settings fetched successfully', [{ settings }]));
+  } catch (error) {
+    console.error(error);
+    res.status(500).json(ResponseFormatter.failure('Server error'));
+  }
+});
+
+// POST /api/admin/settings/bulk-update — upsert many settings.
+// Declared before PUT /settings/:key registration below; distinct method/path so no shadowing.
+router.post('/settings/bulk-update', admin, adminWriteLimiter, csrfProtection, async (req, res) => {
+  try {
+    const { settings } = req.body;
+    if (!Array.isArray(settings) || settings.length === 0) {
+      return res.status(400).json(ResponseFormatter.failure('settings must be a non-empty array'));
+    }
+    let updated = 0;
+    for (const s of settings) {
+      if (!s || !s.key) continue;
+      if (s.type && !ALLOWED_SETTING_TYPES.includes(s.type)) continue;
+      const result = await upsertSetting(s.key, s.value, s.type, req.user.id);
+      if (result.success) updated += 1;
+    }
+    res.json(ResponseFormatter.success('Settings updated successfully', [{ result: { updated } }]));
+  } catch (error) {
+    console.error(error);
+    res.status(500).json(ResponseFormatter.failure('Server error'));
+  }
+});
+
+// PUT /api/admin/settings/:key — upsert one setting. The earlier-registered
+// PUT /settings/general still wins for that exact path.
+router.put('/settings/:key', admin, adminWriteLimiter, csrfProtection, async (req, res) => {
+  try {
+    const { key } = req.params;
+    const { value, type } = req.body;
+    if (!key) {
+      return res.status(400).json(ResponseFormatter.failure('Setting key is required'));
+    }
+    if (type && !ALLOWED_SETTING_TYPES.includes(type)) {
+      return res.status(400).json(ResponseFormatter.failure(`Invalid setting type. Allowed: ${ALLOWED_SETTING_TYPES.join(', ')}`));
+    }
+    const result = await upsertSetting(key, value, type, req.user.id);
+    if (!result.success) throw new Error(result.error);
+    res.json(ResponseFormatter.success('Setting updated successfully', [{ setting: { setting_key: key, setting_value: normalizeSettingValue(value) } }]));
+  } catch (error) {
+    console.error(error);
+    res.status(500).json(ResponseFormatter.failure('Server error'));
+  }
+});
+
+// =====================================================
+// Shipping zones CRUD
+// =====================================================
+// Zone IDs use the existing 'SHIP' transno prefix (matches the seeded
+// SHIP0000000001.. zones/rates in database/migrations/add_shipping_data.sql).
+
+// GET /api/admin/shipping/zones — list zones (read-only; CSRF not required).
+router.get('/shipping/zones', admin, adminReadLimiter, async (req, res) => {
+  try {
+    const result = await DatabaseUtil.executeQuery('SELECT id, name, countries, is_active FROM shipping_zones ORDER BY name ASC');
+    if (!result.success) throw new Error(result.error);
+    const zones = DatabaseUtil.rows(result).map((z) => {
+      let countries = [];
+      if (z.countries) {
+        try {
+          countries = typeof z.countries === 'string' ? JSON.parse(z.countries) : z.countries;
+        } catch (e) {
+          countries = [];
+        }
+      }
+      if (!Array.isArray(countries)) countries = [];
+      return { id: z.id, name: z.name, countries, is_active: !!z.is_active };
+    });
+    res.json(ResponseFormatter.success('Shipping zones fetched successfully', [{ zones }]));
+  } catch (error) {
+    console.error(error);
+    res.status(500).json(ResponseFormatter.failure('Server error'));
+  }
+});
+
+// POST /api/admin/shipping/zones — create a zone.
+router.post('/shipping/zones', admin, adminWriteLimiter, csrfProtection, async (req, res) => {
+  try {
+    const { name, countries, is_active } = req.body;
+    if (!name || typeof name !== 'string' || !name.trim()) {
+      return res.status(400).json(ResponseFormatter.failure('name is required'));
+    }
+    if (!Array.isArray(countries)) {
+      return res.status(400).json(ResponseFormatter.failure('countries must be an array of country codes'));
+    }
+
+    const idRes = await DatabaseUtil.executeQuery("SELECT get_next_id('SHIP') AS id");
+    const id = DatabaseUtil.first(idRes)?.id;
+    if (!idRes.success || !id) throw new Error('Failed to generate shipping zone ID');
+
+    const activeVal = is_active === undefined ? 1 : (is_active ? 1 : 0);
+    const insertRes = await DatabaseUtil.executeQuery(
+      'INSERT INTO shipping_zones (id, name, countries, is_active) VALUES (?, ?, ?, ?)',
+      [id, name.trim(), JSON.stringify(countries), activeVal]
+    );
+    if (!insertRes.success) throw new Error(insertRes.error);
+
+    res.status(201).json(ResponseFormatter.success('Shipping zone created successfully', [{ zone: { id, name: name.trim(), countries, is_active: !!activeVal } }]));
+  } catch (error) {
+    console.error(error);
+    res.status(500).json(ResponseFormatter.failure('Server error'));
+  }
+});
+
+// PUT /api/admin/shipping/zones/:id — update allowlisted fields.
+router.put('/shipping/zones/:id', admin, adminWriteLimiter, csrfProtection, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, countries, is_active } = req.body;
+
+    const existsRes = await DatabaseUtil.executeQuery('SELECT id FROM shipping_zones WHERE id = ?', [id]);
+    if (!existsRes.success) throw new Error(existsRes.error);
+    if (!DatabaseUtil.first(existsRes)) {
+      return res.status(404).json(ResponseFormatter.failure('Shipping zone not found'));
+    }
+
+    const updateFields = [];
+    const updateValues = [];
+    if (name !== undefined) {
+      if (!name || !String(name).trim()) {
+        return res.status(400).json(ResponseFormatter.failure('name cannot be empty'));
+      }
+      updateFields.push('name = ?');
+      updateValues.push(String(name).trim());
+    }
+    if (countries !== undefined) {
+      if (!Array.isArray(countries)) {
+        return res.status(400).json(ResponseFormatter.failure('countries must be an array of country codes'));
+      }
+      updateFields.push('countries = ?');
+      updateValues.push(JSON.stringify(countries));
+    }
+    if (is_active !== undefined) {
+      updateFields.push('is_active = ?');
+      updateValues.push(is_active ? 1 : 0);
+    }
+    if (updateFields.length === 0) {
+      return res.status(400).json(ResponseFormatter.failure('No valid fields to update'));
+    }
+    updateValues.push(id);
+    const result = await DatabaseUtil.executeQuery(`UPDATE shipping_zones SET ${updateFields.join(', ')} WHERE id = ?`, updateValues);
+    if (!result.success) throw new Error(result.error);
+    res.json(ResponseFormatter.success('Shipping zone updated successfully', [{ id }]));
+  } catch (error) {
+    console.error(error);
+    res.status(500).json(ResponseFormatter.failure('Server error'));
+  }
+});
+
+// DELETE /api/admin/shipping/zones/:id — remove a zone and its rates
+// (shipping_rates.zone_id has no ON DELETE CASCADE, so rates are deleted first).
+router.delete('/shipping/zones/:id', admin, adminWriteLimiter, csrfProtection, async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const ratesRes = await DatabaseUtil.executeQuery('DELETE FROM shipping_rates WHERE zone_id = ?', [id]);
+    if (!ratesRes.success) throw new Error(ratesRes.error);
+
+    const result = await DatabaseUtil.executeQuery('DELETE FROM shipping_zones WHERE id = ?', [id]);
+    if (!result.success) throw new Error(result.error);
+    if (result.affectedRows === 0) {
+      return res.status(404).json(ResponseFormatter.failure('Shipping zone not found'));
+    }
+    res.json(ResponseFormatter.success('Shipping zone deleted successfully', [{ id }]));
+  } catch (error) {
+    console.error(error);
+    res.status(500).json(ResponseFormatter.failure('Server error'));
+  }
+});
 
 // Export router
 module.exports = router;

@@ -20,5 +20,8 @@ else
   echo "📊 Database already has ${USERS} users — skipping seed."
 fi
 
+echo "📧 Starting email daemon (background — delivers queued transactional emails)..."
+npm run email-daemon &
+
 echo "🚀 Starting backend (nodemon, port ${PORT})..."
 exec npm run dev

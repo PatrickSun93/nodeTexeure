@@ -26,7 +26,7 @@ const nextConfig = {
       'users', 'products', 'orders', 'cart', 'admin', 'status', 'database', 'settings',
       'search', 'reviews', 'payments', 'images', 'shipping', 'wishlist', 'returns',
       'newsletter', 'currency', 'blog', 'journal', 'loyalty', 'gift-cards', 'support',
-      'unsubscribe',
+      'unsubscribe', 'contact', 'abandoned-cart',
     ];
     
     // In development, add extra debugging routes

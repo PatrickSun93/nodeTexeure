@@ -188,7 +188,24 @@
     "staffLoadFailed": "No se pudo cargar el personal",
     "staffLoadError": "Error al cargar el personal.",
     "navReviews": "Reseñas",
-    "navEmailQueue": "Cola de correos"
+    "navEmailQueue": "Cola de correos",
+    "bulkSelected": "{count} seleccionado(s)",
+    "bulkChooseStatus": "Elegir estado…",
+    "bulkApply": "Aplicar",
+    "bulkUpdating": "Actualizando…",
+    "bulkClear": "Borrar selección",
+    "bulkSelectStatusFirst": "Primero elija un estado.",
+    "bulkOrdersUpdated": "{count} pedido(s) actualizado(s).",
+    "bulkOrdersUpdateFailed": "No se pudieron actualizar los pedidos.",
+    "bulkDelete": "Eliminar",
+    "bulkDeleting": "Eliminando…",
+    "bulkConfirmDeleteProducts": "¿Eliminar los {count} producto(s) seleccionado(s)? Esta acción no se puede deshacer.",
+    "bulkProductsDeleted": "{count} producto(s) eliminado(s).",
+    "bulkProductsDeleteFailed": "No se pudieron eliminar los productos.",
+    "confirmDeleteProduct": "¿Eliminar este producto? Esta acción no se puede deshacer.",
+    "deleteProductError": "No se pudo eliminar el producto.",
+    "selectRow": "Seleccionar fila",
+    "selectAll": "Seleccionar todo"
   },
   "Products": {
     "title": "Gestión de productos",
@@ -1463,7 +1480,8 @@
     "testDataLabel": "Datos de prueba (JSON)",
     "testDataPlaceholder": "'{'\"customer_name\": \"John Doe\", \"order_number\": \"ORD001\"'}'",
     "sending": "Enviando...",
-    "sendTest": "Enviar prueba"
+    "sendTest": "Enviar prueba",
+    "confirmDeleteNamed": "¿Eliminar la plantilla «{name}»? Esta acción no se puede deshacer."
   },
   "Users": {
     "title": "Gestión de usuarios",
@@ -1937,7 +1955,28 @@
     "savedSuccess": "Ajustes guardados correctamente",
     "saveFailed": "No se pudieron guardar los ajustes",
     "saveError": "Error al guardar los ajustes",
-    "loadingSettings": "Cargando ajustes..."
+    "loadingSettings": "Cargando ajustes...",
+    "gatewayUpdateFailed": "No se pudo actualizar la pasarela de pago.",
+    "configureUnavailable": "La configuración de la pasarela aún no está disponible.",
+    "status": "Estado",
+    "zoneStatusActive": "Activo",
+    "zoneStatusInactive": "Inactivo",
+    "noZonesConfigured": "No hay zonas de envío configuradas.",
+    "editZone": "Editar zona",
+    "deleteZone": "Eliminar zona",
+    "confirmDeleteZone": "¿Eliminar la zona «{name}»? Esta acción no se puede deshacer.",
+    "zoneSaveFailed": "No se pudo guardar la zona de envío.",
+    "zoneDeleteFailed": "No se pudo eliminar la zona de envío.",
+    "addZoneTitle": "Agregar zona de envío",
+    "editZoneTitle": "Editar zona de envío",
+    "zoneNamePlaceholder": "p. ej., Nacional (EE. UU.)",
+    "countriesLabel": "Países",
+    "countriesPlaceholder": "US, CA, MX",
+    "countriesHelp": "Separe los códigos de país con comas.",
+    "zoneActiveLabel": "Activo (disponible en el pago)",
+    "cancel": "Cancelar",
+    "save": "Guardar",
+    "zoneNameRequired": "El nombre de la zona es obligatorio."
   },
   "OrderDetailView": {
     "orderTitle": "Pedido {orderNumber}",
@@ -2011,7 +2050,17 @@
     "columnStatus": "Estado",
     "loadingOrders": "Cargando pedidos…",
     "noOrdersFound": "No se encontraron pedidos para este cliente.",
-    "of": "de"
+    "of": "de",
+    "missingCustomerId": "No se puede guardar: falta el ID del cliente.",
+    "customerUpdated": "Cliente actualizado.",
+    "updateFailed": "No se pudo actualizar el cliente.",
+    "saving": "Guardando…",
+    "addresses": "Direcciones",
+    "addressTypeLabel": "Dirección {type}",
+    "addressLabelFallback": "Dirección",
+    "defaultBadge": "Predeterminada",
+    "addressPhone": "Teléfono: {phone}",
+    "noAddressOnFile": "No hay ninguna dirección registrada."
   },
   "AnalyticsDashboard": {
     "title": "Panel de análisis",
@@ -2246,5 +2295,19 @@
     "retry": "Reintentar",
     "retrying": "Reintentando…",
     "footerNote": "Mostrando las {count} tareas más recientes. Las tareas fallidas se reintentan automáticamente hasta su límite antes de pausarse."
+  },
+  "AddCustomerModal": {
+    "title": "Agregar nuevo cliente",
+    "close": "Cerrar",
+    "firstName": "Nombre",
+    "lastName": "Apellido",
+    "email": "Correo electrónico",
+    "phoneOptional": "Teléfono (opcional)",
+    "temporaryPassword": "Contraseña temporal",
+    "cancel": "Cancelar",
+    "creating": "Creando…",
+    "createCustomer": "Crear cliente",
+    "requiredFields": "El nombre, el apellido, el correo electrónico y una contraseña temporal son obligatorios.",
+    "createFailed": "No se pudo crear el cliente."
   }
 }

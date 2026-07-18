@@ -73,7 +73,7 @@ router.post('/product/:productId', protect, admin, upload.single('image'), async
     const { productId } = req.params;
 
     // Verify product exists
-    const [product] = await db.executeQuery('SELECT id FROM products WHERE id = ?', [productId]);
+    const product = db.first(await db.executeQuery('SELECT id FROM products WHERE id = ?', [productId]));
     if (!product) {
       return res.status(404).json(ResponseFormatter.failure('Product not found'));
     }
@@ -86,10 +86,10 @@ router.post('/product/:productId', protect, admin, upload.single('image'), async
     );
 
     // Get max sort_order for this product
-    const [maxSort] = await db.executeQuery(
+    const maxSort = db.first(await db.executeQuery(
       'SELECT COALESCE(MAX(sort_order), 0) as max_sort FROM product_images WHERE product_id = ?',
       [productId]
-    );
+    ));
     const sortOrder = (maxSort?.max_sort || 0) + 1;
 
     // Insert image record into database
@@ -132,7 +132,7 @@ router.delete('/:imageId', protect, admin, async (req, res) => {
     const { imageId } = req.params;
 
     // Get image record
-    const [image] = await db.executeQuery('SELECT * FROM product_images WHERE id = ?', [imageId]);
+    const image = db.first(await db.executeQuery('SELECT * FROM product_images WHERE id = ?', [imageId]));
     if (!image) {
       return res.status(404).json(ResponseFormatter.failure('Image not found'));
     }

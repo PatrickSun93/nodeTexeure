@@ -15,15 +15,12 @@ export default function ContactPage() {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState('');
-  const timeoutRef = useRef(null);
+  const [errorMessage, setErrorMessage] = useState('');
   const clearStatusTimeoutRef = useRef(null);
 
-  // Cleanup timeouts on unmount
+  // Cleanup timeout on unmount
   useEffect(() => {
     return () => {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
       if (clearStatusTimeoutRef.current) {
         clearTimeout(clearStatusTimeoutRef.current);
       }
@@ -41,26 +38,51 @@ export default function ContactPage() {
     e.preventDefault();
     setIsSubmitting(true);
     setSubmitStatus('');
-    
-    // Clear any existing timeouts
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-    }
+    setErrorMessage('');
+
+    // Clear any pending success-message timeout
     if (clearStatusTimeoutRef.current) {
       clearTimeout(clearStatusTimeoutRef.current);
     }
-    
-    // Simulate form submission
-    timeoutRef.current = setTimeout(() => {
+
+    try {
+      const res = await fetch('/api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: formData.fullName,
+          email: formData.email,
+          subject: formData.subject,
+          message: formData.message,
+        }),
+      });
+
+      let data = {};
+      try {
+        data = await res.json();
+      } catch {
+        /* non-JSON response — fall through to the error branch */
+      }
+
+      if (res.ok && data?.status === 'SUCCESS') {
+        setSubmitStatus('success');
+        setFormData({ fullName: '', email: '', subject: '', message: '' });
+
+        // Clear success message after 5 seconds
+        clearStatusTimeoutRef.current = setTimeout(() => {
+          setSubmitStatus('');
+        }, 5000);
+      } else {
+        setErrorMessage(data?.message || t('errorMessage'));
+        setSubmitStatus('error');
+      }
+    } catch (err) {
+      console.error('Contact form submission failed:', err);
+      setErrorMessage(t('errorMessage'));
+      setSubmitStatus('error');
+    } finally {
       setIsSubmitting(false);
-      setSubmitStatus('success');
-      setFormData({ fullName: '', email: '', subject: '', message: '' });
-      
-      // Clear success message after 5 seconds
-      clearStatusTimeoutRef.current = setTimeout(() => {
-        setSubmitStatus('');
-      }, 5000);
-    }, 1000);
+    }
   };
 
   return (
@@ -88,7 +110,24 @@ export default function ContactPage() {
                   {t('successMessage')}
                 </div>
               )}
-              
+
+              {submitStatus === 'error' && (
+                <div
+                  role="alert"
+                  style={{
+                    padding: 'var(--space-4)',
+                    background: 'var(--noirae-error-bg)',
+                    border: '1px solid var(--noirae-error)',
+                    borderRadius: 'var(--radius-base)',
+                    color: 'var(--noirae-error)',
+                    fontSize: 'var(--font-size-sm)',
+                    marginBottom: 'var(--space-4)',
+                  }}
+                >
+                  {errorMessage || t('errorMessage')}
+                </div>
+              )}
+
               <form onSubmit={handleSubmit} className="noirae-contact-form">
                 <div className="noirae-contact-form-group">
                   <label htmlFor="fullName" className="noirae-contact-label">

@@ -23,8 +23,9 @@ async function getTaxRate(stateCode, countryCode) {
        LIMIT 1`,
       [countryCode || 'US', stateCode || '']
     );
-    if (result && result.length > 0) {
-      return parseFloat(result[0].tax_rate);
+    const rows = db.rows(result);
+    if (rows.length > 0) {
+      return parseFloat(rows[0].tax_rate);
     }
     // Try country-level rate
     const countryResult = await db.executeQuery(
@@ -35,8 +36,9 @@ async function getTaxRate(stateCode, countryCode) {
        LIMIT 1`,
       [countryCode || 'US']
     );
-    if (countryResult && countryResult.length > 0) {
-      return parseFloat(countryResult[0].tax_rate);
+    const countryRows = db.rows(countryResult);
+    if (countryRows.length > 0) {
+      return parseFloat(countryRows[0].tax_rate);
     }
   } catch (err) {
     console.error('Tax rate lookup failed, using default:', err.message);
@@ -163,6 +165,9 @@ router.post('/apply-coupon', protectOptional, async (req, res) => {
 
     const coupon = validation.coupon;
     let discountAmount = 0;
+    // free_shipping coupons carry no subtotal discount — they zero the shipping cost
+    // at order time (see /create). Surface the flag so the checkout UI can reflect it.
+    let freeShipping = false;
     if (coupon.type === 'percentage') {
       discountAmount = subtotal * (coupon.value / 100);
       if (coupon.maximum_discount_amount && discountAmount > coupon.maximum_discount_amount) {
@@ -170,12 +175,14 @@ router.post('/apply-coupon', protectOptional, async (req, res) => {
       }
     } else if (coupon.type === 'fixed_amount') {
       discountAmount = coupon.value;
+    } else if (coupon.type === 'free_shipping') {
+      freeShipping = true;
     }
     // Never discount below zero or beyond what's actually in the cart — an
     // oversized fixed_amount coupon must not produce a negative total.
     discountAmount = Math.max(0, Math.min(discountAmount, subtotal));
 
-    res.json(ResponseFormatter.success('Coupon applied', { discount: discountAmount }));
+    res.json(ResponseFormatter.success('Coupon applied', { discount: discountAmount, freeShipping }));
   } catch (error) {
     console.error(error);
     res.status(500).json(ResponseFormatter.failure('Failed to apply coupon'));
@@ -227,6 +234,7 @@ router.post('/create', protectOptional, async (req, res) => {
 
     let discountAmount = 0;
     let appliedCoupon = null; // coupon row (id, usage_limit) for usage accounting inside the order transaction
+    let freeShipping = false; // set by a free_shipping coupon; zeroes shipping below
     if (couponCode) {
       const validation = await validateCoupon(couponCode, subtotal);
       if (!validation.valid) {
@@ -241,6 +249,9 @@ router.post('/create', protectOptional, async (req, res) => {
         }
       } else if (coupon.type === 'fixed_amount') {
         discountAmount = coupon.value;
+      } else if (coupon.type === 'free_shipping') {
+        // No subtotal discount — the benefit is applied to shipping after it's computed.
+        freeShipping = true;
       }
       // Never discount below zero or beyond what's actually in the cart — an
       // oversized fixed_amount coupon must not produce a negative total.
@@ -263,6 +274,10 @@ router.post('/create', protectOptional, async (req, res) => {
     }
     // Free shipping over $100
     if (subtotal >= 100) {
+      shippingAmount = 0;
+    }
+    // A free_shipping coupon zeroes the shipping cost regardless of subtotal.
+    if (freeShipping) {
       shippingAmount = 0;
     }
 
@@ -316,9 +331,34 @@ router.post('/create', protectOptional, async (req, res) => {
           await connection.rollback();
           return res.status(409).json(ResponseFormatter.failure('Coupon usage limit reached'));
         }
-        // TODO: usage_limit_per_customer cannot be enforced yet — orders do not
-        // record the coupon code, so per-customer counts need a schema change
-        // (store the applied coupon on the order first).
+
+        // Per-customer usage cap. The UPDATE above took an exclusive row lock on this
+        // discount_codes row, so concurrent checkouts of the SAME coupon serialize
+        // here — the COUNT below therefore observes every already-committed redemption,
+        // making this check race-safe. Only enforceable for logged-in users (guests
+        // have no stable identity); guest redemptions are still logged below.
+        const perCustomerLimit = appliedCoupon.usage_limit_per_customer;
+        if (userId && perCustomerLimit != null) {
+          const [usageRows] = await connection.execute(
+            'SELECT COUNT(*) AS cnt FROM discount_code_usage WHERE discount_code_id = ? AND user_id = ?',
+            [appliedCoupon.id, userId]
+          );
+          if (Number(usageRows[0].cnt) >= Number(perCustomerLimit)) {
+            await connection.rollback();
+            return res.status(409).json(
+              ResponseFormatter.failure('You have already used this coupon the maximum number of times')
+            );
+          }
+        }
+
+        // Record the redemption in the usage ledger (the order row was inserted above,
+        // so the order_id FK holds). This is what makes per-customer counts work for
+        // subsequent orders.
+        await connection.execute(
+          `INSERT INTO discount_code_usage (id, discount_code_id, order_id, user_id, discount_amount)
+           VALUES (?, ?, ?, ?, ?)`,
+          [uuidv4(), appliedCoupon.id, orderId, userId, discountAmount]
+        );
       }
 
       // Create order items
