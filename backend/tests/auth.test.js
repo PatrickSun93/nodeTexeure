@@ -211,3 +211,30 @@ describe('back office', () => {
     expect((await request(app).get('/api/users/profile').set(bearer(accessToken))).status).toBe(401);
   });
 });
+
+describe('refresh tokens', () => {
+  const { registerCustomer, DatabaseUtil } = require('./helpers');
+
+  test('a refresh token mints a working access token', async () => {
+    const user = await registerCustomer();
+    const res = await request(app).post('/api/users/refresh').send({ refreshToken: user.refreshToken });
+    expect(res.status).toBe(200);
+    const fresh = res.body.keyValueTable.accessToken;
+    expect((await request(app).get('/api/users/profile').set(bearer(fresh))).status).toBe(200);
+  });
+
+  test('refresh tokens are stored hashed', async () => {
+    const user = await registerCustomer();
+    const rows = DatabaseUtil.rows(await DatabaseUtil.executeQuery(
+      'SELECT token_hash FROM refresh_tokens WHERE user_id = ?', [user.userId]));
+    expect(rows).toHaveLength(1);
+    expect(rows[0].token_hash).not.toBe(user.refreshToken);
+  });
+
+  test('refresh is refused for an unknown token or an inactive account', async () => {
+    expect((await request(app).post('/api/users/refresh').send({ refreshToken: 'nope' })).status).toBe(401);
+    const user = await registerCustomer();
+    await DatabaseUtil.executeQuery("UPDATE users SET status = 'suspended' WHERE id = ?", [user.userId]);
+    expect((await request(app).post('/api/users/refresh').send({ refreshToken: user.refreshToken })).status).toBe(401);
+  });
+});

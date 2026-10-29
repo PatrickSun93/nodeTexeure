@@ -23,7 +23,8 @@ const signAccessToken = (user) => {
   );
 };
 
-const hashResetToken = (token) => crypto.createHash('sha256').update(token).digest('hex');
+// Reset and refresh tokens are stored as SHA-256 hashes, never raw.
+const hashToken = (token) => crypto.createHash('sha256').update(token).digest('hex');
 
 // Roles with back-office access to the admin dashboard. Membership issues the
 // HttpOnly admin_auth cookie and skips the guest-cart merge on login; it does
@@ -259,10 +260,14 @@ router.post('/login', loginLimiter, async (req, res) => {
       const refreshExpiry = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
 
       // Get next ID for refresh token
-      const refreshIdResult = await DatabaseUtil.executeQuery('SELECT get_next_id(?) as id', ['REFRESH']);
-      const refreshId = refreshIdResult.data[0].id;
-
-      await DatabaseUtil.executeQuery('INSERT INTO refresh_tokens (id, user_id, token, expiry) VALUES (?, ?, ?, ?)', [refreshId, user.id, refreshToken, refreshExpiry]);
+      const refreshId = DatabaseUtil.first(await DatabaseUtil.executeQuery('SELECT get_next_id(?) as id', ['REFRESH']))?.id;
+      const savedRefresh = await DatabaseUtil.executeQuery(
+        'INSERT INTO refresh_tokens (id, user_id, token_hash, expiry) VALUES (?, ?, ?, ?)',
+        [refreshId, user.id, hashToken(refreshToken), refreshExpiry]
+      );
+      if (!savedRefresh.success) {
+        throw new Error(`Failed to store refresh token: ${savedRefresh.error}`);
+      }
 
       // Issue the HttpOnly admin_auth cookie for back-office logins (admin + staff)
       // so they can use the dashboard (which authenticates via this cookie).
@@ -344,7 +349,7 @@ router.post('/refresh', refreshLimiter, async (req, res) => {
     if (!refreshToken) {
       return res.status(400).json(ResponseFormatter.failure('Refresh token required'));
     }
-    const result = await DatabaseUtil.executeQuery('SELECT * FROM refresh_tokens WHERE token = ? AND expiry > NOW()', [refreshToken]);
+    const result = await DatabaseUtil.executeQuery('SELECT * FROM refresh_tokens WHERE token_hash = ? AND expiry > NOW()', [hashToken(String(refreshToken))]);
     if (!result.success || result.data.length === 0) {
       return res.status(401).json(ResponseFormatter.failure('Invalid or expired refresh token'));
     }
@@ -886,7 +891,7 @@ router.post('/forgot-password', forgotLimiter, async (req, res) => {
 
     const saved = await DatabaseUtil.executeQuery(
       'UPDATE users SET password_reset_token = ?, password_reset_expires = DATE_ADD(NOW(), INTERVAL 1 HOUR) WHERE id = ?',
-      [hashResetToken(token), userId]
+      [hashToken(token), userId]
     );
     if (!saved.success) {
       throw new Error(`Failed to store reset token: ${saved.error}`);
@@ -930,7 +935,7 @@ router.post('/reset-password', async (req, res) => {
 
     const result = await DatabaseUtil.executeQuery(
       'SELECT id FROM users WHERE password_reset_token = ? AND password_reset_expires > NOW()',
-      [hashResetToken(String(token))]
+      [hashToken(String(token))]
     );
 
     if (!result.success || result.data.length === 0) {

@@ -67,6 +67,37 @@ const fetchBackend = async (url, options = {}) => {
   });
 };
 
+const REFRESH_MARGIN_MS = 5 * 60 * 1000;
+
+// Read `exp` from the backend JWT (no verification needed: it's our own token,
+// only used to schedule the refresh).
+const accessTokenExpiry = (accessToken) => {
+  try {
+    const payload = JSON.parse(Buffer.from(accessToken.split('.')[1], 'base64url').toString());
+    return payload.exp * 1000;
+  } catch {
+    return 0;
+  }
+};
+
+async function refreshAccessToken(token) {
+  try {
+    const response = await fetchBackend('/api/users/refresh', {
+      method: 'POST',
+      body: JSON.stringify({ refreshToken: token.refreshToken }),
+    });
+    const data = await response.json();
+    if (!response.ok || data.status !== 'SUCCESS') throw new Error(data.message || 'refresh failed');
+    const { accessToken } = data.keyValueTable;
+    return { ...token, accessToken, accessTokenExpires: accessTokenExpiry(accessToken), error: undefined };
+  } catch (error) {
+    // Revoked or expired: drop the backend token so API calls 401 and the
+    // pages send the user back to sign in, rather than half-working.
+    console.warn('[NextAuth] Access token refresh failed:', error.message);
+    return { ...token, accessToken: undefined, error: 'RefreshAccessTokenError' };
+  }
+}
+
 const handler = NextAuth({
   providers: [
     CredentialsProvider({
@@ -130,8 +161,15 @@ const handler = NextAuth({
         token.id = user.id;
         token.accessToken = user.accessToken;
         token.refreshToken = user.refreshToken;
+        token.accessTokenExpires = accessTokenExpiry(user.accessToken);
         token.role = user.role;
         token.isAdmin = user.isAdmin;
+        return token;
+      }
+      // The backend access token is short-lived (24h) while the NextAuth session
+      // lasts 30 days: renew it shortly before it expires.
+      if (token.accessToken && Date.now() > (token.accessTokenExpires || 0) - REFRESH_MARGIN_MS) {
+        return refreshAccessToken(token);
       }
       return token;
     },
@@ -140,6 +178,7 @@ const handler = NextAuth({
       session.user.role = token.role;
       session.user.isAdmin = token.isAdmin;
       session.accessToken = token.accessToken;
+      if (token.error) session.error = token.error;
       return session;
     }
   },
