@@ -2,6 +2,7 @@
 
 import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import Header from '../../components/Header';
@@ -22,12 +23,19 @@ export function ProductCard({ product, onAddToCart }) {
     }
   };
 
+  const imageSrc = product.image || `/api/placeholder/400/400?seed=${product.id || product.slug || product.name || 'p'}`;
+
   return (
     <Link href={`/products/${product.id}`} className="noirae-shop-product-card">
       <div className="noirae-shop-product-image">
-        <img 
-          src={product.image || `/api/placeholder/400/400?seed=${product.id || product.slug || product.name || 'p'}`}
+        <Image
+          src={imageSrc}
           alt={product.name}
+          fill
+          sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+          // Catalogue images in /public are optimized (AVIF/WebP, responsive sizes);
+          // remote (S3/backend) and placeholder URLs are served as-is.
+          unoptimized={!imageSrc.startsWith('/images/')}
         />
       </div>
       <div className="noirae-shop-product-info">

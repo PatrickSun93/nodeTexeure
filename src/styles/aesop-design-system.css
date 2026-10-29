@@ -4159,6 +4159,7 @@ p {
 }
 
 .noirae-shop-product-image {
+  position: relative; /* next/image `fill` */
   aspect-ratio: 1;
   overflow: hidden;
   border-radius: var(--radius-md);

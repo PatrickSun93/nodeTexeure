@@ -96,3 +96,24 @@ describe('checkout', () => {
     expect(res.body.status).toBe('FAIL');
   });
 });
+
+describe('product listings', () => {
+  test('list includes each product\'s primary image', async () => {
+    const res = await request(app).get('/api/products').query({ limit: 50, nocache: 'true' });
+    const products = res.body.keyValueTable.products;
+    const withImages = DatabaseUtil.rows(await DatabaseUtil.executeQuery(
+      "SELECT DISTINCT pi.product_id FROM product_images pi JOIN products p ON p.id = pi.product_id WHERE p.status = 'approved'"));
+    expect(withImages.length).toBeGreaterThan(0);
+    for (const { product_id: id } of withImages) {
+      expect(products.find((p) => p.id === id)?.image).toMatch(/\.(jpe?g|png|webp)$/);
+    }
+  });
+
+  test('by-ids accepts product ids and preserves order', async () => {
+    const ids = DatabaseUtil.rows(await DatabaseUtil.executeQuery(
+      "SELECT id FROM products WHERE status = 'approved' ORDER BY id DESC LIMIT 2")).map((r) => r.id);
+    const res = await request(app).get('/api/products/by-ids').query({ ids: ids.join(',') });
+    expect(res.status).toBe(200);
+    expect(res.body.keyValueTable.products.map((p) => p.id)).toEqual(ids);
+  });
+});
