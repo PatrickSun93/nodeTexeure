@@ -1,9 +1,15 @@
 import React, { useState } from 'react';
 import { useTranslations } from 'next-intl';
 
-export default function PromotionModal({ isOpen, onClose, promotion }) {
-    const t = useTranslations('PromotionModal');
+// The form lives in its own component so its hooks always run in the same
+// order, and it remounts (fresh form state) every time the modal opens.
+export default function PromotionModal({ isOpen, ...props }) {
     if (!isOpen) return null;
+    return <PromotionModalForm {...props} />;
+}
+
+function PromotionModalForm({ onClose, promotion }) {
+    const t = useTranslations('PromotionModal');
 
     const getTodayDate = () => {
         const now = new Date();

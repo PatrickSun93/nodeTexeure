@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import Link from 'next/link';
 
 class ErrorBoundary extends React.Component {
   constructor(props) {
@@ -79,12 +80,12 @@ class ErrorBoundary extends React.Component {
             </div>
 
             <div className="mt-4 text-center">
-              <a
+              <Link
                 href="/"
                 className="text-sm text-blue-600 hover:text-blue-700 transition-colors"
               >
                 Return to Dashboard
-              </a>
+              </Link>
             </div>
           </div>
         </div>
