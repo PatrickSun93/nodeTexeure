@@ -3,22 +3,13 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import Head from 'next/head';
 import Header from '../../../components/Header';
 import Footer from '../../../components/Footer';
 import Breadcrumb from '../../../components/Breadcrumb';
 import { ProductCard } from '../../shop/page';
 import { apiRequest } from '../../../lib/api';
-import { generateMetaTags, generateStructuredData, generateBreadcrumbs } from '../../../lib/seo';
-
-// Category mapping for SEO-friendly URLs
-const categoryMapping = {
-  'sheets': 'Sheets',
-  'pillows': 'Pillows',
-  'blankets': 'Blankets',
-  'mattresses': 'Mattresses',
-  'accessories': 'Accessories'
-};
+import { generateBreadcrumbs } from '../../../lib/seo';
+import { categoryName as nameForSlug, categoryDescKey } from '../../../lib/categories';
 
 export default function CategoryPage() {
   const t = useTranslations('CategoryPage');
@@ -28,15 +19,9 @@ export default function CategoryPage() {
   const [error, setError] = useState('');
   const [sortBy, setSortBy] = useState('featured');
 
-  const categoryName = categoryMapping[slug] || slug;
-  const categoryDescriptions = {
-    'sheets': t('descSheets'),
-    'pillows': t('descPillows'),
-    'blankets': t('descBlankets'),
-    'mattresses': t('descMattresses'),
-    'accessories': t('descAccessories'),
-  };
-  const categoryDescription = categoryDescriptions[slug] || t('descFallback', { category: categoryName });
+  const categoryName = nameForSlug(slug);
+  const descKey = categoryDescKey(slug);
+  const categoryDescription = descKey ? t(descKey) : t('descFallback', { category: categoryName });
 
   useEffect(() => {
     const fetchCategoryProducts = async () => {
@@ -116,20 +101,7 @@ export default function CategoryPage() {
     slug: slug 
   });
 
-  const categoryMetaTags = generateMetaTags({
-    title: `${categoryName} - Premium Bed Textures & Luxury Linens`,
-    description: categoryDescription,
-    keywords: `${categoryName.toLowerCase()}, bed textures, luxury linens, premium bedding, ${slug}`,
-    url: `/categories/${slug}`,
-    type: 'website'
-  });
-
-  const categoryStructuredData = generateStructuredData('collection', {
-    name: `${categoryName} Collection`,
-    description: categoryDescription,
-    url: `/categories/${slug}`,
-    products: sortedProducts
-  });
+  // Page metadata + CollectionPage JSON-LD are rendered server-side in ./layout.js.
 
   if (loading) {
     return (
@@ -146,31 +118,6 @@ export default function CategoryPage() {
 
   return (
     <>
-      <Head>
-        <title>{categoryMetaTags.title}</title>
-        <meta name="description" content={categoryMetaTags.description} />
-        <meta name="keywords" content={categoryMetaTags.keywords} />
-        <link rel="canonical" href={categoryMetaTags.canonical} />
-        
-        {/* Open Graph */}
-        <meta property="og:title" content={categoryMetaTags.openGraph.title} />
-        <meta property="og:description" content={categoryMetaTags.openGraph.description} />
-        <meta property="og:url" content={categoryMetaTags.openGraph.url} />
-        <meta property="og:type" content={categoryMetaTags.openGraph.type} />
-        
-        {/* Twitter Card */}
-        <meta name="twitter:card" content={categoryMetaTags.twitter.card} />
-        <meta name="twitter:title" content={categoryMetaTags.twitter.title} />
-        <meta name="twitter:description" content={categoryMetaTags.twitter.description} />
-        
-        {/* Category Structured Data */}
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify(categoryStructuredData)
-          }}
-        />
-      </Head>
       
       <div className="aesop-page">
         <Header />

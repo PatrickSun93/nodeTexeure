@@ -2,7 +2,7 @@
  * Breadcrumb Navigation Component with SEO optimization
  */
 import Link from 'next/link';
-import { generateStructuredData } from '../lib/seo';
+import { generateStructuredData, jsonLd } from '../lib/seo';
 
 export default function Breadcrumb({ items, className = '' }) {
   if (!items || items.length === 0) return null;
@@ -14,9 +14,7 @@ export default function Breadcrumb({ items, className = '' }) {
       {/* Structured Data for Breadcrumbs */}
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify(structuredData)
-        }}
+        dangerouslySetInnerHTML={jsonLd(structuredData)}
       />
       
       {/* Breadcrumb Navigation */}

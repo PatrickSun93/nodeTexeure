@@ -80,7 +80,8 @@ imagery is served from the `product_images` table (`public/images/bedding/*.jpg`
 
 - **Port 6666 is a browser-blocked "bad port."** Browsers and Node `fetch`
   refuse it. Client code must call `/api/*` (relative, via the proxy), never
-  `http://localhost:6666` directly. Server-side, use `http.request` (not fetch).
+  `http://localhost:6666` directly. Server-side, use `getBackendJson()` from
+  `src/lib/server/backend.js` (it uses `http.request`; Node's fetch refuses the port).
 - **`executeQuery` never throws and always returns `{ success, data, affectedRows,
   insertId }`** (`{ success: false, error }` on failure). Read rows with
   `DatabaseUtil.rows(result)` / `DatabaseUtil.first(result)` — never index the
