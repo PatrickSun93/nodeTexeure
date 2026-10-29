@@ -82,7 +82,7 @@ router.post('/create-checkout-session', protectOptional, async (req, res) => {
     }
 
     const customerEmail = order.guest_email || (req.user ? req.user.email : null);
-    const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
+    const baseUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
     const successUrl = `${baseUrl}/order/confirmation/${orderId}?session_id={CHECKOUT_SESSION_ID}`;
     const cancelUrl = `${baseUrl}/checkout?cancelled=true`;
 

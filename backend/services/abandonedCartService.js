@@ -171,7 +171,7 @@ class AbandonedCartService {
           variant_details: item.variant_details
         })),
         totalAmount: parseFloat(cart_total).toFixed(2),
-        checkoutUrl: `${process.env.BASE_URL || 'http://localhost:3000'}/cart-recovery?recovery=${recoveryToken}`,
+        checkoutUrl: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/cart-recovery?recovery=${recoveryToken}`,
         customerName: `${first_name || ''} ${last_name || ''}`.trim() || 'Customer',
         recoveryToken
       };

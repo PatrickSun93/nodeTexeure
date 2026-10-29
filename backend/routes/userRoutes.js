@@ -1,7 +1,6 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const nodemailer = require('nodemailer');
 const rateLimit = require('express-rate-limit');
 const DatabaseUtil = require('../utils/database');
 const ResponseFormatter = require('../utils/responseFormatter');
@@ -208,15 +207,6 @@ const forgotLimiter = rateLimit({
   max: 3, // limit each IP to 3 requests per windowMs
   message: 'Too many password reset attempts from this IP, please try again after an hour',
   skip: skipRateLimit,
-});
-
-// Email transporter configuration (use env vars in production)
-const transporter = nodemailer.createTransport({
-  service: 'gmail', // or your email service
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS
-  }
 });
 
 /**
