@@ -4,7 +4,7 @@
  * Database Initialization Script
  * 
  * This script initializes the MySQL database with:
- * - All tables from database_schema.sql
+ * - All tables from docker/mysql/init.sql, then backend/migrations
  * - Audit log tables and triggers
  * - Initial data and views
  * 
@@ -65,6 +65,14 @@ async function createDatabaseIfNotExists() {
   const connection = await mysql.createConnection(connectionConfig);
   
   try {
+    if (process.argv.includes('--reset')) {
+      if (process.env.NODE_ENV === 'production') {
+        throw new Error('Refusing to --reset a database while NODE_ENV=production');
+      }
+      logStep('1', `Dropping database '${dbConfig.database}' (--reset)...`);
+      await connection.query(`DROP DATABASE IF EXISTS \`${dbConfig.database}\``);
+    }
+
     logStep('1', 'Checking if database exists...');
     
     const [rows] = await connection.execute(
@@ -298,10 +306,7 @@ async function showDatabaseInfo(connection) {
   log('  3. Begin adding your business data', 'white');
   
   log('\n📚 Documentation:', 'blue');
-  log('  • Database Schema: database_schema.sql', 'white');
-  log('  • Audit System: AUDIT_SYSTEM.md', 'white');
-  log('  • JSON System: JSON_SYSTEM.md', 'white');
-  log('  • Database Design: DATABASE_DESIGN.md', 'white');
+  log('  • docs/DATABASE.md (schema, custom IDs, migrations)', 'white');
 }
 
 async function main() {
@@ -320,8 +325,10 @@ async function main() {
     
     try {
       // Step 3: Execute schema file
-      const schemaPath = path.join(__dirname, 'database_schema.sql');
+      // Same schema Docker uses, then the tracked migrations on top of it.
+      const schemaPath = path.join(__dirname, '..', 'docker', 'mysql', 'init.sql');
       await executeSQLFile(connection, schemaPath, 'database schema');
+      await require('../backend/scripts/migrate').runMigrations();
       
       // Step 4: Verify tables
       await verifyTables(connection);

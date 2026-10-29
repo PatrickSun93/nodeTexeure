@@ -210,6 +210,19 @@ if (require.main === module) {
     console.log(`📡 API endpoints available at http://localhost:${PORT}/api`);
     console.log(`✅ Server ready to accept connections`);
   });
+
+  // Return stock held by abandoned checkouts. Idempotent, so running it in every
+  // backend instance is safe. Low-stock alerts stay in
+  // scripts/cleanup-expired-reservations.js (run it from cron if wanted).
+  const InventoryService = require('./services/inventoryService');
+  const releaseExpired = () => InventoryService.releaseExpiredReservations()
+    .then((r) => {
+      if (!r.success) console.error('Reservation cleanup failed:', r.error);
+      else if (r.data.released_count) console.log(`♻️  Released ${r.data.released_count} expired stock reservation(s)`);
+    })
+    .catch((err) => console.error('Reservation cleanup failed:', err.message));
+  setInterval(releaseExpired, 15 * 60 * 1000).unref();
+  releaseExpired();
 }
 
 module.exports = app;
