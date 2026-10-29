@@ -10,6 +10,7 @@ const DatabaseUtil = require('../utils/database');
 const stripeService = require('../services/stripeService');
 const { protect, admin, protectOptional } = require('../middleware/authMiddleware');
 const { csrfProtection } = require('../middleware/csrfMiddleware');
+const orderPayments = require('../services/orderPayments');
 const db = DatabaseUtil; // executeQuery et al. are static — reference the class, not an instance
 
 /**
@@ -94,10 +95,7 @@ router.post('/create-checkout-session', protectOptional, async (req, res) => {
     );
 
     // Save Stripe session ID to order
-    await db.executeQuery(
-      'UPDATE orders SET stripe_session_id = ? WHERE id = ?',
-      [session.id, orderId]
-    );
+    await orderPayments.recordCheckoutSession(orderId, session.id);
 
     res.json(ResponseFormatter.success('Checkout session created', {
       sessionId: session.id,
@@ -151,10 +149,7 @@ router.post('/create-payment-intent', protectOptional, async (req, res) => {
     );
 
     // Save payment intent ID to order
-    await db.executeQuery(
-      'UPDATE orders SET stripe_payment_intent_id = ? WHERE id = ?',
-      [paymentIntent.id, orderId]
-    );
+    await orderPayments.recordPaymentIntent(orderId, paymentIntent.id);
 
     res.json(ResponseFormatter.success('Payment intent created', {
       clientSecret: paymentIntent.client_secret,
@@ -192,10 +187,7 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
               break; // Do not mark as paid
             }
           }
-          await db.executeQuery(
-            "UPDATE orders SET status = 'paid', payment_status = 'paid', paid_at = NOW(), stripe_payment_intent_id = ? WHERE id = ?",
-            [session.payment_intent, orderId]
-          );
+          await orderPayments.markOrderPaid(orderId, session.payment_intent);
           console.log(`Order ${orderId} marked as paid via checkout session`);
         }
         break;
@@ -215,10 +207,7 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
               break;
             }
           }
-          await db.executeQuery(
-            "UPDATE orders SET status = 'paid', payment_status = 'paid', paid_at = NOW() WHERE id = ?",
-            [orderId]
-          );
+          await orderPayments.markOrderPaid(orderId, paymentIntent.id);
           console.log(`Order ${orderId} payment succeeded`);
         }
         break;
@@ -232,10 +221,7 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
           [charge.payment_intent]
         ));
         if (order) {
-          await db.executeQuery(
-            "UPDATE orders SET status = 'refunded', payment_status = 'refunded' WHERE id = ?",
-            [order.id]
-          );
+          await orderPayments.markOrderRefunded(order.id, { partial: charge.amount_refunded < charge.amount });
           console.log(`💰 Order ${order.id} refunded`);
         }
         break;
@@ -282,10 +268,7 @@ router.post('/refund', protect, admin, csrfProtection, async (req, res) => {
     const refund = await stripeService.processRefund(order.stripe_payment_intent_id, refundAmount);
 
     // Update order status
-    await db.executeQuery(
-      "UPDATE orders SET status = 'refunded', payment_status = 'refunded' WHERE id = ?",
-      [orderId]
-    );
+    await orderPayments.markOrderRefunded(orderId, { partial: refund.amount < Math.round(order.total_amount * 100) });
 
     res.json(ResponseFormatter.success('Refund processed', {
       refundId: refund.id,
