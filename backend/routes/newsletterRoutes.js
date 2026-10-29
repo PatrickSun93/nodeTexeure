@@ -6,7 +6,7 @@
  * so re-subscribing an existing address is a harmless no-op that still returns success
  * and never reveals whether the address was already on the list.
  *
- * Requires database/migrations/007_newsletter_subscribers.sql (see report FLAGS —
+ * Requires backend/migrations/008_newsletter_subscribers.sql (see report FLAGS —
  * Docker only auto-runs docker/mysql/init.sql, so this migration must be applied or
  * folded into init.sql for the table to exist in a fresh stack).
  *

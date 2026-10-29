@@ -7,7 +7,7 @@ const express = require('express');
 const router = express.Router();
 const multer = require('multer');
 const path = require('path');
-const { v4: uuidv4 } = require('uuid');
+const { randomUUID: uuidv4 } = require('crypto');
 const ResponseFormatter = require('../utils/responseFormatter');
 const DatabaseUtil = require('../utils/database');
 const s3Service = require('../services/s3Service');
@@ -30,9 +30,9 @@ const upload = multer({
 
 /**
  * POST /api/images/upload
- * Upload a single image (authenticated users)
+ * Upload a single image (admin only — storage writes are not a customer feature)
  */
-router.post('/upload', protect, upload.single('image'), async (req, res) => {
+router.post('/upload', protect, admin, upload.single('image'), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json(ResponseFormatter.failure('No image file provided'));

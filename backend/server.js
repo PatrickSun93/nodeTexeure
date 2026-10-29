@@ -203,11 +203,13 @@ app.use((err, req, res, next) => {
   res.status(500).json(ResponseFormatter.failure('Internal server error', keyValueTable));
 });
 
-// Start server
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`🚀 Backend server running on http://localhost:${PORT}`);
-  console.log(`📡 API endpoints available at http://localhost:${PORT}/api`);
-  console.log(`✅ Server ready to accept connections`);
-});
+// Start server (skipped when required by the test suite, which drives `app` directly)
+if (require.main === module) {
+  app.listen(PORT, '0.0.0.0', () => {
+    console.log(`🚀 Backend server running on http://localhost:${PORT}`);
+    console.log(`📡 API endpoints available at http://localhost:${PORT}/api`);
+    console.log(`✅ Server ready to accept connections`);
+  });
+}
 
 module.exports = app;

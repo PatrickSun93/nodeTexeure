@@ -8,6 +8,9 @@ until mysqladmin ping -h "$DB_HOST" -P "$DB_PORT" -uroot -p"$DB_PASSWORD" --sile
 done
 echo "✅ MySQL is ready."
 
+echo "🗄️  Applying schema migrations..."
+npm run migrate
+
 USERS=$(mysql -h "$DB_HOST" -P "$DB_PORT" -uroot -p"$DB_PASSWORD" "$DB_NAME" -N -e "SELECT COUNT(*) FROM users;" 2>/dev/null || echo "")
 if [ -z "$USERS" ] || [ "$USERS" = "0" ]; then
   echo "🌱 Empty database — seeding demo data (admin@example.com / Admin@123, alice.customer@example.com / Customer@123)..."

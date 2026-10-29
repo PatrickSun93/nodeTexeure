@@ -6,11 +6,24 @@ const rateLimit = require('express-rate-limit');
 const DatabaseUtil = require('../utils/database');
 const ResponseFormatter = require('../utils/responseFormatter');
 const { protect, admin, protectOptional } = require('../middleware/authMiddleware');
-const { generateCSRFToken } = require('../middleware/csrfMiddleware');
+const { generateCSRFToken, csrfProtection } = require('../middleware/csrfMiddleware');
 const crypto = require('crypto');
 const emailQueueProducer = require('../services/emailQueueProducer');
 
 const router = express.Router();
+
+// Access tokens carry the user's token_version (`tv`); the auth middleware
+// rejects tokens whose version has since been bumped (see migration 009).
+const signAccessToken = (user) => {
+  const role = String(user.role).toLowerCase();
+  return jwt.sign(
+    { id: user.id, email: user.email, isAdmin: role === 'admin', isStaff: role === 'staff', tv: Number(user.token_version) || 0 },
+    process.env.JWT_SECRET,
+    { algorithm: 'HS256', expiresIn: process.env.ACCESS_TOKEN_TTL || '24h' }
+  );
+};
+
+const hashResetToken = (token) => crypto.createHash('sha256').update(token).digest('hex');
 
 // Roles with back-office access to the admin dashboard. Membership issues the
 // HttpOnly admin_auth cookie and skips the guest-cart merge on login; it does
@@ -230,13 +243,18 @@ router.post('/login', loginLimiter, async (req, res) => {
     // Determine user role
     const userRole = user.role.toLowerCase();
 
+    // Deactivated/suspended accounts can't sign in (same response as bad credentials).
+    if (user.status !== 'active') {
+      return res.status(401).json(ResponseFormatter.failure('Invalid credentials', { error: 'Invalid email or password' }));
+    }
+
     if (await bcrypt.compare(password, user.password_hash)) {
       // Admin privilege is granted ONLY to the 'admin' role. Staff are NOT admins
       // (isAdmin=false) so they cannot pass the admin-only middleware; they get a
       // separate isStaff flag for staff-or-admin routes.
       const isAdmin = userRole === 'admin';
       const isStaff = userRole === 'staff';
-      const accessToken = jwt.sign({ id: user.id, email: user.email, isAdmin, isStaff }, process.env.JWT_SECRET, { algorithm: 'HS256', expiresIn: '24h' });
+      const accessToken = signAccessToken(user);
       const refreshToken = crypto.randomBytes(64).toString('hex');
       const refreshExpiry = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
 
@@ -331,17 +349,16 @@ router.post('/refresh', refreshLimiter, async (req, res) => {
       return res.status(401).json(ResponseFormatter.failure('Invalid or expired refresh token'));
     }
     const { user_id } = result.data[0];
-    const userResult = await DatabaseUtil.executeQuery('SELECT id, email, role FROM users WHERE id = ?', [user_id]);
+    const userResult = await DatabaseUtil.executeQuery('SELECT id, email, role, status, token_version FROM users WHERE id = ?', [user_id]);
     if (!userResult.success || userResult.data.length === 0) {
       return res.status(404).json(ResponseFormatter.failure('User not found'));
     }
+    if (userResult.data[0].status !== 'active') {
+      return res.status(401).json(ResponseFormatter.failure('Invalid or expired refresh token'));
+    }
+    // Role flags are re-derived from the current DB role (signAccessToken).
     const user = userResult.data[0];
-    // Admin privilege is granted ONLY to the 'admin' role; staff get isStaff. Keep
-    // the same flags in refreshed tokens so role gating survives a token refresh.
-    const userRole = user.role.toLowerCase();
-    const isAdmin = userRole === 'admin';
-    const isStaff = userRole === 'staff';
-    const newAccessToken = jwt.sign({ id: user.id, email: user.email, isAdmin, isStaff }, process.env.JWT_SECRET, { algorithm: 'HS256', expiresIn: '24h' });
+    const newAccessToken = signAccessToken(user);
     res.json(ResponseFormatter.success('Token refreshed', { accessToken: newAccessToken }));
   } catch (error) {
     console.error('Refresh token error:', error);
@@ -670,12 +687,18 @@ router.patch('/addresses/:id/default', protect, async (req, res) => {
  */
 router.get('/', protect, admin, async (req, res) => {
   try {
-    const { page = 1, limit = 10 } = req.query;
+    const limit = Math.min(Math.max(Number.parseInt(req.query.limit, 10) || 10, 1), 100);
+    const page = Math.max(Number.parseInt(req.query.page, 10) || 1, 1);
     const offset = (page - 1) * limit;
-    const result = await DatabaseUtil.executeQuery('SELECT id, name, email, isAdmin FROM users WHERE isDeleted = FALSE LIMIT ? OFFSET ?', [parseInt(limit), offset]);
+    // LIMIT/OFFSET are validated integers; inlined because MySQL 8 rejects them as
+    // bound parameters in prepared statements.
+    const result = await DatabaseUtil.executeQuery(
+      `SELECT id, email, first_name, last_name, role, status, created_at
+       FROM users ORDER BY created_at DESC LIMIT ${limit} OFFSET ${offset}`
+    );
 
     if (result.success) {
-      res.json(ResponseFormatter.success('Users fetched', { users: result.data }));
+      res.json(ResponseFormatter.success('Users fetched', { users: result.data, page, limit }));
     } else {
       throw new Error('Failed to fetch users');
     }
@@ -723,20 +746,29 @@ router.get('/csrf-token', protect, admin, async (req, res) => {
   }
 });
 
+// Admin user routes. `:id` only matches real user IDs (USER0000000001) so these
+// never shadow public routes declared below, such as GET /verify-email.
+const USER_ID = '/:id(USER\\d+)';
+const USER_ROLES = ['admin', 'staff', 'customer'];
+
 /**
  * GET /api/users/:id
  * Get user by ID (admin)
  */
-router.get('/:id', protect, admin, async (req, res) => {
+router.get(USER_ID, protect, admin, async (req, res) => {
   try {
-    const result = await DatabaseUtil.executeQuery('SELECT id, name, email, address, isAdmin FROM users WHERE id = ? AND isDeleted = FALSE', [req.params.id]);
+    const user = DatabaseUtil.first(await DatabaseUtil.executeQuery(
+      `SELECT id, email, first_name, last_name, phone, role, status, email_verified, last_login, created_at
+       FROM users WHERE id = ?`,
+      [req.params.id]
+    ));
 
-    if (!result.success || result.data.length === 0) {
+    if (!user) {
       const keyValueTable = { error: 'User not found' };
       return res.status(404).json(ResponseFormatter.failure('User not found', keyValueTable));
     }
 
-    res.json(ResponseFormatter.success('User fetched', result.data[0]));
+    res.json(ResponseFormatter.success('User fetched', user));
   } catch (error) {
     console.error('Get user by ID error:', error);
     const keyValueTable = {};
@@ -747,27 +779,34 @@ router.get('/:id', protect, admin, async (req, res) => {
 /**
  * PUT /api/users/:id
  * Update user (admin)
- * @param {string} name - User's name
+ * @param {string} firstName / lastName - User's name
  * @param {string} email - User's email
- * @param {boolean} isAdmin - Admin status
+ * @param {string} role - 'admin' | 'staff' | 'customer'
  */
-router.put('/:id', protect, admin, async (req, res) => {
+router.put(USER_ID, protect, admin, csrfProtection, async (req, res) => {
   try {
-    const { name, email, isAdmin } = req.body;
+    const { firstName, lastName, email, role } = req.body;
     let updates = [];
     let params = [];
 
-    if (name) {
-      updates.push('name = ?');
-      params.push(name);
+    if (firstName) {
+      updates.push('first_name = ?');
+      params.push(firstName);
+    }
+    if (lastName) {
+      updates.push('last_name = ?');
+      params.push(lastName);
     }
     if (email) {
       updates.push('email = ?');
       params.push(email);
     }
-    if (typeof isAdmin !== 'undefined') {
-      updates.push('isAdmin = ?');
-      params.push(isAdmin);
+    if (typeof role !== 'undefined') {
+      if (!USER_ROLES.includes(role)) {
+        return res.status(400).json(ResponseFormatter.failure('Invalid role'));
+      }
+      updates.push('role = ?, token_version = token_version + 1');
+      params.push(role);
     }
 
     if (updates.length === 0) {
@@ -779,9 +818,11 @@ router.put('/:id', protect, admin, async (req, res) => {
     const query = `UPDATE users SET ${updates.join(', ')} WHERE id = ?`;
     const result = await DatabaseUtil.executeQuery(query, params);
 
-    if (result.success) {
+    if (result.success && result.affectedRows > 0) {
       const keyValueTable = { userId: req.params.id, updatedFields: updates.length };
       res.json(ResponseFormatter.success('User updated', keyValueTable));
+    } else if (result.success) {
+      res.status(404).json(ResponseFormatter.failure('User not found'));
     } else {
       throw new Error('Failed to update user');
     }
@@ -794,13 +835,17 @@ router.put('/:id', protect, admin, async (req, res) => {
 
 /**
  * DELETE /api/users/:id
- * Delete user (admin) - soft delete
+ * Deactivate user (admin) - soft delete via status, and revoke their sessions
  */
-router.delete('/:id', protect, admin, async (req, res) => {
+router.delete(USER_ID, protect, admin, csrfProtection, async (req, res) => {
   try {
-    const result = await DatabaseUtil.executeQuery('UPDATE users SET isDeleted = TRUE WHERE id = ?', [req.params.id]);
+    const result = await DatabaseUtil.executeQuery(
+      "UPDATE users SET status = 'inactive', token_version = token_version + 1 WHERE id = ?",
+      [req.params.id]
+    );
 
-    if (result.success && result.data.affectedRows > 0) {
+    if (result.success && result.affectedRows > 0) {
+      await DatabaseUtil.executeQuery('DELETE FROM refresh_tokens WHERE user_id = ?', [req.params.id]);
       const keyValueTable = { userId: req.params.id };
       res.json(ResponseFormatter.success('User deleted', keyValueTable));
     } else {
@@ -836,9 +881,17 @@ router.post('/forgot-password', forgotLimiter, async (req, res) => {
     }
 
     const userId = result.data[0].id;
-    const token = jwt.sign({ userId }, process.env.JWT_SECRET, { algorithm: 'HS256', expiresIn: '1h' });
+    // Single-use random token; only its SHA-256 hash is stored, so a DB leak
+    // doesn't hand out working reset links.
+    const token = crypto.randomBytes(32).toString('hex');
 
-    await DatabaseUtil.executeQuery('UPDATE users SET resetToken = ?, resetTokenExpiry = DATE_ADD(NOW(), INTERVAL 1 HOUR) WHERE id = ?', [token, userId]);
+    const saved = await DatabaseUtil.executeQuery(
+      'UPDATE users SET password_reset_token = ?, password_reset_expires = DATE_ADD(NOW(), INTERVAL 1 HOUR) WHERE id = ?',
+      [hashResetToken(token), userId]
+    );
+    if (!saved.success) {
+      throw new Error(`Failed to store reset token: ${saved.error}`);
+    }
 
     // Enqueue password reset email via the queue (daemon will send it)
     const resetLink = `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/reset-password?token=${token}`;
@@ -876,15 +929,10 @@ router.post('/reset-password', async (req, res) => {
       return res.status(400).json(ResponseFormatter.failure(resetPwError));
     }
 
-    let decoded;
-    try {
-      decoded = jwt.verify(token, process.env.JWT_SECRET, { algorithms: ['HS256'] });
-    } catch (err) {
-      const keyValueTable = { error: 'Invalid or expired token' };
-      return res.status(400).json(ResponseFormatter.failure('Invalid token', keyValueTable));
-    }
-
-    const result = await DatabaseUtil.executeQuery('SELECT id FROM users WHERE resetToken = ? AND resetTokenExpiry > NOW()', [token]);
+    const result = await DatabaseUtil.executeQuery(
+      'SELECT id FROM users WHERE password_reset_token = ? AND password_reset_expires > NOW()',
+      [hashResetToken(String(token))]
+    );
 
     if (!result.success || result.data.length === 0) {
       const keyValueTable = { error: 'Invalid or expired token' };
@@ -895,7 +943,14 @@ router.post('/reset-password', async (req, res) => {
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(newPassword, salt);
 
-    const updateResult = await DatabaseUtil.executeQuery('UPDATE users SET password_hash = ?, resetToken = NULL, resetTokenExpiry = NULL WHERE id = ?', [hashedPassword, userId]);
+    // Clear the token (single use) and revoke every existing session.
+    const updateResult = await DatabaseUtil.executeQuery(
+      `UPDATE users SET password_hash = ?, password_reset_token = NULL, password_reset_expires = NULL,
+         token_version = token_version + 1
+       WHERE id = ?`,
+      [hashedPassword, userId]
+    );
+    await DatabaseUtil.executeQuery('DELETE FROM refresh_tokens WHERE user_id = ?', [userId]);
 
     if (!updateResult.success || (updateResult.affectedRows || 0) === 0) {
       const keyValueTable = { error: 'Password could not be updated' };

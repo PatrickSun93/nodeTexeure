@@ -12,7 +12,7 @@ const ResponseFormatter = require('../utils/responseFormatter');
 const path = require('path');
 const fs = require('fs');
 const bcrypt = require('bcryptjs');
-const { v4: uuidv4 } = require('uuid');
+const { randomUUID: uuidv4 } = require('crypto');
 const emailQueueProducer = require('../services/emailQueueProducer');
 const emailService = require('../services/emailService');
 
@@ -624,6 +624,10 @@ router.put('/users/:id', admin, adminWriteLimiter, csrfProtection, async (req, r
     }
     if (updateFields.length === 0) {
       return res.status(400).json(ResponseFormatter.failure('No valid fields to update'));
+    }
+    // A role or status change revokes the user's outstanding access tokens.
+    if ('role' in updates || 'status' in updates) {
+      updateFields.push('token_version = token_version + 1');
     }
     updateValues.push(id);
     const updateResult = await DatabaseUtil.executeQuery(`UPDATE users SET ${updateFields.join(', ')} WHERE id = ?`, updateValues);

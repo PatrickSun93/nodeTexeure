@@ -16,7 +16,8 @@ Design direction: **"Champagne & Charcoal"** (see [docs/DESIGN.md](docs/DESIGN.m
 | Backend API | `backend/` | Express.js, MySQL (`mysql2`), JWT | 6666 |
 | Admin dashboard | `admin-dashboard/` | Next.js 14, React 18 | 3005 |
 
-Database: MySQL 8.0, ~42 tables, custom prefixed IDs (`PROD0000000001`), triggers,
+Database: MySQL 8.0 (schema migrations in `backend/migrations/`, applied on
+backend start via `npm run migrate`), ~42 tables, custom prefixed IDs (`PROD0000000001`), triggers,
 and a `get_next_id('PREFIX')` SQL function.
 
 ## Running it
@@ -46,7 +47,8 @@ Verify: `npm run test` (lint + build) and `npm run smoke` (stack health).
   `/api/<route>/*` to the backend. **The rewrite target is baked in at
   `next build`** — change `BACKEND_URL`/`PRODUCTION_BACKEND_URL` then rebuild.
 - **Auth.** JWT via `Authorization: Bearer` header or an `admin_auth` HttpOnly
-  cookie. Middleware: `protect` (auth), `admin` (admin role), `protectOptional`.
+  cookie. `protect` re-reads role/status/`token_version` from `users` on each
+  request, so bumping `token_version` revokes a user's tokens immediately. Middleware: `protect` (auth), `admin` (admin role), `protectOptional`.
   Admin write endpoints also require a CSRF token (`X-CSRF-Token`). Customer and
   admin auth flows are separate.
 - **Response format.** Every endpoint returns
@@ -97,11 +99,17 @@ proxy + design tokens → seed example data → smoke test).
 
 ## Testing
 
-- `npm run test` — ESLint + production `next build` (the CI gate).
+- `npm run test` — storefront ESLint + production `next build`.
+- `cd backend && npm test` — Jest + supertest API tests against a real, seeded
+  MySQL (`tests/*.test.js`: auth, revocation, CSRF, IDOR, checkout, SQLi). Point
+  `DB_HOST`/`DB_PORT` at the Docker MySQL (`DB_PORT=3307`).
 - `npm run smoke` — checks the running stack (frontend pages + backend via proxy).
-- Security posture verified: privilege escalation, IDOR, JWT forgery (incl.
-  `alg:none`), and SQL injection are all blocked; unauth hits redirect to login.
-  Keep it that way — new admin routes go under `protect, admin` (+ CSRF for writes).
+- CI (`.github/workflows/ci.yml`) runs all of the above for both Next apps and the
+  backend (MySQL service → `init.sql` → `migrate` → seed → tests) plus `npm audit`.
+- Security posture is enforced by those tests: privilege escalation, IDOR, JWT
+  forgery (incl. `alg:none`), revoked sessions, and SQL injection are blocked.
+  Keep it that way — new admin routes go under `protect, admin` (+ CSRF for writes)
+  and get a test. Role denials are 403; missing/invalid auth is 401.
 
 ## Conventions
 

@@ -125,8 +125,9 @@ npm run db:reset # drop + recreate schema (dev only)
 ```
 
 New DB columns/tables ship as ordered migrations under
-[`database/migrations/`](database/migrations/) (applied automatically on a fresh
-Docker volume via `docker/mysql/init.sql`; run them manually against an existing DB).
+[`backend/migrations/`](backend/migrations/). The backend applies pending ones on
+startup (`cd backend && npm run migrate`, `-- --status` to inspect), tracked in the
+`schema_migrations` table.
 
 ---
 
@@ -164,7 +165,9 @@ Browser ─► Storefront (Next.js, :3000)
 
 ## Testing & quality
 
-- **`npm run test`** — ESLint + production `next build` (the CI gate).
+- **`npm run test`** — ESLint + production `next build`.
+- **`cd backend && npm test`** — API tests (Jest + supertest) against the seeded
+  MySQL. CI runs both apps' lint/build, these tests, and `npm audit` on every PR.
 - **`npm run smoke`** — checks the running stack (storefront pages + backend via
   the proxy).
 - **End-to-end** — the customer purchase flow, coupon/abuse cases, admin

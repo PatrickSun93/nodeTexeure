@@ -1,5 +1,5 @@
 const DatabaseUtil = require('../utils/database');
-const { v4: uuidv4 } = require('uuid');
+const { randomUUID: uuidv4 } = require('crypto');
 
 async function createTestOrder() {
   console.log('🧪 Creating Test Order...\n');

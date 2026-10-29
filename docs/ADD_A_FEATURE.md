@@ -8,7 +8,7 @@ storage), following this repo's conventions. Example: a "gift messages" feature.
 Add a table via a migration (don't hand-edit a live DB):
 
 ```sql
--- database/migrations/003_gift_messages.sql
+-- backend/migrations/010_gift_messages.sql  (next free number)
 CREATE TABLE IF NOT EXISTS gift_messages (
   id VARCHAR(50) PRIMARY KEY,
   order_id VARCHAR(50) NOT NULL,
@@ -20,8 +20,9 @@ CREATE TABLE IF NOT EXISTS gift_messages (
 INSERT IGNORE INTO transno (prefix, count, details) VALUES ('GIFT', 0, 'Gift message id');
 ```
 
-Include the migration in `docker/mysql/init.sql` (append it) so `docker compose up`
-creates it on a fresh DB, and run it against your current DB.
+The backend applies pending migrations on startup (`npm run migrate`, tracked in
+the `schema_migrations` table), so every environment picks it up — fresh Docker
+volumes included. Never edit a migration that has shipped; add a new one.
 
 ## 2. Backend route
 
@@ -37,7 +38,7 @@ const { protect } = require('../middleware/authMiddleware');
 
 router.post('/', protect, async (req, res) => {
   try {
-    const [{ id }] = (await DatabaseUtil.executeQuery("SELECT get_next_id('GIFT') AS id")).data ?? await DatabaseUtil.executeQuery("SELECT get_next_id('GIFT') AS id");
+    const { id } = DatabaseUtil.first(await DatabaseUtil.executeQuery("SELECT get_next_id('GIFT') AS id"));
     await DatabaseUtil.executeQuery(
       'INSERT INTO gift_messages (id, order_id, message) VALUES (?, ?, ?)',
       [id, req.body.order_id, req.body.message]

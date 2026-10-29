@@ -8,7 +8,7 @@
 --
 -- NOTE: Docker only auto-runs docker/mysql/init.sql, so this migration must be
 -- applied explicitly (or folded into init.sql) for the table to exist in a fresh
--- stack. Apply with:  mysql ... < database/migrations/007_newsletter_subscribers.sql
+-- stack. Apply with:  mysql ... < backend/migrations/008_newsletter_subscribers.sql
 CREATE TABLE IF NOT EXISTS newsletter_subscribers (
   id          BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   email       VARCHAR(255) NOT NULL,
