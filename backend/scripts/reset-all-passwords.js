@@ -16,6 +16,10 @@ const NEW_PASSWORD = 'Password@123';
 const SALT_ROUNDS = 10;
 
 async function resetAllPasswords() {
+  if (process.env.NODE_ENV === 'production') {
+    console.error('Refusing to reset every password while NODE_ENV=production.');
+    process.exit(1);
+  }
   console.log('========================================');
   console.log('Password Reset Script');
   console.log('========================================');

@@ -1,3 +1,4 @@
+const { Sentry } = require('./instrument'); // must load before express
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
@@ -188,6 +189,9 @@ app.use('*', (req, res) => {
   };
   res.status(404).json(ResponseFormatter.failure('Endpoint not found', keyValueTable));
 });
+
+// Report unhandled errors to Sentry when configured (see instrument.js)
+if (Sentry) Sentry.setupExpressErrorHandler(app);
 
 // Logging error middleware (logs errors before handling them)
 app.use(LoggingMiddleware.errorMiddleware());

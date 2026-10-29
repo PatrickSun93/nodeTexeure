@@ -1,5 +1,5 @@
 {
-  "name": "nodetexture-backend",
+  "name": "nodetexeure-backend",
   "version": "1.0.0",
   "main": "server.js",
   "scripts": {
@@ -11,7 +11,8 @@
     "seed:example": "node scripts/seed-example-data.js",
     "translate:content": "node scripts/translate-content.js",
     "reset-passwords": "node scripts/reset-all-passwords.js",
-    "email-daemon": "node services/emailDaemon.js"
+    "email-daemon": "node services/emailDaemon.js",
+    "create-admin": "node scripts/create-admin.js"
   },
   "keywords": [
     "express",
@@ -26,6 +27,7 @@
     "@aws-sdk/client-ses": "^3.994.0",
     "@aws-sdk/lib-storage": "^3.994.0",
     "@aws-sdk/s3-request-presigner": "^3.994.0",
+    "@sentry/node": "^11.10.0",
     "bcryptjs": "^3.0.3",
     "compression": "^1.8.1",
     "cookie-parser": "^1.4.7",
@@ -38,7 +40,6 @@
     "multer": "^2.5.0",
     "mysql2": "^3.6.0",
     "node-cache": "^5.1.2",
-    "nodemailer": "^10.3.1",
     "papaparse": "^5.4.1",
     "sharp": "^0.35.5",
     "stripe": "^20.3.1"
