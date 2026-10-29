@@ -33,17 +33,12 @@ const {
 
 const VALID_SCOPES = ['all', 'marketing'];
 
-// Normalize the inconsistent executeQuery return shape into a rows array.
-function rowsOf(res) {
-  return Array.isArray(res) ? res : (res && res.data) || [];
-}
-
 async function getSuppression(email) {
   const res = await DatabaseUtil.executeQuery(
     'SELECT id, email, scope, reason, unsubscribed_at FROM email_unsubscribes WHERE email = ? LIMIT 1',
     [email]
   );
-  return rowsOf(res)[0] || null;
+  return DatabaseUtil.rows(res)[0] || null;
 }
 
 /**
@@ -109,7 +104,7 @@ router.post('/', async (req, res) => {
     }
 
     const idRes = await DatabaseUtil.executeQuery("SELECT get_next_id('UNSB') AS id");
-    const id = rowsOf(idRes)[0] && rowsOf(idRes)[0].id;
+    const id = DatabaseUtil.rows(idRes)[0] && DatabaseUtil.rows(idRes)[0].id;
     if (!id) throw new Error("get_next_id('UNSB') returned NULL — is the UNSB prefix registered in transno?");
 
     // Upsert: one suppression record per email. Re-unsubscribing refreshes the

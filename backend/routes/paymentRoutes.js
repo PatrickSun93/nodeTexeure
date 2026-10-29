@@ -38,7 +38,7 @@ router.post('/create-checkout-session', protectOptional, async (req, res) => {
     `;
     const orderResult = await db.executeQuery(orderQuery, [orderId]);
     // executeQuery may return a rows array or a {success, data} wrapper — normalize.
-    const orderItems = Array.isArray(orderResult) ? orderResult : (orderResult && orderResult.data) || [];
+    const orderItems = DatabaseUtil.rows(orderResult);
 
     if (!orderItems || orderItems.length === 0) {
       return res.status(404).json(ResponseFormatter.failure('Order not found'));
@@ -129,7 +129,7 @@ router.post('/create-payment-intent', protectOptional, async (req, res) => {
     // Fetch order total
     const orderResult = await db.executeQuery('SELECT * FROM orders WHERE id = ?', [orderId]);
     // executeQuery may return a rows array or a {success, data} wrapper — normalize.
-    const orderRows = Array.isArray(orderResult) ? orderResult : (orderResult && orderResult.data) || [];
+    const orderRows = DatabaseUtil.rows(orderResult);
     const order = orderRows[0];
     if (!order) {
       return res.status(404).json(ResponseFormatter.failure('Order not found'));
@@ -318,7 +318,7 @@ router.get('/session/:sessionId', protectOptional, async (req, res) => {
     if (orderId) {
       const orderResult = await db.executeQuery('SELECT user_id FROM orders WHERE id = ?', [orderId]);
       // executeQuery may return a rows array or a {success, data} wrapper — normalize.
-      const orderRows = Array.isArray(orderResult) ? orderResult : (orderResult && orderResult.data) || [];
+      const orderRows = DatabaseUtil.rows(orderResult);
       const order = orderRows[0];
       if (order && order.user_id) {
         if (!req.user || (req.user.id !== order.user_id && !req.user.isAdmin)) {

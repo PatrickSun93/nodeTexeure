@@ -129,7 +129,7 @@ async function sendTemplatedEmail(to, templateSlug, variables = {}) {
     if (result && result.success === false) {
       throw new Error(result.error || 'email_templates lookup failed');
     }
-    const rows = Array.isArray(result) ? result : (result && result.data) || [];
+    const rows = DatabaseUtil.rows(result);
     const template = rows[0];
 
     if (!template) {

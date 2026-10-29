@@ -81,9 +81,10 @@ imagery is served from the `product_images` table (`public/images/bedding/*.jpg`
 - **Port 6666 is a browser-blocked "bad port."** Browsers and Node `fetch`
   refuse it. Client code must call `/api/*` (relative, via the proxy), never
   `http://localhost:6666` directly. Server-side, use `http.request` (not fetch).
-- **`executeQuery` return shape is inconsistent across routes** (some expect a
-  rows array, some a `{success, data}` wrapper) — normalize when you touch a
-  route (`Array.isArray(r) ? r : r?.data || []`).
+- **`executeQuery` never throws and always returns `{ success, data, affectedRows,
+  insertId }`** (`{ success: false, error }` on failure). Read rows with
+  `DatabaseUtil.rows(result)` / `DatabaseUtil.first(result)` — never index the
+  wrapper — and check `result.success` on writes, or failures are silent.
 - **`payments.status` is a strict ENUM** — valid values include `completed`,
   `refunded`, `pending` (not `succeeded`).
 - **The macOS local MySQL CLI can be flaky here** — query via a small `mysql2`

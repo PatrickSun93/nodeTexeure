@@ -17,6 +17,17 @@
   --border: #e5e7eb;
   --input: #ffffff;
   --ring: #3b82f6;
+
+  /* Champagne brand palette (matches the storefront's --noirae-gold family).
+     Exposed to Tailwind as `brand`, e.g. bg-brand, text-brand-deep, ring-brand. */
+  --admin-brand: #C5A572;
+  --admin-brand-hover: #b09060;
+  --admin-brand-deep: #8C6B3D;
+  --admin-brand-muted: #a08050;
+  --admin-brand-soft: #F3EAD8;
+  --admin-brand-soft-hover: #eaddc5;
+  --admin-brand-softer: #faf5ea;
+  --admin-brand-border: #e5d3ad;
 }
 
 * {

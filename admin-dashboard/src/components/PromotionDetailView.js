@@ -144,7 +144,7 @@ export default function PromotionDetailView({ promotion, onBack }) {
                                     value={formData.name}
                                     onChange={handleChange}
                                     placeholder={t('promotionNamePlaceholder')}
-                                    className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C5A572] focus:border-transparent bg-gray-50"
+                                    className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent bg-gray-50"
                                 />
                             </div>
                             <div>
@@ -155,7 +155,7 @@ export default function PromotionDetailView({ promotion, onBack }) {
                                     onChange={handleChange}
                                     rows={3}
                                     placeholder={t('descriptionPlaceholder')}
-                                    className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C5A572] focus:border-transparent bg-gray-50"
+                                    className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent bg-gray-50"
                                 />
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -167,7 +167,7 @@ export default function PromotionDetailView({ promotion, onBack }) {
                                         value={formData.code}
                                         onChange={handleChange}
                                         placeholder={t('discountCodePlaceholder')}
-                                        className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C5A572] focus:border-transparent bg-gray-50"
+                                        className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent bg-gray-50"
                                     />
                                 </div>
                                 <div>
@@ -176,7 +176,7 @@ export default function PromotionDetailView({ promotion, onBack }) {
                                         name="type"
                                         value={formData.type}
                                         onChange={handleChange}
-                                        className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C5A572] bg-gray-50"
+                                        className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand bg-gray-50"
                                     >
                                         <option value="Percentage">{t('typePercentage')}</option>
                                         <option value="Fixed Amount">{t('typeFixedAmount')}</option>
@@ -196,7 +196,7 @@ export default function PromotionDetailView({ promotion, onBack }) {
                                         value={formData.value}
                                         onChange={handleChange}
                                         placeholder="20"
-                                        className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C5A572] focus:border-transparent bg-gray-50"
+                                        className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent bg-gray-50"
                                     />
                                 </div>
                             </div>
@@ -215,7 +215,7 @@ export default function PromotionDetailView({ promotion, onBack }) {
                                     name="minRequirements"
                                     value={formData.minRequirements}
                                     onChange={handleChange}
-                                    className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C5A572] bg-gray-50"
+                                    className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand bg-gray-50"
                                 >
                                     <option value="None">{t('minReqNone')}</option>
                                     <option value="Minimum Purchase Amount">{t('minReqPurchaseAmount')}</option>
@@ -228,7 +228,7 @@ export default function PromotionDetailView({ promotion, onBack }) {
                                     name="appliesTo"
                                     value={formData.appliesTo}
                                     onChange={handleChange}
-                                    className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C5A572] bg-gray-50"
+                                    className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand bg-gray-50"
                                 >
                                     <option value="All products">{t('appliesAllProducts')}</option>
                                     <option value="Specific collections">{t('appliesSpecificCollections')}</option>
@@ -250,7 +250,7 @@ export default function PromotionDetailView({ promotion, onBack }) {
                                                 value={formData.minimum_order_amount}
                                                 onChange={handleChange}
                                                 placeholder="0.00"
-                                                className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C5A572] focus:border-transparent bg-gray-50"
+                                                className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent bg-gray-50"
                                             />
                                         </div>
                                         <p className="text-xs text-gray-400 mt-1">{t('leaveEmptyNoMinimum')}</p>
@@ -265,7 +265,7 @@ export default function PromotionDetailView({ promotion, onBack }) {
                                                 value={formData.maximum_discount_amount}
                                                 onChange={handleChange}
                                                 placeholder="0.00"
-                                                className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C5A572] focus:border-transparent bg-gray-50"
+                                                className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent bg-gray-50"
                                             />
                                         </div>
                                         <p className="text-xs text-gray-400 mt-1">{t('capForPercentage')}</p>
@@ -278,7 +278,7 @@ export default function PromotionDetailView({ promotion, onBack }) {
                                             value={formData.usage_limit}
                                             onChange={handleChange}
                                             placeholder={t('unlimited')}
-                                            className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C5A572] focus:border-transparent bg-gray-50"
+                                            className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent bg-gray-50"
                                         />
                                         <p className="text-xs text-gray-400 mt-1">{t('maxTimesGlobal')}</p>
                                     </div>
@@ -290,7 +290,7 @@ export default function PromotionDetailView({ promotion, onBack }) {
                                             value={formData.usage_limit_per_customer}
                                             onChange={handleChange}
                                             placeholder={t('unlimited')}
-                                            className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C5A572] focus:border-transparent bg-gray-50"
+                                            className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent bg-gray-50"
                                         />
                                         <p className="text-xs text-gray-400 mt-1">{t('maxTimesPerCustomer')}</p>
                                     </div>
@@ -300,7 +300,7 @@ export default function PromotionDetailView({ promotion, onBack }) {
                                     <div className="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-100">
                                         <div className="flex justify-between items-center">
                                             <span className="text-sm font-medium text-gray-700">{t('currentUsageCount')}</span>
-                                            <span className="text-lg font-bold text-[#C5A572]">{formData.usage_count}</span>
+                                            <span className="text-lg font-bold text-brand">{formData.usage_count}</span>
                                         </div>
                                         <p className="text-xs text-gray-400 mt-1">{t('usageCountHelp')}</p>
                                     </div>
@@ -326,7 +326,7 @@ export default function PromotionDetailView({ promotion, onBack }) {
                                     name="startDate"
                                     value={formData.startDate}
                                     onChange={handleChange}
-                                    className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C5A572] bg-gray-50 text-sm"
+                                    className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand bg-gray-50 text-sm"
                                 />
                             </div>
                             <div>
@@ -336,7 +336,7 @@ export default function PromotionDetailView({ promotion, onBack }) {
                                     name="endDate"
                                     value={formData.endDate}
                                     onChange={handleChange}
-                                    className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C5A572] bg-gray-50 text-sm"
+                                    className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand bg-gray-50 text-sm"
                                 />
                                 <div className="mt-2 flex gap-2">
                                     <button
@@ -368,7 +368,7 @@ export default function PromotionDetailView({ promotion, onBack }) {
                                 <label className="block text-sm font-medium text-gray-700 mb-2">{t('status')}</label>
                                 <button
                                     onClick={() => setFormData(prev => ({ ...prev, status: prev.status === 'Active' ? 'Draft' : 'Active' }))}
-                                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${formData.status === 'Active' ? 'bg-[#C5A572]' : 'bg-gray-200'}`}
+                                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${formData.status === 'Active' ? 'bg-brand' : 'bg-gray-200'}`}
                                 >
                                     <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${formData.status === 'Active' ? 'translate-x-6' : 'translate-x-1'}`} />
                                 </button>
@@ -386,7 +386,7 @@ export default function PromotionDetailView({ promotion, onBack }) {
                             <button
                                 onClick={handleSave}
                                 disabled={isSaving}
-                                className="flex-1 px-4 py-2 bg-[#C5A572] text-white rounded-lg hover:bg-[#b09060] font-medium transition-colors shadow-sm disabled:opacity-50"
+                                className="flex-1 px-4 py-2 bg-brand text-white rounded-lg hover:bg-brand-hover font-medium transition-colors shadow-sm disabled:opacity-50"
                             >
                                 {isSaving ? t('saving') : t('saveChanges')}
                             </button>

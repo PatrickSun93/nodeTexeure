@@ -441,7 +441,7 @@ class AbandonedCartService {
 }
 
 // Shared singleton. The constructor starts background intervals (abandoned-cart
-// detection + an EmailQueueService processor), so route modules should reuse one
+// detection), so route modules should reuse one
 // instance via getShared() instead of each calling `new AbandonedCartService()`
 // and multiplying those intervals.
 let sharedInstance = null;

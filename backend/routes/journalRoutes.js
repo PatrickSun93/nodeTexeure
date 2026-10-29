@@ -16,14 +16,6 @@ const ResponseFormatter = require('../utils/responseFormatter');
 const LIST_COLUMNS =
   'id, slug, title, excerpt, category, author, hero_image, read_minutes, published_at';
 
-// executeQuery returns { success, data } where data is the rows array; normalize
-// defensively (the repo's executeQuery shape is not identical across all callers).
-function rowsOf(result) {
-  if (!result) return [];
-  if (Array.isArray(result)) return result;
-  return Array.isArray(result.data) ? result.data : [];
-}
-
 /**
  * GET /api/journal
  * List published articles, newest first. Optional ?category= filter (exact match,
@@ -60,7 +52,7 @@ router.get('/', async (req, res) => {
     }
 
     res.json(ResponseFormatter.success('Journal articles fetched successfully', {
-      articles: rowsOf(result),
+      articles: DatabaseUtil.rows(result),
     }));
   } catch (error) {
     console.error('Error fetching journal articles:', error);
@@ -88,7 +80,7 @@ router.get('/:idOrSlug', async (req, res) => {
       throw new Error(result.error || 'Query failed');
     }
 
-    const article = rowsOf(result)[0];
+    const article = DatabaseUtil.rows(result)[0];
     if (!article) {
       return res.status(404).json(ResponseFormatter.failure('Article not found', { idOrSlug }));
     }

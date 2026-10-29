@@ -5,7 +5,7 @@ const nodemailer = require('nodemailer');
 const rateLimit = require('express-rate-limit');
 const DatabaseUtil = require('../utils/database');
 const ResponseFormatter = require('../utils/responseFormatter');
-const { protect, admin, protectOptional } = require('../middleware/authMiddleware');
+const { protect, admin, staffOrAdmin, protectOptional } = require('../middleware/authMiddleware');
 const { generateCSRFToken, csrfProtection } = require('../middleware/csrfMiddleware');
 const crypto = require('crypto');
 const emailQueueProducer = require('../services/emailQueueProducer');
@@ -711,10 +711,9 @@ router.get('/', protect, admin, async (req, res) => {
 
 /**
  * GET /api/users/csrf-token
- * Generate and return a CSRF token for admin authentication
- * Requires user to be authenticated and an admin
+ * Generate and return a CSRF token for back-office (admin or staff) writes
  */
-router.get('/csrf-token', protect, admin, async (req, res) => {
+router.get('/csrf-token', protect, staffOrAdmin, async (req, res) => {
   try {
     // Generate CSRF token bound to the current user session
     const csrfToken = generateCSRFToken(req.user);

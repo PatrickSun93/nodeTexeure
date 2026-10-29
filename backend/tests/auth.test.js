@@ -167,3 +167,47 @@ describe('password reset', () => {
     await login({ email: user.email, password: 'Changed@5678' });
   });
 });
+
+describe('back office', () => {
+  const csrfFor = async (accessToken) => {
+    const res = await request(app).get('/api/users/csrf-token').set(bearer(accessToken));
+    expect(res.status).toBe(200);
+    return res.body.keyValueTable.csrfToken;
+  };
+  const write = (method, url, accessToken, csrf) =>
+    request(app)[method](url).set(bearer(accessToken)).set('X-CSRF-Token', csrf).set('Cookie', `csrf_token=${csrf}`);
+
+  test('staff can use staff routes but not admin-only ones', async () => {
+    const { accessToken } = await login('staff');
+    const csrf = await csrfFor(accessToken);
+    const order = (await request(app).get('/api/orders/my-orders').set(bearer(accessToken))).status;
+    expect(order).toBe(200);
+
+    // staffOrAdmin route: passes the guard (400 = reached validation).
+    const status = await write('post', '/api/admin/orders/bulk-update', accessToken, csrf).send({});
+    expect(status.status).toBe(400);
+    // admin-only routes stay closed.
+    expect((await request(app).get('/api/admin/users').set(bearer(accessToken))).status).toBe(403);
+    expect((await write('delete', '/api/admin/coupons/NOPE', accessToken, csrf)).status).toBe(403);
+  });
+
+  test('every admin area responds for an admin', async () => {
+    const { accessToken } = await login('admin');
+    for (const url of ['/api/admin/products', '/api/admin/categories', '/api/admin/coupons',
+      '/api/admin/inventory', '/api/admin/users', '/api/admin/staff', '/api/admin/orders',
+      '/api/admin/analytics/summary', '/api/admin/settings', '/api/admin/shipping/zones',
+      '/api/admin/email-templates']) {
+      const res = await request(app).get(url).set(bearer(accessToken));
+      expect([url, res.status]).toEqual([url, 200]);
+    }
+  });
+
+  test('logout clears the cookie and revokes the session', async () => {
+    const { accessToken } = await login('staff');
+    const csrf = await csrfFor(accessToken);
+    const res = await write('post', '/api/admin/logout', accessToken, csrf);
+    expect(res.status).toBe(200);
+    expect(String(res.headers['set-cookie'])).toMatch(/admin_auth=;/);
+    expect((await request(app).get('/api/users/profile').set(bearer(accessToken))).status).toBe(401);
+  });
+});

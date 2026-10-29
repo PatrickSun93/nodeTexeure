@@ -85,7 +85,7 @@ app.use('/uploads', express.static(uploadsRoot, { index: false, maxAge: '1d' }))
 
 
 // Import middleware and routes
-const { protect, admin } = require('./middleware/authMiddleware');
+const { protect, admin, staffOrAdmin } = require('./middleware/authMiddleware');
 const statusRoutes = require('./routes/statusRoutes');
 const databaseRoutes = require('./routes/databaseRoutes');
 const userRoutes = require('./routes/userRoutes');
@@ -146,9 +146,9 @@ app.use('/api/admin/bulk', protect, admin, require('./routes/bulkOperationsRoute
 // Email Template routes (protected admin)
 app.use('/api/admin/email-templates', protect, admin, require('./routes/emailTemplateRoutes'));
 
-// Admin routes (protected)
-const adminRoutes = require('./routes/adminRoutes');
-app.use('/api/admin', protect, admin, adminRoutes);
+// Admin routes (protected). Staff reach only the routes that opt in with
+// staffOrAdmin; everything else declares `admin` (see routes/admin/index.js).
+app.use('/api/admin', protect, staffOrAdmin, require('./routes/admin'));
 
 // Payment routes (Stripe)
 app.use('/api/payments', require('./routes/paymentRoutes'));

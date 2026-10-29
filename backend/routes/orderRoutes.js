@@ -63,7 +63,7 @@ async function generateOrderNumber() {
       'SELECT 1 FROM orders WHERE order_number = ? LIMIT 1',
       [candidate]
     );
-    if (!Array.isArray(existing?.data) || existing.data.length === 0) return candidate;
+    if (!DatabaseUtil.first(existing)) return candidate;
   }
   // Fallback with extra entropy — effectively never reached.
   return `NOR-${crypto.randomBytes(6).toString('hex').toUpperCase()}`;
@@ -79,7 +79,7 @@ async function getCartDetails(cartId) {
     WHERE ci.cart_id = ?
   `;
   const result = await db.executeQuery(cartItemsQuery, [cartId]);
-  return Array.isArray(result?.data) ? result.data : [];
+  return DatabaseUtil.rows(result);
 }
 
 // Ownership guard shared by apply-coupon and create. Cart IDs are sequential and
@@ -97,7 +97,7 @@ async function ownsCart(cartId, req) {
     'SELECT user_id, session_id FROM shopping_carts WHERE id = ?',
     [cartId]
   );
-  const cart = Array.isArray(result?.data) ? result.data[0] : undefined;
+  const cart = DatabaseUtil.first(result);
   if (!cart) return false;
 
   const authUserId = req.user ? req.user.id : null;
@@ -121,7 +121,7 @@ async function validateCoupon(code, subtotal) {
     WHERE code = ? AND is_active = 1 AND (starts_at <= NOW() OR starts_at IS NULL) AND (expires_at >= NOW() OR expires_at IS NULL)
   `;
   const couponResult = await db.executeQuery(couponQuery, [code]);
-  const coupon = Array.isArray(couponResult?.data) ? couponResult.data[0] : undefined;
+  const coupon = DatabaseUtil.first(couponResult);
 
   if (!coupon) {
     return { valid: false, message: 'Invalid or expired coupon' };
@@ -299,7 +299,7 @@ router.post('/create', protectOptional, async (req, res) => {
       const sysUser = await db.executeQuery(
         "SELECT id FROM users WHERE role = 'admin' AND status = 'active' ORDER BY created_at ASC LIMIT 1"
       );
-      movementCreatedBy = Array.isArray(sysUser?.data) && sysUser.data.length > 0 ? sysUser.data[0].id : null;
+      movementCreatedBy = DatabaseUtil.first(sysUser)?.id ?? null;
     }
 
     // Order + items + inventory decrement must be one atomic unit so a stock race
