@@ -21,6 +21,17 @@ app.use(helmet({
 // development or test. An unset/misconfigured NODE_ENV is treated as production.
 const isDev = process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test';
 
+// Fail fast in production if JWT_SECRET is missing, too short, or a known
+// placeholder. The same secret signs auth JWTs and the CSRF HMAC, so a weak or
+// guessable value means trivial admin-token forgery. Dev/test may use a local
+// placeholder so the stack still boots.
+const jwtSecret = process.env.JWT_SECRET || '';
+const jwtLooksPlaceholder = /your-super-secret|change[_-]?me|placeholder|example|min-32-chars/i.test(jwtSecret);
+if (!isDev && (jwtSecret.length < 32 || jwtLooksPlaceholder)) {
+  console.error('FATAL: JWT_SECRET is missing, too short, or a placeholder value. Set a strong, random 32+ character secret before starting in production.');
+  process.exit(1);
+}
+
 // Global rate limiter for all API routes (configurable via RATE_LIMIT_* env vars).
 // Enforced everywhere except dev/test (or when DISABLE_RATE_LIMIT=true) so local
 // dev, automated tests, and screenshot capture aren't throttled.
@@ -45,7 +56,13 @@ app.use(cors({
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'X-CSRF-Token']
 }));
-app.use(express.json());
+// Stripe needs the raw request body to verify webhook signatures, so the global
+// JSON parser must skip the webhook route (paymentRoutes mounts express.raw() on
+// it). Every other route is parsed as JSON exactly as before.
+app.use((req, res, next) => {
+  if (req.originalUrl.startsWith('/api/payments/webhook')) return next();
+  return express.json()(req, res, next);
+});
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
@@ -107,6 +124,15 @@ app.use('/api/journal', require('./routes/journalRoutes'));
 
 // Unsubscribe / email-suppression routes — public (one-click email links)
 app.use('/api/unsubscribe', require('./routes/unsubscribeRoutes'));
+
+// Contact form — public (enqueues a support message)
+app.use('/api/contact', require('./routes/contactRoutes'));
+
+// Newsletter subscription — public (idempotent signup)
+app.use('/api/newsletter', require('./routes/newsletterRoutes'));
+
+// Abandoned-cart recovery — public (token-authorized recovery links)
+app.use('/api/abandoned-cart', require('./routes/abandonedCartRoutes'));
 
 // Analytics routes (admin only - protected in routes file)
 app.use('/api/admin/analytics', require('./routes/analyticsRoutes'));

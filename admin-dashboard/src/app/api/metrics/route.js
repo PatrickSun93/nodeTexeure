@@ -80,38 +80,42 @@ function getNodeJsMetrics() {
   };
 }
 
-// Response time metrics (placeholder)
+// Response time metrics.
+// Not instrumented in this tier — report null + measured:false so consumers don't
+// mistake an un-tracked metric for a real "0ms" reading.
 function getResponseTimeMetrics() {
-  // In a real implementation, you would track these metrics
-  // using a monitoring library or custom middleware
   return {
-    average: 0,
-    p50: 0,
-    p95: 0,
-    p99: 0,
+    average: null,
+    p50: null,
+    p95: null,
+    p99: null,
+    measured: false,
     note: 'Response time tracking not implemented'
   };
 }
 
-// Request metrics (placeholder)
+// Request metrics.
+// Not instrumented — null (not-measured) instead of a fabricated 0.
 function getRequestMetrics() {
-  // In a real implementation, you would track these metrics
   return {
-    total: 0,
-    success: 0,
-    errors: 0,
-    rate: 0,
+    total: null,
+    success: null,
+    errors: null,
+    rate: null,
+    measured: false,
     note: 'Request tracking not implemented'
   };
 }
 
-// Error metrics (placeholder)
+// Error metrics.
+// Not instrumented — null (not-measured) instead of a fabricated 0 (which could be
+// misread as "zero errors / healthy").
 function getErrorMetrics() {
-  // In a real implementation, you would track error rates
   return {
-    total: 0,
-    rate: 0,
+    total: null,
+    rate: null,
     lastError: null,
+    measured: false,
     note: 'Error tracking not implemented'
   };
 }

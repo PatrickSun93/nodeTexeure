@@ -340,6 +340,29 @@ class DatabaseUtil {
       poolStats: this.getPoolStats()
     };
   }
+
+  /**
+   * Normalize an executeQuery() result to a rows array.
+   * executeQuery always returns a { success, data } wrapper (it never returns
+   * a bare array and never throws), so callers must not destructure/index it
+   * as if it were the rows. This collapses the wrapper — and the legacy array
+   * shape — to the rows array, returning [] on a failed query.
+   * @param {Object|Array} result - value returned by executeQuery
+   * @returns {Array} rows (empty array on failure)
+   */
+  static rows(result) {
+    if (Array.isArray(result)) return result;
+    return (result && result.data) || [];
+  }
+
+  /**
+   * Normalize an executeQuery() result to its first row, or null when empty.
+   * @param {Object|Array} result - value returned by executeQuery
+   * @returns {Object|null} first row, or null when there are none
+   */
+  static first(result) {
+    return DatabaseUtil.rows(result)[0] || null;
+  }
 }
 
 module.exports = DatabaseUtil;

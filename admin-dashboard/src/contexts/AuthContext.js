@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useReducer, useEffect } from 'react';
 import { adminAuth, isAuthError } from '@/lib/api';
+import { apiFetch } from '@/utils/api';
 
 // Auth state
 const initialState = {
@@ -132,7 +133,9 @@ export function AuthProvider({ children }) {
 
   const logout = async () => {
     try {
-      await adminAuth.logout();
+      // Admin writes (incl. logout) must go through the CSRF-aware apiFetch and hit the
+      // real backend route: POST /api/admin/logout (there is no /admin/auth/logout).
+      await apiFetch('/api/admin/logout', { method: 'POST' });
     } catch (error) {
       console.error('Logout error:', error);
       // Continue with logout even if API call fails
@@ -144,8 +147,9 @@ export function AuthProvider({ children }) {
   const updateProfile = async (profileData) => {
     try {
       const response = await adminAuth.updateProfile(profileData);
-      
-      if (response.success) {
+
+      // Backend envelope uses status: 'SUCCESS' (not success: true).
+      if (response.status === 'SUCCESS') {
         // Refresh user data
         await checkAuthStatus();
         return { success: true };

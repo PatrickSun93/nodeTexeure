@@ -126,11 +126,10 @@ router.get('/:id', protect, async (req, res) => {
       [id, req.user.id, req.user.isAdmin || false]
     );
 
-    if (!returnResult || returnResult.length === 0) {
+    const returnData = DatabaseUtil.first(returnResult);
+    if (!returnData) {
       return res.status(404).json(ResponseFormatter.failure('Return not found'));
     }
-
-    const returnData = returnResult[0];
     if (typeof returnData.return_details === 'string') {
       returnData.return_details = JSON.parse(returnData.return_details);
     }
@@ -143,7 +142,7 @@ router.get('/:id', protect, async (req, res) => {
        WHERE ri.return_id = ?`,
       [id]
     );
-    returnData.items = itemsResult || [];
+    returnData.items = DatabaseUtil.rows(itemsResult);
 
     res.json(ResponseFormatter.success('Return details fetched', { return: returnData }));
   } catch (error) {
@@ -234,8 +233,8 @@ router.get('/admin/all', protect, admin, async (req, res) => {
     );
 
     res.json(ResponseFormatter.success('Returns fetched', {
-      returns: returns || [],
-      total: countResult[0]?.total || 0,
+      returns: DatabaseUtil.rows(returns),
+      total: DatabaseUtil.first(countResult)?.total || 0,
       page: parseInt(page),
       limit: parseInt(limit),
     }));

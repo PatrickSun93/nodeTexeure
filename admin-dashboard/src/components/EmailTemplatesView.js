@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslations } from 'next-intl';
 import EmailTemplateEditorView from './EmailTemplateEditorView';
 
 export default function EmailTemplatesView() {
+    const t = useTranslations('EmailTemplates');
     const [filter, setFilter] = useState('All');
     const [sort, setSort] = useState('Newest');
     const [searchQuery, setSearchQuery] = useState('');
@@ -67,6 +69,24 @@ export default function EmailTemplatesView() {
 
     const closePreview = () => {
         setPreviewTemplate(null);
+    };
+
+    // Wire the card delete button to DELETE /api/admin/email-templates/:id (real endpoint).
+    const handleDelete = async (template) => {
+        if (!template?.id) return;
+        if (!confirm(t('confirmDeleteNamed', { name: template.name }))) return;
+        try {
+            const { apiFetch } = await import('../utils/api');
+            const response = await apiFetch(`/api/admin/email-templates/${template.id}`, { method: 'DELETE' });
+            if (response.status === 'SUCCESS') {
+                setTemplates((prev) => prev.filter((x) => x.id !== template.id));
+            } else {
+                alert(t('failedToDelete'));
+            }
+        } catch (e) {
+            console.error('Delete template failed', e);
+            alert(t('failedToDelete'));
+        }
     };
 
     if (viewMode === 'create' || viewMode === 'edit') {
@@ -199,7 +219,11 @@ export default function EmailTemplatesView() {
                                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
                                                 Edit
                                             </button>
-                                            <button className="flex items-center justify-center w-6 h-6 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors ml-1">
+                                            <button
+                                                onClick={() => handleDelete(template)}
+                                                title="Delete template"
+                                                className="flex items-center justify-center w-6 h-6 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors ml-1"
+                                            >
                                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                                             </button>
                                         </div>

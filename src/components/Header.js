@@ -198,7 +198,7 @@ import LanguageSwitcher from './LanguageSwitcher';
                 </div>
               ) : (
                 <Link
-                  href="/signin"
+                  href="/login"
                   className="aesop-sign-in-link"
                 >
                   {t('signIn')}

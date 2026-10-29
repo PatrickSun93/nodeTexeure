@@ -295,7 +295,8 @@
     "callUsText": "Our team is available to help during business hours.",
     "callUsHours": "Mon-Fri, 9am - 5pm EST",
     "showroomTitle": "Visit Our Showroom",
-    "showroomText": "Experience the luxury of Noirae products in person."
+    "showroomText": "Experience the luxury of Noirae products in person.",
+    "errorMessage": "Something went wrong. Please try again, or email us directly at support@noirae.com."
   },
   "Faq": {
     "title": "FREQUENTLY ASKED QUESTIONS",
@@ -524,7 +525,7 @@
     "lastNamePlaceholder": "Enter your last name",
     "emailLabel": "Email Address",
     "emailPlaceholder": "your.email@example.com",
-    "emailHint": "Email cannot be changed",
+    "emailHint": "To change your email address, please contact support.",
     "phoneLabel": "Phone Number",
     "phonePlaceholder": "+1 (555) 123-4567",
     "changePasswordTitle": "Change Password (Optional)",
@@ -749,7 +750,9 @@
     "description": "Subscribe to receive exclusive offers, styling tips, and early access to new collections",
     "emailPlaceholder": "Enter your email address",
     "subscribe": "Subscribe",
-    "successMessage": "Thank you for subscribing!"
+    "successMessage": "Thank you for subscribing!",
+    "errorMessage": "Something went wrong. Please try again.",
+    "subscribing": "Subscribing..."
   },
   "OrderTracking": {
     "fetchError": "Failed to fetch tracking information",
@@ -899,5 +902,56 @@
     "retry": "Try again",
     "needHelp": "Need a hand?",
     "contactUs": "Contact us"
+  },
+  "Privacy": {
+    "pageTitle": "Privacy Policy",
+    "intro": "This Privacy Policy explains how Noiraé collects, uses, and protects your personal information when you visit our website or make a purchase. We are committed to handling your data with the same care we bring to our products.",
+    "lastUpdated": "Last updated January 2026",
+    "collectionTitle": "Information We Collect",
+    "collectionBody": "We collect the information you provide when you create an account, place an order, subscribe to our newsletter, or contact us — such as your name, email address, shipping and billing details, and phone number. We also automatically collect limited technical information, including your device type, browser, and how you interact with our site.",
+    "useTitle": "How We Use Your Information",
+    "useBody": "We use your information to process and deliver your orders, manage your account, respond to your enquiries, send order updates, and — where you have opted in — share news and offers. We also use aggregated, anonymised data to improve our website and services.",
+    "sharingTitle": "Sharing Your Information",
+    "sharingBody": "We never sell your personal information. We share it only with the trusted partners who help us operate — such as payment processors, shipping carriers, and email providers — and only to the extent needed to fulfil your order. These partners are required to protect your data and may use it solely for the services they provide to us.",
+    "cookiesTitle": "Cookies",
+    "cookiesBody": "Our site uses cookies to keep you signed in, remember your cart and language preference, and understand how the site is used. You can control or disable cookies through your browser settings, though some features may not work properly without them.",
+    "securityTitle": "Data Security",
+    "securityBody": "We use appropriate technical and organisational measures to protect your personal information against loss, misuse, and unauthorised access. Payment details are handled by our payment providers over encrypted connections and are never stored in full on our servers.",
+    "rightsTitle": "Your Rights",
+    "rightsBody": "Depending on where you live, you may have the right to access, correct, or delete the personal information we hold about you, to object to certain processing, and to withdraw your consent to marketing at any time. To exercise any of these rights, please get in touch with us.",
+    "retentionTitle": "Data Retention",
+    "retentionBody": "We keep your personal information only for as long as necessary to fulfil the purposes described in this policy, including to meet our legal, accounting, and reporting obligations. When it is no longer needed, we securely delete or anonymise it.",
+    "contactTitle": "Contact Us",
+    "contactBody": "If you have any questions about this Privacy Policy or how we handle your information, please get in touch and our team will be happy to help.",
+    "contactLinkText": "Contact our team"
+  },
+  "Dashboard": {
+    "welcomeNamed": "Welcome back, {name}!",
+    "welcome": "Welcome back!",
+    "subtitle": "Manage your account, orders, and preferences from your dashboard.",
+    "errorLoadProfile": "Failed to load profile data.",
+    "profileTitle": "Profile",
+    "profileSubtitle": "Manage your account",
+    "labelName": "Name",
+    "labelEmail": "Email",
+    "labelPhone": "Phone",
+    "notProvided": "Not provided",
+    "editProfile": "Edit Profile",
+    "ordersTitle": "Orders",
+    "ordersSubtitle": "View your order history",
+    "ordersDesc": "Review recent orders and track your shipments.",
+    "viewOrders": "View Orders",
+    "cartTitle": "Shopping Cart",
+    "cartSubtitle": "Continue shopping",
+    "cartDesc": "Pick up where you left off with the items in your cart.",
+    "viewCart": "View Cart",
+    "quickActions": "Quick Actions",
+    "shopNow": "Shop Now",
+    "contactUs": "Contact Us",
+    "aboutUs": "About Us",
+    "recentActivity": "Recent Activity",
+    "noActivity": "No recent activity to display.",
+    "noActivityHint": "Start shopping to see your activity here.",
+    "browseProducts": "Browse Products"
   }
 }

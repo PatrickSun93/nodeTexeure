@@ -103,7 +103,10 @@ export const adminAuth = {
    * @returns {Promise<object>} - Logout response
    */
   async logout() {
-    return apiRequest('admin/auth/logout', {
+    // Backend route is POST /api/admin/logout (mounted under /api/admin); there is no
+    // /api/admin/auth/logout. NOTE: apiRequest does not attach a CSRF token, so admin
+    // writes should prefer utils/api `apiFetch` (AuthContext.logout() already does).
+    return apiRequest('admin/logout', {
       method: 'POST',
     });
   },

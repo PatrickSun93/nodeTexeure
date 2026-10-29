@@ -8,6 +8,7 @@ import MetricsCard from '../../components/MetricsCard';
 import RecentOrdersTable from '../../components/RecentOrdersTable';
 import ProductDetailView from '../../components/ProductDetailView';
 import CustomerDetailView from '../../components/CustomerDetailView';
+import AddCustomerModal from '../../components/AddCustomerModal';
 import PromotionDetailView from '../../components/PromotionDetailView';
 import PromotionModal from '../../components/PromotionModal';
 import StaffDetailView from '../../components/StaffDetailView';
@@ -296,6 +297,13 @@ function OrdersView() {
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+  // Bulk-select + bulk status update state.
+  const [selectedOrderIds, setSelectedOrderIds] = useState(() => new Set());
+  const [bulkStatus, setBulkStatus] = useState('');
+  const [bulkBusy, setBulkBusy] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
     const fetchOrders = async () => {
@@ -317,7 +325,54 @@ function OrdersView() {
       }
     };
     fetchOrders();
-  }, [selectedOrder]); // Re-fetch when returning from detail view (in case status changed)
+  }, [selectedOrder, reloadKey]); // Re-fetch when returning from detail view or after a bulk update
+
+  const bulkStatuses = ['Pending', 'Processing', 'Shipped', 'Delivered', 'Cancelled'];
+
+  const toggleOrderSelected = (id) => {
+    setSelectedOrderIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAllOrders = (ids, checked) => {
+    setSelectedOrderIds((prev) => {
+      const next = new Set(prev);
+      ids.forEach((id) => { if (checked) next.add(id); else next.delete(id); });
+      return next;
+    });
+  };
+
+  const clearOrderSelection = () => { setSelectedOrderIds(new Set()); setBulkStatus(''); };
+
+  const handleBulkOrderUpdate = async () => {
+    if (selectedOrderIds.size === 0) return;
+    if (!bulkStatus) { alert(t('bulkSelectStatusFirst')); return; }
+    setBulkBusy(true);
+    try {
+      const { apiFetch } = await import('../../utils/api');
+      const response = await apiFetch('/api/admin/orders/bulk-update', {
+        method: 'POST',
+        body: JSON.stringify({ orderIds: Array.from(selectedOrderIds), status: bulkStatus }),
+      });
+      if (response.status === 'SUCCESS') {
+        const updated = response.keyValueTable?.find?.((i) => i.result)?.result?.updated
+          ?? response.keyValueTable?.[0]?.result?.updated ?? selectedOrderIds.size;
+        alert(t('bulkOrdersUpdated', { count: updated }));
+        clearOrderSelection();
+        setReloadKey((k) => k + 1);
+      } else {
+        alert(t('bulkOrdersUpdateFailed'));
+      }
+    } catch (e) {
+      console.error('Bulk order update failed', e);
+      alert(t('bulkOrdersUpdateFailed'));
+    } finally {
+      setBulkBusy(false);
+    }
+  };
 
   // Local YYYY-MM-DD for a timestamp, matching the value produced by the <input type="date">.
   const toLocalYMD = (d) => {
@@ -331,6 +386,15 @@ function OrdersView() {
     ((order.id && String(order.id).toLowerCase().includes(searchQuery.toLowerCase())) ||
       (order.customer && order.customer.toLowerCase().includes(searchQuery.toLowerCase())))
   );
+
+  // Client-side pagination over the filtered set.
+  const totalPages = Math.max(1, Math.ceil(filteredOrders.length / itemsPerPage));
+  const paginatedOrders = filteredOrders.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
+  // Reset to page 1 whenever the filters change.
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [selectedStatus, searchQuery, appliedDate]);
 
   // Client-side CSV export of the currently displayed (filtered) orders.
   const handleExport = () => {
@@ -359,6 +423,9 @@ function OrdersView() {
   };
 
   const statuses = ['All', 'Pending', 'Processing', 'Shipped', 'Delivered', 'Cancelled'];
+
+  const pageOrderIds = paginatedOrders.map((o) => o.id);
+  const allPageOrdersSelected = pageOrderIds.length > 0 && pageOrderIds.every((id) => selectedOrderIds.has(id));
 
   if (selectedOrder) {
     return <OrderDetailView order={selectedOrder} onBack={() => setSelectedOrder(null)} />;
@@ -429,6 +496,31 @@ function OrdersView() {
         ))}
       </div>
 
+      {/* Bulk action bar */}
+      {selectedOrderIds.size > 0 && (
+        <div className="flex flex-wrap items-center gap-3 mb-4 p-3 bg-[#F3EAD8] border border-[#e5d3ad] rounded-lg">
+          <span className="text-sm font-medium text-[#8C6B3D]">{t('bulkSelected', { count: selectedOrderIds.size })}</span>
+          <select
+            value={bulkStatus}
+            onChange={(e) => setBulkStatus(e.target.value)}
+            className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#C5A572]"
+          >
+            <option value="">{t('bulkChooseStatus')}</option>
+            {bulkStatuses.map((s) => <option key={s} value={s}>{t(`status${s}`)}</option>)}
+          </select>
+          <button
+            onClick={handleBulkOrderUpdate}
+            disabled={bulkBusy}
+            className="px-4 py-1.5 bg-[#C5A572] text-white rounded-lg hover:bg-[#b09060] text-sm font-medium disabled:opacity-50"
+          >
+            {bulkBusy ? t('bulkUpdating') : t('bulkApply')}
+          </button>
+          <button onClick={clearOrderSelection} className="px-3 py-1.5 text-sm text-gray-600 hover:text-gray-900">
+            {t('bulkClear')}
+          </button>
+        </div>
+      )}
+
       {/* Table */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
         <div className="overflow-x-auto">
@@ -436,7 +528,13 @@ function OrdersView() {
             <thead>
               <tr className="border-b border-gray-100">
                 <th className="px-6 py-4 text-left w-10">
-                  <input type="checkbox" className="rounded border-gray-300 text-[#C5A572] focus:ring-[#C5A572]" />
+                  <input
+                    type="checkbox"
+                    aria-label={t('selectAll')}
+                    checked={allPageOrdersSelected}
+                    onChange={(e) => toggleSelectAllOrders(pageOrderIds, e.target.checked)}
+                    className="rounded border-gray-300 text-[#C5A572] focus:ring-[#C5A572] cursor-pointer"
+                  />
                 </th>
                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{t('colOrderId')}</th>
                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{t('colDate')}</th>
@@ -455,10 +553,16 @@ function OrdersView() {
               ) : filteredOrders.length === 0 ? (
                 <tr><td colSpan="8" className="px-6 py-10 text-center text-gray-500">{t('noOrdersFound')}</td></tr>
               ) : (
-                filteredOrders.map((order) => (
-                  <tr key={order.id} className="hover:bg-gray-50 transition-colors">
+                paginatedOrders.map((order) => (
+                  <tr key={order.id} className={`hover:bg-gray-50 transition-colors ${selectedOrderIds.has(order.id) ? 'bg-[#faf5ea]' : ''}`}>
                     <td className="px-6 py-4">
-                      <input type="checkbox" className="rounded border-gray-300 text-[#C5A572] focus:ring-[#C5A572]" />
+                      <input
+                        type="checkbox"
+                        aria-label={t('selectRow')}
+                        checked={selectedOrderIds.has(order.id)}
+                        onChange={() => toggleOrderSelected(order.id)}
+                        className="rounded border-gray-300 text-[#C5A572] focus:ring-[#C5A572] cursor-pointer"
+                      />
                     </td>
                     <td className="px-6 py-4 text-sm font-medium text-gray-600">{order.id}</td>
                     <td className="px-6 py-4 text-sm text-gray-500">{new Date(order.date).toLocaleDateString()}</td>
@@ -490,12 +594,26 @@ function OrdersView() {
         </div>
         {/* Pagination */}
         <div className="px-6 py-4 border-t border-gray-100 flex items-center justify-between bg-white">
-          <span className="text-sm text-gray-500">{t('showingOrdersResults', { to: filteredOrders.length })}</span>
+          <span className="text-sm text-gray-500">
+            {t('showingResults', {
+              from: Math.min((currentPage - 1) * itemsPerPage + 1, filteredOrders.length),
+              to: Math.min(currentPage * itemsPerPage, filteredOrders.length),
+              total: filteredOrders.length,
+            })}
+          </span>
           <div className="flex gap-1">
-            <button className="p-2 rounded hover:bg-gray-100 text-gray-500 border border-gray-200">
+            <button
+              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+              className="p-2 rounded hover:bg-gray-100 text-gray-500 border border-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
             </button>
-            <button className="p-2 rounded hover:bg-gray-100 text-gray-500 border border-gray-200">
+            <button
+              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+              disabled={currentPage >= totalPages}
+              className="p-2 rounded hover:bg-gray-100 text-gray-500 border border-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
             </button>
           </div>
@@ -517,10 +635,13 @@ function ProductsView() {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
-  // Mock data based on image
   const [products, setProducts] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  // Bulk-select + bulk-delete state (selection keyed by row id; payload dedupes to product_id).
+  const [selectedProductRows, setSelectedProductRows] = useState(() => new Set());
+  const [bulkBusy, setBulkBusy] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -544,7 +665,7 @@ function ProductsView() {
       }
     };
     fetchProducts();
-  }, [viewMode]); // Re-fetch when switching from add/edit back to list
+  }, [viewMode, reloadKey]); // Re-fetch when switching back to list or after a bulk delete
 
   // Map image for display if API returns thumbnail_small_url
   const displayProducts = products.map(p => ({
@@ -552,14 +673,18 @@ function ProductsView() {
     image: p.thumbnail_small_url || p.image || 'https://placehold.co/40x40/e5e7eb/374151?text=IMG'
   }));
 
+  // Build the category dropdown from the real category values the API returns (admin
+  // GET /products exposes `category` = category name). Deriving the options from the data
+  // guarantees the filter below actually matches instead of comparing to hardcoded labels.
+  const categoryOptions = Array.from(
+    new Set(displayProducts.map(p => p.category).filter(Boolean))
+  ).sort();
+
   // Filtering Logic
   const filteredProducts = displayProducts.filter(product => {
-    const matchesCategory = categoryFilter === 'All' || product.category === categoryFilter; // Note: API might not return category name but ID?
-    // For now assuming existing schema has category name or we need to join. 
-    // The GET /products is SELECT * FROM products. Category is usually category_id or name.
-    // In adminRoutes we did SELECT *. Schema has category_id.
-    // We might need to map category_id to name or just display ID for now.
-    // For migration, we display what we have.
+    // Compare against the real category field returned by the API (product.category),
+    // which is exactly what the dropdown options are populated from.
+    const matchesCategory = categoryFilter === 'All' || product.category === categoryFilter;
 
     const matchesStatus = statusFilter === 'All' ||
       (statusFilter === 'Active' && product.status === 'Active') ||
@@ -584,6 +709,58 @@ function ProductsView() {
     setCurrentPage(1);
   }, [categoryFilter, statusFilter, searchQuery]);
 
+  // Bulk selection: rows are keyed by row id; the delete payload dedupes down to product ids.
+  const pageProductIds = paginatedProducts.map((p) => p.id);
+  const allPageProductsSelected = pageProductIds.length > 0 && pageProductIds.every((id) => selectedProductRows.has(id));
+  const selectedProductIds = Array.from(new Set(
+    displayProducts.filter((p) => selectedProductRows.has(p.id)).map((p) => p.product_id || p.id)
+  ));
+
+  const toggleProductRow = (id) => {
+    setSelectedProductRows((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAllProducts = (ids, checked) => {
+    setSelectedProductRows((prev) => {
+      const next = new Set(prev);
+      ids.forEach((id) => { if (checked) next.add(id); else next.delete(id); });
+      return next;
+    });
+  };
+
+  const clearProductSelection = () => setSelectedProductRows(new Set());
+
+  const handleBulkDeleteProducts = async () => {
+    if (selectedProductIds.length === 0) return;
+    if (!confirm(t('bulkConfirmDeleteProducts', { count: selectedProductIds.length }))) return;
+    setBulkBusy(true);
+    try {
+      const { apiFetch } = await import('../../utils/api');
+      const response = await apiFetch('/api/admin/products/bulk-delete', {
+        method: 'POST',
+        body: JSON.stringify({ productIds: selectedProductIds }),
+      });
+      if (response.status === 'SUCCESS') {
+        const deleted = response.keyValueTable?.find?.((i) => i.result)?.result?.deleted
+          ?? response.keyValueTable?.[0]?.result?.deleted ?? selectedProductIds.length;
+        alert(t('bulkProductsDeleted', { count: deleted }));
+        clearProductSelection();
+        setReloadKey((k) => k + 1);
+      } else {
+        alert(t('bulkProductsDeleteFailed'));
+      }
+    } catch (e) {
+      console.error('Bulk delete products failed', e);
+      alert(t('bulkProductsDeleteFailed'));
+    } finally {
+      setBulkBusy(false);
+    }
+  };
+
   const handleAddProduct = () => {
     setSelectedProduct(null);
     setViewMode('add');
@@ -597,6 +774,26 @@ function ProductsView() {
   const handleBack = () => {
     setViewMode('list');
     setSelectedProduct(null);
+  };
+
+  // Wire the row trash button to DELETE /api/admin/products/:id (real endpoint).
+  // The list flattens variants into rows, so delete the parent product id (product_id).
+  const handleDeleteProduct = async (product) => {
+    const pid = product.product_id || product.id;
+    if (!pid) return;
+    if (!confirm(t('confirmDeleteProduct'))) return;
+    try {
+      const { apiFetch } = await import('../../utils/api');
+      const response = await apiFetch(`/api/admin/products/${pid}`, { method: 'DELETE' });
+      if (response.status === 'SUCCESS') {
+        setProducts((prev) => prev.filter((p) => (p.product_id || p.id) !== pid));
+      } else {
+        alert(t('deleteProductError'));
+      }
+    } catch (e) {
+      console.error('Delete product failed', e);
+      alert(t('deleteProductError'));
+    }
   };
 
   if (viewMode === 'add' || viewMode === 'edit') {
@@ -643,8 +840,9 @@ function ProductsView() {
             onChange={(e) => setCategoryFilter(e.target.value)}
           >
             <option value="All">{t('categoryAll')}</option>
-            <option value="Silk Bedding">{t('categorySilkBedding')}</option>
-            <option value="Cashmere Throws">{t('categoryCashmereThrows')}</option>
+            {categoryOptions.map((cat) => (
+              <option key={cat} value={cat}>{cat}</option>
+            ))}
           </select>
           <select
             className="px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C5A572] bg-white text-gray-600"
@@ -659,6 +857,23 @@ function ProductsView() {
         </div>
       </div>
 
+      {/* Bulk action bar */}
+      {selectedProductIds.length > 0 && (
+        <div className="flex flex-wrap items-center gap-3 mb-4 p-3 bg-[#F3EAD8] border border-[#e5d3ad] rounded-lg">
+          <span className="text-sm font-medium text-[#8C6B3D]">{t('bulkSelected', { count: selectedProductIds.length })}</span>
+          <button
+            onClick={handleBulkDeleteProducts}
+            disabled={bulkBusy}
+            className="px-4 py-1.5 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm font-medium disabled:opacity-50"
+          >
+            {bulkBusy ? t('bulkDeleting') : t('bulkDelete')}
+          </button>
+          <button onClick={clearProductSelection} className="px-3 py-1.5 text-sm text-gray-600 hover:text-gray-900">
+            {t('bulkClear')}
+          </button>
+        </div>
+      )}
+
       {/* Table */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
         <div className="overflow-x-auto">
@@ -666,7 +881,13 @@ function ProductsView() {
             <thead>
               <tr className="border-b border-gray-100 bg-gray-50/50">
                 <th className="px-6 py-4 text-left w-10">
-                  <input type="checkbox" className="rounded border-gray-300 text-[#C5A572] focus:ring-[#C5A572]" />
+                  <input
+                    type="checkbox"
+                    aria-label={t('selectAll')}
+                    checked={allPageProductsSelected}
+                    onChange={(e) => toggleSelectAllProducts(pageProductIds, e.target.checked)}
+                    className="rounded border-gray-300 text-[#C5A572] focus:ring-[#C5A572] cursor-pointer"
+                  />
                 </th>
                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{t('colProductName')}</th>
                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{t('colSku')}</th>
@@ -686,9 +907,15 @@ function ProductsView() {
                 <tr><td colSpan="8" className="px-6 py-10 text-center text-gray-500">{t('noProductsFound')}</td></tr>
               ) : (
                 paginatedProducts.map((product) => (
-                  <tr key={product.id} className="hover:bg-gray-50 transition-colors">
+                  <tr key={product.id} className={`hover:bg-gray-50 transition-colors ${selectedProductRows.has(product.id) ? 'bg-[#faf5ea]' : ''}`}>
                     <td className="px-6 py-4">
-                      <input type="checkbox" className="rounded border-gray-300 text-[#C5A572] focus:ring-[#C5A572]" />
+                      <input
+                        type="checkbox"
+                        aria-label={t('selectRow')}
+                        checked={selectedProductRows.has(product.id)}
+                        onChange={() => toggleProductRow(product.id)}
+                        className="rounded border-gray-300 text-[#C5A572] focus:ring-[#C5A572] cursor-pointer"
+                      />
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
@@ -713,7 +940,7 @@ function ProductsView() {
                         <button onClick={() => handleEditProduct(product)} className="text-gray-400 hover:text-blue-600">
                           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
                         </button>
-                        <button className="text-gray-400 hover:text-red-600">
+                        <button onClick={() => handleDeleteProduct(product)} title="Delete product" className="text-gray-400 hover:text-red-600">
                           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                         </button>
                       </div>
@@ -776,6 +1003,8 @@ function CustomersView() {
   const itemsPerPage = 10;
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0); // bumped after creating a customer to refetch
 
   useEffect(() => {
     const fetchCustomers = async () => {
@@ -797,7 +1026,7 @@ function CustomersView() {
       }
     };
     fetchCustomers();
-  }, []); // Re-fetch?
+  }, [reloadKey]); // refetch after a new customer is created
 
   // Reset to page 1 when search changes
   useEffect(() => {
@@ -828,7 +1057,10 @@ function CustomersView() {
         <div className="flex items-center gap-4">
           <h2 className="text-3xl font-bold text-gray-900">{t('customersTitle')}</h2>
         </div>
-        <button className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition shadow-sm font-medium flex items-center gap-2">
+        <button
+          onClick={() => setShowAddModal(true)}
+          className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition shadow-sm font-medium flex items-center gap-2"
+        >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
           {t('addNewCustomer')}
         </button>
@@ -949,6 +1181,13 @@ function CustomersView() {
           </div>
         )}
       </div>
+
+      {showAddModal && (
+        <AddCustomerModal
+          onClose={() => setShowAddModal(false)}
+          onCreated={() => { setShowAddModal(false); setReloadKey((k) => k + 1); }}
+        />
+      )}
     </div>
   );
 }
@@ -1162,6 +1401,7 @@ function PromotionsView() {
 function StaffView() {
   const t = useTranslations('Dashboard');
   const [selectedStaff, setSelectedStaff] = useState(null);
+  const [isAddingStaff, setIsAddingStaff] = useState(false);
   const [staff, setStaff] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -1185,10 +1425,18 @@ function StaffView() {
       }
     };
     fetchStaff();
-  }, []); // Re-fetch?
+  }, [selectedStaff, isAddingStaff]); // refetch when returning to the list (create/edit may have changed it)
 
-  if (selectedStaff) {
-    return <StaffDetailView staff={selectedStaff} onBack={() => setSelectedStaff(null)} />;
+  // Editing passes the selected member; adding passes null so StaffDetailView runs its
+  // create flow (POST /api/admin/users). Passing {} previously made isEditing truthy and
+  // fired PUT /api/admin/users/undefined.
+  if (selectedStaff || isAddingStaff) {
+    return (
+      <StaffDetailView
+        staff={isAddingStaff ? null : selectedStaff}
+        onBack={() => { setSelectedStaff(null); setIsAddingStaff(false); }}
+      />
+    );
   }
 
   return (
@@ -1196,7 +1444,7 @@ function StaffView() {
       <div className="flex justify-between items-center mb-8">
         <h2 className="text-3xl font-bold text-gray-900">{t('staffTitle')}</h2>
         <button
-          onClick={() => setSelectedStaff({})}
+          onClick={() => setIsAddingStaff(true)}
           className="px-4 py-2 bg-[#C5A572] text-white rounded-md hover:bg-[#b09060] transition shadow-sm font-medium flex items-center gap-2"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>

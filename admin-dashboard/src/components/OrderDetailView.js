@@ -24,6 +24,7 @@ export default function OrderDetailView({ order, onBack }) {
                     const data = response.keyValueTable[0].order;
                     setOrderDetails(prev => ({ ...prev, ...data }));
                     if (data.status) setStatus(data.status.charAt(0).toUpperCase() + data.status.slice(1));
+                    if (data.tracking_number) setTrackingNumber(data.tracking_number);
                     // Address parsing if needed? Backend returns JSON blocks, frontend might need object.
                     // The backend returns row with shipping_address_json string.
                     // We might need to parse it if it wasn't parsed.
@@ -46,9 +47,16 @@ export default function OrderDetailView({ order, onBack }) {
         setIsSaving(true);
         try {
             const { apiFetch } = await import('../utils/api');
+            // Persist the tracking number alongside the status change.
+            // NOTE (backend): PUT /api/admin/orders/:id/status currently reads only
+            // { status, notes } and does NOT save tracking_number — the backend route
+            // must be updated to accept and persist it for this to take effect.
+            const payload = { status };
+            const trimmedTracking = (trackingNumber || '').trim();
+            if (trimmedTracking) payload.tracking_number = trimmedTracking;
             const response = await apiFetch(`/api/admin/orders/${idToUpdate}/status`, {
                 method: 'PUT',
-                body: JSON.stringify({ status })
+                body: JSON.stringify(payload)
             });
             if (response.status === 'SUCCESS') {
                 alert(t('orderUpdatedSuccess'));

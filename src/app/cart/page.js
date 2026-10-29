@@ -260,9 +260,9 @@ export default function Cart() {
                   </div>
                 </div>
                 <div className="aesop-cart-summary-actions">
-                  <button className="aesop-button-primary aesop-checkout-btn">
+                  <Link href="/checkout" className="aesop-button-primary aesop-checkout-btn">
                     {t('proceedToCheckout')}
-                  </button>
+                  </Link>
                   <Link href="/shop" className="aesop-button-secondary">
                     {t('continueShopping')}
                   </Link>

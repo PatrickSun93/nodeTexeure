@@ -10,7 +10,9 @@ const router = express.Router();
 
 // Initialize services
 const emailQueueService = new EmailQueueService();
-const abandonedCartService = new AbandonedCartService();
+// Reuse the one shared AbandonedCartService instance so the abandoned-cart recovery
+// route can share it without starting a second background detection interval.
+const abandonedCartService = AbandonedCartService.getShared();
 
 // Helper to get or create cart
 async function getOrCreateCart(req, res) {
@@ -85,7 +87,7 @@ router.get('/', protectOptional, async (req, res) => {
     }));
   } catch (error) {
     console.error('Error fetching cart:', error);
-    res.status(500).json(ResponseFormatter.failure('Failed to get cart', { error: error.message }));
+    res.status(500).json(ResponseFormatter.failure('Failed to get cart'));
   }
 });
 
@@ -176,7 +178,7 @@ router.post('/add', protectOptional, async (req, res) => {
     res.json(ResponseFormatter.success('Item added to cart'));
   } catch (error) {
     console.error('Error adding item to cart:', error);
-    res.status(500).json(ResponseFormatter.failure('Failed to add item', { error: error.message }));
+    res.status(500).json(ResponseFormatter.failure('Failed to add item'));
   }
 });
 
@@ -230,7 +232,7 @@ router.put('/update/:itemId', protectOptional, async (req, res) => {
     }
   } catch (error) {
     console.error('Error updating cart item:', error);
-    res.status(500).json(ResponseFormatter.failure('Failed to update item', { error: error.message }));
+    res.status(500).json(ResponseFormatter.failure('Failed to update item'));
   }
 });
 
@@ -249,7 +251,7 @@ router.delete('/remove/:itemId', protectOptional, async (req, res) => {
     }
   } catch (error) {
     console.error('Error removing cart item:', error);
-    res.status(500).json(ResponseFormatter.failure('Failed to remove item', { error: error.message }));
+    res.status(500).json(ResponseFormatter.failure('Failed to remove item'));
   }
 });
 
@@ -273,16 +275,18 @@ router.post('/reserve-stock', protectOptional, async (req, res) => {
     const result = await InventoryService.reserveStock(items, cartId, userId);
     
     if (!result.success) {
-      return res.status(400).json(ResponseFormatter.failure(result.error));
+      // result.error may carry internal detail (DB/service messages) — return a
+      // generic, user-facing message instead of leaking it.
+      return res.status(400).json(ResponseFormatter.failure('Unable to reserve stock for checkout'));
     }
-    
+
     res.json(ResponseFormatter.success('Stock reserved for checkout', {
       reservations: result.data,
       expires_in_minutes: 60
     }));
   } catch (error) {
     console.error('Error reserving stock:', error);
-    res.status(500).json(ResponseFormatter.failure('Failed to reserve stock', { error: error.message }));
+    res.status(500).json(ResponseFormatter.failure('Failed to reserve stock'));
   }
 });
 
@@ -296,8 +300,8 @@ router.post('/track-abandonment', protectOptional, async (req, res) => {
     
     // Get cart items to check if cart has items
     const cartItemsResult = await DatabaseUtil.executeQuery(
-      `SELECT ci.*, p.name, p.price 
-       FROM cart_items ci 
+      `SELECT ci.*, p.name
+       FROM cart_items ci
        JOIN products p ON ci.product_id = p.id 
        WHERE ci.cart_id = ?`,
       [cartId]
@@ -363,7 +367,7 @@ router.post('/track-abandonment', protectOptional, async (req, res) => {
 
   } catch (error) {
     console.error('Error tracking cart abandonment:', error);
-    res.status(500).json(ResponseFormatter.failure('Failed to track cart abandonment', { error: error.message }));
+    res.status(500).json(ResponseFormatter.failure('Failed to track cart abandonment'));
   }
 });
 
@@ -394,7 +398,7 @@ router.post('/cancel-abandonment', protectOptional, async (req, res) => {
 
   } catch (error) {
     console.error('Error cancelling cart abandonment:', error);
-    res.status(500).json(ResponseFormatter.failure('Failed to cancel cart abandonment', { error: error.message }));
+    res.status(500).json(ResponseFormatter.failure('Failed to cancel cart abandonment'));
   }
 });
 

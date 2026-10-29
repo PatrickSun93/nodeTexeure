@@ -1,32 +1,47 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { signIn, useSession, getSession } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import Header from '../../components/Header';
 import Footer from '../../components/Footer';
 
-export default function LoginPage() {
+function LoginContent() {
+  const t = useTranslations('SignIn');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { status } = useSession();
+  const redirect = searchParams.get('redirect');
+  const message = searchParams.get('message');
+
+  // Where to send the user after authentication: honour an explicit ?redirect=,
+  // otherwise route admins/staff to the dashboard and customers to their profile.
+  const destinationFor = (session) => {
+    if (redirect) return redirect;
+    if (
+      session?.user?.isAdmin ||
+      session?.user?.role === 'admin' ||
+      session?.user?.role === 'staff'
+    ) {
+      return '/dashboard';
+    }
+    return '/profile';
+  };
 
   useEffect(() => {
     if (status === 'authenticated') {
       getSession().then((session) => {
-        if (session?.user?.isAdmin || session?.user?.role === 'admin' || session?.user?.role === 'staff') {
-          router.push('/dashboard');
-        } else {
-          // Customer is authenticated but on admin login page, send them to profile
-          router.push('/profile');
-        }
+        router.push(destinationFor(session));
       });
     }
-  }, [status, router]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [status]);
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -42,18 +57,13 @@ export default function LoginPage() {
     setIsLoading(false);
 
     if (result?.error) {
-      setError('Login failed. Please check your credentials.');
+      setError(t('invalidCredentials'));
     } else if (result?.ok) {
       router.refresh();
       const session = await getSession();
-      if (session?.user?.isAdmin || session?.user?.role === 'admin' || session?.user?.role === 'staff') {
-        router.push('/dashboard');
-      } else {
-        // Customer logged in on admin page, redirect to profile
-        router.push('/profile');
-      }
+      router.push(destinationFor(session));
     } else {
-      setError('An unexpected error occurred.');
+      setError(t('unexpectedError'));
     }
   };
 
@@ -63,7 +73,7 @@ export default function LoginPage() {
         <Header />
         <div className="noirae-loading">
           <div className="aesop-loading-spinner"></div>
-          <p>Loading...</p>
+          <p>{t('loading')}</p>
         </div>
         <Footer />
       </div>
@@ -73,19 +83,36 @@ export default function LoginPage() {
   return (
     <div className="noirae-page">
       <Header />
-      
+
       <main className="noirae-login-main">
         <div className="noirae-login-container">
           {/* Welcome Section */}
           <div className="noirae-login-header">
-            <h1 className="noirae-login-title">Admin Login</h1>
+            <h1 className="noirae-login-title">{t('title')}</h1>
             <p className="noirae-login-subtitle">
-              Sign in to access the admin dashboard.
+              {t('subtitle')}
             </p>
           </div>
 
           {/* Login Form Card */}
           <div className="noirae-login-card">
+            {message && (
+              <div
+                role="status"
+                style={{
+                  padding: '12px 14px',
+                  marginBottom: '1rem',
+                  background: 'var(--noirae-success-bg)',
+                  border: '1px solid var(--noirae-success)',
+                  color: 'var(--noirae-success)',
+                  fontSize: '0.875rem',
+                  lineHeight: 1.5,
+                }}
+              >
+                {message}
+              </div>
+            )}
+
             {error && (
               <div className="noirae-login-error" role="alert">
                 {error}
@@ -96,7 +123,7 @@ export default function LoginPage() {
               {/* Email Field */}
               <div className="noirae-form-group">
                 <label htmlFor="email" className="noirae-form-label">
-                  Email
+                  {t('emailLabel')}
                 </label>
                 <input
                   id="email"
@@ -107,7 +134,7 @@ export default function LoginPage() {
                   onChange={(e) => setEmail(e.target.value)}
                   disabled={isLoading}
                   className="noirae-form-input"
-                  placeholder="you@example.com"
+                  placeholder={t('emailPlaceholder')}
                 />
               </div>
 
@@ -115,10 +142,10 @@ export default function LoginPage() {
               <div className="noirae-form-group">
                 <div className="noirae-form-label-row">
                   <label htmlFor="password" className="noirae-form-label">
-                    Password
+                    {t('passwordLabel')}
                   </label>
                   <Link href="/forgot-password" className="noirae-forgot-password">
-                    Forgot password?
+                    {t('forgotPassword')}
                   </Link>
                 </div>
                 <input
@@ -130,7 +157,7 @@ export default function LoginPage() {
                   onChange={(e) => setPassword(e.target.value)}
                   disabled={isLoading}
                   className="noirae-form-input"
-                  placeholder="Enter your password"
+                  placeholder={t('passwordPlaceholder')}
                 />
               </div>
 
@@ -140,15 +167,51 @@ export default function LoginPage() {
                 disabled={isLoading}
                 className="noirae-login-button"
               >
-                {isLoading ? 'Signing In...' : 'Sign In'}
+                {isLoading ? t('signingIn') : t('signIn')}
               </button>
             </form>
 
+            <div
+              style={{
+                textAlign: 'center',
+                marginTop: '1.5rem',
+                fontSize: '0.9rem',
+                color: 'var(--noirae-text-secondary)',
+              }}
+            >
+              {t('noAccount')}{' '}
+              <Link
+                href="/register"
+                style={{ color: 'var(--noirae-text-primary)', fontWeight: 500 }}
+              >
+                {t('createAccount')}
+              </Link>
+            </div>
           </div>
         </div>
       </main>
-      
+
       <Footer />
     </div>
+  );
+}
+
+export default function LoginPage() {
+  const t = useTranslations('SignIn');
+  return (
+    <Suspense
+      fallback={
+        <div className="noirae-page">
+          <Header />
+          <div className="noirae-loading">
+            <div className="aesop-loading-spinner"></div>
+            <p>{t('loading')}</p>
+          </div>
+          <Footer />
+        </div>
+      }
+    >
+      <LoginContent />
+    </Suspense>
   );
 }

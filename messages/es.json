@@ -295,7 +295,8 @@
     "callUsText": "Nuestro equipo está disponible para ayudarle durante el horario comercial.",
     "callUsHours": "Lun. – Vie., 9:00 – 17:00 (EST)",
     "showroomTitle": "Visite nuestro showroom",
-    "showroomText": "Descubra el lujo de los productos Noirae en persona."
+    "showroomText": "Descubra el lujo de los productos Noirae en persona.",
+    "errorMessage": "Algo salió mal. Vuelva a intentarlo o escríbanos directamente a support@noirae.com."
   },
   "Faq": {
     "title": "PREGUNTAS FRECUENTES",
@@ -524,7 +525,7 @@
     "lastNamePlaceholder": "Introduce tus apellidos",
     "emailLabel": "Correo electrónico",
     "emailPlaceholder": "your.email@example.com",
-    "emailHint": "El correo electrónico no se puede cambiar",
+    "emailHint": "Para cambiar tu dirección de correo electrónico, ponte en contacto con el servicio de atención al cliente.",
     "phoneLabel": "Número de teléfono",
     "phonePlaceholder": "+1 (555) 123-4567",
     "changePasswordTitle": "Cambiar contraseña (opcional)",
@@ -749,7 +750,9 @@
     "description": "Suscríbase para recibir ofertas exclusivas, consejos de estilo y acceso anticipado a las nuevas colecciones",
     "emailPlaceholder": "Introduzca su dirección de correo electrónico",
     "subscribe": "Suscribirse",
-    "successMessage": "¡Gracias por suscribirse!"
+    "successMessage": "¡Gracias por suscribirse!",
+    "errorMessage": "Algo salió mal. Vuelva a intentarlo.",
+    "subscribing": "Suscribiendo…"
   },
   "OrderTracking": {
     "fetchError": "No se pudo obtener la información de seguimiento",
@@ -899,5 +902,56 @@
     "retry": "Reintentar",
     "needHelp": "¿Necesitas ayuda?",
     "contactUs": "Contáctanos"
+  },
+  "Privacy": {
+    "pageTitle": "Política de privacidad",
+    "intro": "Esta Política de privacidad explica cómo Noiraé recopila, utiliza y protege tu información personal cuando visitas nuestro sitio web o realizas una compra. Nos comprometemos a tratar tus datos con el mismo cuidado que ponemos en nuestros productos.",
+    "lastUpdated": "Última actualización: enero de 2026",
+    "collectionTitle": "Información que recopilamos",
+    "collectionBody": "Recopilamos la información que nos facilitas cuando creas una cuenta, realizas un pedido, te suscribes a nuestro boletín o te pones en contacto con nosotros, como tu nombre, dirección de correo electrónico, datos de envío y facturación y número de teléfono. También recopilamos automáticamente información técnica limitada, incluidos el tipo de dispositivo, el navegador y la forma en que interactúas con nuestro sitio.",
+    "useTitle": "Cómo utilizamos tu información",
+    "useBody": "Utilizamos tu información para procesar y entregar tus pedidos, gestionar tu cuenta, responder a tus consultas, enviarte actualizaciones de pedidos y, cuando lo hayas autorizado, compartir novedades y ofertas. También utilizamos datos agregados y anonimizados para mejorar nuestro sitio web y nuestros servicios.",
+    "sharingTitle": "Compartir tu información",
+    "sharingBody": "Nunca vendemos tu información personal. La compartimos únicamente con los socios de confianza que nos ayudan a operar —como procesadores de pagos, transportistas y proveedores de correo electrónico— y solo en la medida necesaria para completar tu pedido. Estos socios están obligados a proteger tus datos y solo pueden utilizarlos para los servicios que nos prestan.",
+    "cookiesTitle": "Cookies",
+    "cookiesBody": "Nuestro sitio utiliza cookies para mantener tu sesión iniciada, recordar tu carrito y tu preferencia de idioma, y entender cómo se utiliza el sitio. Puedes controlar o desactivar las cookies desde la configuración de tu navegador, aunque es posible que algunas funciones del sitio no funcionen correctamente sin ellas.",
+    "securityTitle": "Seguridad de los datos",
+    "securityBody": "Aplicamos medidas técnicas y organizativas apropiadas para proteger tu información personal frente a la pérdida, el uso indebido y el acceso no autorizado. Los datos de pago los gestionan nuestros proveedores de pago a través de conexiones cifradas y nunca se almacenan de forma completa en nuestros servidores.",
+    "rightsTitle": "Tus derechos",
+    "rightsBody": "Según el lugar donde residas, puedes tener derecho a acceder a la información personal que tenemos sobre ti, a corregirla o eliminarla, a oponerte a determinados tratamientos y a retirar tu consentimiento para el marketing en cualquier momento. Para ejercer cualquiera de estos derechos, ponte en contacto con nosotros.",
+    "retentionTitle": "Conservación de los datos",
+    "retentionBody": "Conservamos tu información personal únicamente durante el tiempo necesario para cumplir los fines descritos en esta política, incluido el cumplimiento de nuestras obligaciones legales, contables y de información. Cuando ya no sea necesaria, la eliminamos o anonimizamos de forma segura.",
+    "contactTitle": "Contáctanos",
+    "contactBody": "Si tienes alguna pregunta sobre esta Política de privacidad o sobre cómo tratamos tu información, ponte en contacto con nosotros y nuestro equipo estará encantado de ayudarte.",
+    "contactLinkText": "Contactar con nuestro equipo"
+  },
+  "Dashboard": {
+    "welcomeNamed": "¡Bienvenido de nuevo, {name}!",
+    "welcome": "¡Bienvenido de nuevo!",
+    "subtitle": "Gestiona tu cuenta, pedidos y preferencias desde tu panel.",
+    "errorLoadProfile": "No se pudieron cargar los datos del perfil.",
+    "profileTitle": "Perfil",
+    "profileSubtitle": "Gestiona tu cuenta",
+    "labelName": "Nombre",
+    "labelEmail": "Correo electrónico",
+    "labelPhone": "Teléfono",
+    "notProvided": "No indicado",
+    "editProfile": "Editar perfil",
+    "ordersTitle": "Pedidos",
+    "ordersSubtitle": "Consulta el historial de tus pedidos",
+    "ordersDesc": "Revisa tus pedidos recientes y haz seguimiento de tus envíos.",
+    "viewOrders": "Ver pedidos",
+    "cartTitle": "Carrito",
+    "cartSubtitle": "Seguir comprando",
+    "cartDesc": "Retoma donde lo dejaste con los artículos de tu carrito.",
+    "viewCart": "Ver carrito",
+    "quickActions": "Acciones rápidas",
+    "shopNow": "Comprar ahora",
+    "contactUs": "Contáctanos",
+    "aboutUs": "Acerca de nosotros",
+    "recentActivity": "Actividad reciente",
+    "noActivity": "No hay actividad reciente para mostrar.",
+    "noActivityHint": "Empieza a comprar para ver tu actividad aquí.",
+    "browseProducts": "Explorar productos"
   }
 }

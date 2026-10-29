@@ -51,6 +51,31 @@ const verifyEmailLimiter = rateLimit({
 });
 
 /**
+ * Validate password strength: min 8 chars, at least one uppercase letter, one
+ * lowercase letter, and one digit. Returns a human-readable error message when
+ * the password is too weak, or null when it passes. Shared by register,
+ * reset-password, and the profile password-change path so every place that sets
+ * a password enforces one identical policy.
+ * @param {string} password
+ * @returns {string|null} error message, or null when the password is acceptable
+ */
+function validatePasswordStrength(password) {
+  if (!password || password.length < 8) {
+    return 'Password must be at least 8 characters';
+  }
+  if (!/[A-Z]/.test(password)) {
+    return 'Password must contain at least one uppercase letter';
+  }
+  if (!/[a-z]/.test(password)) {
+    return 'Password must contain at least one lowercase letter';
+  }
+  if (!/[0-9]/.test(password)) {
+    return 'Password must contain at least one number';
+  }
+  return null;
+}
+
+/**
  * POST /api/users/register
  * Register a new user
  * @param {string} email - User's email
@@ -72,17 +97,9 @@ router.post('/register', registerLimiter, async (req, res) => {
     }
 
     // Password strength validation
-    if (password.length < 8) {
-      return res.status(400).json(ResponseFormatter.failure('Password must be at least 8 characters'));
-    }
-    if (!/[A-Z]/.test(password)) {
-      return res.status(400).json(ResponseFormatter.failure('Password must contain at least one uppercase letter'));
-    }
-    if (!/[a-z]/.test(password)) {
-      return res.status(400).json(ResponseFormatter.failure('Password must contain at least one lowercase letter'));
-    }
-    if (!/[0-9]/.test(password)) {
-      return res.status(400).json(ResponseFormatter.failure('Password must contain at least one number'));
+    const registerPwError = validatePasswordStrength(password);
+    if (registerPwError) {
+      return res.status(400).json(ResponseFormatter.failure(registerPwError));
     }
 
     // Email format validation
@@ -159,13 +176,7 @@ router.post('/register', registerLimiter, async (req, res) => {
     }
   } catch (error) {
     console.error('User registration error:', error);
-    const keyValueTable = {
-      error: error.message
-    };
-    res.status(500).json(ResponseFormatter.failure(
-      'User registration failed',
-      keyValueTable
-    ));
+    res.status(500).json(ResponseFormatter.failure('User registration failed'));
   }
 });
 
@@ -304,7 +315,7 @@ router.post('/login', loginLimiter, async (req, res) => {
     }
   } catch (error) {
     console.error('Login error:', error);
-    const keyValueTable = { error: error.message };
+    const keyValueTable = {};
     res.status(500).json(ResponseFormatter.failure('Login failed', keyValueTable));
   }
 });
@@ -383,7 +394,7 @@ router.get('/profile', protect, async (req, res) => {
     res.json(ResponseFormatter.success('User profile fetched', result.data[0]));
   } catch (error) {
     console.error('Get profile error:', error);
-    const keyValueTable = { error: error.message };
+    const keyValueTable = {};
     res.status(500).json(ResponseFormatter.failure('Failed to get profile', keyValueTable));
   }
 });
@@ -429,7 +440,7 @@ router.get('/session', protectOptional, async (req, res) => {
  */
 router.put('/profile', protect, async (req, res) => {
   try {
-    const { firstName, lastName, phone, password } = req.body;
+    const { firstName, lastName, phone, password, currentPassword } = req.body;
     let updates = [];
     let params = [];
 
@@ -446,6 +457,25 @@ router.put('/profile', protect, async (req, res) => {
       params.push(phone);
     }
     if (password) {
+      // Changing the password requires proving knowledge of the current one, so
+      // a hijacked session cannot silently lock out the account owner.
+      if (!currentPassword) {
+        return res.status(400).json(ResponseFormatter.failure('Current password is required to set a new password'));
+      }
+      const profilePwError = validatePasswordStrength(password);
+      if (profilePwError) {
+        return res.status(400).json(ResponseFormatter.failure(profilePwError));
+      }
+      const userRow = DatabaseUtil.first(
+        await DatabaseUtil.executeQuery('SELECT password_hash FROM users WHERE id = ?', [req.user.id])
+      );
+      if (!userRow) {
+        return res.status(404).json(ResponseFormatter.failure('User not found'));
+      }
+      const currentMatches = await bcrypt.compare(currentPassword, userRow.password_hash || '');
+      if (!currentMatches) {
+        return res.status(401).json(ResponseFormatter.failure('Current password is incorrect'));
+      }
       const salt = await bcrypt.genSalt(10);
       const hashedPassword = await bcrypt.hash(password, salt);
       updates.push('password_hash = ?');
@@ -469,7 +499,7 @@ router.put('/profile', protect, async (req, res) => {
     }
   } catch (error) {
     console.error('Update profile error:', error);
-    const keyValueTable = { error: error.message };
+    const keyValueTable = {};
     res.status(500).json(ResponseFormatter.failure('Failed to update profile', keyValueTable));
   }
 });
@@ -651,7 +681,7 @@ router.get('/', protect, admin, async (req, res) => {
     }
   } catch (error) {
     console.error('Get all users error:', error);
-    const keyValueTable = { error: error.message };
+    const keyValueTable = {};
     res.status(500).json(ResponseFormatter.failure('Failed to get users', keyValueTable));
   }
 });
@@ -688,7 +718,7 @@ router.get('/csrf-token', protect, admin, async (req, res) => {
     res.json(ResponseFormatter.success('CSRF token generated successfully', keyValueTable));
   } catch (error) {
     console.error('CSRF token generation error:', error);
-    const keyValueTable = { error: error.message };
+    const keyValueTable = {};
     res.status(500).json(ResponseFormatter.failure('Failed to generate CSRF token', keyValueTable));
   }
 });
@@ -709,7 +739,7 @@ router.get('/:id', protect, admin, async (req, res) => {
     res.json(ResponseFormatter.success('User fetched', result.data[0]));
   } catch (error) {
     console.error('Get user by ID error:', error);
-    const keyValueTable = { error: error.message };
+    const keyValueTable = {};
     res.status(500).json(ResponseFormatter.failure('Failed to get user', keyValueTable));
   }
 });
@@ -757,7 +787,7 @@ router.put('/:id', protect, admin, async (req, res) => {
     }
   } catch (error) {
     console.error('Update user error:', error);
-    const keyValueTable = { error: error.message };
+    const keyValueTable = {};
     res.status(500).json(ResponseFormatter.failure('Failed to update user', keyValueTable));
   }
 });
@@ -779,7 +809,7 @@ router.delete('/:id', protect, admin, async (req, res) => {
     }
   } catch (error) {
     console.error('Delete user error:', error);
-    const keyValueTable = { error: error.message };
+    const keyValueTable = {};
     res.status(500).json(ResponseFormatter.failure('Failed to delete user', keyValueTable));
   }
 });
@@ -820,7 +850,7 @@ router.post('/forgot-password', forgotLimiter, async (req, res) => {
     res.json(ResponseFormatter.success('Email sent', keyValueTable));
   } catch (error) {
     console.error('Forgot password error:', error);
-    const keyValueTable = { error: error.message };
+    const keyValueTable = {};
     res.status(500).json(ResponseFormatter.failure('Failed to process forgot password', keyValueTable));
   }
 });
@@ -838,6 +868,12 @@ router.post('/reset-password', async (req, res) => {
     if (!token || !newPassword) {
       const keyValueTable = { error: 'Token and new password are required' };
       return res.status(400).json(ResponseFormatter.failure('Missing required fields', keyValueTable));
+    }
+
+    // Enforce the same password strength policy as registration.
+    const resetPwError = validatePasswordStrength(newPassword);
+    if (resetPwError) {
+      return res.status(400).json(ResponseFormatter.failure(resetPwError));
     }
 
     let decoded;
@@ -870,7 +906,7 @@ router.post('/reset-password', async (req, res) => {
     res.json(ResponseFormatter.success('Password reset successful', keyValueTable));
   } catch (error) {
     console.error('Reset password error:', error);
-    const keyValueTable = { error: error.message };
+    const keyValueTable = {};
     res.status(500).json(ResponseFormatter.failure('Failed to reset password', keyValueTable));
   }
 });

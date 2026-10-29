@@ -45,7 +45,15 @@ function normalizeEmail(email) {
 }
 
 function secret() {
-  return process.env.JWT_SECRET || 'noirae-dev-unsubscribe-secret';
+  // No fallback: a hardcoded default would let anyone forge unsubscribe /
+  // resubscribe tokens. Every running environment must set JWT_SECRET (the same
+  // secret signs auth JWTs and the CSRF HMAC; the server refuses to boot in
+  // production without it). Throw rather than silently sign with a weak key.
+  const s = process.env.JWT_SECRET;
+  if (!s) {
+    throw new Error('JWT_SECRET is not set — refusing to build/verify unsubscribe tokens with a fallback secret');
+  }
+  return s;
 }
 
 /**

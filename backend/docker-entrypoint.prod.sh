@@ -7,5 +7,8 @@ echo "Waiting for MySQL at ${DB_HOST}:${DB_PORT}..."
 until mysqladmin ping -h "$DB_HOST" -P "$DB_PORT" -uroot -p"$DB_PASSWORD" --silent >/dev/null 2>&1; do
   sleep 2
 done
-echo "MySQL ready. Starting backend (production, port ${PORT})..."
+echo "MySQL ready. Starting email daemon (background — delivers queued transactional emails)..."
+node services/emailDaemon.js &
+
+echo "Starting backend (production, port ${PORT})..."
 exec node server.js

@@ -6,6 +6,50 @@ export default function CustomerDetailView({ customer, onBack }) {
     const [activeTab, setActiveTab] = useState('overview'); // For future tabs if needed
     const [orders, setOrders] = useState([]);
     const [isLoadingOrders, setIsLoadingOrders] = useState(false);
+    // Real addresses + created_at come from GET /api/admin/users/:id (see effect below).
+    const [addresses, setAddresses] = useState([]);
+    const [createdAt, setCreatedAt] = useState(customer?.created_at || null);
+
+    // Editable personal-info form. Seeded from the list row we already have (name/email).
+    // Phone has no source in the admin users list (see FLAG), so it starts empty.
+    const [profile, setProfile] = useState(() => {
+        const parts = (customer?.name || '').trim().split(' ');
+        return {
+            first_name: parts[0] || '',
+            last_name: parts.slice(1).join(' ') || '',
+            email: customer?.email || '',
+            phone: customer?.phone || '',
+        };
+    });
+    const [isSaving, setIsSaving] = useState(false);
+
+    // Wire "Save Changes" to the real endpoint: PUT /api/admin/users/:id (CSRF-aware apiFetch).
+    const handleSaveProfile = async () => {
+        if (!customer?.id) { alert(t('missingCustomerId')); return; }
+        setIsSaving(true);
+        try {
+            const { apiFetch } = await import('../utils/api');
+            const response = await apiFetch(`/api/admin/users/${customer.id}`, {
+                method: 'PUT',
+                body: JSON.stringify({
+                    first_name: profile.first_name,
+                    last_name: profile.last_name,
+                    email: profile.email,
+                    phone: profile.phone || null,
+                }),
+            });
+            if (response.status === 'SUCCESS') {
+                alert(t('customerUpdated'));
+            } else {
+                alert(response.message || t('updateFailed'));
+            }
+        } catch (e) {
+            console.error('Save customer failed', e);
+            alert(t('updateFailed'));
+        } finally {
+            setIsSaving(false);
+        }
+    };
 
     useEffect(() => {
         const fetchOrders = async () => {
@@ -27,6 +71,53 @@ export default function CustomerDetailView({ customer, onBack }) {
         fetchOrders();
     }, [customer?.id]);
 
+    // Load the full customer profile (personal info + real addresses + created_at) from the
+    // admin detail endpoint. Falls back gracefully (keeps list-seeded values) if it 404s.
+    useEffect(() => {
+        const fetchDetail = async () => {
+            if (!customer?.id) return;
+            try {
+                const { apiFetch } = await import('../utils/api');
+                const response = await apiFetch(`/api/admin/users/${customer.id}`);
+                if (response.status === 'SUCCESS') {
+                    const detail = response.keyValueTable?.find?.((i) => i.customer)?.customer
+                        || response.keyValueTable?.[0]?.customer;
+                    const u = detail?.user;
+                    if (u) {
+                        setProfile({
+                            first_name: u.first_name || '',
+                            last_name: u.last_name || '',
+                            email: u.email || '',
+                            phone: u.phone || '',
+                        });
+                        setCreatedAt(u.created_at || null);
+                    }
+                    setAddresses(Array.isArray(detail?.addresses) ? detail.addresses : []);
+                }
+            } catch (error) {
+                console.error('Failed to fetch customer detail:', error);
+            }
+        };
+        fetchDetail();
+    }, [customer?.id]);
+
+    const capitalize = (s) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s);
+
+    // Render a single real address block from the user_addresses shape.
+    const renderAddress = (addr) => (
+        <div className="text-sm text-gray-600 leading-relaxed not-italic">
+            <p className="font-medium text-gray-900">
+                {[addr.first_name, addr.last_name].filter(Boolean).join(' ') || customer.name}
+            </p>
+            {addr.company && <p>{addr.company}</p>}
+            {addr.address_line_1 && <p>{addr.address_line_1}</p>}
+            {addr.address_line_2 && <p>{addr.address_line_2}</p>}
+            <p>{[addr.city, addr.state].filter(Boolean).join(', ')} {addr.postal_code}</p>
+            {addr.country && <p>{addr.country}</p>}
+            {addr.phone && <p className="text-gray-500 mt-1">{t('addressPhone', { phone: addr.phone })}</p>}
+        </div>
+    );
+
     return (
         <div className="p-8 bg-gray-50 min-h-full">
             {/* Header */}
@@ -43,8 +134,12 @@ export default function CustomerDetailView({ customer, onBack }) {
                     <button onClick={onBack} className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 font-medium transition-colors">
                         {t('cancel')}
                     </button>
-                    <button className="px-4 py-2 bg-[#C5A572] text-white rounded-lg hover:bg-[#b09060] font-medium transition-colors shadow-sm">
-                        {t('saveChanges')}
+                    <button
+                        onClick={handleSaveProfile}
+                        disabled={isSaving}
+                        className="px-4 py-2 bg-[#C5A572] text-white rounded-lg hover:bg-[#b09060] font-medium transition-colors shadow-sm disabled:opacity-50"
+                    >
+                        {isSaving ? t('saving') : t('saveChanges')}
                     </button>
                 </div>
             </div>
@@ -73,11 +168,11 @@ export default function CustomerDetailView({ customer, onBack }) {
                         <div className="text-left space-y-3 border-t border-gray-100 pt-4">
                             <div className="flex justify-between text-sm">
                                 <span className="text-gray-500">{t('customerIdLabel')}</span>
-                                <span className="font-medium text-gray-900">{customer.id || 'CUST-10234'}</span>
+                                <span className="font-medium text-gray-900">{customer.id || '—'}</span>
                             </div>
                             <div className="flex justify-between text-sm">
                                 <span className="text-gray-500">{t('memberSinceLabel')}</span>
-                                <span className="font-medium text-gray-900">Jan 15, 2023</span>
+                                <span className="font-medium text-gray-900">{createdAt ? new Date(createdAt).toLocaleDateString() : '—'}</span>
                             </div>
                         </div>
                     </div>
@@ -125,63 +220,49 @@ export default function CustomerDetailView({ customer, onBack }) {
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
                                     <label className="block text-xs text-gray-500 uppercase tracking-wider mb-1">{t('firstName')}</label>
-                                    <input type="text" defaultValue={customer.name.split(' ')[0]} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#C5A572]" />
+                                    <input type="text" value={profile.first_name} onChange={(e) => setProfile((p) => ({ ...p, first_name: e.target.value }))} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#C5A572]" />
                                 </div>
                                 <div>
                                     <label className="block text-xs text-gray-500 uppercase tracking-wider mb-1">{t('lastName')}</label>
-                                    <input type="text" defaultValue={customer.name.split(' ')[1] || ''} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#C5A572]" />
+                                    <input type="text" value={profile.last_name} onChange={(e) => setProfile((p) => ({ ...p, last_name: e.target.value }))} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#C5A572]" />
                                 </div>
                             </div>
                             <div>
                                 <label className="block text-xs text-gray-500 uppercase tracking-wider mb-1">{t('emailAddress')}</label>
-                                <input type="email" defaultValue={customer.email} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#C5A572]" />
+                                <input type="email" value={profile.email} onChange={(e) => setProfile((p) => ({ ...p, email: e.target.value }))} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#C5A572]" />
                             </div>
                             <div>
                                 <label className="block text-xs text-gray-500 uppercase tracking-wider mb-1">{t('phoneNumber')}</label>
-                                <input type="text" defaultValue="+1 (555) 123-4567" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#C5A572]" />
+                                {/* FLAG: admin users list has no phone to prefill; an admin can set one here and it persists via PUT /api/admin/users/:id. */}
+                                <input type="text" value={profile.phone} onChange={(e) => setProfile((p) => ({ ...p, phone: e.target.value }))} placeholder="—" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#C5A572]" />
                             </div>
                         </div>
                     </div>
 
-                    {/* Addresses */}
-                    <div className="grid grid-cols-1 gap-6">
-                        {/* Shipping Address */}
-                        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-                            <div className="flex justify-between items-center mb-4">
-                                <h3 className="text-lg font-semibold text-gray-900">{t('shippingAddress')}</h3>
-                                <button className="text-[#C5A572] text-sm font-medium hover:text-[#a08050] flex items-center gap-1">
-                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
-                                    {t('edit')}
-                                </button>
+                    {/* Addresses — real rows from GET /api/admin/users/:id (user_addresses). */}
+                    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                        <h3 className="text-lg font-semibold text-gray-900 mb-4">{t('addresses')}</h3>
+                        {addresses.length === 0 ? (
+                            <div className="text-sm text-gray-500 leading-relaxed">
+                                <p>{t('noAddressOnFile')}</p>
                             </div>
-                            <div className="text-sm text-gray-600 leading-relaxed">
-                                <p>123 Luxury Lane</p>
-                                <p>Suite 450</p>
-                                <p>Beverly Hills, CA 90210</p>
-                                <p>United States</p>
+                        ) : (
+                            <div className="divide-y divide-gray-50">
+                                {addresses.map((addr) => (
+                                    <div key={addr.id} className="py-4 first:pt-0 last:pb-0">
+                                        <div className="flex items-center gap-2 mb-2">
+                                            <span className="text-xs font-semibold uppercase tracking-wider text-gray-500">
+                                                {addr.type ? t('addressTypeLabel', { type: capitalize(addr.type) }) : t('addressLabelFallback')}
+                                            </span>
+                                            {addr.is_default ? (
+                                                <span className="px-2 py-0.5 text-[10px] font-semibold bg-[#F3EAD8] text-[#8C6B3D] rounded-full">{t('defaultBadge')}</span>
+                                            ) : null}
+                                        </div>
+                                        {renderAddress(addr)}
+                                    </div>
+                                ))}
                             </div>
-                        </div>
-
-                        {/* Billing Address */}
-                        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-                            <div className="flex justify-between items-center mb-4">
-                                <h3 className="text-lg font-semibold text-gray-900">{t('billingAddress')}</h3>
-                                <button className="text-[#C5A572] text-sm font-medium hover:text-[#a08050] flex items-center gap-1">
-                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
-                                    {t('edit')}
-                                </button>
-                            </div>
-                            <div className="text-sm text-gray-600 leading-relaxed mb-3">
-                                <p>123 Luxury Lane</p>
-                                <p>Suite 450</p>
-                                <p>Beverly Hills, CA 90210</p>
-                                <p>United States</p>
-                            </div>
-                            <label className="flex items-center gap-2 text-sm text-gray-600">
-                                <input type="checkbox" defaultChecked className="rounded border-gray-300 text-[#C5A572] focus:ring-[#C5A572]" />
-                                {t('sameAsShippingAddress')}
-                            </label>
-                        </div>
+                        )}
                     </div>
                 </div>
 

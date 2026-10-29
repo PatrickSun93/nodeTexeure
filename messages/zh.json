@@ -295,7 +295,8 @@
     "callUsText": "我们的团队将在营业时间内为您服务。",
     "callUsHours": "周一至周五，上午9点至下午5点（东部时间）",
     "showroomTitle": "参观展厅",
-    "showroomText": "亲临体验 Noirae 产品的奢华质感。"
+    "showroomText": "亲临体验 Noirae 产品的奢华质感。",
+    "errorMessage": "出了点问题。请重试，或直接发送邮件至 support@noirae.com。"
   },
   "Faq": {
     "title": "常见问题",
@@ -524,7 +525,7 @@
     "lastNamePlaceholder": "请输入您的姓氏",
     "emailLabel": "电子邮箱",
     "emailPlaceholder": "your.email@example.com",
-    "emailHint": "电子邮箱无法更改",
+    "emailHint": "如需更改电子邮箱地址，请联系客户支持。",
     "phoneLabel": "电话号码",
     "phonePlaceholder": "+1 (555) 123-4567",
     "changePasswordTitle": "修改密码（选填）",
@@ -749,7 +750,9 @@
     "description": "订阅以获取专属优惠、搭配建议以及新系列的抢先体验",
     "emailPlaceholder": "请输入您的电子邮箱地址",
     "subscribe": "订阅",
-    "successMessage": "感谢您的订阅！"
+    "successMessage": "感谢您的订阅！",
+    "errorMessage": "出了点问题，请重试。",
+    "subscribing": "订阅中……"
   },
   "OrderTracking": {
     "fetchError": "无法获取物流跟踪信息",
@@ -899,5 +902,56 @@
     "retry": "重试",
     "needHelp": "需要帮助？",
     "contactUs": "联系我们"
+  },
+  "Privacy": {
+    "pageTitle": "隐私政策",
+    "intro": "本隐私政策说明当您访问我们的网站或进行购物时，Noiraé 如何收集、使用和保护您的个人信息。我们承诺以对待产品同样的用心来处理您的数据。",
+    "lastUpdated": "最后更新于 2026 年 1 月",
+    "collectionTitle": "我们收集的信息",
+    "collectionBody": "当您创建账户、下单、订阅我们的资讯或与我们联系时，我们会收集您所提供的信息，例如您的姓名、电子邮箱地址、配送与账单信息以及电话号码。我们还会自动收集有限的技术信息，包括您的设备类型、浏览器以及您与网站的互动方式。",
+    "useTitle": "我们如何使用您的信息",
+    "useBody": "我们使用您的信息来处理和交付订单、管理您的账户、回复您的咨询、发送订单更新，并在您选择接收的情况下向您分享资讯与优惠。我们还会使用经过汇总的匿名数据来改进我们的网站与服务。",
+    "sharingTitle": "信息的共享",
+    "sharingBody": "我们绝不会出售您的个人信息。我们仅与协助我们运营的可信合作伙伴（如支付处理商、物流承运商和电子邮件服务商）共享信息，且仅限于完成您订单所需的范围。这些合作伙伴须保护您的数据，并且只能将其用于向我们提供的服务。",
+    "cookiesTitle": "Cookie",
+    "cookiesBody": "我们的网站使用 Cookie 来保持您的登录状态、记住您的购物车和语言偏好，并了解网站的使用情况。您可以通过浏览器设置控制或禁用 Cookie，但若禁用，网站的部分功能可能无法正常运作。",
+    "securityTitle": "数据安全",
+    "securityBody": "我们采取适当的技术和组织措施，保护您的个人信息免遭丢失、滥用和未经授权的访问。支付信息由我们的支付服务商通过加密连接处理，绝不会以完整形式存储在我们的服务器上。",
+    "rightsTitle": "您的权利",
+    "rightsBody": "根据您所在地区的规定，您可能有权访问、更正或删除我们所持有的关于您的个人信息，反对某些处理行为，并随时撤回您对营销的同意。如需行使上述任何权利，请与我们联系。",
+    "retentionTitle": "数据保留",
+    "retentionBody": "我们仅在为实现本政策所述目的（包括履行法律、会计和报告义务）所必需的期限内保留您的个人信息。当不再需要时，我们会安全地将其删除或匿名化。",
+    "contactTitle": "联系我们",
+    "contactBody": "如您对本隐私政策或我们处理您信息的方式有任何疑问，欢迎与我们联系，我们的团队将竭诚为您服务。",
+    "contactLinkText": "联系我们的团队"
+  },
+  "Dashboard": {
+    "welcomeNamed": "欢迎回来，{name}！",
+    "welcome": "欢迎回来！",
+    "subtitle": "在您的仪表板中管理账户、订单和偏好设置。",
+    "errorLoadProfile": "无法加载个人资料数据。",
+    "profileTitle": "个人资料",
+    "profileSubtitle": "管理您的账户",
+    "labelName": "姓名",
+    "labelEmail": "电子邮箱",
+    "labelPhone": "电话",
+    "notProvided": "未提供",
+    "editProfile": "编辑资料",
+    "ordersTitle": "订单",
+    "ordersSubtitle": "查看您的订单历史",
+    "ordersDesc": "查看近期订单并追踪您的物流。",
+    "viewOrders": "查看订单",
+    "cartTitle": "购物车",
+    "cartSubtitle": "继续购物",
+    "cartDesc": "从购物车中的商品继续您的选购。",
+    "viewCart": "查看购物车",
+    "quickActions": "快捷操作",
+    "shopNow": "立即选购",
+    "contactUs": "联系我们",
+    "aboutUs": "关于我们",
+    "recentActivity": "近期活动",
+    "noActivity": "暂无近期活动可显示。",
+    "noActivityHint": "开始购物后，您的活动将在此显示。",
+    "browseProducts": "浏览商品"
   }
 }

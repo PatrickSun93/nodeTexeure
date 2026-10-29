@@ -9,11 +9,6 @@ const fetchBackend = async (url, options = {}) => {
   const path = `/${url.replace(/^\//, '')}`;
   const requestUrl = `${BACKEND_URL}${path}`;
   
-  console.log(`[NextAuth] BACKEND_URL: "${BACKEND_URL}"`);
-  console.log(`[NextAuth] path: "${path}"`);
-  console.log(`[NextAuth] requestUrl: "${requestUrl}"`);
-  console.log(`[NextAuth] Fetching: ${options.method || 'GET'} ${requestUrl}`);
-
   return new Promise((resolve, reject) => {
     try {
       const parsedUrl = new URL(requestUrl);
@@ -81,8 +76,6 @@ const handler = NextAuth({
         password: { label: 'Password', type: 'password' }
       },
       async authorize(credentials) {
-        console.log('[NextAuth] Authorize function called with:', credentials);
-
         if (!credentials?.email || !credentials?.password) {
           console.log('[NextAuth] Missing credentials');
           return null;
@@ -101,7 +94,6 @@ const handler = NextAuth({
           console.log(`[NextAuth] Backend response status: ${response.status}`);
           
           const data = await response.json();
-          console.log('[NextAuth] Backend response data:', data);
 
           if (data.status == 'SUCCESS') {
             // Extract user data from successful response
