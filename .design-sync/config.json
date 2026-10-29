@@ -1,11 +1,11 @@
 {
   "projectId": "550c3051-3b02-409f-9333-d74e07def26c",
   "shape": "package",
-  "pkg": "nodetexture",
+  "pkg": "nodetexeure",
   "globalName": "Noirae",
   "srcDir": "src",
   "cssEntry": "src/styles/aesop-design-system.css",
-  "tokensPkg": "nodetexture",
+  "tokensPkg": "nodetexeure",
   "tokensGlob": "src/styles/design-tokens.css",
   "readmeHeader": ".design-sync/conventions.md",
   "guidelinesGlob": []

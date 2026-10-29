@@ -22,6 +22,8 @@ jobs:
       - run: npm ci
       - run: npm run lint
       - run: npm run build
+      - name: docs/API.md is up to date
+        run: node scripts/gen-api-docs.js && git diff --exit-code docs/API.md
 
   admin:
     name: Admin (lint + build)

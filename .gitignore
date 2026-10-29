@@ -187,3 +187,7 @@ ds-bundle/
 # test/email artifacts
 backend/email-outbox/
 backend/uploads/general/
+
+# Uploaded product images (served from S3 or written at runtime)
+backend/uploads/products/
+.vercel

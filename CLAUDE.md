@@ -22,7 +22,7 @@ and a `get_next_id('PREFIX')` SQL function.
 
 ## Running it
 
-**Docker is the primary dev flow (PM2 is deprecated).**
+**Docker is the primary dev flow.**
 
 ```bash
 docker compose up            # mysql + backend + frontend + admin, hot-reload
@@ -91,6 +91,13 @@ imagery is served from the `product_images` table (`public/images/bedding/*.jpg`
   node script instead (see `seed-example-data.js`).
 - **Admin writes need a CSRF token**; a bare `curl` POST returns
   "CSRF token required" — that's correct, not a bug.
+
+## Docs map
+
+[docs/DATABASE.md](docs/DATABASE.md) (schema, IDs, migrations) ·
+[docs/API.md](docs/API.md) (generated — run `node scripts/gen-api-docs.js` after
+changing routes) · [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) ·
+[backend/README.md](backend/README.md).
 
 ## Adding a feature
 

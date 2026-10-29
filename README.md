@@ -122,6 +122,7 @@ docker compose -f docker-compose.prod.yml up -d --build   # production stack
 npm run test     # ESLint + production build (CI gate)
 npm run smoke    # health-check the running stack
 npm run db:reset # drop + recreate schema (dev only)
+node scripts/gen-api-docs.js   # regenerate docs/API.md after changing routes
 ```
 
 New DB columns/tables ship as ordered migrations under
@@ -155,9 +156,10 @@ Browser ─► Storefront (Next.js, :3000)
 
 - **API proxy:** the browser only talks to `:3000`; the backend port `6666` is a
   browser-blocked port, so all API access goes through the proxy.
-- **Auth:** JWT + an `admin_auth` cookie; three middleware levels (`protect`,
-  `admin`, `protectOptional`); admin writes require a CSRF token. Customer/customer
-  and admin auth flows are separate.
+- **Auth:** JWT + an `admin_auth` cookie; middleware levels `protect`,
+  `protectOptional`, `staffOrAdmin`, `admin`; admin writes require a CSRF token.
+  Tokens are checked against the user's current role/status on every request, so
+  revocation is immediate. Customer and admin auth flows are separate.
 - **IDs:** human-readable prefixed IDs (`PROD0000000001`) via a `get_next_id` SQL
   function.
 
@@ -170,13 +172,10 @@ Browser ─► Storefront (Next.js, :3000)
   MySQL. CI runs both apps' lint/build, these tests, and `npm audit` on every PR.
 - **`npm run smoke`** — checks the running stack (storefront pages + backend via
   the proxy).
-- **End-to-end** — the customer purchase flow, coupon/abuse cases, admin
-  operations, and email delivery have been validated headless against the running
-  stack with Playwright.
-- **Security posture verified** — privilege escalation, IDOR, SQL injection, JWT
-  forgery (incl. `alg:none`), missing-CSRF, and upload path-traversal are all
-  blocked. New admin routes go under `protect, admin` (+ CSRF for writes) to keep
-  it that way.
+- **Security posture is tested** — privilege escalation, IDOR, SQL injection, JWT
+  forgery (incl. `alg:none`), revoked sessions and missing CSRF are covered by the
+  API tests. New admin routes go under `admin` or `staffOrAdmin` (+ CSRF for writes)
+  and get a test.
 
 ---
 
@@ -186,9 +185,10 @@ Browser ─► Storefront (Next.js, :3000)
   (Claude Code, Codex): architecture, gotchas, conventions.
 - **[docs/DESIGN.md](docs/DESIGN.md)** — the Champagne & Charcoal design system.
 - **[docs/ADD_A_FEATURE.md](docs/ADD_A_FEATURE.md)** — how to add a feature end-to-end.
-- **[docs/PROJECT_STATUS.md](docs/PROJECT_STATUS.md)** — honest state + process.
-- **[BACKEND.md](BACKEND.md)** · **[FRONTEND.md](FRONTEND.md)** ·
-  **[DATABASE.md](DATABASE.md)** · **[TROUBLESHOOTING.md](TROUBLESHOOTING.md)**.
+- **[docs/DATABASE.md](docs/DATABASE.md)** — schema, custom IDs, migrations, status values.
+- **[docs/API.md](docs/API.md)** — every endpoint and its access rule (generated from the routes).
+- **[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)** — production stack, Stripe webhook, ops, launch checklist.
+- **[backend/README.md](backend/README.md)** — backend layout, scripts, running the tests.
 
 ---
 

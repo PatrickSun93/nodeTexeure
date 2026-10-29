@@ -11,16 +11,16 @@ there is nothing to author previews for.
 
 ## Required setup for the converter (per clone)
 The package isn't installed in its own `node_modules` (npm won't self-install),
-so the converter can't resolve `pkg: "nodetexture"`. Create a self-symlink first:
+so the converter can't resolve `pkg: "nodetexeure"`. Create a self-symlink first:
 
-    ln -sfn "$(pwd)" node_modules/nodetexture
+    ln -sfn "$(pwd)" node_modules/nodetexeure
 
 Then run the converter with `--node-modules ./node_modules` (react is at the repo
 root). **Remove the symlink after building** — a self-referential symlink under
 node_modules can confuse `next build`; it's only needed during the converter run.
 
 ## Config choices
-- `tokensPkg: "nodetexture"` + `tokensGlob: "src/styles/design-tokens.css"` — this
+- `tokensPkg: "nodetexeure"` + `tokensGlob: "src/styles/design-tokens.css"` — this
   is what pulls the 123 `--noirae-*` tokens into the closure (tokensGlob does
   nothing without tokensPkg).
 - `cssEntry: src/styles/aesop-design-system.css` → `_ds_bundle.css` (the styling).
