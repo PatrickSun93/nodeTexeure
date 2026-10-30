@@ -56,16 +56,6 @@
       "security": "Seguridad y auditoría"
     }
   },
-  "AdminHome": {
-    "adminLogin": "Inicio de sesión de administrador",
-    "emailPlaceholder": "Correo electrónico",
-    "passwordPlaceholder": "Contraseña",
-    "accessDenied": "Acceso denegado. Se requieren privilegios de administrador.",
-    "invalidCredentials": "Credenciales no válidas",
-    "loginFailed": "Error al iniciar sesión. Inténtalo de nuevo.",
-    "loggingIn": "Iniciando sesión…",
-    "login": "Iniciar sesión"
-  },
   "Dashboard": {
     "title": "Panel de administración",
     "brandSubtitle": "Admin de Noirae",
@@ -2016,7 +2006,11 @@
     "shippingAddress": "Dirección de envío",
     "orderUpdatedSuccess": "Pedido actualizado correctamente",
     "failedToUpdate": "No se pudo actualizar el pedido",
-    "errorUpdating": "Error al actualizar el pedido"
+    "errorUpdating": "Error al actualizar el pedido",
+    "discount": "Descuento",
+    "statusConfirmed": "Confirmado",
+    "statusRefunded": "Reembolsado",
+    "dismiss": "Cerrar"
   },
   "CustomerDetailView": {
     "breadcrumbCustomers": "Clientes",

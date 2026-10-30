@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { useTranslations } from 'next-intl';
+import { useNotifications } from './NotificationSystem';
 
 export default function ProductDetailView({ product, onBack }) {
     const t = useTranslations('ProductDetailView');
+    const notify = useNotifications();
     const isEditing = !!product;
 
     const [formData, setFormData] = useState({
@@ -116,12 +118,12 @@ export default function ProductDetailView({ product, onBack }) {
             if (response.status === 'SUCCESS') {
                 onBack();
             } else {
-                alert(t('saveFailed', { error: response.message || t('unknownError') }));
+                notify.error(t('saveFailed', { error: response.message || t('unknownError') }));
             }
 
         } catch (e) {
             console.error('Save failed', e);
-            alert(t('saveError'));
+            notify.error(t('saveError'));
         } finally {
             setIsSaving(false);
         }

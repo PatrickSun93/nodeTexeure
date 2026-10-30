@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { useTranslations } from 'next-intl';
+import { useNotifications } from './NotificationSystem';
 
 export default function PromotionDetailView({ promotion, onBack }) {
     const t = useTranslations('PromotionDetailView');
+    const notify = useNotifications();
     const isEditing = !!promotion;
 
     // Parse initial details
@@ -105,13 +107,13 @@ export default function PromotionDetailView({ promotion, onBack }) {
             });
 
             if (response.status === 'SUCCESS') {
-                alert(t('updateSuccess'));
+                notify.success(t('updateSuccess'));
             } else {
-                alert(t('updateFailed'));
+                notify.error(t('updateFailed'));
             }
         } catch (e) {
             console.error('Update promo failed', e);
-            alert(t('updateError'));
+            notify.error(t('updateError'));
         } finally {
             setIsSaving(false);
         }

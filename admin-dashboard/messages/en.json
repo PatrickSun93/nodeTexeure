@@ -56,16 +56,6 @@
       "security": "Security and audit"
     }
   },
-  "AdminHome": {
-    "adminLogin": "Admin Login",
-    "emailPlaceholder": "Email",
-    "passwordPlaceholder": "Password",
-    "accessDenied": "Access denied. Admin privileges required.",
-    "invalidCredentials": "Invalid credentials",
-    "loginFailed": "Login failed. Please try again.",
-    "loggingIn": "Logging in...",
-    "login": "Login"
-  },
   "Dashboard": {
     "title": "Admin Dashboard",
     "brandSubtitle": "Noirae Admin",
@@ -2016,7 +2006,11 @@
     "shippingAddress": "Shipping Address",
     "orderUpdatedSuccess": "Order updated successfully",
     "failedToUpdate": "Failed to update order",
-    "errorUpdating": "Error updating order"
+    "errorUpdating": "Error updating order",
+    "discount": "Discount",
+    "statusConfirmed": "Confirmed",
+    "statusRefunded": "Refunded",
+    "dismiss": "Dismiss"
   },
   "CustomerDetailView": {
     "breadcrumbCustomers": "Customers",

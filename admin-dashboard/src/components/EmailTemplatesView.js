@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import EmailTemplateEditorView from './EmailTemplateEditorView';
+import { useNotifications } from './NotificationSystem';
 
 export default function EmailTemplatesView() {
     const t = useTranslations('EmailTemplates');
+    const notify = useNotifications();
     const [filter, setFilter] = useState('All');
     const [sort, setSort] = useState('Newest');
     const [searchQuery, setSearchQuery] = useState('');
@@ -81,11 +83,11 @@ export default function EmailTemplatesView() {
             if (response.status === 'SUCCESS') {
                 setTemplates((prev) => prev.filter((x) => x.id !== template.id));
             } else {
-                alert(t('failedToDelete'));
+                notify.error(t('failedToDelete'));
             }
         } catch (e) {
             console.error('Delete template failed', e);
-            alert(t('failedToDelete'));
+            notify.error(t('failedToDelete'));
         }
     };
 

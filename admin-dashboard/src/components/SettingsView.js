@@ -1,8 +1,10 @@
 import React, { useState, useCallback } from 'react';
 import { useTranslations } from 'next-intl';
+import { useNotifications } from './NotificationSystem';
 
 export default function SettingsView() {
     const t = useTranslations('SettingsView');
+    const notify = useNotifications();
     const [storeName, setStoreName] = useState('Noirae Silk & Cashmere');
     const [supportEmail, setSupportEmail] = useState('support@noirae.com');
     const [currency, setCurrency] = useState('USD');
@@ -86,13 +88,13 @@ export default function SettingsView() {
                 })
             });
             if (response.status === 'SUCCESS') {
-                alert(t('savedSuccess'));
+                notify.success(t('savedSuccess'));
             } else {
-                alert(t('saveFailed'));
+                notify.error(t('saveFailed'));
             }
         } catch (e) {
             console.error(e);
-            alert(t('saveError'));
+            notify.error(t('saveError'));
         } finally {
             setIsSaving(false);
         }
@@ -118,7 +120,7 @@ export default function SettingsView() {
         setStripeEnabled(next);
         if (!(await persistGateway('payment_stripe_enabled', next))) {
             setStripeEnabled(!next);
-            alert(t('gatewayUpdateFailed'));
+            notify.error(t('gatewayUpdateFailed'));
         }
     };
 
@@ -127,12 +129,12 @@ export default function SettingsView() {
         setPaypalEnabled(next);
         if (!(await persistGateway('payment_paypal_enabled', next))) {
             setPaypalEnabled(!next);
-            alert(t('gatewayUpdateFailed'));
+            notify.error(t('gatewayUpdateFailed'));
         }
     };
 
     const saveZone = async () => {
-        if (!zoneModal || !zoneModal.name.trim()) { alert(t('zoneNameRequired')); return; }
+        if (!zoneModal || !zoneModal.name.trim()) { notify.warning(t('zoneNameRequired')); return; }
         setZoneSaving(true);
         try {
             const { apiFetch } = await import('../utils/api');
@@ -146,11 +148,11 @@ export default function SettingsView() {
                 setZoneModal(null);
                 await loadZones();
             } else {
-                alert(t('zoneSaveFailed'));
+                notify.error(t('zoneSaveFailed'));
             }
         } catch (e) {
             console.error('Save shipping zone failed', e);
-            alert(t('zoneSaveFailed'));
+            notify.error(t('zoneSaveFailed'));
         } finally {
             setZoneSaving(false);
         }
@@ -165,11 +167,11 @@ export default function SettingsView() {
             if (response.status === 'SUCCESS') {
                 await loadZones();
             } else {
-                alert(t('zoneDeleteFailed'));
+                notify.error(t('zoneDeleteFailed'));
             }
         } catch (e) {
             console.error('Delete shipping zone failed', e);
-            alert(t('zoneDeleteFailed'));
+            notify.error(t('zoneDeleteFailed'));
         }
     };
 

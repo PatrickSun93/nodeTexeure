@@ -22,7 +22,7 @@ function LoginForm() {
   useEffect(() => {
     // Check if user is already authenticated
     if (!isLoading && isAuthenticated) {
-      router.push('/');
+      router.push('/dashboard');
     }
 
     // Check for logout message
@@ -73,7 +73,7 @@ function LoginForm() {
       
       // Small delay to show success message
       setTimeout(() => {
-        router.push('/');
+        router.push('/dashboard');
       }, 1000);
     }
     // Error handling is done by the auth context

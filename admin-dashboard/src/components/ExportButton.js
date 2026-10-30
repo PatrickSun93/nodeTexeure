@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import api from '../lib/api';
+import { useNotifications } from './NotificationSystem';
 
 export default function ExportButton({
   endpoint,
@@ -13,6 +14,7 @@ export default function ExportButton({
   variant = 'primary'
 }) {
   const t = useTranslations('ExportButton');
+  const notify = useNotifications();
   const [isExporting, setIsExporting] = useState(false);
 
   const handleExport = async () => {
@@ -39,7 +41,7 @@ export default function ExportButton({
       window.URL.revokeObjectURL(url);
     } catch (error) {
       console.error('Export failed:', error);
-      alert(t('exportFailed'));
+      notify.error(t('exportFailed'));
     } finally {
       setIsExporting(false);
     }
