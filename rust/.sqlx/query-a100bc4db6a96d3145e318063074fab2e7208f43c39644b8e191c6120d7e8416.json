@@ -1,0 +1,54 @@
+{
+  "db_name": "MySQL",
+  "query": "SELECT osh.status, osh.status_details AS \"status_details: Value\", osh.created_at,\n             u.first_name AS \"changed_by_name: String\"\n           FROM order_status_history osh\n           LEFT JOIN users u ON osh.changed_by = u.id\n           WHERE osh.order_id = ? ORDER BY osh.created_at ASC, osh.id ASC",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "status",
+        "type_info": {
+          "type": "String",
+          "flags": "NOT_NULL | MULTIPLE_KEY | ENUM | NO_DEFAULT_VALUE",
+          "max_size": 40
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "status_details: Value",
+        "type_info": {
+          "type": "Json",
+          "flags": "BLOB | BINARY",
+          "max_size": 4294967295
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "created_at",
+        "type_info": {
+          "type": "Timestamp",
+          "flags": "MULTIPLE_KEY | BINARY | TIMESTAMP",
+          "max_size": 19
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "changed_by_name: String",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NO_DEFAULT_VALUE",
+          "max_size": 400
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false,
+      true,
+      true,
+      true
+    ]
+  },
+  "hash": "a100bc4db6a96d3145e318063074fab2e7208f43c39644b8e191c6120d7e8416"
+}

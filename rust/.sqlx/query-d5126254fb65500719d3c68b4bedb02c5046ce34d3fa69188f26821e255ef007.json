@@ -1,0 +1,34 @@
+{
+  "db_name": "MySQL",
+  "query": "SELECT osh.status, osh.created_at FROM order_status_history osh\n         JOIN orders o ON o.id = osh.order_id\n         WHERE o.order_number = ?\n         ORDER BY osh.created_at ASC, osh.id ASC",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "status",
+        "type_info": {
+          "type": "String",
+          "flags": "NOT_NULL | MULTIPLE_KEY | ENUM | NO_DEFAULT_VALUE",
+          "max_size": 40
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "created_at",
+        "type_info": {
+          "type": "Timestamp",
+          "flags": "MULTIPLE_KEY | BINARY | TIMESTAMP",
+          "max_size": 19
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false,
+      true
+    ]
+  },
+  "hash": "d5126254fb65500719d3c68b4bedb02c5046ce34d3fa69188f26821e255ef007"
+}

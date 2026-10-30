@@ -42,11 +42,28 @@ const nextConfig = {
     const rustEntries = rustUrl
       ? (process.env.RUST_API_ROUTES || '').split(',').map((r) => r.trim()).filter(Boolean)
       : [];
-    const rustGroups = new Set(rustEntries.filter((r) => !r.includes('/')));
+    // Groups only partly ported: listing the group moves just these paths (Next
+    // path patterns); the rest of the group stays on Node. Drop the entry once the
+    // whole group is ported. orders: the GET routes — create, apply-coupon and
+    // calculate-tax (POST) are still Node.
+    const partialGroups = {
+      orders: [
+        'orders/my-orders',
+        'orders/track/:orderNumber',
+        'orders/:id((?!create$|apply-coupon$|calculate-tax$)[^/]+)',
+      ],
+    };
+    const rustGroups = new Set(
+      rustEntries.filter((r) => !r.includes('/') && !partialGroups[r])
+    );
     // Exact paths first: Next uses the first matching rewrite.
     const rustPaths = rustEntries
-      .filter((r) => r.includes('/'))
-      .map((path) => ({ source: `/api/${path}`, destination: `${rustUrl}/api/${path}` }));
+      .flatMap((r) => partialGroups[r] || (r.includes('/') ? [r] : []))
+      // A param's regex `(…)` belongs to the source only.
+      .map((path) => ({
+        source: `/api/${path}`,
+        destination: `${rustUrl}/api/${path.replace(/\(.*\)/, '')}`,
+      }));
 
     return [
       ...rustPaths,
