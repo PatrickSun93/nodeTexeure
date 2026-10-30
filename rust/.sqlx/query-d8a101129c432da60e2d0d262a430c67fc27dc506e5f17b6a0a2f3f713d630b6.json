@@ -1,0 +1,12 @@
+{
+  "db_name": "MySQL",
+  "query": "INSERT INTO email_unsubscribes (id, email, token, scope, reason, unsubscribed_at)\n           VALUES (?, ?, ?, ?, ?, NOW())\n         ON DUPLICATE KEY UPDATE\n           scope = VALUES(scope),\n           reason = COALESCE(VALUES(reason), reason),\n           unsubscribed_at = NOW()",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 5
+    },
+    "nullable": []
+  },
+  "hash": "d8a101129c432da60e2d0d262a430c67fc27dc506e5f17b6a0a2f3f713d630b6"
+}

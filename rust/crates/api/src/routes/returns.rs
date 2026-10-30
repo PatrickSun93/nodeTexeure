@@ -3,7 +3,7 @@
 //! views their returns; admins list all returns and move a return through its
 //! statuses (CSRF on the write).
 //!
-//! Routed like Express by [`dispatch`] (see [`crate::express`]): `GET
+//! Routed like Express by [`dispatch`] (see [`crate::express_router`]): `GET
 //! /request` is a return id (`/:id`), and paths Node doesn't route get its 404.
 
 use axum::Json;
@@ -20,7 +20,7 @@ use crate::AppState;
 use crate::auth::{Admin, AuthUser};
 use crate::body::{is_non_empty_string, is_optional_string, truthy};
 use crate::csrf::Csrf;
-use crate::express::{self, Routed, Verb};
+use crate::express_router::{self as express, Routed, Verb};
 use crate::routes::reviews::guard;
 
 /// Where the group is mounted (`app.use('/api/returns', ...)`).

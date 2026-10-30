@@ -4,7 +4,7 @@
 //! admin moderation (pending queue, approve, reject; CSRF on the writes).
 //!
 //! The whole mount point goes through [`dispatch`], which routes like the
-//! Express router (see [`crate::express`]): the paths overlap (`PUT /create`
+//! Express router (see [`crate::express_router`]): the paths overlap (`PUT /create`
 //! edits a review with id `create`, `POST /product/helpful` votes on review
 //! `product`), and anything Node doesn't route gets Node's 404.
 //!
@@ -27,7 +27,7 @@ use crate::auth::{Admin, AuthUser};
 use crate::body::{is_non_empty_string, is_optional_string, js_string, js_to_number, truthy};
 use crate::csrf::Csrf;
 use crate::error::ApiError;
-use crate::express::{self, Routed, Verb};
+use crate::express_router::{self as express, Routed, Verb};
 
 /// Where the group is mounted (`app.use('/api/reviews', ...)`).
 pub const PREFIX: &str = "/api/reviews";

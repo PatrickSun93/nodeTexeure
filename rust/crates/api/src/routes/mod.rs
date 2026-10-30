@@ -13,3 +13,9 @@ pub mod settings;
 pub mod users_auth;
 pub mod users_account;
 pub mod wishlist;
+// unsubscribe, newsletter, contact, status, shipping (wf/misc)
+pub mod contact;
+pub mod newsletter;
+pub mod shipping;
+pub mod status;
+pub mod unsubscribe;

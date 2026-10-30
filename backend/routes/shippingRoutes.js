@@ -119,9 +119,10 @@ router.post('/create-label', protect, admin, csrfProtection, async (req, res) =>
       packages: [{ weight: 2 }], // Default weight
     });
 
-    // Update order with tracking info
+    // Update order with tracking info. (orders has no shipping_carrier column;
+    // naming it made this UPDATE fail silently, so no label ever reached the order.)
     await db.executeQuery(
-      "UPDATE orders SET tracking_number = ?, shipping_carrier = 'FedEx', status = 'shipped', shipped_at = NOW() WHERE id = ?",
+      "UPDATE orders SET tracking_number = ?, status = 'shipped', shipped_at = NOW() WHERE id = ?",
       [shipment.trackingNumber, orderId]
     );
 

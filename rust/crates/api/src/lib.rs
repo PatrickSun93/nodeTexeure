@@ -9,12 +9,18 @@ pub mod cookies;
 pub mod csrf;
 pub mod email_queue;
 pub mod error;
-pub mod express;
+// Express Router matching + qs for whole-group dispatchers (reviews, returns).
+pub mod express_router;
 pub mod params;
 pub mod password;
 pub mod ratelimit;
 pub mod routes;
 pub mod tokens;
+
+// unsubscribe, newsletter, contact, status, shipping (wf/misc)
+pub mod express;
+pub mod fedex;
+pub mod qs;
 
 use std::time::Duration;
 
@@ -178,6 +184,12 @@ pub fn router_with_limiter(state: AppState, global: ratelimit::RateLimiter) -> R
         // way the Express router does it (crate::express).
         .merge(routes::reviews::router())
         .merge(routes::returns::router())
+        // unsubscribe, newsletter, contact, status, shipping (wf/misc)
+        .merge(routes::unsubscribe::router())
+        .merge(routes::newsletter::router())
+        .merge(routes::contact::router())
+        .merge(routes::status::router())
+        .merge(routes::shipping::router(state.trust_proxy))
         .fallback(|| async {
             (
                 StatusCode::NOT_FOUND,

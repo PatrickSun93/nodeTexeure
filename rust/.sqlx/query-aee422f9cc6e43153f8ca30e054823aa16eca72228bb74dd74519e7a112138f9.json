@@ -1,0 +1,24 @@
+{
+  "db_name": "MySQL",
+  "query": "SELECT setting_value FROM system_settings WHERE setting_key = 'support_email' LIMIT 1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "setting_value",
+        "type_info": {
+          "type": "Blob",
+          "flags": "BLOB",
+          "max_size": 262140
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 0
+    },
+    "nullable": [
+      true
+    ]
+  },
+  "hash": "aee422f9cc6e43153f8ca30e054823aa16eca72228bb74dd74519e7a112138f9"
+}

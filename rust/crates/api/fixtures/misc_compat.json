@@ -1,0 +1,2280 @@
+{
+ "query": [
+  {
+   "input": "",
+   "value": {}
+  },
+  {
+   "input": "email=a@b.co&token=t",
+   "value": {
+    "email": "a@b.co",
+    "token": "t"
+   }
+  },
+  {
+   "input": "email=A%40B.CO",
+   "value": {
+    "email": "A@B.CO"
+   }
+  },
+  {
+   "input": "email=a&email=b",
+   "value": {
+    "email": [
+     "a",
+     "b"
+    ]
+   }
+  },
+  {
+   "input": "email[]=x@y.z",
+   "value": {
+    "email": [
+     "x@y.z"
+    ]
+   }
+  },
+  {
+   "input": "email[0]=a&email[1]=b",
+   "value": {
+    "email": [
+     "a",
+     "b"
+    ]
+   }
+  },
+  {
+   "input": "email[1]=b&email[0]=a",
+   "value": {
+    "email": [
+     "a",
+     "b"
+    ]
+   }
+  },
+  {
+   "input": "email[x]=1",
+   "value": {
+    "email": {
+     "x": "1"
+    }
+   }
+  },
+  {
+   "input": "email%5Bx%5D=1",
+   "value": {
+    "email": {
+     "x": "1"
+    }
+   }
+  },
+  {
+   "input": "email=a&email[x]=b",
+   "value": {
+    "email": [
+     "a",
+     {
+      "x": "b"
+     }
+    ]
+   }
+  },
+  {
+   "input": "email[x]=b&email=a",
+   "value": {
+    "email": [
+     {
+      "x": "b"
+     },
+     "a"
+    ]
+   }
+  },
+  {
+   "input": "email[]=a&email[x]=b",
+   "value": {
+    "email": {
+     "0": "a",
+     "x": "b"
+    }
+   }
+  },
+  {
+   "input": "email[]=a&email=",
+   "value": {
+    "email": [
+     "a"
+    ]
+   }
+  },
+  {
+   "input": "email[]=&email[]=",
+   "value": {
+    "email": [
+     "",
+     ""
+    ]
+   }
+  },
+  {
+   "input": "email",
+   "value": {
+    "email": ""
+   }
+  },
+  {
+   "input": "email=",
+   "value": {
+    "email": ""
+   }
+  },
+  {
+   "input": "=x&&",
+   "value": {}
+  },
+  {
+   "input": "[email]=x",
+   "value": {
+    "email": "x"
+   }
+  },
+  {
+   "input": "email=%E0%A4%A",
+   "value": {
+    "email": "%E0%A4%A"
+   }
+  },
+  {
+   "input": "email=a+b%20c",
+   "value": {
+    "email": "a b c"
+   }
+  },
+  {
+   "input": "token=a&token=b",
+   "value": {
+    "token": [
+     "a",
+     "b"
+    ]
+   }
+  },
+  {
+   "input": "token[]=a",
+   "value": {
+    "token": [
+     "a"
+    ]
+   }
+  },
+  {
+   "input": "token[a][b]=1",
+   "value": {
+    "token": {
+     "a": {
+      "b": "1"
+     }
+    }
+   }
+  },
+  {
+   "input": "token[=1",
+   "value": {
+    "token": {
+     "[": "1"
+    }
+   }
+  },
+  {
+   "input": "token]=1",
+   "value": {
+    "token]": "1"
+   }
+  },
+  {
+   "input": "a[b][c][d][e][f][g]=1",
+   "value": {
+    "a": {
+     "b": {
+      "c": {
+       "d": {
+        "e": {
+         "f": {
+          "[g]": "1"
+         }
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  {
+   "input": "a[1001]=x",
+   "value": {
+    "a": {
+     "1001": "x"
+    }
+   }
+  },
+  {
+   "input": "a[999]=x&a[]=y",
+   "value": {
+    "a": [
+     "y",
+     "x"
+    ]
+   }
+  },
+  {
+   "input": "a[2]=x&a[2]=y",
+   "value": {
+    "a": [
+     [
+      "x",
+      "y"
+     ]
+    ]
+   }
+  },
+  {
+   "input": "a[0][b]=1&a[0][c]=2",
+   "value": {
+    "a": [
+     {
+      "b": "1",
+      "c": "2"
+     }
+    ]
+   }
+  },
+  {
+   "input": "a[][b]=1&a[][b]=2",
+   "value": {
+    "a": [
+     {
+      "b": [
+       "1",
+       "2"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": "0=a&b=c&1=d",
+   "value": {
+    "0": "a",
+    "1": "d",
+    "b": "c"
+   }
+  },
+  {
+   "input": "email=x%5By%5D",
+   "value": {
+    "email": "x[y]"
+   }
+  },
+  {
+   "input": "__proto__[email]=x",
+   "value": {}
+  },
+  {
+   "input": "email[__proto__]=x",
+   "value": {
+    "email": {}
+   }
+  },
+  {
+   "input": "constructor=1",
+   "value": {
+    "constructor": "1"
+   }
+  },
+  {
+   "input": "a=1&a=2&a[]=3&a[x]=4",
+   "value": {
+    "a": {
+     "0": "1",
+     "1": "2",
+     "2": "3",
+     "x": "4"
+    }
+   }
+  },
+  {
+   "input": "a[x]=1&a=2&a=3",
+   "value": {
+    "a": {
+     "0": "2",
+     "1": "3",
+     "x": "1"
+    }
+   }
+  },
+  {
+   "input": "email=%F0%9F%98%80&token=%25",
+   "value": {
+    "email": "😀",
+    "token": "%"
+   }
+  }
+ ],
+ "urlencoded": [
+  {
+   "input": "email=a%40b.co&token=x",
+   "body": {
+    "email": "a@b.co",
+    "token": "x"
+   }
+  },
+  {
+   "input": "name=Ann+Lee",
+   "body": {
+    "name": "Ann Lee"
+   }
+  },
+  {
+   "input": "items[0][weight]=3&items[1][weight]=4",
+   "body": {
+    "items": [
+     {
+      "weight": "3"
+     },
+     {
+      "weight": "4"
+     }
+    ]
+   }
+  },
+  {
+   "input": "destination[postalCode]=10001&destination[city]=NY",
+   "body": {
+    "destination": {
+     "postalCode": "10001",
+     "city": "NY"
+    }
+   }
+  },
+  {
+   "input": "a[]=1&a[]=2&a[x]=3",
+   "body": {
+    "a": {
+     "0": "1",
+     "1": "2",
+     "x": "3"
+    }
+   }
+  },
+  {
+   "input": "a[b][b][b][b][b][b][b][b][b][b][b][b][b][b][b][b][b][b][b][b][b][b][b][b][b][b][b][b][b][b][b][b][b]=1",
+   "error": {
+    "status": 400,
+    "message": "The input exceeded the depth"
+   }
+  },
+  {
+   "input": "a[b][b][b][b][b][b][b][b][b][b][b][b][b][b][b][b][b][b][b][b][b][b][b][b][b][b][b][b][b][b][b]=1",
+   "body": {
+    "a": {
+     "b": {
+      "b": {
+       "b": {
+        "b": {
+         "b": {
+          "b": {
+           "b": {
+            "b": {
+             "b": {
+              "b": {
+               "b": {
+                "b": {
+                 "b": {
+                  "b": {
+                   "b": {
+                    "b": {
+                     "b": {
+                      "b": {
+                       "b": {
+                        "b": {
+                         "b": {
+                          "b": {
+                           "b": {
+                            "b": {
+                             "b": {
+                              "b": {
+                               "b": {
+                                "b": {
+                                 "b": {
+                                  "b": {
+                                   "b": "1"
+                                  }
+                                 }
+                                }
+                               }
+                              }
+                             }
+                            }
+                           }
+                          }
+                         }
+                        }
+                       }
+                      }
+                     }
+                    }
+                   }
+                  }
+                 }
+                }
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  {
+   "input": "x=%E0",
+   "body": {
+    "x": "%E0"
+   }
+  },
+  {
+   "input": "k",
+   "body": {
+    "k": ""
+   }
+  },
+  {
+   "input": "&&",
+   "body": {}
+  },
+  {
+   "input": "a=1&a=2",
+   "body": {
+    "a": [
+     "1",
+     "2"
+    ]
+   }
+  }
+ ],
+ "fedex": [
+  {
+   "name": "rates: token then quote, mapped",
+   "calls": [
+    [
+     "getRates",
+     {
+      "streetLines": [
+       "1 Main St"
+      ],
+      "city": "Boston",
+      "stateOrProvinceCode": "MA",
+      "postalCode": "02101",
+      "countryCode": "US"
+     },
+     [
+      {
+       "weight": 3,
+       "length": 12,
+       "width": 10,
+       "height": 4
+      },
+      {
+       "weight": "5",
+       "length": 1,
+       "width": 2,
+       "height": 3
+      }
+     ]
+    ]
+   ],
+   "responses": {
+    "/oauth/token": [
+     {
+      "status": 200,
+      "text": "{\"access_token\":\"tok-1\",\"expires_in\":3600}"
+     }
+    ],
+    "/rate/v1/rates/quotes": [
+     {
+      "status": 200,
+      "text": "{\"output\":{\"rateReplyDetails\":[{\"serviceType\":\"FEDEX_GROUND\",\"serviceName\":\"FedEx Ground\",\"commit\":{\"dateDetail\":{\"dayFormat\":\"MON\"}},\"ratedShipmentDetails\":[{\"totalNetCharge\":\"12.50\",\"currency\":\"USD\"}]},{\"serviceType\":\"PRIORITY_OVERNIGHT\",\"ratedShipmentDetails\":[{\"totalNetCharge\":45.1}]},{\"serviceName\":\"\",\"commit\":null,\"ratedShipmentDetails\":\"x\"},{\"serviceType\":\"X\",\"ratedShipmentDetails\":[{\"totalNetCharge\":\"abc\",\"currency\":\"\"}]},{\"serviceType\":\"Y\",\"ratedShipmentDetails\":{\"0\":{\"totalNetCharge\":[7],\"currency\":\"EUR\"}}},\"odd\"]}}"
+     }
+    ]
+   },
+   "requests": [
+    {
+     "method": "POST",
+     "path": "/oauth/token",
+     "headers": {
+      "content-type": "application/x-www-form-urlencoded"
+     },
+     "body": "grant_type=client_credentials&client_id=client+id%261&client_secret=se+cret%2B%2F%3D"
+    },
+    {
+     "method": "POST",
+     "path": "/rate/v1/rates/quotes",
+     "headers": {
+      "content-type": "application/json",
+      "authorization": "Bearer tok-1",
+      "x-locale": "en_US"
+     },
+     "body": "{\"accountNumber\":{\"value\":\"740561073\"},\"requestedShipment\":{\"shipper\":{\"address\":{\"streetLines\":[\"123 Store Street\"],\"city\":\"New York\",\"stateOrProvinceCode\":\"NY\",\"postalCode\":\"10001\",\"countryCode\":\"US\"}},\"recipient\":{\"address\":{\"streetLines\":[\"1 Main St\"],\"city\":\"Boston\",\"stateOrProvinceCode\":\"MA\",\"postalCode\":\"02101\",\"countryCode\":\"US\"}},\"pickupType\":\"DROPOFF_AT_FEDEX_LOCATION\",\"rateRequestType\":[\"ACCOUNT\",\"LIST\"],\"requestedPackageLineItems\":[{\"weight\":{\"units\":\"LB\",\"value\":3},\"dimensions\":{\"length\":12,\"width\":10,\"height\":4,\"units\":\"IN\"}},{\"weight\":{\"units\":\"LB\",\"value\":\"5\"},\"dimensions\":{\"length\":1,\"width\":2,\"height\":3,\"units\":\"IN\"}}]}}"
+    }
+   ],
+   "results": [
+    {
+     "ok": [
+      {
+       "serviceType": "FEDEX_GROUND",
+       "serviceName": "FedEx Ground",
+       "deliveryDays": "MON",
+       "rate": 12.5,
+       "currency": "USD"
+      },
+      {
+       "serviceType": "PRIORITY_OVERNIGHT",
+       "serviceName": "PRIORITY_OVERNIGHT",
+       "deliveryDays": "N/A",
+       "rate": 45.1,
+       "currency": "USD"
+      },
+      {
+       "deliveryDays": "N/A",
+       "rate": 0,
+       "currency": "USD"
+      },
+      {
+       "serviceType": "X",
+       "serviceName": "X",
+       "deliveryDays": "N/A",
+       "rate": null,
+       "currency": "USD"
+      },
+      {
+       "serviceType": "Y",
+       "serviceName": "Y",
+       "deliveryDays": "N/A",
+       "rate": 7,
+       "currency": "EUR"
+      },
+      {
+       "deliveryDays": "N/A",
+       "rate": 0,
+       "currency": "USD"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "rates: the token is cached",
+   "calls": [
+    [
+     "getRates",
+     {
+      "streetLines": [
+       "1 Main St"
+      ],
+      "city": "Boston",
+      "stateOrProvinceCode": "MA",
+      "postalCode": "02101",
+      "countryCode": "US"
+     },
+     [
+      {
+       "weight": 3,
+       "length": 12,
+       "width": 10,
+       "height": 4
+      },
+      {
+       "weight": "5",
+       "length": 1,
+       "width": 2,
+       "height": 3
+      }
+     ]
+    ],
+    [
+     "getRates",
+     {
+      "streetLines": [
+       "1 Main St"
+      ],
+      "city": "Boston",
+      "stateOrProvinceCode": "MA",
+      "postalCode": "02101",
+      "countryCode": "US"
+     },
+     [
+      {
+       "weight": 3,
+       "length": 12,
+       "width": 10,
+       "height": 4
+      },
+      {
+       "weight": "5",
+       "length": 1,
+       "width": 2,
+       "height": 3
+      }
+     ]
+    ]
+   ],
+   "responses": {
+    "/oauth/token": [
+     {
+      "status": 200,
+      "text": "{\"access_token\":\"tok-1\",\"expires_in\":3600}"
+     }
+    ],
+    "/rate/v1/rates/quotes": [
+     {
+      "status": 200,
+      "text": "{\"output\":{}}"
+     }
+    ]
+   },
+   "requests": [
+    {
+     "method": "POST",
+     "path": "/oauth/token",
+     "headers": {
+      "content-type": "application/x-www-form-urlencoded"
+     },
+     "body": "grant_type=client_credentials&client_id=client+id%261&client_secret=se+cret%2B%2F%3D"
+    },
+    {
+     "method": "POST",
+     "path": "/rate/v1/rates/quotes",
+     "headers": {
+      "content-type": "application/json",
+      "authorization": "Bearer tok-1",
+      "x-locale": "en_US"
+     },
+     "body": "{\"accountNumber\":{\"value\":\"740561073\"},\"requestedShipment\":{\"shipper\":{\"address\":{\"streetLines\":[\"123 Store Street\"],\"city\":\"New York\",\"stateOrProvinceCode\":\"NY\",\"postalCode\":\"10001\",\"countryCode\":\"US\"}},\"recipient\":{\"address\":{\"streetLines\":[\"1 Main St\"],\"city\":\"Boston\",\"stateOrProvinceCode\":\"MA\",\"postalCode\":\"02101\",\"countryCode\":\"US\"}},\"pickupType\":\"DROPOFF_AT_FEDEX_LOCATION\",\"rateRequestType\":[\"ACCOUNT\",\"LIST\"],\"requestedPackageLineItems\":[{\"weight\":{\"units\":\"LB\",\"value\":3},\"dimensions\":{\"length\":12,\"width\":10,\"height\":4,\"units\":\"IN\"}},{\"weight\":{\"units\":\"LB\",\"value\":\"5\"},\"dimensions\":{\"length\":1,\"width\":2,\"height\":3,\"units\":\"IN\"}}]}}"
+    },
+    {
+     "method": "POST",
+     "path": "/rate/v1/rates/quotes",
+     "headers": {
+      "content-type": "application/json",
+      "authorization": "Bearer tok-1",
+      "x-locale": "en_US"
+     },
+     "body": "{\"accountNumber\":{\"value\":\"740561073\"},\"requestedShipment\":{\"shipper\":{\"address\":{\"streetLines\":[\"123 Store Street\"],\"city\":\"New York\",\"stateOrProvinceCode\":\"NY\",\"postalCode\":\"10001\",\"countryCode\":\"US\"}},\"recipient\":{\"address\":{\"streetLines\":[\"1 Main St\"],\"city\":\"Boston\",\"stateOrProvinceCode\":\"MA\",\"postalCode\":\"02101\",\"countryCode\":\"US\"}},\"pickupType\":\"DROPOFF_AT_FEDEX_LOCATION\",\"rateRequestType\":[\"ACCOUNT\",\"LIST\"],\"requestedPackageLineItems\":[{\"weight\":{\"units\":\"LB\",\"value\":3},\"dimensions\":{\"length\":12,\"width\":10,\"height\":4,\"units\":\"IN\"}},{\"weight\":{\"units\":\"LB\",\"value\":\"5\"},\"dimensions\":{\"length\":1,\"width\":2,\"height\":3,\"units\":\"IN\"}}]}}"
+    }
+   ],
+   "results": [
+    {
+     "ok": []
+    },
+    {
+     "ok": []
+    }
+   ]
+  },
+  {
+   "name": "rates: no expires_in, a new token each time",
+   "calls": [
+    [
+     "getRates",
+     {
+      "streetLines": [
+       "1 Main St"
+      ],
+      "city": "Boston",
+      "stateOrProvinceCode": "MA",
+      "postalCode": "02101",
+      "countryCode": "US"
+     },
+     [
+      {
+       "weight": 3,
+       "length": 12,
+       "width": 10,
+       "height": 4
+      },
+      {
+       "weight": "5",
+       "length": 1,
+       "width": 2,
+       "height": 3
+      }
+     ]
+    ],
+    [
+     "getRates",
+     {
+      "streetLines": [
+       "1 Main St"
+      ],
+      "city": "Boston",
+      "stateOrProvinceCode": "MA",
+      "postalCode": "02101",
+      "countryCode": "US"
+     },
+     [
+      {
+       "weight": 3,
+       "length": 12,
+       "width": 10,
+       "height": 4
+      },
+      {
+       "weight": "5",
+       "length": 1,
+       "width": 2,
+       "height": 3
+      }
+     ]
+    ]
+   ],
+   "responses": {
+    "/oauth/token": [
+     {
+      "status": 200,
+      "text": "{\"access_token\":\"a\"}"
+     },
+     {
+      "status": 200,
+      "text": "{\"access_token\":\"b\",\"expires_in\":\"120\"}"
+     }
+    ],
+    "/rate/v1/rates/quotes": [
+     {
+      "status": 200,
+      "text": "{}"
+     }
+    ]
+   },
+   "requests": [
+    {
+     "method": "POST",
+     "path": "/oauth/token",
+     "headers": {
+      "content-type": "application/x-www-form-urlencoded"
+     },
+     "body": "grant_type=client_credentials&client_id=client+id%261&client_secret=se+cret%2B%2F%3D"
+    },
+    {
+     "method": "POST",
+     "path": "/rate/v1/rates/quotes",
+     "headers": {
+      "content-type": "application/json",
+      "authorization": "Bearer a",
+      "x-locale": "en_US"
+     },
+     "body": "{\"accountNumber\":{\"value\":\"740561073\"},\"requestedShipment\":{\"shipper\":{\"address\":{\"streetLines\":[\"123 Store Street\"],\"city\":\"New York\",\"stateOrProvinceCode\":\"NY\",\"postalCode\":\"10001\",\"countryCode\":\"US\"}},\"recipient\":{\"address\":{\"streetLines\":[\"1 Main St\"],\"city\":\"Boston\",\"stateOrProvinceCode\":\"MA\",\"postalCode\":\"02101\",\"countryCode\":\"US\"}},\"pickupType\":\"DROPOFF_AT_FEDEX_LOCATION\",\"rateRequestType\":[\"ACCOUNT\",\"LIST\"],\"requestedPackageLineItems\":[{\"weight\":{\"units\":\"LB\",\"value\":3},\"dimensions\":{\"length\":12,\"width\":10,\"height\":4,\"units\":\"IN\"}},{\"weight\":{\"units\":\"LB\",\"value\":\"5\"},\"dimensions\":{\"length\":1,\"width\":2,\"height\":3,\"units\":\"IN\"}}]}}"
+    },
+    {
+     "method": "POST",
+     "path": "/oauth/token",
+     "headers": {
+      "content-type": "application/x-www-form-urlencoded"
+     },
+     "body": "grant_type=client_credentials&client_id=client+id%261&client_secret=se+cret%2B%2F%3D"
+    },
+    {
+     "method": "POST",
+     "path": "/rate/v1/rates/quotes",
+     "headers": {
+      "content-type": "application/json",
+      "authorization": "Bearer b",
+      "x-locale": "en_US"
+     },
+     "body": "{\"accountNumber\":{\"value\":\"740561073\"},\"requestedShipment\":{\"shipper\":{\"address\":{\"streetLines\":[\"123 Store Street\"],\"city\":\"New York\",\"stateOrProvinceCode\":\"NY\",\"postalCode\":\"10001\",\"countryCode\":\"US\"}},\"recipient\":{\"address\":{\"streetLines\":[\"1 Main St\"],\"city\":\"Boston\",\"stateOrProvinceCode\":\"MA\",\"postalCode\":\"02101\",\"countryCode\":\"US\"}},\"pickupType\":\"DROPOFF_AT_FEDEX_LOCATION\",\"rateRequestType\":[\"ACCOUNT\",\"LIST\"],\"requestedPackageLineItems\":[{\"weight\":{\"units\":\"LB\",\"value\":3},\"dimensions\":{\"length\":12,\"width\":10,\"height\":4,\"units\":\"IN\"}},{\"weight\":{\"units\":\"LB\",\"value\":\"5\"},\"dimensions\":{\"length\":1,\"width\":2,\"height\":3,\"units\":\"IN\"}}]}}"
+    }
+   ],
+   "results": [
+    {
+     "ok": []
+    },
+    {
+     "ok": []
+    }
+   ]
+  },
+  {
+   "name": "rates: missing access_token is sent as undefined",
+   "calls": [
+    [
+     "getRates",
+     {
+      "streetLines": [
+       "1 Main St"
+      ],
+      "city": "Boston",
+      "stateOrProvinceCode": "MA",
+      "postalCode": "02101",
+      "countryCode": "US"
+     },
+     [
+      {
+       "weight": 3,
+       "length": 12,
+       "width": 10,
+       "height": 4
+      },
+      {
+       "weight": "5",
+       "length": 1,
+       "width": 2,
+       "height": 3
+      }
+     ]
+    ]
+   ],
+   "responses": {
+    "/oauth/token": [
+     {
+      "status": 200,
+      "text": "{\"expires_in\":3600}"
+     }
+    ],
+    "/rate/v1/rates/quotes": [
+     {
+      "status": 200,
+      "text": "{\"output\":{\"rateReplyDetails\":[]}}"
+     }
+    ]
+   },
+   "requests": [
+    {
+     "method": "POST",
+     "path": "/oauth/token",
+     "headers": {
+      "content-type": "application/x-www-form-urlencoded"
+     },
+     "body": "grant_type=client_credentials&client_id=client+id%261&client_secret=se+cret%2B%2F%3D"
+    },
+    {
+     "method": "POST",
+     "path": "/rate/v1/rates/quotes",
+     "headers": {
+      "content-type": "application/json",
+      "authorization": "Bearer undefined",
+      "x-locale": "en_US"
+     },
+     "body": "{\"accountNumber\":{\"value\":\"740561073\"},\"requestedShipment\":{\"shipper\":{\"address\":{\"streetLines\":[\"123 Store Street\"],\"city\":\"New York\",\"stateOrProvinceCode\":\"NY\",\"postalCode\":\"10001\",\"countryCode\":\"US\"}},\"recipient\":{\"address\":{\"streetLines\":[\"1 Main St\"],\"city\":\"Boston\",\"stateOrProvinceCode\":\"MA\",\"postalCode\":\"02101\",\"countryCode\":\"US\"}},\"pickupType\":\"DROPOFF_AT_FEDEX_LOCATION\",\"rateRequestType\":[\"ACCOUNT\",\"LIST\"],\"requestedPackageLineItems\":[{\"weight\":{\"units\":\"LB\",\"value\":3},\"dimensions\":{\"length\":12,\"width\":10,\"height\":4,\"units\":\"IN\"}},{\"weight\":{\"units\":\"LB\",\"value\":\"5\"},\"dimensions\":{\"length\":1,\"width\":2,\"height\":3,\"units\":\"IN\"}}]}}"
+    }
+   ],
+   "results": [
+    {
+     "ok": []
+    }
+   ]
+  },
+  {
+   "name": "rates: auth failure falls back",
+   "calls": [
+    [
+     "getRates",
+     {
+      "streetLines": [
+       "1 Main St"
+      ],
+      "city": "Boston",
+      "stateOrProvinceCode": "MA",
+      "postalCode": "02101",
+      "countryCode": "US"
+     },
+     [
+      {
+       "weight": 3,
+       "length": 12,
+       "width": 10,
+       "height": 4
+      },
+      {
+       "weight": "5",
+       "length": 1,
+       "width": 2,
+       "height": 3
+      }
+     ]
+    ]
+   ],
+   "responses": {
+    "/oauth/token": [
+     {
+      "status": 401,
+      "text": "bad client"
+     }
+    ]
+   },
+   "requests": [
+    {
+     "method": "POST",
+     "path": "/oauth/token",
+     "headers": {
+      "content-type": "application/x-www-form-urlencoded"
+     },
+     "body": "grant_type=client_credentials&client_id=client+id%261&client_secret=se+cret%2B%2F%3D"
+    }
+   ],
+   "results": [
+    {
+     "ok": [
+      {
+       "serviceType": "STANDARD",
+       "serviceName": "Standard Shipping",
+       "deliveryDays": "5-7 business days",
+       "rate": 9.99,
+       "currency": "USD"
+      },
+      {
+       "serviceType": "EXPRESS",
+       "serviceName": "Express Shipping",
+       "deliveryDays": "2-3 business days",
+       "rate": 19.99,
+       "currency": "USD"
+      },
+      {
+       "serviceType": "OVERNIGHT",
+       "serviceName": "Overnight Shipping",
+       "deliveryDays": "1 business day",
+       "rate": 34.99,
+       "currency": "USD"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "rates: quote error falls back",
+   "calls": [
+    [
+     "getRates",
+     {
+      "streetLines": [
+       "1 Main St"
+      ],
+      "city": "Boston",
+      "stateOrProvinceCode": "MA",
+      "postalCode": "02101",
+      "countryCode": "US"
+     },
+     [
+      {
+       "weight": 3,
+       "length": 12,
+       "width": 10,
+       "height": 4
+      },
+      {
+       "weight": "5",
+       "length": 1,
+       "width": 2,
+       "height": 3
+      }
+     ]
+    ]
+   ],
+   "responses": {
+    "/oauth/token": [
+     {
+      "status": 200,
+      "text": "{\"access_token\":\"tok-1\",\"expires_in\":3600}"
+     }
+    ],
+    "/rate/v1/rates/quotes": [
+     {
+      "status": 500,
+      "text": "boom"
+     }
+    ]
+   },
+   "requests": [
+    {
+     "method": "POST",
+     "path": "/oauth/token",
+     "headers": {
+      "content-type": "application/x-www-form-urlencoded"
+     },
+     "body": "grant_type=client_credentials&client_id=client+id%261&client_secret=se+cret%2B%2F%3D"
+    },
+    {
+     "method": "POST",
+     "path": "/rate/v1/rates/quotes",
+     "headers": {
+      "content-type": "application/json",
+      "authorization": "Bearer tok-1",
+      "x-locale": "en_US"
+     },
+     "body": "{\"accountNumber\":{\"value\":\"740561073\"},\"requestedShipment\":{\"shipper\":{\"address\":{\"streetLines\":[\"123 Store Street\"],\"city\":\"New York\",\"stateOrProvinceCode\":\"NY\",\"postalCode\":\"10001\",\"countryCode\":\"US\"}},\"recipient\":{\"address\":{\"streetLines\":[\"1 Main St\"],\"city\":\"Boston\",\"stateOrProvinceCode\":\"MA\",\"postalCode\":\"02101\",\"countryCode\":\"US\"}},\"pickupType\":\"DROPOFF_AT_FEDEX_LOCATION\",\"rateRequestType\":[\"ACCOUNT\",\"LIST\"],\"requestedPackageLineItems\":[{\"weight\":{\"units\":\"LB\",\"value\":3},\"dimensions\":{\"length\":12,\"width\":10,\"height\":4,\"units\":\"IN\"}},{\"weight\":{\"units\":\"LB\",\"value\":\"5\"},\"dimensions\":{\"length\":1,\"width\":2,\"height\":3,\"units\":\"IN\"}}]}}"
+    }
+   ],
+   "results": [
+    {
+     "ok": [
+      {
+       "serviceType": "STANDARD",
+       "serviceName": "Standard Shipping",
+       "deliveryDays": "5-7 business days",
+       "rate": 9.99,
+       "currency": "USD"
+      },
+      {
+       "serviceType": "EXPRESS",
+       "serviceName": "Express Shipping",
+       "deliveryDays": "2-3 business days",
+       "rate": 19.99,
+       "currency": "USD"
+      },
+      {
+       "serviceType": "OVERNIGHT",
+       "serviceName": "Overnight Shipping",
+       "deliveryDays": "1 business day",
+       "rate": 34.99,
+       "currency": "USD"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "rates: non-JSON reply falls back",
+   "calls": [
+    [
+     "getRates",
+     {
+      "streetLines": [
+       "1 Main St"
+      ],
+      "city": "Boston",
+      "stateOrProvinceCode": "MA",
+      "postalCode": "02101",
+      "countryCode": "US"
+     },
+     [
+      {
+       "weight": 3,
+       "length": 12,
+       "width": 10,
+       "height": 4
+      },
+      {
+       "weight": "5",
+       "length": 1,
+       "width": 2,
+       "height": 3
+      }
+     ]
+    ]
+   ],
+   "responses": {
+    "/oauth/token": [
+     {
+      "status": 200,
+      "text": "{\"access_token\":\"tok-1\",\"expires_in\":3600}"
+     }
+    ],
+    "/rate/v1/rates/quotes": [
+     {
+      "status": 200,
+      "text": "<html>"
+     }
+    ]
+   },
+   "requests": [
+    {
+     "method": "POST",
+     "path": "/oauth/token",
+     "headers": {
+      "content-type": "application/x-www-form-urlencoded"
+     },
+     "body": "grant_type=client_credentials&client_id=client+id%261&client_secret=se+cret%2B%2F%3D"
+    },
+    {
+     "method": "POST",
+     "path": "/rate/v1/rates/quotes",
+     "headers": {
+      "content-type": "application/json",
+      "authorization": "Bearer tok-1",
+      "x-locale": "en_US"
+     },
+     "body": "{\"accountNumber\":{\"value\":\"740561073\"},\"requestedShipment\":{\"shipper\":{\"address\":{\"streetLines\":[\"123 Store Street\"],\"city\":\"New York\",\"stateOrProvinceCode\":\"NY\",\"postalCode\":\"10001\",\"countryCode\":\"US\"}},\"recipient\":{\"address\":{\"streetLines\":[\"1 Main St\"],\"city\":\"Boston\",\"stateOrProvinceCode\":\"MA\",\"postalCode\":\"02101\",\"countryCode\":\"US\"}},\"pickupType\":\"DROPOFF_AT_FEDEX_LOCATION\",\"rateRequestType\":[\"ACCOUNT\",\"LIST\"],\"requestedPackageLineItems\":[{\"weight\":{\"units\":\"LB\",\"value\":3},\"dimensions\":{\"length\":12,\"width\":10,\"height\":4,\"units\":\"IN\"}},{\"weight\":{\"units\":\"LB\",\"value\":\"5\"},\"dimensions\":{\"length\":1,\"width\":2,\"height\":3,\"units\":\"IN\"}}]}}"
+    }
+   ],
+   "results": [
+    {
+     "ok": [
+      {
+       "serviceType": "STANDARD",
+       "serviceName": "Standard Shipping",
+       "deliveryDays": "5-7 business days",
+       "rate": 9.99,
+       "currency": "USD"
+      },
+      {
+       "serviceType": "EXPRESS",
+       "serviceName": "Express Shipping",
+       "deliveryDays": "2-3 business days",
+       "rate": 19.99,
+       "currency": "USD"
+      },
+      {
+       "serviceType": "OVERNIGHT",
+       "serviceName": "Overnight Shipping",
+       "deliveryDays": "1 business day",
+       "rate": 34.99,
+       "currency": "USD"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "rates: non-array details fall back",
+   "calls": [
+    [
+     "getRates",
+     {
+      "streetLines": [
+       "1 Main St"
+      ],
+      "city": "Boston",
+      "stateOrProvinceCode": "MA",
+      "postalCode": "02101",
+      "countryCode": "US"
+     },
+     [
+      {
+       "weight": 3,
+       "length": 12,
+       "width": 10,
+       "height": 4
+      },
+      {
+       "weight": "5",
+       "length": 1,
+       "width": 2,
+       "height": 3
+      }
+     ]
+    ]
+   ],
+   "responses": {
+    "/oauth/token": [
+     {
+      "status": 200,
+      "text": "{\"access_token\":\"tok-1\",\"expires_in\":3600}"
+     }
+    ],
+    "/rate/v1/rates/quotes": [
+     {
+      "status": 200,
+      "text": "{\"output\":{\"rateReplyDetails\":{\"a\":1}}}"
+     }
+    ]
+   },
+   "requests": [
+    {
+     "method": "POST",
+     "path": "/oauth/token",
+     "headers": {
+      "content-type": "application/x-www-form-urlencoded"
+     },
+     "body": "grant_type=client_credentials&client_id=client+id%261&client_secret=se+cret%2B%2F%3D"
+    },
+    {
+     "method": "POST",
+     "path": "/rate/v1/rates/quotes",
+     "headers": {
+      "content-type": "application/json",
+      "authorization": "Bearer tok-1",
+      "x-locale": "en_US"
+     },
+     "body": "{\"accountNumber\":{\"value\":\"740561073\"},\"requestedShipment\":{\"shipper\":{\"address\":{\"streetLines\":[\"123 Store Street\"],\"city\":\"New York\",\"stateOrProvinceCode\":\"NY\",\"postalCode\":\"10001\",\"countryCode\":\"US\"}},\"recipient\":{\"address\":{\"streetLines\":[\"1 Main St\"],\"city\":\"Boston\",\"stateOrProvinceCode\":\"MA\",\"postalCode\":\"02101\",\"countryCode\":\"US\"}},\"pickupType\":\"DROPOFF_AT_FEDEX_LOCATION\",\"rateRequestType\":[\"ACCOUNT\",\"LIST\"],\"requestedPackageLineItems\":[{\"weight\":{\"units\":\"LB\",\"value\":3},\"dimensions\":{\"length\":12,\"width\":10,\"height\":4,\"units\":\"IN\"}},{\"weight\":{\"units\":\"LB\",\"value\":\"5\"},\"dimensions\":{\"length\":1,\"width\":2,\"height\":3,\"units\":\"IN\"}}]}}"
+    }
+   ],
+   "results": [
+    {
+     "ok": [
+      {
+       "serviceType": "STANDARD",
+       "serviceName": "Standard Shipping",
+       "deliveryDays": "5-7 business days",
+       "rate": 9.99,
+       "currency": "USD"
+      },
+      {
+       "serviceType": "EXPRESS",
+       "serviceName": "Express Shipping",
+       "deliveryDays": "2-3 business days",
+       "rate": 19.99,
+       "currency": "USD"
+      },
+      {
+       "serviceType": "OVERNIGHT",
+       "serviceName": "Overnight Shipping",
+       "deliveryDays": "1 business day",
+       "rate": 34.99,
+       "currency": "USD"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "rates: a null detail falls back",
+   "calls": [
+    [
+     "getRates",
+     {
+      "streetLines": [
+       "1 Main St"
+      ],
+      "city": "Boston",
+      "stateOrProvinceCode": "MA",
+      "postalCode": "02101",
+      "countryCode": "US"
+     },
+     [
+      {
+       "weight": 3,
+       "length": 12,
+       "width": 10,
+       "height": 4
+      },
+      {
+       "weight": "5",
+       "length": 1,
+       "width": 2,
+       "height": 3
+      }
+     ]
+    ]
+   ],
+   "responses": {
+    "/oauth/token": [
+     {
+      "status": 200,
+      "text": "{\"access_token\":\"tok-1\",\"expires_in\":3600}"
+     }
+    ],
+    "/rate/v1/rates/quotes": [
+     {
+      "status": 200,
+      "text": "{\"output\":{\"rateReplyDetails\":[null]}}"
+     }
+    ]
+   },
+   "requests": [
+    {
+     "method": "POST",
+     "path": "/oauth/token",
+     "headers": {
+      "content-type": "application/x-www-form-urlencoded"
+     },
+     "body": "grant_type=client_credentials&client_id=client+id%261&client_secret=se+cret%2B%2F%3D"
+    },
+    {
+     "method": "POST",
+     "path": "/rate/v1/rates/quotes",
+     "headers": {
+      "content-type": "application/json",
+      "authorization": "Bearer tok-1",
+      "x-locale": "en_US"
+     },
+     "body": "{\"accountNumber\":{\"value\":\"740561073\"},\"requestedShipment\":{\"shipper\":{\"address\":{\"streetLines\":[\"123 Store Street\"],\"city\":\"New York\",\"stateOrProvinceCode\":\"NY\",\"postalCode\":\"10001\",\"countryCode\":\"US\"}},\"recipient\":{\"address\":{\"streetLines\":[\"1 Main St\"],\"city\":\"Boston\",\"stateOrProvinceCode\":\"MA\",\"postalCode\":\"02101\",\"countryCode\":\"US\"}},\"pickupType\":\"DROPOFF_AT_FEDEX_LOCATION\",\"rateRequestType\":[\"ACCOUNT\",\"LIST\"],\"requestedPackageLineItems\":[{\"weight\":{\"units\":\"LB\",\"value\":3},\"dimensions\":{\"length\":12,\"width\":10,\"height\":4,\"units\":\"IN\"}},{\"weight\":{\"units\":\"LB\",\"value\":\"5\"},\"dimensions\":{\"length\":1,\"width\":2,\"height\":3,\"units\":\"IN\"}}]}}"
+    }
+   ],
+   "results": [
+    {
+     "ok": [
+      {
+       "serviceType": "STANDARD",
+       "serviceName": "Standard Shipping",
+       "deliveryDays": "5-7 business days",
+       "rate": 9.99,
+       "currency": "USD"
+      },
+      {
+       "serviceType": "EXPRESS",
+       "serviceName": "Express Shipping",
+       "deliveryDays": "2-3 business days",
+       "rate": 19.99,
+       "currency": "USD"
+      },
+      {
+       "serviceType": "OVERNIGHT",
+       "serviceName": "Overnight Shipping",
+       "deliveryDays": "1 business day",
+       "rate": 34.99,
+       "currency": "USD"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "rates: null reply falls back",
+   "calls": [
+    [
+     "getRates",
+     {
+      "streetLines": [
+       "1 Main St"
+      ],
+      "city": "Boston",
+      "stateOrProvinceCode": "MA",
+      "postalCode": "02101",
+      "countryCode": "US"
+     },
+     [
+      {
+       "weight": 3,
+       "length": 12,
+       "width": 10,
+       "height": 4
+      },
+      {
+       "weight": "5",
+       "length": 1,
+       "width": 2,
+       "height": 3
+      }
+     ]
+    ]
+   ],
+   "responses": {
+    "/oauth/token": [
+     {
+      "status": 200,
+      "text": "{\"access_token\":\"tok-1\",\"expires_in\":3600}"
+     }
+    ],
+    "/rate/v1/rates/quotes": [
+     {
+      "status": 200,
+      "text": "null"
+     }
+    ]
+   },
+   "requests": [
+    {
+     "method": "POST",
+     "path": "/oauth/token",
+     "headers": {
+      "content-type": "application/x-www-form-urlencoded"
+     },
+     "body": "grant_type=client_credentials&client_id=client+id%261&client_secret=se+cret%2B%2F%3D"
+    },
+    {
+     "method": "POST",
+     "path": "/rate/v1/rates/quotes",
+     "headers": {
+      "content-type": "application/json",
+      "authorization": "Bearer tok-1",
+      "x-locale": "en_US"
+     },
+     "body": "{\"accountNumber\":{\"value\":\"740561073\"},\"requestedShipment\":{\"shipper\":{\"address\":{\"streetLines\":[\"123 Store Street\"],\"city\":\"New York\",\"stateOrProvinceCode\":\"NY\",\"postalCode\":\"10001\",\"countryCode\":\"US\"}},\"recipient\":{\"address\":{\"streetLines\":[\"1 Main St\"],\"city\":\"Boston\",\"stateOrProvinceCode\":\"MA\",\"postalCode\":\"02101\",\"countryCode\":\"US\"}},\"pickupType\":\"DROPOFF_AT_FEDEX_LOCATION\",\"rateRequestType\":[\"ACCOUNT\",\"LIST\"],\"requestedPackageLineItems\":[{\"weight\":{\"units\":\"LB\",\"value\":3},\"dimensions\":{\"length\":12,\"width\":10,\"height\":4,\"units\":\"IN\"}},{\"weight\":{\"units\":\"LB\",\"value\":\"5\"},\"dimensions\":{\"length\":1,\"width\":2,\"height\":3,\"units\":\"IN\"}}]}}"
+    }
+   ],
+   "results": [
+    {
+     "ok": [
+      {
+       "serviceType": "STANDARD",
+       "serviceName": "Standard Shipping",
+       "deliveryDays": "5-7 business days",
+       "rate": 9.99,
+       "currency": "USD"
+      },
+      {
+       "serviceType": "EXPRESS",
+       "serviceName": "Express Shipping",
+       "deliveryDays": "2-3 business days",
+       "rate": 19.99,
+       "currency": "USD"
+      },
+      {
+       "serviceType": "OVERNIGHT",
+       "serviceName": "Overnight Shipping",
+       "deliveryDays": "1 business day",
+       "rate": 34.99,
+       "currency": "USD"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "rates: network failure falls back",
+   "network": true,
+   "calls": [
+    [
+     "getRates",
+     {
+      "streetLines": [
+       "1 Main St"
+      ],
+      "city": "Boston",
+      "stateOrProvinceCode": "MA",
+      "postalCode": "02101",
+      "countryCode": "US"
+     },
+     [
+      {
+       "weight": 3,
+       "length": 12,
+       "width": 10,
+       "height": 4
+      },
+      {
+       "weight": "5",
+       "length": 1,
+       "width": 2,
+       "height": 3
+      }
+     ]
+    ]
+   ],
+   "responses": {},
+   "requests": [
+    {
+     "method": "POST",
+     "path": "/oauth/token",
+     "headers": {
+      "content-type": "application/x-www-form-urlencoded"
+     },
+     "body": "grant_type=client_credentials&client_id=client+id%261&client_secret=se+cret%2B%2F%3D"
+    }
+   ],
+   "results": [
+    {
+     "ok": [
+      {
+       "serviceType": "STANDARD",
+       "serviceName": "Standard Shipping",
+       "deliveryDays": "5-7 business days",
+       "rate": 9.99,
+       "currency": "USD"
+      },
+      {
+       "serviceType": "EXPRESS",
+       "serviceName": "Express Shipping",
+       "deliveryDays": "2-3 business days",
+       "rate": 19.99,
+       "currency": "USD"
+      },
+      {
+       "serviceType": "OVERNIGHT",
+       "serviceName": "Overnight Shipping",
+       "deliveryDays": "1 business day",
+       "rate": 34.99,
+       "currency": "USD"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "ship: label created",
+   "calls": [
+    [
+     "createShipment",
+     {
+      "recipient": {
+       "streetLines": [
+        "1 Main St"
+       ],
+       "city": "Boston",
+       "stateOrProvinceCode": "MA",
+       "postalCode": "02101",
+       "countryCode": "US"
+      },
+      "recipientName": "Ann Lee",
+      "recipientPhone": "5551234",
+      "serviceType": "FEDEX_GROUND",
+      "packages": [
+       {
+        "weight": 2
+       }
+      ]
+     }
+    ]
+   ],
+   "responses": {
+    "/oauth/token": [
+     {
+      "status": 200,
+      "text": "{\"access_token\":\"tok-1\",\"expires_in\":3600}"
+     }
+    ],
+    "/ship/v1/shipments": [
+     {
+      "status": 200,
+      "text": "{\"output\":{\"transactionShipments\":[{\"pieceResponses\":[{\"trackingNumber\":\"7946\",\"packageDocuments\":[{\"url\":\"https://label/1.pdf\"}]}]}]}}"
+     }
+    ]
+   },
+   "requests": [
+    {
+     "method": "POST",
+     "path": "/oauth/token",
+     "headers": {
+      "content-type": "application/x-www-form-urlencoded"
+     },
+     "body": "grant_type=client_credentials&client_id=client+id%261&client_secret=se+cret%2B%2F%3D"
+    },
+    {
+     "method": "POST",
+     "path": "/ship/v1/shipments",
+     "headers": {
+      "content-type": "application/json",
+      "authorization": "Bearer tok-1",
+      "x-locale": "en_US"
+     },
+     "body": "{\"accountNumber\":{\"value\":\"740561073\"},\"labelResponseOptions\":\"URL_ONLY\",\"requestedShipment\":{\"shipper\":{\"address\":{\"streetLines\":[\"123 Store Street\"],\"city\":\"New York\",\"stateOrProvinceCode\":\"NY\",\"postalCode\":\"10001\",\"countryCode\":\"US\"},\"contact\":{\"personName\":\"Store Admin\",\"phoneNumber\":\"1234567890\"}},\"recipients\":[{\"address\":{\"streetLines\":[\"1 Main St\"],\"city\":\"Boston\",\"stateOrProvinceCode\":\"MA\",\"postalCode\":\"02101\",\"countryCode\":\"US\"},\"contact\":{\"personName\":\"Ann Lee\",\"phoneNumber\":\"5551234\"}}],\"serviceType\":\"FEDEX_GROUND\",\"packagingType\":\"YOUR_PACKAGING\",\"pickupType\":\"DROPOFF_AT_FEDEX_LOCATION\",\"shippingChargesPayment\":{\"paymentType\":\"SENDER\"},\"labelSpecification\":{\"labelFormatType\":\"COMMON2D\",\"imageType\":\"PDF\",\"labelStockType\":\"PAPER_4X6\"},\"requestedPackageLineItems\":[{\"weight\":{\"units\":\"LB\",\"value\":2}}]}}"
+    }
+   ],
+   "results": [
+    {
+     "ok": {
+      "trackingNumber": "7946",
+      "labelUrl": "https://label/1.pdf",
+      "mock": false
+     }
+    }
+   ]
+  },
+  {
+   "name": "ship: master tracking number, no label",
+   "calls": [
+    [
+     "createShipment",
+     {
+      "recipient": {
+       "streetLines": [
+        "1 Main St"
+       ],
+       "city": "Boston",
+       "stateOrProvinceCode": "MA",
+       "postalCode": "02101",
+       "countryCode": "US"
+      },
+      "recipientName": "",
+      "recipientPhone": 12345,
+      "serviceType": {
+       "odd": true
+      },
+      "packages": [
+       {
+        "weight": 2
+       }
+      ]
+     }
+    ]
+   ],
+   "responses": {
+    "/oauth/token": [
+     {
+      "status": 200,
+      "text": "{\"access_token\":\"tok-1\",\"expires_in\":3600}"
+     }
+    ],
+    "/ship/v1/shipments": [
+     {
+      "status": 200,
+      "text": "{\"output\":{\"transactionShipments\":[{\"pieceResponses\":[{\"trackingNumber\":\"\"}],\"masterTrackingNumber\":{\"trackingNumber\":999}}]}}"
+     }
+    ]
+   },
+   "requests": [
+    {
+     "method": "POST",
+     "path": "/oauth/token",
+     "headers": {
+      "content-type": "application/x-www-form-urlencoded"
+     },
+     "body": "grant_type=client_credentials&client_id=client+id%261&client_secret=se+cret%2B%2F%3D"
+    },
+    {
+     "method": "POST",
+     "path": "/ship/v1/shipments",
+     "headers": {
+      "content-type": "application/json",
+      "authorization": "Bearer tok-1",
+      "x-locale": "en_US"
+     },
+     "body": "{\"accountNumber\":{\"value\":\"740561073\"},\"labelResponseOptions\":\"URL_ONLY\",\"requestedShipment\":{\"shipper\":{\"address\":{\"streetLines\":[\"123 Store Street\"],\"city\":\"New York\",\"stateOrProvinceCode\":\"NY\",\"postalCode\":\"10001\",\"countryCode\":\"US\"},\"contact\":{\"personName\":\"Store Admin\",\"phoneNumber\":\"1234567890\"}},\"recipients\":[{\"address\":{\"streetLines\":[\"1 Main St\"],\"city\":\"Boston\",\"stateOrProvinceCode\":\"MA\",\"postalCode\":\"02101\",\"countryCode\":\"US\"},\"contact\":{\"personName\":\"Customer\",\"phoneNumber\":12345}}],\"serviceType\":{\"odd\":true},\"packagingType\":\"YOUR_PACKAGING\",\"pickupType\":\"DROPOFF_AT_FEDEX_LOCATION\",\"shippingChargesPayment\":{\"paymentType\":\"SENDER\"},\"labelSpecification\":{\"labelFormatType\":\"COMMON2D\",\"imageType\":\"PDF\",\"labelStockType\":\"PAPER_4X6\"},\"requestedPackageLineItems\":[{\"weight\":{\"units\":\"LB\",\"value\":2}}]}}"
+    }
+   ],
+   "results": [
+    {
+     "ok": {
+      "trackingNumber": 999,
+      "labelUrl": null,
+      "mock": false
+     }
+    }
+   ]
+  },
+  {
+   "name": "ship: nothing in the reply",
+   "calls": [
+    [
+     "createShipment",
+     {
+      "recipient": {
+       "streetLines": [
+        "1 Main St"
+       ],
+       "city": "Boston",
+       "stateOrProvinceCode": "MA",
+       "postalCode": "02101",
+       "countryCode": "US"
+      },
+      "recipientName": "Ann Lee",
+      "recipientPhone": "5551234",
+      "serviceType": "FEDEX_GROUND",
+      "packages": [
+       {
+        "weight": 2
+       }
+      ]
+     }
+    ]
+   ],
+   "responses": {
+    "/oauth/token": [
+     {
+      "status": 200,
+      "text": "{\"access_token\":\"tok-1\",\"expires_in\":3600}"
+     }
+    ],
+    "/ship/v1/shipments": [
+     {
+      "status": 200,
+      "text": "{}"
+     }
+    ]
+   },
+   "requests": [
+    {
+     "method": "POST",
+     "path": "/oauth/token",
+     "headers": {
+      "content-type": "application/x-www-form-urlencoded"
+     },
+     "body": "grant_type=client_credentials&client_id=client+id%261&client_secret=se+cret%2B%2F%3D"
+    },
+    {
+     "method": "POST",
+     "path": "/ship/v1/shipments",
+     "headers": {
+      "content-type": "application/json",
+      "authorization": "Bearer tok-1",
+      "x-locale": "en_US"
+     },
+     "body": "{\"accountNumber\":{\"value\":\"740561073\"},\"labelResponseOptions\":\"URL_ONLY\",\"requestedShipment\":{\"shipper\":{\"address\":{\"streetLines\":[\"123 Store Street\"],\"city\":\"New York\",\"stateOrProvinceCode\":\"NY\",\"postalCode\":\"10001\",\"countryCode\":\"US\"},\"contact\":{\"personName\":\"Store Admin\",\"phoneNumber\":\"1234567890\"}},\"recipients\":[{\"address\":{\"streetLines\":[\"1 Main St\"],\"city\":\"Boston\",\"stateOrProvinceCode\":\"MA\",\"postalCode\":\"02101\",\"countryCode\":\"US\"},\"contact\":{\"personName\":\"Ann Lee\",\"phoneNumber\":\"5551234\"}}],\"serviceType\":\"FEDEX_GROUND\",\"packagingType\":\"YOUR_PACKAGING\",\"pickupType\":\"DROPOFF_AT_FEDEX_LOCATION\",\"shippingChargesPayment\":{\"paymentType\":\"SENDER\"},\"labelSpecification\":{\"labelFormatType\":\"COMMON2D\",\"imageType\":\"PDF\",\"labelStockType\":\"PAPER_4X6\"},\"requestedPackageLineItems\":[{\"weight\":{\"units\":\"LB\",\"value\":2}}]}}"
+    }
+   ],
+   "results": [
+    {
+     "ok": {
+      "labelUrl": null,
+      "mock": false
+     }
+    }
+   ]
+  },
+  {
+   "name": "ship: null reply",
+   "calls": [
+    [
+     "createShipment",
+     {
+      "recipient": {
+       "streetLines": [
+        "1 Main St"
+       ],
+       "city": "Boston",
+       "stateOrProvinceCode": "MA",
+       "postalCode": "02101",
+       "countryCode": "US"
+      },
+      "recipientName": "Ann Lee",
+      "recipientPhone": "5551234",
+      "serviceType": "FEDEX_GROUND",
+      "packages": [
+       {
+        "weight": 2
+       }
+      ]
+     }
+    ]
+   ],
+   "responses": {
+    "/oauth/token": [
+     {
+      "status": 200,
+      "text": "{\"access_token\":\"tok-1\",\"expires_in\":3600}"
+     }
+    ],
+    "/ship/v1/shipments": [
+     {
+      "status": 200,
+      "text": "null"
+     }
+    ]
+   },
+   "requests": [
+    {
+     "method": "POST",
+     "path": "/oauth/token",
+     "headers": {
+      "content-type": "application/x-www-form-urlencoded"
+     },
+     "body": "grant_type=client_credentials&client_id=client+id%261&client_secret=se+cret%2B%2F%3D"
+    },
+    {
+     "method": "POST",
+     "path": "/ship/v1/shipments",
+     "headers": {
+      "content-type": "application/json",
+      "authorization": "Bearer tok-1",
+      "x-locale": "en_US"
+     },
+     "body": "{\"accountNumber\":{\"value\":\"740561073\"},\"labelResponseOptions\":\"URL_ONLY\",\"requestedShipment\":{\"shipper\":{\"address\":{\"streetLines\":[\"123 Store Street\"],\"city\":\"New York\",\"stateOrProvinceCode\":\"NY\",\"postalCode\":\"10001\",\"countryCode\":\"US\"},\"contact\":{\"personName\":\"Store Admin\",\"phoneNumber\":\"1234567890\"}},\"recipients\":[{\"address\":{\"streetLines\":[\"1 Main St\"],\"city\":\"Boston\",\"stateOrProvinceCode\":\"MA\",\"postalCode\":\"02101\",\"countryCode\":\"US\"},\"contact\":{\"personName\":\"Ann Lee\",\"phoneNumber\":\"5551234\"}}],\"serviceType\":\"FEDEX_GROUND\",\"packagingType\":\"YOUR_PACKAGING\",\"pickupType\":\"DROPOFF_AT_FEDEX_LOCATION\",\"shippingChargesPayment\":{\"paymentType\":\"SENDER\"},\"labelSpecification\":{\"labelFormatType\":\"COMMON2D\",\"imageType\":\"PDF\",\"labelStockType\":\"PAPER_4X6\"},\"requestedPackageLineItems\":[{\"weight\":{\"units\":\"LB\",\"value\":2}}]}}"
+    }
+   ],
+   "results": [
+    {
+     "error": "Cannot read properties of null (reading 'output')"
+    }
+   ]
+  },
+  {
+   "name": "ship: FedEx error",
+   "calls": [
+    [
+     "createShipment",
+     {
+      "recipient": {
+       "streetLines": [
+        "1 Main St"
+       ],
+       "city": "Boston",
+       "stateOrProvinceCode": "MA",
+       "postalCode": "02101",
+       "countryCode": "US"
+      },
+      "recipientName": "Ann Lee",
+      "recipientPhone": "5551234",
+      "serviceType": "FEDEX_GROUND",
+      "packages": [
+       {
+        "weight": 2
+       }
+      ]
+     }
+    ]
+   ],
+   "responses": {
+    "/oauth/token": [
+     {
+      "status": 200,
+      "text": "{\"access_token\":\"tok-1\",\"expires_in\":3600}"
+     }
+    ],
+    "/ship/v1/shipments": [
+     {
+      "status": 422,
+      "text": "{\"errors\":[{\"code\":\"X\"}]}"
+     }
+    ]
+   },
+   "requests": [
+    {
+     "method": "POST",
+     "path": "/oauth/token",
+     "headers": {
+      "content-type": "application/x-www-form-urlencoded"
+     },
+     "body": "grant_type=client_credentials&client_id=client+id%261&client_secret=se+cret%2B%2F%3D"
+    },
+    {
+     "method": "POST",
+     "path": "/ship/v1/shipments",
+     "headers": {
+      "content-type": "application/json",
+      "authorization": "Bearer tok-1",
+      "x-locale": "en_US"
+     },
+     "body": "{\"accountNumber\":{\"value\":\"740561073\"},\"labelResponseOptions\":\"URL_ONLY\",\"requestedShipment\":{\"shipper\":{\"address\":{\"streetLines\":[\"123 Store Street\"],\"city\":\"New York\",\"stateOrProvinceCode\":\"NY\",\"postalCode\":\"10001\",\"countryCode\":\"US\"},\"contact\":{\"personName\":\"Store Admin\",\"phoneNumber\":\"1234567890\"}},\"recipients\":[{\"address\":{\"streetLines\":[\"1 Main St\"],\"city\":\"Boston\",\"stateOrProvinceCode\":\"MA\",\"postalCode\":\"02101\",\"countryCode\":\"US\"},\"contact\":{\"personName\":\"Ann Lee\",\"phoneNumber\":\"5551234\"}}],\"serviceType\":\"FEDEX_GROUND\",\"packagingType\":\"YOUR_PACKAGING\",\"pickupType\":\"DROPOFF_AT_FEDEX_LOCATION\",\"shippingChargesPayment\":{\"paymentType\":\"SENDER\"},\"labelSpecification\":{\"labelFormatType\":\"COMMON2D\",\"imageType\":\"PDF\",\"labelStockType\":\"PAPER_4X6\"},\"requestedPackageLineItems\":[{\"weight\":{\"units\":\"LB\",\"value\":2}}]}}"
+    }
+   ],
+   "results": [
+    {
+     "error": "FedEx shipment creation failed: {\"errors\":[{\"code\":\"X\"}]}"
+    }
+   ]
+  },
+  {
+   "name": "ship: auth failure",
+   "calls": [
+    [
+     "createShipment",
+     {
+      "recipient": {
+       "streetLines": [
+        "1 Main St"
+       ],
+       "city": "Boston",
+       "stateOrProvinceCode": "MA",
+       "postalCode": "02101",
+       "countryCode": "US"
+      },
+      "recipientName": "Ann Lee",
+      "recipientPhone": "5551234",
+      "serviceType": "FEDEX_GROUND",
+      "packages": [
+       {
+        "weight": 2
+       }
+      ]
+     }
+    ]
+   ],
+   "responses": {
+    "/oauth/token": [
+     {
+      "status": 500,
+      "text": "down"
+     }
+    ]
+   },
+   "requests": [
+    {
+     "method": "POST",
+     "path": "/oauth/token",
+     "headers": {
+      "content-type": "application/x-www-form-urlencoded"
+     },
+     "body": "grant_type=client_credentials&client_id=client+id%261&client_secret=se+cret%2B%2F%3D"
+    }
+   ],
+   "results": [
+    {
+     "error": "FedEx authentication failed: down"
+    }
+   ]
+  },
+  {
+   "name": "ship: network failure",
+   "network": true,
+   "calls": [
+    [
+     "createShipment",
+     {
+      "recipient": {
+       "streetLines": [
+        "1 Main St"
+       ],
+       "city": "Boston",
+       "stateOrProvinceCode": "MA",
+       "postalCode": "02101",
+       "countryCode": "US"
+      },
+      "recipientName": "Ann Lee",
+      "recipientPhone": "5551234",
+      "serviceType": "FEDEX_GROUND",
+      "packages": [
+       {
+        "weight": 2
+       }
+      ]
+     }
+    ]
+   ],
+   "responses": {},
+   "requests": [
+    {
+     "method": "POST",
+     "path": "/oauth/token",
+     "headers": {
+      "content-type": "application/x-www-form-urlencoded"
+     },
+     "body": "grant_type=client_credentials&client_id=client+id%261&client_secret=se+cret%2B%2F%3D"
+    }
+   ],
+   "results": [
+    {
+     "error": "fetch failed"
+    }
+   ]
+  },
+  {
+   "name": "track: scans mapped",
+   "calls": [
+    [
+     "getTracking",
+     "7946"
+    ]
+   ],
+   "responses": {
+    "/oauth/token": [
+     {
+      "status": 200,
+      "text": "{\"access_token\":\"tok-1\",\"expires_in\":3600}"
+     }
+    ],
+    "/track/v1/trackingnumbers": [
+     {
+      "status": 200,
+      "text": "{\"output\":{\"completeTrackResults\":[{\"trackResults\":[{\"latestStatusDetail\":{\"code\":\"IT\",\"description\":\"In transit\"},\"estimatedDeliveryTimeWindow\":{\"window\":{\"ends\":\"2026-11-02T20:00:00Z\"}},\"scanEvents\":[{\"date\":\"2026-10-30T10:00:00Z\",\"eventDescription\":\"Picked up\",\"scanLocation\":{\"city\":\"Memphis\",\"stateOrProvinceCode\":\"TN\"}},{\"date\":\"2026-10-30T12:00:00Z\",\"eventDescription\":\"Left\",\"scanLocation\":{\"city\":\"Memphis\"}},{\"eventDescription\":\"Odd\",\"scanLocation\":\"x\"},{\"date\":5,\"scanLocation\":null},\"string event\"]}]}]}}"
+     }
+    ]
+   },
+   "requests": [
+    {
+     "method": "POST",
+     "path": "/oauth/token",
+     "headers": {
+      "content-type": "application/x-www-form-urlencoded"
+     },
+     "body": "grant_type=client_credentials&client_id=client+id%261&client_secret=se+cret%2B%2F%3D"
+    },
+    {
+     "method": "POST",
+     "path": "/track/v1/trackingnumbers",
+     "headers": {
+      "content-type": "application/json",
+      "authorization": "Bearer tok-1",
+      "x-locale": "en_US"
+     },
+     "body": "{\"includeDetailedScans\":true,\"trackingInfo\":[{\"trackingNumberInfo\":{\"trackingNumber\":\"7946\"}}]}"
+    }
+   ],
+   "results": [
+    {
+     "ok": {
+      "trackingNumber": "7946",
+      "status": "IT",
+      "statusDescription": "In transit",
+      "estimatedDelivery": "2026-11-02T20:00:00Z",
+      "events": [
+       {
+        "timestamp": "2026-10-30T10:00:00Z",
+        "description": "Picked up",
+        "location": "Memphis, TN"
+       },
+       {
+        "timestamp": "2026-10-30T12:00:00Z",
+        "description": "Left",
+        "location": "Memphis, undefined"
+       },
+       {
+        "description": "Odd",
+        "location": "undefined, undefined"
+       },
+       {
+        "timestamp": 5,
+        "location": "N/A"
+       },
+       {
+        "location": "N/A"
+       }
+      ],
+      "mock": false
+     }
+    }
+   ]
+  },
+  {
+   "name": "track: empty reply",
+   "calls": [
+    [
+     "getTracking",
+     "ABC"
+    ]
+   ],
+   "responses": {
+    "/oauth/token": [
+     {
+      "status": 200,
+      "text": "{\"access_token\":\"tok-1\",\"expires_in\":3600}"
+     }
+    ],
+    "/track/v1/trackingnumbers": [
+     {
+      "status": 200,
+      "text": "{\"output\":{\"completeTrackResults\":[]}}"
+     }
+    ]
+   },
+   "requests": [
+    {
+     "method": "POST",
+     "path": "/oauth/token",
+     "headers": {
+      "content-type": "application/x-www-form-urlencoded"
+     },
+     "body": "grant_type=client_credentials&client_id=client+id%261&client_secret=se+cret%2B%2F%3D"
+    },
+    {
+     "method": "POST",
+     "path": "/track/v1/trackingnumbers",
+     "headers": {
+      "content-type": "application/json",
+      "authorization": "Bearer tok-1",
+      "x-locale": "en_US"
+     },
+     "body": "{\"includeDetailedScans\":true,\"trackingInfo\":[{\"trackingNumberInfo\":{\"trackingNumber\":\"ABC\"}}]}"
+    }
+   ],
+   "results": [
+    {
+     "ok": {
+      "trackingNumber": "ABC",
+      "status": "UNKNOWN",
+      "statusDescription": "Unknown",
+      "estimatedDelivery": null,
+      "events": [],
+      "mock": false
+     }
+    }
+   ]
+  },
+  {
+   "name": "track: scanEvents is not an array",
+   "calls": [
+    [
+     "getTracking",
+     "ABC"
+    ]
+   ],
+   "responses": {
+    "/oauth/token": [
+     {
+      "status": 200,
+      "text": "{\"access_token\":\"tok-1\",\"expires_in\":3600}"
+     }
+    ],
+    "/track/v1/trackingnumbers": [
+     {
+      "status": 200,
+      "text": "{\"output\":{\"completeTrackResults\":[{\"trackResults\":[{\"scanEvents\":\"x\"}]}]}}"
+     }
+    ]
+   },
+   "requests": [
+    {
+     "method": "POST",
+     "path": "/oauth/token",
+     "headers": {
+      "content-type": "application/x-www-form-urlencoded"
+     },
+     "body": "grant_type=client_credentials&client_id=client+id%261&client_secret=se+cret%2B%2F%3D"
+    },
+    {
+     "method": "POST",
+     "path": "/track/v1/trackingnumbers",
+     "headers": {
+      "content-type": "application/json",
+      "authorization": "Bearer tok-1",
+      "x-locale": "en_US"
+     },
+     "body": "{\"includeDetailedScans\":true,\"trackingInfo\":[{\"trackingNumberInfo\":{\"trackingNumber\":\"ABC\"}}]}"
+    }
+   ],
+   "results": [
+    {
+     "error": "((intermediate value) || []).map is not a function"
+    }
+   ]
+  },
+  {
+   "name": "track: a null scan event",
+   "calls": [
+    [
+     "getTracking",
+     "ABC"
+    ]
+   ],
+   "responses": {
+    "/oauth/token": [
+     {
+      "status": 200,
+      "text": "{\"access_token\":\"tok-1\",\"expires_in\":3600}"
+     }
+    ],
+    "/track/v1/trackingnumbers": [
+     {
+      "status": 200,
+      "text": "{\"output\":{\"completeTrackResults\":[{\"trackResults\":[{\"scanEvents\":[null]}]}]}}"
+     }
+    ]
+   },
+   "requests": [
+    {
+     "method": "POST",
+     "path": "/oauth/token",
+     "headers": {
+      "content-type": "application/x-www-form-urlencoded"
+     },
+     "body": "grant_type=client_credentials&client_id=client+id%261&client_secret=se+cret%2B%2F%3D"
+    },
+    {
+     "method": "POST",
+     "path": "/track/v1/trackingnumbers",
+     "headers": {
+      "content-type": "application/json",
+      "authorization": "Bearer tok-1",
+      "x-locale": "en_US"
+     },
+     "body": "{\"includeDetailedScans\":true,\"trackingInfo\":[{\"trackingNumberInfo\":{\"trackingNumber\":\"ABC\"}}]}"
+    }
+   ],
+   "results": [
+    {
+     "error": "Cannot read properties of null (reading 'date')"
+    }
+   ]
+  },
+  {
+   "name": "track: FedEx error",
+   "calls": [
+    [
+     "getTracking",
+     "ABC"
+    ]
+   ],
+   "responses": {
+    "/oauth/token": [
+     {
+      "status": 200,
+      "text": "{\"access_token\":\"tok-1\",\"expires_in\":3600}"
+     }
+    ],
+    "/track/v1/trackingnumbers": [
+     {
+      "status": 404,
+      "text": "nope"
+     }
+    ]
+   },
+   "requests": [
+    {
+     "method": "POST",
+     "path": "/oauth/token",
+     "headers": {
+      "content-type": "application/x-www-form-urlencoded"
+     },
+     "body": "grant_type=client_credentials&client_id=client+id%261&client_secret=se+cret%2B%2F%3D"
+    },
+    {
+     "method": "POST",
+     "path": "/track/v1/trackingnumbers",
+     "headers": {
+      "content-type": "application/json",
+      "authorization": "Bearer tok-1",
+      "x-locale": "en_US"
+     },
+     "body": "{\"includeDetailedScans\":true,\"trackingInfo\":[{\"trackingNumberInfo\":{\"trackingNumber\":\"ABC\"}}]}"
+    }
+   ],
+   "results": [
+    {
+     "error": "FedEx tracking lookup failed"
+    }
+   ]
+  },
+  {
+   "name": "track: auth reply is null",
+   "calls": [
+    [
+     "getTracking",
+     "ABC"
+    ]
+   ],
+   "responses": {
+    "/oauth/token": [
+     {
+      "status": 200,
+      "text": "null"
+     }
+    ]
+   },
+   "requests": [
+    {
+     "method": "POST",
+     "path": "/oauth/token",
+     "headers": {
+      "content-type": "application/x-www-form-urlencoded"
+     },
+     "body": "grant_type=client_credentials&client_id=client+id%261&client_secret=se+cret%2B%2F%3D"
+    }
+   ],
+   "results": [
+    {
+     "error": "Cannot read properties of null (reading 'access_token')"
+    }
+   ]
+  },
+  {
+   "name": "track: non-JSON reply",
+   "calls": [
+    [
+     "getTracking",
+     "ABC"
+    ]
+   ],
+   "responses": {
+    "/oauth/token": [
+     {
+      "status": 200,
+      "text": "{\"access_token\":\"tok-1\",\"expires_in\":3600}"
+     }
+    ],
+    "/track/v1/trackingnumbers": [
+     {
+      "status": 200,
+      "text": "<!DOCTYPE html><html></html>"
+     }
+    ]
+   },
+   "requests": [
+    {
+     "method": "POST",
+     "path": "/oauth/token",
+     "headers": {
+      "content-type": "application/x-www-form-urlencoded"
+     },
+     "body": "grant_type=client_credentials&client_id=client+id%261&client_secret=se+cret%2B%2F%3D"
+    },
+    {
+     "method": "POST",
+     "path": "/track/v1/trackingnumbers",
+     "headers": {
+      "content-type": "application/json",
+      "authorization": "Bearer tok-1",
+      "x-locale": "en_US"
+     },
+     "body": "{\"includeDetailedScans\":true,\"trackingInfo\":[{\"trackingNumberInfo\":{\"trackingNumber\":\"ABC\"}}]}"
+    }
+   ],
+   "results": [
+    {
+     "error": "Unexpected token '<', \"<!DOCTYPE \"... is not valid JSON"
+    }
+   ]
+  }
+ ]
+}
