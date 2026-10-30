@@ -5,7 +5,7 @@ const { isMarketingCategory, isEmailSuppressed } = require('../utils/emailSuppre
 class EmailQueueService {
   constructor() {
     // Producer + queue-maintenance API only. Delivery is done by the separate
-    // email daemon (services/emailDaemon.js), the queue's single consumer.
+    // email daemon (rust/crates/email-daemon), the queue's single consumer.
   }
 
   /**

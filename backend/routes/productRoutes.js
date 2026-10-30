@@ -26,7 +26,13 @@ function applyTranslation(p) {
   delete out.t_name;
   delete out.t_short_description;
   delete out.t_description;
-  return out;
+  return withoutInternalColumns(out);
+}
+
+// Columns that are back-office only: approval notes and the staff author.
+function withoutInternalColumns(p) {
+  const { approval_details, created_by, ...publicFields } = p;
+  return publicFields;
 }
 
 // GET /api/products - Product listing with pagination and filters (with caching)
@@ -120,7 +126,8 @@ router.get('/', PerformanceMiddleware.responseCache({
     const pageNum = Math.max(1, parseInt(page, 10) || 1);
     const offsetNum = Math.max(0, (pageNum - 1) * limitNum);
 
-    query += ` LIMIT ${limitNum} OFFSET ${offsetNum}`;
+    // Deterministic order (newest first), or pages can repeat/skip products.
+    query += ` ORDER BY p.created_at DESC, p.id ASC LIMIT ${limitNum} OFFSET ${offsetNum}`;
 
     // List query joins translations, so the locale param leads; count has no join.
     const listResult = await DatabaseUtil.executeQuery(query, [locale, ...filterParams]);
@@ -186,7 +193,7 @@ router.get('/by-ids', async (req, res) => {
     const rows = result.data || [];
 
     // Map image alias for frontend compatibility
-    const products = rows.map(p => ({ ...p, image: p.image || null }));
+    const products = rows.map(p => ({ ...withoutInternalColumns(p), image: p.image || null }));
 
     const keyValueTable = { products, total: products.length };
     res.json(ResponseFormatter.success('Products fetched by IDs successfully', keyValueTable));
@@ -233,7 +240,12 @@ router.get('/:id', PerformanceMiddleware.responseCache({
     const imagesResult = await DatabaseUtil.executeQuery('SELECT * FROM product_images WHERE product_id = ? ORDER BY sort_order', [productId]);
     if (!imagesResult.success) throw new Error(imagesResult.error || 'Failed to fetch images');
 
-    const reviewsResult = await DatabaseUtil.executeQuery('SELECT * FROM product_reviews WHERE product_id = ? ORDER BY created_at DESC', [productId]);
+    // Approved reviews only, without reviewer/moderator ids (feeds the rating).
+    const reviewsResult = await DatabaseUtil.executeQuery(
+      `SELECT id, product_id, rating, review_details, is_verified_purchase, created_at
+       FROM product_reviews WHERE product_id = ? AND is_approved = 1 ORDER BY created_at DESC`,
+      [productId]
+    );
     if (!reviewsResult.success) throw new Error(reviewsResult.error || 'Failed to fetch reviews');
 
     const keyValueTable = { ...product, variants: variantsResult.data, images: imagesResult.data, reviews: reviewsResult.data };

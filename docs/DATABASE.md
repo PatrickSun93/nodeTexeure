@@ -61,7 +61,7 @@ VAR WISH`. Orders also get a random, non-sequential customer-facing
 | Cart & checkout | `shopping_carts`, `cart_items`, `abandoned_cart_recovery`, `discount_codes`, `discount_code_usage`, `tax_rates`, `shipping_zones`, `shipping_rates` |
 | Orders & payments | `orders` (`status` lifecycle + `payment_status`, Stripe ids), `order_items`, `order_status_history`, `payments`, `payment_methods`, `refunds`, `returns`, `return_items` |
 | Content & engagement | `product_reviews`, `review_helpful_votes`, `wishlists`, `journal_articles`, `newsletter_subscribers` |
-| Email | `email_templates`, `email_queue` (drained by `services/emailDaemon.js`, the only consumer), `email_unsubscribes` |
+| Email | `email_templates`, `email_queue` (drained by the Rust email daemon, `rust/crates/email-daemon`, the only consumer), `email_unsubscribes` |
 | System | `system_settings`, `audit_logs`, `api_rate_limits`, `transno`, `schema_migrations` |
 
 Stored routines: `get_next_id`, `ReserveStock`, `ReleaseExpiredReservations`;

@@ -152,6 +152,7 @@ token block re-skins the whole app. Palette, fonts, and theming details:
 Browser ─► Storefront (Next.js, :3000)
                 │  rewrites /api/* ─► Backend (Express, :6666) ─► MySQL
             Admin dashboard (Next.js, :3005) ─► Backend
+            Email daemon (Rust) ─► MySQL email_queue ─► AWS SES
 ```
 
 - **API proxy:** the browser only talks to `:3000`; the backend port `6666` is a
@@ -189,6 +190,7 @@ Browser ─► Storefront (Next.js, :3000)
 - **[docs/API.md](docs/API.md)** — every endpoint and its access rule (generated from the routes).
 - **[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)** — production stack, Stripe webhook, ops, launch checklist.
 - **[backend/README.md](backend/README.md)** — backend layout, scripts, running the tests.
+- **[rust/README.md](rust/README.md)** — the Rust port (email daemon done; API next).
 
 ---
 

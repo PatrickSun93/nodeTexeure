@@ -10,8 +10,5 @@ done
 echo "MySQL ready. Applying schema migrations..."
 node scripts/migrate.js
 
-echo "Starting email daemon (background — delivers queued transactional emails)..."
-node services/emailDaemon.js &
-
 echo "Starting backend (production, port ${PORT})..."
 exec node server.js

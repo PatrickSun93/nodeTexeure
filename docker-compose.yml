@@ -49,6 +49,8 @@ services:
       dockerfile: Dockerfile.dev
     environment:
       BACKEND_URL: http://backend:6666
+      RUST_API_URL: http://api:7000
+      RUST_API_ROUTES: products,search,journal,settings/public
       NEXTAUTH_URL: http://localhost:3000
       NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:-dev_only_nextauth_secret}
       NODE_ENV: development
@@ -61,6 +63,7 @@ services:
       - frontend_next:/app/.next
     depends_on:
       - backend
+      - api
 
   admin-dashboard:
     build:
@@ -78,6 +81,45 @@ services:
       - admin_next:/app/.next
     depends_on:
       - backend
+
+  # Rust API (rust/crates/api): answers the route groups listed in the
+  # frontend's RUST_API_ROUTES; everything else stays on the Node backend.
+  api:
+    build:
+      context: ./rust
+    command: ["api"]
+    environment:
+      DB_HOST: mysql
+      DB_PORT: "3306"
+      DB_NAME: bed_texture_ecommerce
+      DB_USER: root
+      DB_PASSWORD: ${DB_PASSWORD:-noirae_dev}
+      API_PORT: "7000"
+    ports:
+      - "7000:7000"
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+  # Rust email daemon (rust/crates/email-daemon): delivers email_queue. Without
+  # SES keys it writes each email to ./backend/email-outbox as an HTML file.
+  email-daemon:
+    build:
+      context: ./rust
+    command: ["email-daemon"]
+    environment:
+      DB_HOST: mysql
+      DB_PORT: "3306"
+      DB_NAME: bed_texture_ecommerce
+      DB_USER: root
+      DB_PASSWORD: ${DB_PASSWORD:-noirae_dev}
+      EMAIL_TRANSPORT: outbox
+      EMAIL_OUTBOX_DIR: /outbox
+    user: root # write to the bind-mounted outbox regardless of host ownership
+    volumes:
+      - ./backend/email-outbox:/outbox
+    depends_on:
+      - backend # waits itself until the backend has applied migrations
 
 volumes:
   mysql_data:

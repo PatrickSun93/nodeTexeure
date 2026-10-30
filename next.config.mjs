@@ -34,10 +34,27 @@ const nextConfig = {
       routes.push('debug', 'logs');
     }
     
-    return routes.map(route => ({
-      source: `/api/${route}/:path*`,
-      destination: `${backendUrl}/api/${route}/:path*`,
-    }));
+    // Route groups already ported to the Rust API (rust/crates/api) go there
+    // instead, e.g. RUST_API_URL=http://api:7000 RUST_API_ROUTES=products,search.
+    // An entry with a slash moves a single path (settings/public) while the rest
+    // of its group stays on Node. Unset = everything on Node (instant rollback).
+    const rustUrl = (process.env.RUST_API_URL || '').trim().replace(/\/$/, '');
+    const rustEntries = rustUrl
+      ? (process.env.RUST_API_ROUTES || '').split(',').map((r) => r.trim()).filter(Boolean)
+      : [];
+    const rustGroups = new Set(rustEntries.filter((r) => !r.includes('/')));
+    // Exact paths first: Next uses the first matching rewrite.
+    const rustPaths = rustEntries
+      .filter((r) => r.includes('/'))
+      .map((path) => ({ source: `/api/${path}`, destination: `${rustUrl}/api/${path}` }));
+
+    return [
+      ...rustPaths,
+      ...routes.map(route => ({
+        source: `/api/${route}/:path*`,
+        destination: `${rustGroups.has(route) ? rustUrl : backendUrl}/api/${route}/:path*`,
+      })),
+    ];
   },
   images: {
     formats: ['image/avif', 'image/webp'],

@@ -1,0 +1,18 @@
+[package]
+name = "common"
+version = "0.1.0"
+description = "Shared pieces for the NodeTexeure Rust services: env config, MySQL connection, JSON conventions"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+anyhow.workspace = true
+chrono.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+sqlx.workspace = true
+
+[lints]
+workspace = true

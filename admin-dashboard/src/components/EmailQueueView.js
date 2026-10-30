@@ -19,7 +19,7 @@ import { useTranslations } from 'next-intl';
  *   POST /api/admin/email-queue/:id/retry       -> requeue one failed/cancelled
  *
  * Note: there is intentionally no "flush now" action. The consumer
- * (services/emailDaemon.js) is a separate process that polls every few seconds,
+ * (rust/crates/email-daemon) is a separate process that polls every few seconds,
  * so a manual flush would be misleading; the header offers an honest Refresh.
  */
 

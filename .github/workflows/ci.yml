@@ -82,6 +82,71 @@ jobs:
       - run: npm run seed:rnd && npm run seed:example
       - run: npm test
 
+  rust:
+    name: Rust (fmt, clippy, tests, image)
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: ci_root
+          MYSQL_DATABASE: bed_texture_ecommerce
+        ports: ['3306:3306']
+        options: >-
+          --health-cmd="mysqladmin ping -h localhost -uroot -pci_root"
+          --health-interval=5s --health-timeout=5s --health-retries=20
+    env:
+      DB_HOST: 127.0.0.1
+      DB_PORT: '3306'
+      DB_USER: root
+      DB_PASSWORD: ci_root
+      DB_NAME: bed_texture_ecommerce
+      DATABASE_URL: mysql://root:ci_root@127.0.0.1:3306/bed_texture_ecommerce
+      # The example-data seed signs unsubscribe tokens with it.
+      JWT_SECRET: ci_only_jwt_secret_value_long_enough_0123456789
+      NODE_ENV: test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+      - name: Schema (init.sql + migrations + seed)
+        working-directory: backend
+        run: |
+          npm ci
+          mysql -h 127.0.0.1 -uroot -pci_root bed_texture_ecommerce < ../docker/mysql/init.sql
+          npm run migrate
+          npm run seed:rnd && npm run seed:example
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: rust
+      - name: rustfmt
+        working-directory: rust
+        run: cargo fmt --all --check
+      - name: clippy (queries checked against the live schema)
+        working-directory: rust
+        run: cargo clippy --all-targets --locked -- -D warnings
+      - name: tests (unit + MySQL integration)
+        working-directory: rust
+        run: cargo test --locked -- --include-ignored --test-threads=1
+      - name: Node ↔ Rust API parity (same requests, same JSON)
+        run: |
+          (cd rust && cargo build --locked -p api)   # in rust/ so rust-toolchain.toml applies
+          API_PORT=7000 rust/target/debug/api > api.log 2>&1 &
+          for i in $(seq 1 30); do curl -sf http://127.0.0.1:7000/health && break; sleep 1; done
+          cd backend && RUST_API_URL=http://127.0.0.1:7000 npx jest tests/parity.test.js
+      - name: API log (on failure)
+        if: failure()
+        run: cat api.log || true
+      - name: .sqlx offline data is up to date
+        working-directory: rust
+        # touch: make the macros re-run offline instead of reusing the cached build
+        run: find crates -name "*.rs" -exec touch {} + && SQLX_OFFLINE=true DATABASE_URL= cargo check --all-targets --locked
+      - name: Docker image builds
+        run: docker build -t nodetexeure-rust rust
+
   audit:
     name: Dependency audit
     runs-on: ubuntu-latest

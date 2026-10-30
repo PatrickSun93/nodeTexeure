@@ -62,6 +62,8 @@ services:
       dockerfile: Dockerfile.prod
       args:
         PRODUCTION_BACKEND_URL: http://backend:6666
+        RUST_API_URL: http://api:7000
+        RUST_API_ROUTES: ${RUST_API_ROUTES-products,search,journal,settings/public}
     environment:
       PRODUCTION_BACKEND_URL: http://backend:6666
       NEXTAUTH_URL: ${NEXTAUTH_URL:-http://localhost:3000}
@@ -73,6 +75,8 @@ services:
     depends_on:
       backend:
         condition: service_healthy
+      api:
+        condition: service_healthy
 
   admin-dashboard:
     build:
@@ -83,6 +87,52 @@ services:
       NODE_ENV: production
     ports:
       - "3005:3005"
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+
+  # Rust API: serves the route groups in RUST_API_ROUTES (baked into the
+  # frontend build below); unset them to send everything back to Node.
+  api:
+    build:
+      context: ./rust
+    command: ["api"]
+    environment:
+      DB_HOST: mysql
+      DB_PORT: "3306"
+      DB_NAME: bed_texture_ecommerce
+      DB_USER: root
+      DB_PASSWORD: ${DB_PASSWORD:?set DB_PASSWORD}
+      API_PORT: "7000"
+    expose:
+      - "7000"
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/7000 && printf 'GET /health HTTP/1.0\\r\\n\\r\\n' >&3 && grep -q ' 200 ' <&3"]
+      interval: 15s
+      timeout: 5s
+      start_period: 10s
+      retries: 3
+
+  # Rust email daemon: the only consumer of email_queue (SES credentials and
+  # sender settings come from backend/.env).
+  email-daemon:
+    build:
+      context: ./rust
+    command: ["email-daemon"]
+    env_file:
+      - path: ./backend/.env
+        required: false
+    environment:
+      DB_HOST: mysql
+      DB_PORT: "3306"
+      DB_NAME: bed_texture_ecommerce
+      DB_USER: root
+      DB_PASSWORD: ${DB_PASSWORD:?set DB_PASSWORD}
     restart: unless-stopped
     depends_on:
       backend:

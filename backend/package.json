@@ -11,7 +11,7 @@
     "seed:example": "node scripts/seed-example-data.js",
     "translate:content": "node scripts/translate-content.js",
     "reset-passwords": "node scripts/reset-all-passwords.js",
-    "email-daemon": "node services/emailDaemon.js",
+    "email-daemon": "cargo run --release --manifest-path ../rust/Cargo.toml -p email-daemon",
     "create-admin": "node scripts/create-admin.js"
   },
   "keywords": [

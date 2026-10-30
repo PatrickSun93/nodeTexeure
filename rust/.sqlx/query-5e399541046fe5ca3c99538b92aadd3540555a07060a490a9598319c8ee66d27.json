@@ -1,0 +1,24 @@
+{
+  "db_name": "MySQL",
+  "query": "SELECT template_content FROM email_templates WHERE id = ?",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "template_content",
+        "type_info": {
+          "type": "Json",
+          "flags": "NOT_NULL | BLOB | BINARY | NO_DEFAULT_VALUE",
+          "max_size": 4294967295
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "5e399541046fe5ca3c99538b92aadd3540555a07060a490a9598319c8ee66d27"
+}
