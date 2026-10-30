@@ -334,7 +334,7 @@ router.post('/track-abandonment', protectOptional, async (req, res) => {
       return {
         name: item.name,
         quantity: item.quantity,
-        price: `$${item.price.toFixed(2)}`
+        price: `$${Number(item.price).toFixed(2)}`
       };
     });
 

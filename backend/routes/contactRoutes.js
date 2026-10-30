@@ -6,12 +6,9 @@
  * support address in the email_queue table so it is durably captured (and can be
  * picked up by the email pipeline), rather than sending it inline.
  *
- * NOTE (email_queue schema drift): EmailQueueService.queueEmail() INSERTs the
- * columns type / recipient / data / priority, which exist only after
- * database/migrations/add_email_queue.sql is applied — they are NOT in the
- * ground-truth docker/mysql/init.sql email_queue. To work against the ground-truth
- * schema we INSERT here using only the columns init.sql guarantees (id, to_email,
- * to_name, subject, email_content, status, scheduled_at, created_at). See report FLAGS.
+ * The message is not template-based, so it is INSERTed directly using the
+ * email_queue columns (id, to_email, to_name, subject, email_content, status,
+ * scheduled_at, created_at).
  *
  * Mount (server.js):  app.use('/api/contact', require('./routes/contactRoutes'));
  * Proxy (next.config.mjs): 'contact' is already in the rewrite allowlist.
