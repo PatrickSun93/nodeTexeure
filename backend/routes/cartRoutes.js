@@ -5,14 +5,19 @@ const InventoryService = require('../services/inventoryService');
 const ResponseFormatter = require('../utils/responseFormatter');
 const EmailQueueService = require('../services/emailQueueService');
 const AbandonedCartService = require('../services/abandonedCartService');
-const crypto = require('crypto');
+const { isNonEmptyString } = require('../utils/params');
+const { GUEST_SESSION_COOKIE, guestSessionId, newGuestSessionId } = require('../utils/guestSession');
 const router = express.Router();
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 // Initialize services
 const emailQueueService = new EmailQueueService();
 // Reuse the one shared AbandonedCartService instance so the abandoned-cart recovery
 // route can share it without starting a second background detection interval.
 const abandonedCartService = AbandonedCartService.getShared();
+
+const isGuestEmail = (v) => isNonEmptyString(v) && v.length <= 255 && EMAIL_RE.test(v);
 
 // owner: 'user_id' or 'session_id' (a fixed column name, never user input).
 async function createCart(owner, value) {
@@ -37,11 +42,13 @@ async function getOrCreateCart(req, res) {
       cartId = await createCart('user_id', req.user.id);
     }
   } else {
-    // Guest - use session_id from cookie or create new
-    let sessionId = req.cookies.sessionId;
+    // Guest - use the session id from the cookie, or issue a new one when there
+    // is none or it isn't one we issue (a `j:1` cookie is the number 1 and would
+    // match a stranger's cart; see utils/guestSession.js).
+    let sessionId = guestSessionId(req);
     if (!sessionId) {
-      sessionId = crypto.randomBytes(16).toString('hex');
-      res.cookie('sessionId', sessionId, { httpOnly: true, maxAge: 30 * 24 * 60 * 60 * 1000 });
+      sessionId = newGuestSessionId();
+      res.cookie(GUEST_SESSION_COOKIE, sessionId, { httpOnly: true, maxAge: 30 * 24 * 60 * 60 * 1000 });
     }
     const result = await DatabaseUtil.executeQuery(
       'SELECT id FROM shopping_carts WHERE session_id = ? ORDER BY created_at ASC, id ASC LIMIT 1', [sessionId]);
@@ -88,8 +95,7 @@ router.get('/', protectOptional, async (req, res) => {
 
     // Track cart activity for abandonment detection
     const userEmail = req.user ? req.user.email : null;
-    const sessionId = req.cookies.sessionId || null;
-    await abandonedCartService.trackCartActivity(cartId, userEmail, sessionId);
+    await abandonedCartService.trackCartActivity(cartId, userEmail, guestSessionId(req));
     
     res.json(ResponseFormatter.success('Cart fetched', { 
       cartId, 
@@ -189,8 +195,7 @@ router.post('/add', protectOptional, async (req, res) => {
 
     // Track cart activity for abandonment detection
     const userEmail = req.user ? req.user.email : null;
-    const sessionId = req.cookies.sessionId || null;
-    await abandonedCartService.trackCartActivity(cartId, userEmail, sessionId);
+    await abandonedCartService.trackCartActivity(cartId, userEmail, guestSessionId(req));
     
     res.json(ResponseFormatter.success('Item added to cart'));
   } catch (error) {
@@ -313,6 +318,9 @@ router.post('/reserve-stock', protectOptional, async (req, res) => {
  */
 router.post('/track-abandonment', protectOptional, async (req, res) => {
   try {
+    if (!req.user && req.body.guestEmail && !isGuestEmail(req.body.guestEmail)) {
+      return res.status(400).json(ResponseFormatter.failure('A valid email is required'));
+    }
     const cartId = await getOrCreateCart(req, res);
     
     // Get cart items to check if cart has items
@@ -336,7 +344,7 @@ router.post('/track-abandonment', protectOptional, async (req, res) => {
       customerEmail = req.user.email;
       customerName = `${req.user.firstName || ''} ${req.user.lastName || ''}`.trim() || 'Customer';
     } else if (req.body.guestEmail) {
-      customerEmail = req.body.guestEmail;
+      customerEmail = req.body.guestEmail; // validated above
     }
 
     if (!customerEmail) {
@@ -399,6 +407,10 @@ router.post('/cancel-abandonment', protectOptional, async (req, res) => {
     if (req.user) {
       customerEmail = req.user.email;
     } else if (req.body.guestEmail) {
+      // A number would compare numerically with email_queue.to_email.
+      if (!isGuestEmail(req.body.guestEmail)) {
+        return res.status(400).json(ResponseFormatter.failure('A valid email is required'));
+      }
       customerEmail = req.body.guestEmail;
     }
 

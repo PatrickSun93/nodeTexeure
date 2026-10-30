@@ -9,6 +9,7 @@ const path = require('path');
 const fs = require('fs');
 const multer = require('multer');
 const { adminReadLimiter, adminWriteLimiter } = require('./limiters');
+const { isNonEmptyString, isStringList } = require('../../utils/params');
 
 const router = express.Router();
 
@@ -114,6 +115,9 @@ router.put('/products/:id', admin, adminWriteLimiter, csrfProtection, async (req
     // 2. Handle Variants (Upsert)
     if (variants && Array.isArray(variants)) {
       for (const v of variants) {
+        if (v && v.id && !isNonEmptyString(v.id)) {
+          return res.status(400).json(ResponseFormatter.failure('Variant ids must be strings'));
+        }
         if (v.id) {
           // Update Existing Variant
           // We typically update price_adj, sku, stock (via inventory)
@@ -444,7 +448,8 @@ router.post('/products/:id/image', admin, adminWriteLimiter, csrfProtection, asy
 router.post('/products/bulk-update', admin, adminWriteLimiter, csrfProtection, async (req, res) => {
   try {
     const { productIds, updates } = req.body;
-    if (!Array.isArray(productIds) || productIds.length === 0) {
+    // Ids must be strings: `WHERE id = 0` matches every product (PROD… casts to 0).
+    if (!isStringList(productIds)) {
       return res.status(400).json(ResponseFormatter.failure('productIds must be a non-empty array'));
     }
     if (!updates || typeof updates !== 'object' || Array.isArray(updates)) {
@@ -496,7 +501,8 @@ router.post('/products/bulk-update', admin, adminWriteLimiter, csrfProtection, a
 router.post('/products/bulk-delete', admin, adminWriteLimiter, csrfProtection, async (req, res) => {
   try {
     const { productIds } = req.body;
-    if (!Array.isArray(productIds) || productIds.length === 0) {
+    // Ids must be strings: `WHERE id = 0` would delete every product.
+    if (!isStringList(productIds)) {
       return res.status(400).json(ResponseFormatter.failure('productIds must be a non-empty array'));
     }
 

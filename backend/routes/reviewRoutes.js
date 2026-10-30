@@ -4,6 +4,7 @@ const DatabaseUtil = require('../utils/database');
 const ResponseFormatter = require('../utils/responseFormatter');
 const { protect, admin } = require('../middleware/authMiddleware');
 const { csrfProtection } = require('../middleware/csrfMiddleware');
+const { isNonEmptyString, isOptionalString } = require('../utils/params');
 
 /**
  * Review data model
@@ -142,9 +143,13 @@ router.post('/create', protect, async (req, res) => {
         const { product_id, rating, title, review_text } = req.body;
         const user_id = req.user.id;
 
-        // Validation
-        if (!product_id || rating === undefined || rating === null || !review_text) {
+        // Validation. product_id must be a string: a number would compare
+        // numerically in the duplicate / verified-purchase lookups below.
+        if (!isNonEmptyString(product_id) || rating === undefined || rating === null || !review_text) {
             return res.status(400).json(ResponseFormatter.failure('Missing required fields'));
+        }
+        if (!isOptionalString(title)) {
+            return res.status(400).json(ResponseFormatter.failure('Title must be text'));
         }
 
         const ratingNum = parseInt(rating, 10);

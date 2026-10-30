@@ -104,9 +104,31 @@ fn new_session_id() -> anyhow::Result<String> {
         .collect())
 }
 
-/// The guest's `sessionId` cookie as Express's `req.cookies.sessionId` sees it.
+/// cookie-parser's JSON cookies: a `j:` value that parses as JSON becomes that
+/// JSON value when it is truthy. Only a string result can be a session id, so
+/// anything else keeps the raw text (which never is one).
+fn json_cookie(value: String) -> String {
+    match value
+        .strip_prefix("j:")
+        .and_then(|json| serde_json::from_str::<Value>(json).ok())
+    {
+        Some(Value::String(s)) if !s.is_empty() => s,
+        _ => value,
+    }
+}
+
+/// A session id this API or Node could have issued: 32 lowercase hex chars.
+fn is_session_id(s: &str) -> bool {
+    s.len() == 32 && s.bytes().all(|b| matches!(b, b'0'..=b'9' | b'a'..=b'f'))
+}
+
+/// The guest's `sessionId` cookie as Express's `req.cookies.sessionId` sees it,
+/// kept only when it is a session id we issue (backend/utils/guestSession.js):
+/// anything else is no session, so a new one is issued.
 pub(crate) fn guest_session(headers: &HeaderMap) -> Option<String> {
-    cookie(headers, SESSION_COOKIE).map(|raw| decode_cookie(&raw))
+    cookie(headers, SESSION_COOKIE)
+        .map(|raw| json_cookie(decode_cookie(&raw)))
+        .filter(|s| is_session_id(s))
 }
 
 async fn create_cart(
@@ -541,9 +563,41 @@ mod tests {
     #[test]
     fn session_ids_are_random_hex() {
         let a = new_session_id().unwrap();
-        assert_eq!(a.len(), 32);
-        assert!(a.chars().all(|c| c.is_ascii_hexdigit()));
+        assert!(is_session_id(&a));
         assert_ne!(a, new_session_id().unwrap());
+    }
+
+    #[test]
+    fn only_issued_session_ids_count() {
+        let id = "0123456789abcdef0123456789abcdef";
+        let session = |cookie: &str| {
+            let mut headers = HeaderMap::new();
+            headers.insert(header::COOKIE, HeaderValue::from_str(cookie).unwrap());
+            guest_session(&headers)
+        };
+        assert_eq!(session(&format!("sessionId={id}")).as_deref(), Some(id));
+        assert_eq!(session(&format!("sessionId=\"{id}\"")).as_deref(), Some(id));
+        assert_eq!(
+            session(&format!("sessionId=j:\"{id}\"")).as_deref(),
+            Some(id)
+        );
+        assert_eq!(
+            session(&format!("sessionId=j:%22{id}%22")).as_deref(),
+            Some(id)
+        );
+        for bad in [
+            "j:1",
+            "j:true",
+            "j:[1]",
+            "j:{}",
+            "abc",
+            "1",
+            "",
+            "0123456789ABCDEF0123456789ABCDEF",
+            "0123456789abcdef0123456789abcdef0",
+        ] {
+            assert_eq!(session(&format!("sessionId={bad}")), None, "{bad}");
+        }
     }
 
     #[test]
