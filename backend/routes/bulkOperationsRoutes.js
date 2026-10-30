@@ -7,6 +7,7 @@ const CSVParser = require('../utils/csvParser');
 const CSVExporter = require('../utils/csvExporter');
 const { protect, admin } = require('../middleware/authMiddleware');
 const { csrfProtection } = require('../middleware/csrfMiddleware');
+const { isOptionalString } = require('../utils/params');
 
 // Configure multer for CSV file upload
 const storage = multer.memoryStorage();
@@ -167,6 +168,10 @@ router.post('/products/upload', protect, admin, csrfProtection, upload.single('f
 router.get('/orders/export', protect, admin, async (req, res) => {
     try {
         const { start_date, end_date, status } = req.query;
+        // ?status[]=a / ?status[a]=b parse to arrays/objects: single values only.
+        if (![start_date, end_date, status].every(isOptionalString)) {
+            return res.status(400).json(ResponseFormatter.failure('Filters must be single values'));
+        }
 
         let query = `
             SELECT 
@@ -214,6 +219,9 @@ router.get('/orders/export', protect, admin, async (req, res) => {
 router.get('/products/export', protect, admin, async (req, res) => {
     try {
         const { category, status } = req.query;
+        if (![category, status].every(isOptionalString)) {
+            return res.status(400).json(ResponseFormatter.failure('Filters must be single values'));
+        }
 
         let query = 'SELECT * FROM products WHERE 1=1';
         const params = [];

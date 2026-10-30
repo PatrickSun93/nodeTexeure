@@ -6,14 +6,22 @@ const { admin } = require('../../middleware/authMiddleware');
 const DatabaseUtil = require('../../utils/database');
 const ResponseFormatter = require('../../utils/responseFormatter');
 const { adminReadLimiter, adminWriteLimiter } = require('./limiters');
+const { isOptionalString } = require('../../utils/params');
 
 const router = express.Router();
+
+// code/name/type are text (type is an ENUM: a number would be written as an
+// enum index, and checkout looks codes up as strings).
+const TEXT_COLUMNS = ['code', 'name', 'type'];
 
 // Coupon Management
 // Add new coupon
 router.post('/coupons', admin, adminWriteLimiter, csrfProtection, async (req, res) => {
   try {
     const { code, name, discount_details, type, value, minimum_order_amount, maximum_discount_amount, usage_limit, usage_limit_per_customer, starts_at, expires_at } = req.body;
+    if (![code, name, type].every(isOptionalString)) {
+      return res.status(400).json(ResponseFormatter.failure('code, name and type must be text'));
+    }
     const idResult = await DatabaseUtil.executeQuery('SELECT get_next_id("DISC") as id');
     if (!idResult.success) throw new Error(idResult.error);
     const id = idResult.data[0].id;
@@ -62,6 +70,9 @@ router.put('/coupons/:id', admin, adminWriteLimiter, csrfProtection, async (req,
     const updateValues = [];
     for (const [key, value] of Object.entries(updates)) {
       if (!ALLOWED_COUPON_COLUMNS.includes(key)) continue;
+      if (TEXT_COLUMNS.includes(key) && !isOptionalString(value)) {
+        return res.status(400).json(ResponseFormatter.failure(`${key} must be text`));
+      }
       if (key === 'discount_details') {
         updateFields.push(`${key} = ?`);
         updateValues.push(JSON.stringify(value || {}));

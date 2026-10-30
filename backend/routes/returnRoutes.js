@@ -3,6 +3,13 @@ const DatabaseUtil = require('../utils/database');
 const ResponseFormatter = require('../utils/responseFormatter');
 const { protect, admin } = require('../middleware/authMiddleware');
 const { csrfProtection } = require('../middleware/csrfMiddleware');
+const { isNonEmptyString, isOptionalString } = require('../utils/params');
+
+// returns.reason / returns.status ENUMs (docker/mysql/init.sql).
+const RETURN_REASONS = ['defective', 'wrong_item', 'not_as_described', 'changed_mind', 'damaged_shipping', 'other'];
+const RETURN_STATUSES = ['requested', 'approved', 'rejected', 'shipped_back', 'received', 'processed', 'closed'];
+const isReturnItem = (item) => item !== null && typeof item === 'object' && isNonEmptyString(item.orderItemId)
+  && isOptionalString(item.reason);
 
 const router = express.Router();
 const db = new DatabaseUtil();
@@ -15,7 +22,11 @@ router.post('/request', protect, async (req, res) => {
   try {
     const { orderId, reason, description, items } = req.body;
 
-    if (!orderId || !reason || !items || items.length === 0) {
+    // ids are strings (a number would compare numerically with orders.id), the
+    // reason is one of the ENUM values (anything else failed the INSERT silently).
+    if (!isNonEmptyString(orderId) || !RETURN_REASONS.includes(reason)
+      || !Array.isArray(items) || items.length === 0 || !items.every(isReturnItem)
+      || !isOptionalString(description)) {
       return res.status(400).json(ResponseFormatter.failure('orderId, reason, and items are required'));
     }
 
@@ -160,8 +171,11 @@ router.put('/:id/status', protect, admin, csrfProtection, async (req, res) => {
     const { id } = req.params;
     const { status, admin_notes, refund_amount, return_tracking_number } = req.body;
 
-    if (!status) {
+    if (!RETURN_STATUSES.includes(status)) {
       return res.status(400).json(ResponseFormatter.failure('status is required'));
+    }
+    if (![admin_notes, return_tracking_number].every(isOptionalString)) {
+      return res.status(400).json(ResponseFormatter.failure('admin_notes and return_tracking_number must be text'));
     }
 
     const updates = ['status = ?'];
@@ -206,7 +220,14 @@ router.put('/:id/status', protect, admin, csrfProtection, async (req, res) => {
 router.get('/admin/all', protect, admin, async (req, res) => {
   try {
     const { status, page = 1, limit = 20 } = req.query;
-    const offset = (page - 1) * limit;
+    if (!isOptionalString(status)) {
+      return res.status(400).json(ResponseFormatter.failure('status must be a single value'));
+    }
+    // LIMIT/OFFSET are validated integers, inlined: mysql2 binds numbers as
+    // DOUBLE, which MySQL 8 rejects for LIMIT in a prepared statement.
+    const limitNum = Math.min(Math.max(Number.parseInt(limit, 10) || 20, 1), 100);
+    const pageNum = Math.max(Number.parseInt(page, 10) || 1, 1);
+    const offset = (pageNum - 1) * limitNum;
     let where = '1=1';
     const params = [];
 
@@ -215,17 +236,17 @@ router.get('/admin/all', protect, admin, async (req, res) => {
       params.push(status);
     }
 
-    params.push(parseInt(limit), offset);
     const returns = await DatabaseUtil.executeQuery(
       `SELECT r.*, o.order_number, u.email AS user_email, u.first_name, u.last_name
        FROM returns r
        JOIN orders o ON r.order_id = o.id
        JOIN users u ON r.user_id = u.id
        WHERE ${where}
-       ORDER BY r.created_at DESC
-       LIMIT ? OFFSET ?`,
+       ORDER BY r.created_at DESC, r.id DESC
+       LIMIT ${limitNum} OFFSET ${offset}`,
       params
     );
+    if (!returns.success) throw new Error(returns.error);
 
     const countResult = await DatabaseUtil.executeQuery(
       `SELECT COUNT(*) AS total FROM returns r WHERE ${where}`,
@@ -235,8 +256,8 @@ router.get('/admin/all', protect, admin, async (req, res) => {
     res.json(ResponseFormatter.success('Returns fetched', {
       returns: DatabaseUtil.rows(returns),
       total: DatabaseUtil.first(countResult)?.total || 0,
-      page: parseInt(page),
-      limit: parseInt(limit),
+      page: pageNum,
+      limit: limitNum,
     }));
   } catch (error) {
     console.error('Admin get returns error:', error);

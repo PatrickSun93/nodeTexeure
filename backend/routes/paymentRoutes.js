@@ -11,6 +11,7 @@ const stripeService = require('../services/stripeService');
 const { protect, admin, protectOptional } = require('../middleware/authMiddleware');
 const { csrfProtection } = require('../middleware/csrfMiddleware');
 const orderPayments = require('../services/orderPayments');
+const { isNonEmptyString } = require('../utils/params');
 const db = DatabaseUtil; // executeQuery et al. are static — reference the class, not an instance
 
 /**
@@ -22,7 +23,9 @@ router.post('/create-checkout-session', protectOptional, async (req, res) => {
   try {
     const { orderId } = req.body;
 
-    if (!orderId) {
+    // A string only: order ids are UUIDs, and a number would match every id
+    // with that numeric prefix (`id = 1` matches '1a3f…').
+    if (!isNonEmptyString(orderId)) {
       return res.status(400).json(ResponseFormatter.failure('Order ID is required'));
     }
 
@@ -116,7 +119,9 @@ router.post('/create-payment-intent', protectOptional, async (req, res) => {
   try {
     const { orderId } = req.body;
 
-    if (!orderId) {
+    // A string only: order ids are UUIDs, and a number would match every id
+    // with that numeric prefix (`id = 1` matches '1a3f…').
+    if (!isNonEmptyString(orderId)) {
       return res.status(400).json(ResponseFormatter.failure('Order ID is required'));
     }
 
@@ -247,7 +252,9 @@ router.post('/refund', protect, admin, csrfProtection, async (req, res) => {
   try {
     const { orderId, amount } = req.body;
 
-    if (!orderId) {
+    // A string only: order ids are UUIDs, and a number would match every id
+    // with that numeric prefix (`id = 1` matches '1a3f…').
+    if (!isNonEmptyString(orderId)) {
       return res.status(400).json(ResponseFormatter.failure('Order ID is required'));
     }
 

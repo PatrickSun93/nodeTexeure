@@ -11,6 +11,7 @@ const shippingService = require('../services/shippingService');
 const { protect, admin, protectOptional } = require('../middleware/authMiddleware');
 const db = DatabaseUtil; // executeQuery et al. are static — reference the class, not an instance
 const rateLimit = require('express-rate-limit');
+const { isNonEmptyString } = require('../utils/params');
 
 // Public quote/tracking endpoints call the carrier API when FedEx is configured;
 // cap them per IP so they can't be used to burn the carrier quota.
@@ -81,7 +82,7 @@ router.post('/create-label', protect, admin, async (req, res) => {
   try {
     const { orderId, serviceType } = req.body;
 
-    if (!orderId) {
+    if (!isNonEmptyString(orderId)) {
       return res.status(400).json(ResponseFormatter.failure('Order ID is required'));
     }
 

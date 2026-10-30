@@ -8,6 +8,8 @@ const { protect, admin, staffOrAdmin, protectOptional } = require('../middleware
 const { generateCSRFToken, csrfProtection } = require('../middleware/csrfMiddleware');
 const crypto = require('crypto');
 const emailQueueProducer = require('../services/emailQueueProducer');
+const { isNonEmptyString, isOptionalString } = require('../utils/params');
+const { GUEST_SESSION_COOKIE, guestSessionId } = require('../utils/guestSession');
 
 const router = express.Router();
 
@@ -101,8 +103,9 @@ router.post('/register', registerLimiter, async (req, res) => {
   try {
     const { email, password, firstName, lastName } = req.body;
 
-    // Input validation
-    if (!email || !password || !firstName || !lastName) {
+    // Input validation. Every field must be a string: a number/array email would
+    // be compared numerically / as JSON in `WHERE email = ?` (see utils/params.js).
+    if (![email, password, firstName, lastName].every(isNonEmptyString)) {
       return res.status(400).json(ResponseFormatter.failure(
         'Missing required fields',
         { error: 'All fields are required: email, password, firstName, lastName' }
@@ -210,6 +213,52 @@ const forgotLimiter = rateLimit({
 });
 
 /**
+ * Move a guest cart's lines into the user's cart (created if needed) and delete
+ * the guest cart. A line for the same product + variant adds its quantity.
+ * @param {string} sessionId - a validated guest session id
+ * @param {string} userId
+ */
+async function mergeGuestCart(sessionId, userId) {
+  const guestCart = DatabaseUtil.first(await DatabaseUtil.executeQuery(
+    'SELECT id FROM shopping_carts WHERE session_id = ? AND user_id IS NULL ORDER BY created_at ASC, id ASC LIMIT 1',
+    [sessionId]
+  ));
+  if (!guestCart) return;
+
+  let userCartId = DatabaseUtil.first(await DatabaseUtil.executeQuery(
+    'SELECT id FROM shopping_carts WHERE user_id = ? ORDER BY created_at ASC, id ASC LIMIT 1', [userId]
+  ))?.id;
+  if (!userCartId) {
+    userCartId = DatabaseUtil.first(await DatabaseUtil.executeQuery('SELECT get_next_id(?) as id', ['CART']))?.id;
+    const created = await DatabaseUtil.executeQuery('INSERT INTO shopping_carts (id, user_id) VALUES (?, ?)', [userCartId, userId]);
+    if (!created.success) throw new Error(`Failed to create cart: ${created.error}`);
+  }
+
+  const guestItems = await DatabaseUtil.executeQuery('SELECT * FROM cart_items WHERE cart_id = ?', [guestCart.id]);
+  if (!guestItems.success) throw new Error(guestItems.error);
+  for (const item of DatabaseUtil.rows(guestItems)) {
+    // variant_id may be NULL: `<=>` (a plain `=` never matches NULL and duplicated the line).
+    const existing = DatabaseUtil.first(await DatabaseUtil.executeQuery(
+      'SELECT id FROM cart_items WHERE cart_id = ? AND product_id = ? AND variant_id <=> ? ORDER BY id LIMIT 1',
+      [userCartId, item.product_id, item.variant_id]
+    ));
+    let written;
+    if (existing) {
+      written = await DatabaseUtil.executeQuery(
+        'UPDATE cart_items SET quantity = quantity + ? WHERE id = ?', [item.quantity, existing.id]);
+    } else {
+      const newItemId = DatabaseUtil.first(await DatabaseUtil.executeQuery('SELECT get_next_id(?) as id', ['CARTITEM']))?.id;
+      written = await DatabaseUtil.executeQuery(
+        'INSERT INTO cart_items (id, cart_id, product_id, variant_id, quantity, price) VALUES (?, ?, ?, ?, ?, ?)',
+        [newItemId, userCartId, item.product_id, item.variant_id, item.quantity, item.price]
+      );
+    }
+    if (!written.success) throw new Error(`Failed to merge cart line: ${written.error}`);
+  }
+  await DatabaseUtil.executeQuery('DELETE FROM shopping_carts WHERE id = ?', [guestCart.id]);
+}
+
+/**
  * POST /api/users/login
  * User login
  * @param {string} email - User's email
@@ -219,7 +268,8 @@ router.post('/login', loginLimiter, async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    if (!email || !password) {
+    // Strings only: `WHERE email = 0` would match every address.
+    if (!isNonEmptyString(email) || !isNonEmptyString(password)) {
       const keyValueTable = { error: 'Email and password are required' };
       return res.status(400).json(ResponseFormatter.failure('Missing required fields', keyValueTable));
     }
@@ -274,51 +324,20 @@ router.post('/login', loginLimiter, async (req, res) => {
         });
       }
 
-      // Handle cart merge - skip for admin/staff users
-      if (req.cookies.sessionId && !BACKOFFICE_ROLES.includes(userRole)) {
-        const sessionId = req.cookies.sessionId;
-        const guestCartResult = await DatabaseUtil.executeQuery('SELECT id FROM shopping_carts WHERE session_id = ?', [sessionId]);
-        if (guestCartResult.success && guestCartResult.data.length > 0) {
-          const guestCartId = guestCartResult.data[0].id;
-          // Get or create user cart
-          let userCartId;
-          const userCartResult = await DatabaseUtil.executeQuery('SELECT id FROM shopping_carts WHERE user_id = ?', [user.id]);
-          if (userCartResult.success && userCartResult.data.length > 0) {
-            userCartId = userCartResult.data[0].id;
-          } else {
-            const cartIdResult = await DatabaseUtil.executeQuery('SELECT get_next_id(?) as id', ['CART']);
-            userCartId = cartIdResult.data[0].id;
-            await DatabaseUtil.executeQuery('INSERT INTO shopping_carts (id, user_id) VALUES (?, ?)', [userCartId, user.id]);
-          }
-          // Merge items: for each guest item, add or update in user cart
-          const guestItems = await DatabaseUtil.executeQuery('SELECT * FROM cart_items WHERE cart_id = ?', [guestCartId]);
-          for (const item of guestItems.data) {
-            const checkUserItem = await DatabaseUtil.executeQuery(
-              'SELECT id, quantity FROM cart_items WHERE cart_id = ? AND product_id = ? AND variant_id = ?',
-              [userCartId, item.product_id, item.variant_id]
-            );
-            if (checkUserItem.data.length > 0) {
-              await DatabaseUtil.executeQuery(
-                'UPDATE cart_items SET quantity = quantity + ? WHERE id = ?',
-                [item.quantity, checkUserItem.data[0].id]
-              );
-            } else {
-              const itemIdResult = await DatabaseUtil.executeQuery('SELECT get_next_id(?) as id', ['CARTITEM']);
-              const newItemId = itemIdResult.data[0].id;
-              await DatabaseUtil.executeQuery(
-                'INSERT INTO cart_items (id, cart_id, product_id, variant_id, quantity, price) VALUES (?, ?, ?, ?, ?, ?)',
-                [newItemId, userCartId, item.product_id, item.variant_id, item.quantity, item.price]
-              );
-            }
-          }
-          // Delete guest cart
-          await DatabaseUtil.executeQuery('DELETE FROM shopping_carts WHERE id = ?', [guestCartId]);
+      // Merge the guest cart into the customer's cart (back-office logins skip
+      // it). Only a session id we issued counts: a `j:1` cookie is the number 1,
+      // which would match a stranger's guest cart (utils/guestSession.js).
+      const sessionId = guestSessionId(req);
+      if (sessionId && !BACKOFFICE_ROLES.includes(userRole)) {
+        try {
+          await mergeGuestCart(sessionId, user.id);
+        } catch (mergeError) {
+          // Never fail a valid login over the cart; the guest cart stays as it was.
+          console.error('Non-fatal: guest cart merge failed:', mergeError.message);
         }
-        // Clear session cookie for regular users
-        res.clearCookie('sessionId');
-      } else if (req.cookies.sessionId && BACKOFFICE_ROLES.includes(userRole)) {
-        // For admin/staff users, just clear the session cookie without cart operations
-        res.clearCookie('sessionId');
+      }
+      if (req.cookies[GUEST_SESSION_COOKIE] !== undefined) {
+        res.clearCookie(GUEST_SESSION_COOKIE);
       }
       const keyValueTable = { userId: user.id, email: user.email, accessToken, refreshToken, role: user.role, isAdmin, isStaff };
       res.json(ResponseFormatter.success('Login successful', keyValueTable));
@@ -336,10 +355,10 @@ router.post('/login', loginLimiter, async (req, res) => {
 router.post('/refresh', refreshLimiter, async (req, res) => {
   try {
     const { refreshToken } = req.body;
-    if (!refreshToken) {
+    if (!isNonEmptyString(refreshToken)) {
       return res.status(400).json(ResponseFormatter.failure('Refresh token required'));
     }
-    const result = await DatabaseUtil.executeQuery('SELECT * FROM refresh_tokens WHERE token_hash = ? AND expiry > NOW()', [hashToken(String(refreshToken))]);
+    const result = await DatabaseUtil.executeQuery('SELECT * FROM refresh_tokens WHERE token_hash = ? AND expiry > NOW()', [hashToken(refreshToken)]);
     if (!result.success || result.data.length === 0) {
       return res.status(401).json(ResponseFormatter.failure('Invalid or expired refresh token'));
     }
@@ -453,6 +472,9 @@ router.get('/session', protectOptional, async (req, res) => {
 router.put('/profile', protect, async (req, res) => {
   try {
     const { firstName, lastName, phone, password, currentPassword } = req.body;
+    if (![firstName, lastName, phone, password, currentPassword].every(isOptionalString)) {
+      return res.status(400).json(ResponseFormatter.failure('Profile fields must be strings'));
+    }
     let updates = [];
     let params = [];
 
@@ -520,6 +542,10 @@ router.put('/profile', protect, async (req, res) => {
 // ADDRESS MANAGEMENT
 // =====================================================
 
+// user_addresses.type is ENUM('shipping','billing'); absent means 'shipping'. A
+// number would be read as an enum index (1 → 'shipping') in `type = ?`.
+const isAddressType = (type) => type === undefined || type === null || type === '' || type === 'shipping' || type === 'billing';
+
 /**
  * GET /api/users/addresses
  * List current user's addresses
@@ -550,8 +576,11 @@ router.post('/addresses', protect, async (req, res) => {
   try {
     const { type, first_name, last_name, phone, address_line_1, address_line_2, city, state, postal_code, country, is_default } = req.body;
 
-    if (!first_name || !last_name || !address_line_1 || !city || !state || !postal_code || !country) {
+    if (![first_name, last_name, address_line_1, city, state, postal_code, country].every(isNonEmptyString)) {
       return res.status(400).json(ResponseFormatter.failure('Required address fields missing'));
+    }
+    if (![phone, address_line_2].every(isOptionalString) || !isAddressType(type)) {
+      return res.status(400).json(ResponseFormatter.failure('Invalid address fields'));
     }
 
     const idResult = await DatabaseUtil.executeQuery('SELECT get_next_id("ADDR") as id');
@@ -593,6 +622,10 @@ router.put('/addresses/:id', protect, async (req, res) => {
     }
 
     const { type, first_name, last_name, phone, address_line_1, address_line_2, city, state, postal_code, country, is_default } = req.body;
+    if (![first_name, last_name, phone, address_line_1, address_line_2, city, state, postal_code, country].every(isOptionalString)
+      || !isAddressType(type)) {
+      return res.status(400).json(ResponseFormatter.failure('Invalid address fields'));
+    }
 
     const updates = [];
     const params = [];
@@ -780,6 +813,9 @@ router.get(USER_ID, protect, admin, async (req, res) => {
 router.put(USER_ID, protect, admin, csrfProtection, async (req, res) => {
   try {
     const { firstName, lastName, email, role } = req.body;
+    if (![firstName, lastName, email].every(isOptionalString)) {
+      return res.status(400).json(ResponseFormatter.failure('Name and email must be strings'));
+    }
     let updates = [];
     let params = [];
 
@@ -862,7 +898,8 @@ router.post('/forgot-password', forgotLimiter, async (req, res) => {
   try {
     const { email } = req.body;
 
-    if (!email) {
+    // A string only: `WHERE email = 0` would reset the first account.
+    if (!isNonEmptyString(email)) {
       const keyValueTable = { error: 'Email is required' };
       return res.status(400).json(ResponseFormatter.failure('Missing email', keyValueTable));
     }
@@ -912,7 +949,7 @@ router.post('/reset-password', async (req, res) => {
   try {
     const { token, newPassword } = req.body;
 
-    if (!token || !newPassword) {
+    if (!isNonEmptyString(token) || !isNonEmptyString(newPassword)) {
       const keyValueTable = { error: 'Token and new password are required' };
       return res.status(400).json(ResponseFormatter.failure('Missing required fields', keyValueTable));
     }
@@ -925,7 +962,7 @@ router.post('/reset-password', async (req, res) => {
 
     const result = await DatabaseUtil.executeQuery(
       'SELECT id FROM users WHERE password_reset_token = ? AND password_reset_expires > NOW()',
-      [hashToken(String(token))]
+      [hashToken(token)]
     );
 
     if (!result.success || result.data.length === 0) {
@@ -967,8 +1004,9 @@ router.post('/reset-password', async (req, res) => {
  */
 router.get('/verify-email', verifyEmailLimiter, async (req, res) => {
   try {
+    // ?token=a&token=b and ?token[x]=y parse to an array / object.
     const { token } = req.query;
-    if (!token) {
+    if (!isNonEmptyString(token)) {
       return res.status(400).json(ResponseFormatter.failure('Verification token is required'));
     }
 

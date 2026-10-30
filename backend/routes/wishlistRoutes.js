@@ -6,6 +6,12 @@ const { protect } = require('../middleware/authMiddleware');
 const router = express.Router();
 // DatabaseUtil.executeQuery is a static method — call it on the class, not an instance.
 
+// The text a truthy body id is looked up as. A number/boolean would be bound as
+// DOUBLE/TINY and compared numerically with the string id columns (see
+// utils/params.js); arrays/objects keep mysql2's JSON text. Same as the Rust
+// API's truthy_string (rust/crates/api/src/routes/wishlist.rs), so both reply alike.
+const asText = (v) => (typeof v === 'string' ? v : JSON.stringify(v));
+
 /**
  * GET /api/wishlist
  * List current user's wishlist items with product details
@@ -45,11 +51,11 @@ router.get('/', protect, async (req, res) => {
  */
 router.post('/', protect, async (req, res) => {
   try {
-    const { product_id, variant_id } = req.body;
-
-    if (!product_id) {
+    if (!req.body.product_id) {
       return res.status(400).json(ResponseFormatter.failure('product_id is required'));
     }
+    const product_id = asText(req.body.product_id);
+    const variant_id = req.body.variant_id ? asText(req.body.variant_id) : null;
 
     // The product must exist (and be on sale); a variant must belong to it.
     // Without this, the insert failed on the foreign key and the route still
