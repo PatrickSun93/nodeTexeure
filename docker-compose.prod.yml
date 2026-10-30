@@ -85,6 +85,12 @@ services:
     build:
       context: ./admin-dashboard
       dockerfile: Dockerfile.prod
+      # Baked into the build (admin-dashboard/rustRoutes.mjs). Empty
+      # ADMIN_RUST_API_ROUTES = every admin /api call stays on Node.
+      args:
+        BACKEND_URL: http://backend:6666
+        RUST_API_URL: http://api:7000
+        RUST_API_ROUTES: ${ADMIN_RUST_API_ROUTES-}
     environment:
       BACKEND_URL: http://backend:6666
       NODE_ENV: production
@@ -93,6 +99,8 @@ services:
     restart: unless-stopped
     depends_on:
       backend:
+        condition: service_healthy
+      api:
         condition: service_healthy
 
   # Rust API: serves the route groups in RUST_API_ROUTES (baked into the
