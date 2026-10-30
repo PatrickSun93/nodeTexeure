@@ -1,6 +1,5 @@
 use std::net::SocketAddr;
 
-use api::auth::JwtKey;
 use api::{AppState, router};
 use sqlx::mysql::MySqlPoolOptions;
 use tracing_subscriber::EnvFilter;
@@ -41,7 +40,9 @@ async fn main() -> anyhow::Result<()> {
 
     // Same rule as the Node backend: outside development/test, refuse to start
     // with a missing, short or placeholder secret (it signs every session).
-    let secret = common::env::var("JWT_SECRET");
+    // Raw, like `process.env.JWT_SECRET`: the same bytes must sign and verify
+    // on both services.
+    let secret = std::env::var("JWT_SECRET").ok().filter(|s| !s.is_empty());
     let env = common::env::var("NODE_ENV").unwrap_or_default();
     let is_dev = env == "development" || env == "test";
     let weak = secret.as_deref().is_none_or(|s| {
@@ -64,13 +65,23 @@ async fn main() -> anyhow::Result<()> {
             "JWT_SECRET is missing, too short, or a placeholder; set a strong 32+ character secret"
         );
     }
-    let jwt = JwtKey::from_secret(secret.as_deref());
+    let state = AppState::new(pool, secret.as_deref());
+    if state.trust_proxy.0 > 0 {
+        tracing::info!(
+            hops = state.trust_proxy.0,
+            "trusting X-Forwarded-For (TRUST_PROXY)"
+        );
+    }
 
     let addr = SocketAddr::from(([0, 0, 0, 0], common::env::number("API_PORT", 7000)));
     let listener = tokio::net::TcpListener::bind(addr).await?;
     tracing::info!(%addr, "Rust API listening");
-    axum::serve(listener, router(AppState { pool, jwt }))
-        .with_graceful_shutdown(shutdown_signal())
-        .await?;
+    // The peer address is the rate-limit key when no proxy is trusted.
+    axum::serve(
+        listener,
+        router(state).into_make_service_with_connect_info::<SocketAddr>(),
+    )
+    .with_graceful_shutdown(shutdown_signal())
+    .await?;
     Ok(())
 }

@@ -86,6 +86,16 @@ const guestSessionCookie = (cookieHeader) => {
   return null;
 };
 
+// The backend rate-limits login per client IP. This call comes from the Next
+// server, so without the browser's X-Forwarded-For every shopper would share the
+// server's one bucket (5 logins / 15 min for the whole shop). Pass the header on
+// as the storefront proxy does for /api/*; the backend only believes it when
+// TRUST_PROXY says a proxy in front sets it (docs/DEPLOYMENT.md).
+const forwardedFor = (headers) => {
+  const value = headers?.['x-forwarded-for'];
+  return typeof value === 'string' && value ? { 'X-Forwarded-For': value } : {};
+};
+
 // Read `exp` from the backend JWT (no verification needed: it's our own token,
 // only used to schedule the refresh).
 const accessTokenExpiry = (accessToken) => {
@@ -134,7 +144,10 @@ const handler = NextAuth({
           const guestCookie = guestSessionCookie(req?.headers?.cookie);
           const response = await fetchBackend('/api/users/login', {
             method: 'POST',
-            ...(guestCookie && { headers: { Cookie: guestCookie } }),
+            headers: {
+              ...forwardedFor(req?.headers),
+              ...(guestCookie && { Cookie: guestCookie }),
+            },
             body: JSON.stringify({
               email: credentials.email,
               password: credentials.password

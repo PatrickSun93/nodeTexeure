@@ -34,6 +34,8 @@ services:
       NODE_ENV: development
       JWT_SECRET: ${JWT_SECRET:-dev_only_jwt_secret_change_me_min_32_characters}
       NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:-dev_only_nextauth_secret}
+      # Rate-limit client IP: one trusted hop (the storefront proxy), as in prod.
+      TRUST_PROXY: ${TRUST_PROXY:-1}
     ports:
       - "6666:6666"
     volumes:
@@ -98,6 +100,8 @@ services:
       # Must match the backend: the API verifies the tokens Node signs.
       NODE_ENV: development
       JWT_SECRET: ${JWT_SECRET:-dev_only_jwt_secret_change_me_min_32_characters}
+      # Rate-limit client IP: one trusted hop (the storefront proxy), as in prod.
+      TRUST_PROXY: ${TRUST_PROXY:-1}
     ports:
       - "7000:7000"
     depends_on:

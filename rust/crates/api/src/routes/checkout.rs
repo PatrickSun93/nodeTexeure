@@ -16,8 +16,10 @@ use sqlx::MySqlPool;
 use crate::AppState;
 use crate::auth::{AuthUser, OptionalUser};
 use crate::body::{self, js_string, js_to_number, truthy};
+use crate::email_queue::{self, Enqueued, uuid_v4};
 use crate::error::ApiError;
-use crate::routes::cart::{guest_session, random_bytes};
+use crate::routes::cart::guest_session;
+use crate::tokens::random_bytes;
 
 /// Static shipping rates (`shippingService.DEFAULT_RATES`).
 const SHIPPING_RATES: [(&str, f64); 3] =
@@ -323,21 +325,6 @@ fn is_address(v: Option<&Value>) -> bool {
     matches!(v, Some(Value::Object(_)))
 }
 
-fn uuid_v4() -> anyhow::Result<String> {
-    let mut b = random_bytes::<16>()?;
-    b[6] = (b[6] & 0x0f) | 0x40;
-    b[8] = (b[8] & 0x3f) | 0x80;
-    let hex: String = b.iter().map(|x| format!("{x:02x}")).collect();
-    Ok(format!(
-        "{}-{}-{}-{}-{}",
-        &hex[0..8],
-        &hex[8..12],
-        &hex[12..16],
-        &hex[16..20],
-        &hex[20..32]
-    ))
-}
-
 /// `generateOrderNumber`: NOR-XXXXX-XXXXX from ~50 random bits, unique.
 async fn order_number(pool: &MySqlPool) -> anyhow::Result<String> {
     for _ in 0..6 {
@@ -555,58 +542,6 @@ async fn log_sale(
     Ok(())
 }
 
-/// `emailQueueProducer.enqueue(to, name, 'order_confirmation', vars)`: one
-/// `email_queue` row for the email daemon. Failures are logged, never fatal.
-async fn queue_confirmation(
-    pool: &MySqlPool,
-    to: &str,
-    name: &str,
-    variables: &Map<String, Value>,
-) -> anyhow::Result<()> {
-    let template = sqlx::query!(
-        r#"SELECT id, subject, template_content AS "content: Value"
-           FROM email_templates WHERE name = 'order_confirmation' AND is_active = 1
-           ORDER BY id LIMIT 1"#
-    )
-    .fetch_optional(pool)
-    .await?;
-    let Some(template) = template else {
-        anyhow::bail!("Template 'order_confirmation' not found");
-    };
-    let content = match template.content {
-        Value::String(s) => serde_json::from_str(&s).unwrap_or_else(|_| json!({})),
-        other => other,
-    };
-    let field = |k: &str| {
-        content
-            .get(k)
-            .filter(|v| truthy(Some(v)))
-            .map_or(String::new(), js_string)
-    };
-    let email_content = json!({
-        "html_content": field("html_content"),
-        "text_content": field("text_content"),
-        "priority": "normal",
-    });
-    let subject = interpolate_subject(&template.subject, variables);
-    sqlx::query!(
-        "INSERT INTO email_queue
-           (id, to_email, to_name, subject, email_content, template_id, template_data, status,
-            attempts, max_attempts, scheduled_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, 'pending', 0, 3, NOW())",
-        uuid_v4()?,
-        to,
-        name,
-        subject,
-        email_content.to_string(),
-        template.id,
-        Value::Object(variables.clone()).to_string()
-    )
-    .execute(pool)
-    .await?;
-    Ok(())
-}
-
 /// `Number(n).toFixed(2)` for the cents-rounded amounts used here.
 fn money(x: f64) -> String {
     format!("{x:.2}")
@@ -681,34 +616,6 @@ fn confirmation_variables(
         json!(address_lines(shipping_address)),
     );
     variables
-}
-
-/// The producer's subject interpolation: each `{{ key }}` → `String(value)`.
-fn interpolate_subject(template: &str, variables: &Map<String, Value>) -> String {
-    let mut out = template.to_owned();
-    for (key, value) in variables {
-        let value = js_string(value);
-        let mut result = String::with_capacity(out.len());
-        let mut rest = out.as_str();
-        while let Some(start) = rest.find("{{") {
-            result.push_str(&rest[..start]);
-            let after = &rest[start + 2..];
-            let matched = after.find("}}").filter(|end| after[..*end].trim() == key);
-            match matched {
-                Some(end) => {
-                    result.push_str(&value);
-                    rest = &after[end + 2..];
-                }
-                _ => {
-                    result.push_str("{{");
-                    rest = after;
-                }
-            }
-        }
-        result.push_str(rest);
-        out = result;
-    }
-    out
 }
 
 /// `POST /api/orders/create`
@@ -853,10 +760,17 @@ pub async fn create(
     let variables = confirmation_variables(&checkout, &name, shipping_address);
     match to {
         Some(to) => {
-            if let Err(error) =
-                queue_confirmation(&state.pool, &to, &js_string(&name), &variables).await
-            {
-                tracing::error!(error = %format!("{error:#}"), "order confirmation not queued");
+            let queued = email_queue::enqueue(
+                &state.pool,
+                &to,
+                &js_string(&name),
+                "order_confirmation",
+                &variables,
+                None,
+            )
+            .await;
+            if let Enqueued::NotQueued { reason } = queued {
+                tracing::error!(reason, "order confirmation not queued");
             }
         }
         None => tracing::error!("order confirmation not queued: no email"),
@@ -925,19 +839,6 @@ mod tests {
     }
 
     #[test]
-    fn subject_interpolation() {
-        let mut vars = Map::new();
-        vars.insert("order_number".into(), json!("NOR-1"));
-        assert_eq!(
-            interpolate_subject(
-                "Order {{ order_number }} / {{order_number}} {{other}}",
-                &vars
-            ),
-            "Order NOR-1 / NOR-1 {{other}}"
-        );
-    }
-
-    #[test]
     fn address_lines_skip_blanks_like_node() {
         let a = json!({ "first_name": "Ada", "last_name": "", "address_line_1": "1 Silk Way",
             "address_line_2": "", "city": "Austin", "state": "TX", "postal_code": 73301,
@@ -957,13 +858,5 @@ mod tests {
         assert_eq!(money(9.99), "9.99");
         assert_eq!(money(cents(39.99 * 3.0)), "119.97");
         assert_eq!(money(12.5), "12.50");
-    }
-
-    #[test]
-    fn uuids_are_v4() {
-        let id = uuid_v4().unwrap();
-        assert_eq!(id.len(), 36);
-        assert_eq!(&id[14..15], "4");
-        assert!(matches!(&id[19..20], "8" | "9" | "a" | "b"));
     }
 }

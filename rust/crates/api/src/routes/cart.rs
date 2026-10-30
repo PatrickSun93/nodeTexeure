@@ -17,8 +17,8 @@ use sqlx::MySqlPool;
 use crate::AppState;
 use crate::auth::OptionalUser;
 use crate::body;
+use crate::cookies;
 use crate::error::ApiError;
-use crate::params::cookie;
 
 const SESSION_COOKIE: &str = "sessionId";
 const SESSION_MAX_AGE_DAYS: i64 = 30;
@@ -46,75 +46,19 @@ fn reply(status: StatusCode, body: Value) -> Response {
     (status, Json(body)).into_response()
 }
 
-/// cookie-parser's value decoding: surrounding quotes dropped, then
-/// `decodeURIComponent`, keeping the raw value if that fails.
-fn decode_cookie(raw: &str) -> String {
-    let v = raw
-        .strip_prefix('"')
-        .and_then(|v| v.strip_suffix('"'))
-        .unwrap_or(raw);
-    if !v.contains('%') {
-        return v.to_owned();
-    }
-    let bytes = v.as_bytes();
-    let mut out = Vec::with_capacity(bytes.len());
-    let mut i = 0;
-    while i < bytes.len() {
-        if bytes[i] == b'%' {
-            let hex = v
-                .get(i + 1..i + 3)
-                .and_then(|h| u8::from_str_radix(h, 16).ok());
-            match hex {
-                Some(b) => {
-                    out.push(b);
-                    i += 3;
-                }
-                None => return v.to_owned(),
-            }
-        } else {
-            out.push(bytes[i]);
-            i += 1;
-        }
-    }
-    String::from_utf8(out).unwrap_or_else(|_| v.to_owned())
-}
-
 /// What Express's `res.cookie('sessionId', id, { httpOnly, maxAge: 30d })` sends.
 fn session_cookie(id: &str, now: DateTime<Utc>) -> HeaderValue {
-    let max_age = Duration::days(SESSION_MAX_AGE_DAYS);
-    let expires = (now + max_age).format("%a, %d %b %Y %H:%M:%S GMT");
-    let value = format!(
-        "{SESSION_COOKIE}={id}; Max-Age={}; Path=/; Expires={expires}; HttpOnly",
-        max_age.num_seconds()
-    );
-    HeaderValue::from_str(&value).expect("hex id and date are valid header text")
-}
-
-/// `n` bytes from the OS CSPRNG.
-pub(crate) fn random_bytes<const N: usize>() -> anyhow::Result<[u8; N]> {
-    let mut buf = [0u8; N];
-    getrandom::getrandom(&mut buf).map_err(|e| anyhow::anyhow!("no randomness: {e}"))?;
-    Ok(buf)
+    let options = cookies::CookieOptions {
+        http_only: true,
+        max_age_ms: Some(Duration::days(SESSION_MAX_AGE_DAYS).num_milliseconds() as f64),
+        ..cookies::CookieOptions::default()
+    };
+    cookies::set_cookie(SESSION_COOKIE, id, &options, now)
+        .expect("a hex id and a fixed max-age are a valid cookie")
 }
 
 fn new_session_id() -> anyhow::Result<String> {
-    Ok(random_bytes::<16>()?
-        .iter()
-        .map(|b| format!("{b:02x}"))
-        .collect())
-}
-
-/// cookie-parser's JSON cookies: a `j:` value that parses as JSON becomes that
-/// JSON value when it is truthy. Only a string result can be a session id, so
-/// anything else keeps the raw text (which never is one).
-fn json_cookie(value: String) -> String {
-    match value
-        .strip_prefix("j:")
-        .and_then(|json| serde_json::from_str::<Value>(json).ok())
-    {
-        Some(Value::String(s)) if !s.is_empty() => s,
-        _ => value,
-    }
+    crate::tokens::random_hex::<16>()
 }
 
 /// A session id this API or Node could have issued: 32 lowercase hex chars.
@@ -126,9 +70,7 @@ fn is_session_id(s: &str) -> bool {
 /// kept only when it is a session id we issue (backend/utils/guestSession.js):
 /// anything else is no session, so a new one is issued.
 pub(crate) fn guest_session(headers: &HeaderMap) -> Option<String> {
-    cookie(headers, SESSION_COOKIE)
-        .map(|raw| json_cookie(decode_cookie(&raw)))
-        .filter(|s| is_session_id(s))
+    cookies::get_str(headers, SESSION_COOKIE).filter(|s| is_session_id(s))
 }
 
 async fn create_cart(
@@ -553,15 +495,6 @@ mod tests {
             session_cookie("abc123", now),
             "sessionId=abc123; Max-Age=2592000; Path=/; Expires=Sun, 29 Nov 2026 06:00:00 GMT; HttpOnly"
         );
-    }
-
-    #[test]
-    fn cookie_values_decode_like_cookie_parser() {
-        assert_eq!(decode_cookie("abc"), "abc");
-        assert_eq!(decode_cookie("\"abc\""), "abc");
-        assert_eq!(decode_cookie("a%20b"), "a b");
-        assert_eq!(decode_cookie("100%"), "100%");
-        assert_eq!(decode_cookie("%ff"), "%ff");
     }
 
     #[test]

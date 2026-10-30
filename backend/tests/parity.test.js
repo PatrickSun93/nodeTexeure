@@ -4,20 +4,14 @@
 //
 //   RUST_API_URL=http://127.0.0.1:7000 DB_HOST=127.0.0.1 DB_PORT=3307 \
 //     DB_PASSWORD=noirae_dev npx jest tests/parity.test.js
+//
+// The generic machinery (compare, compareWith, step, both, cookie and
+// rate-limit comparisons, extra server processes) is in ./parityHelpers.js.
 const { app, request } = require('./helpers');
-
-const RUST = process.env.RUST_API_URL;
-const describeIfRust = RUST ? describe : describe.skip;
-
-// Node caches product responses for minutes; parity needs fresh reads.
-const fresh = (url) => url + (url.includes('?') ? '&' : '?') + 'nocache=true';
-
-async function compare(url, headers = {}) {
-  const node = await request(app).get(fresh(url)).set(headers);
-  const rust = await fetch(RUST + url, { headers });
-  const rustBody = await rust.json();
-  expect({ url, status: rust.status, body: rustBody }).toEqual({ url, status: node.status, body: node.body });
-}
+const {
+  RUST, describeIfRust, fresh, compare, compareWith, step, both, norm,
+  expectSameRateLimit, rustBin, startNode, startRust,
+} = require('./parityHelpers');
 
 describeIfRust('products: Node and Rust answer identically', () => {
   const urls = [
@@ -142,36 +136,6 @@ describeIfRust('journal + public settings: Node and Rust answer identically', ()
 // ---------------------------------------------------------------------------
 const jwt = require('jsonwebtoken');
 const { login, registerCustomer, DatabaseUtil } = require('./helpers');
-
-async function compareWith(method, url, { headers = {}, body } = {}) {
-  let nodeReq = request(app)[method](url).set(headers);
-  if (body !== undefined) nodeReq = nodeReq.send(body);
-  const node = await nodeReq;
-  const rust = await fetch(RUST + url, {
-    method: method.toUpperCase(),
-    headers: { ...headers, ...(body !== undefined && { 'Content-Type': 'application/json' }) },
-    body: body !== undefined ? JSON.stringify(body) : undefined,
-  });
-  expect({ url, status: rust.status, body: await rust.json() }).toEqual({ url, status: node.status, body: node.body });
-}
-
-const normalize = (v) => JSON.parse(JSON.stringify(v)
-  .replace(/WISH\d{10}/g, 'WISH*')
-  .replace(/\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{3}Z/g, 'TIME'));
-
-async function step(method, url, nodeToken, rustToken, body) {
-  let nodeReq = request(app)[method](url).set('Authorization', `Bearer ${nodeToken}`);
-  if (body !== undefined) nodeReq = nodeReq.send(body);
-  const node = await nodeReq;
-  const rust = await fetch(RUST + url, {
-    method: method.toUpperCase(),
-    headers: { Authorization: `Bearer ${rustToken}`, ...(body !== undefined && { 'Content-Type': 'application/json' }) },
-    body: body !== undefined ? JSON.stringify(body) : undefined,
-  });
-  const label = `${method.toUpperCase()} ${url} ${JSON.stringify(body ?? '')}`;
-  expect({ label, status: rust.status, body: normalize(await rust.json()) })
-    .toEqual({ label, status: node.status, body: normalize(node.body) });
-}
 
 describeIfRust('auth: Node and Rust reject the same tokens the same way', () => {
   const secret = process.env.JWT_SECRET;
@@ -306,53 +270,10 @@ describeIfRust('orders (read routes): Node and Rust answer identically', () => {
   });
 });
 
-// Two-sided runner for write sequences: each side keeps its own auth (Bearer
-// or guest cookie) and its own data; responses are compared after normalizing
-// generated ids and timestamps.
+// Write sequences use both(): each side keeps its own auth (Bearer or guest
+// cookie) and its own data; responses are compared after normalizing generated
+// ids and timestamps.
 const { inStockVariant } = require('./helpers');
-const norm = (v) => JSON.parse(JSON.stringify(v)
-  .replace(/CARTITEM\d{10}/g, 'CARTITEM*')
-  .replace(/[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}/g, 'UUID')
-  .replace(/NOR-[0-9A-Z]{5}-[0-9A-Z]{5}/g, 'NOR-*')
-  .replace(/CART\d{10}/g, 'CART*')
-  .replace(/USER\d{10}/g, 'USER*')
-  .replace(/test\.\d+\.[a-z0-9]+@example\.com/g, 'EMAIL')
-  .replace(/\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{3}Z/g, 'TIME'));
-
-// One side of the comparison: Node via supertest, Rust via fetch. `auth` is a
-// header object (Bearer or guest cookie) kept per side.
-async function call(side, method, url, auth, body) {
-  if (side === 'node') {
-    let req = request(app)[method](url).set(auth);
-    if (body !== undefined) req = req.send(body);
-    const res = await req;
-    return { status: res.status, body: res.body, cookie: res.headers['set-cookie']?.[0] };
-  }
-  const res = await fetch(RUST + url, {
-    method: method.toUpperCase(),
-    headers: { ...auth, ...(body !== undefined && { 'Content-Type': 'application/json' }) },
-    body: body !== undefined ? JSON.stringify(body) : undefined,
-  });
-  return { status: res.status, body: await res.json(), cookie: res.headers.get('set-cookie') ?? undefined };
-}
-
-// Run the same step on both sides; `url` and `body` may be functions of the
-// side's own state (its cart items, cart id, last order).
-async function both(sides, method, url, body) {
-  const out = {};
-  const pick = (v, s) => (typeof v === 'function' ? v(s) : v);
-  for (const [side, s] of Object.entries(sides)) {
-    out[side] = await call(side, method, pick(url, s), s.auth, pick(body, s));
-    const kvt = out[side].body?.keyValueTable;
-    if (kvt?.items) s.items = kvt.items;
-    if (kvt?.cartId) s.cartId = kvt.cartId;
-    if (kvt?.orderId) s.orderId = kvt.orderId;
-  }
-  const label = `${method.toUpperCase()} ${pick(url, sides.node)} ${JSON.stringify(pick(body, sides.node) ?? '')}`;
-  const view = (r) => ({ label, status: r.status, body: norm(r.body) });
-  expect(view(out.rust)).toEqual(view(out.node));
-  return out;
-}
 
 describeIfRust('cart: same sequence, same answers', () => {
   const item0 = (s) => `/api/cart/update/${s.items[0]?.id ?? 'none'}`;
@@ -561,5 +482,60 @@ describeIfRust('checkout: tax, coupons and order creation', () => {
 
   test('GET on the POST-only paths is an order lookup', async () => {
     for (const p of ['create', 'apply-coupon', 'calculate-tax']) await compareWith('get', `/api/orders/${p}`);
+  });
+});
+
+// The global /api limiter (backend/server.js globalLimiter, Rust ratelimit.rs).
+// The suite runs with NODE_ENV=test, where both skip it, so this starts a
+// separate Node server and Rust API in production mode with a tiny limit and
+// one trusted proxy hop, and sends both the same requests from the same
+// (forwarded) client addresses.
+const describeIfLimiter = RUST && rustBin() ? describe : describe.skip;
+
+describeIfLimiter('global rate limiter: Node and Rust answer alike when enabled', () => {
+  const env = {
+    NODE_ENV: 'production', RATE_LIMIT_MAX_REQUESTS: '3', RATE_LIMIT_WINDOW_MS: '60000', TRUST_PROXY: '1',
+  };
+  let node; let rust;
+
+  beforeAll(async () => {
+    [node, rust] = await Promise.all([
+      startNode({ port: Number(process.env.PARITY_NODE_PORT || 7032), env }),
+      startRust({ port: Number(process.env.PARITY_RUST_PORT || 7031), env }),
+    ]);
+  }, 60000);
+
+  afterAll(async () => {
+    await Promise.all([node?.stop(), rust?.stop()]);
+  });
+
+  const hit = async (base, url, xff) => {
+    const res = await fetch(base + url, { headers: xff ? { 'X-Forwarded-For': xff } : {} });
+    return { status: res.status, headers: res.headers, text: await res.text() };
+  };
+  const same = async (url, xff, label) => {
+    const [n, r] = [await hit(node.url, url, xff), await hit(rust.url, url, xff)];
+    expectSameRateLimit(n, r, `${label}: ${url} from ${xff}`);
+    return { node: n, rust: r };
+  };
+
+  test('counts, headers, the 429 and per-client buckets', async () => {
+    const client = `203.0.113.${10 + (Date.now() % 200)}`;
+    for (let i = 1; i <= 3; i += 1) {
+      const { node: n } = await same('/api/settings/public', client, `request ${i}`);
+      expect(n.status).toBe(200);
+      expect(n.headers.get('ratelimit-remaining')).toBe(String(3 - i));
+    }
+    const limited = await same('/api/settings/public', client, 'over the limit');
+    expect(limited.node.status).toBe(429);
+    expect(JSON.parse(limited.rust.text)).toEqual({ status: 'FAIL', message: 'Too many requests, please try again later' });
+    // Unknown /api paths count too (the limiter runs before routing).
+    await same('/api/no-such-route', client, 'limited 404');
+    // Another client, and the entry the trusted proxy appended, have their own buckets.
+    const other = await same('/api/settings/public', client.replace('203.0.113', '192.0.2'), 'other client');
+    expect(other.node.status).toBe(200);
+    const proxied = await same('/api/settings/public', `${client}, 198.51.100.${Date.now() % 250}`, 'right-most entry');
+    expect(proxied.node.status).toBe(200);
+    expect(proxied.node.headers.get('ratelimit-remaining')).toBe('2');
   });
 });

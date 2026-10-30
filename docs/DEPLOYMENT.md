@@ -23,6 +23,36 @@ In `backend/.env` set at least `FRONTEND_URL` (storefront origin used in emails 
 Stripe redirects) and `CORS_ORIGINS` (storefront + admin origins). Leave an
 integration's keys unset to disable it; each one degrades gracefully.
 
+### Client IPs and rate limits (`TRUST_PROXY`)
+
+Both APIs rate-limit per client IP (`RATE_LIMIT_WINDOW_MS` / `RATE_LIMIT_MAX_REQUESTS`
+for all of `/api`, plus tighter limits on login, registration, password reset and
+shipping quotes). `TRUST_PROXY` — read by the backend (`app.set('trust proxy')`)
+and by the Rust `api` — says how many proxy hops in front of the service may set
+`X-Forwarded-For`; the client IP is then the entry that many hops back
+(Express's rule):
+
+| `TRUST_PROXY` | Client IP | Use when |
+|---|---|---|
+| `0` (code default) | the TCP peer; `X-Forwarded-For` ignored | clients reach the service directly |
+| `1` (compose default) | the right-most `X-Forwarded-For` entry | only the storefront/admin reach it **and** the TLS proxy in front of them sets `X-Forwarded-For` |
+| `n` | `n` entries from the right | `n` trusted proxies |
+
+With `0` behind the storefront, every visitor shares the storefront's single
+bucket (e.g. 5 logins per 15 minutes for the whole shop). Next.js rewrites (and
+the storefront's server-side login call, which forwards the header) pass
+`X-Forwarded-For` through **unchanged and never add the client address**
+(verified with `next dev` and `next start`, Next 15.5), so the address must come
+from the TLS proxy:
+
+- Caddy `reverse_proxy` and cloud load balancers set it by default.
+- nginx: `proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;`
+
+If nothing in front sets it, a client can send its own `X-Forwarded-For` and pick
+its bucket — use `TRUST_PROXY=0` then. Never expose 6666/7000 publicly with a
+non-zero value. The value must be a hop count (`true`, IP lists, etc. are
+rejected and treated as `0`).
+
 The storefront's `/api` proxy target is baked in at build time
 (`PRODUCTION_BACKEND_URL`, set to `http://backend:6666` in the compose file).
 Route groups listed in `RUST_API_ROUTES` (default `products,search,journal,settings/public,wishlist,orders,cart`) go to the Rust API
@@ -80,6 +110,7 @@ handlers return non-2xx if the order can't be updated, so Stripe retries.
 - [ ] Strong `JWT_SECRET`, `NEXTAUTH_SECRET`, `DB_PASSWORD`; `backend/.env` not in git
 - [ ] `NODE_ENV=production` (rate limits on, raw-SQL endpoint off, secure cookies)
 - [ ] HTTPS in front of 3000/3005; MySQL not exposed publicly
+- [ ] The TLS proxy sets `X-Forwarded-For` (else `TRUST_PROXY=0`); 6666/7000 not public
 - [ ] `FRONTEND_URL`, `NEXTAUTH_URL`, `CORS_ORIGINS` use the real domains
 - [ ] Stripe live keys + webhook secret; test a purchase and a refund
 - [ ] SES sender verified; test password-reset and order-confirmation emails

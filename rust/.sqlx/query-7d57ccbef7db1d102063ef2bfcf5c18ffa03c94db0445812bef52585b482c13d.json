@@ -1,0 +1,12 @@
+{
+  "db_name": "MySQL",
+  "query": "INSERT INTO email_unsubscribes (id, email, token, scope, reason) VALUES (?, ?, 't', 'marketing', 'test')",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": []
+  },
+  "hash": "7d57ccbef7db1d102063ef2bfcf5c18ffa03c94db0445812bef52585b482c13d"
+}
