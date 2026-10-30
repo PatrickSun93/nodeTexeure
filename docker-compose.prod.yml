@@ -63,7 +63,7 @@ services:
       args:
         PRODUCTION_BACKEND_URL: http://backend:6666
         RUST_API_URL: http://api:7000
-        RUST_API_ROUTES: ${RUST_API_ROUTES-products}
+        RUST_API_ROUTES: ${RUST_API_ROUTES-products,search,journal,settings/public}
     environment:
       PRODUCTION_BACKEND_URL: http://backend:6666
       NEXTAUTH_URL: ${NEXTAUTH_URL:-http://localhost:3000}

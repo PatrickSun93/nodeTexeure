@@ -1,0 +1,64 @@
+{
+  "db_name": "MySQL",
+  "query": "SELECT id, name, slug, CAST(base_price AS CHAR) AS \"price!: String\",\n             (SELECT pi.thumbnail_small_url FROM product_images pi\n               WHERE pi.product_id = products.id\n               ORDER BY pi.is_primary DESC, pi.sort_order ASC LIMIT 1) AS \"image: String\"\n           FROM products\n           WHERE status = 'approved'\n           ORDER BY created_at DESC, id ASC\n           LIMIT 6",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NOT_NULL | PRIMARY_KEY | NO_DEFAULT_VALUE",
+          "max_size": 200
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "name",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NOT_NULL | MULTIPLE_KEY | NO_DEFAULT_VALUE",
+          "max_size": 1020
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "slug",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NOT_NULL | UNIQUE_KEY | MULTIPLE_KEY | NO_DEFAULT_VALUE",
+          "max_size": 1020
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "price!: String",
+        "type_info": {
+          "type": "VarString",
+          "flags": "",
+          "max_size": 48
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "image: String",
+        "type_info": {
+          "type": "VarString",
+          "flags": "",
+          "max_size": 2000
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 0
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      true,
+      true
+    ]
+  },
+  "hash": "69255786f8378a1ecc488fd5aa93545f6f7d17427f9415e43aa7e55a286e80a5"
+}

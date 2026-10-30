@@ -42,7 +42,7 @@ router.get('/', async (req, res) => {
       SELECT ${LIST_COLUMNS}
       FROM journal_articles
       ${where}
-      ORDER BY published_at DESC, created_at DESC
+      ORDER BY published_at DESC, created_at DESC, id ASC
       LIMIT ${limit}
     `;
 

@@ -27,6 +27,15 @@ pub fn router(state: AppState) -> Router {
         .route("/api/products", get(routes::products::list))
         .route("/api/products/by-ids", get(routes::products::by_ids))
         .route("/api/products/{id}", get(routes::products::detail))
+        .route(
+            "/api/search/autocomplete",
+            get(routes::search::autocomplete),
+        )
+        .route("/api/search/suggestions", get(routes::search::suggestions))
+        .route("/api/search/recent", get(routes::search::recent))
+        .route("/api/journal", get(routes::journal::list))
+        .route("/api/journal/{id_or_slug}", get(routes::journal::detail))
+        .route("/api/settings/public", get(routes::settings::public))
         .fallback(|| async {
             (
                 StatusCode::NOT_FOUND,

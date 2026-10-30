@@ -42,6 +42,11 @@ pub fn clamp_int(value: Option<&str>, default: i64, max: i64) -> i64 {
     n.min(max).max(1)
 }
 
+/// Custom product ids look like `PROD0000000001`.
+pub fn is_product_id(s: &str) -> bool {
+    s.len() == 14 && s.starts_with("PROD") && s[4..].bytes().all(|b| b.is_ascii_digit())
+}
+
 /// `?locale=` first, then the storefront's `NEXT_LOCALE` cookie; unknown → `en`.
 pub fn locale(pairs: &Pairs, headers: &HeaderMap) -> &'static str {
     let requested = first(pairs, "locale")
@@ -131,6 +136,15 @@ mod tests {
             "fr",
             "empty is falsy"
         );
+    }
+
+    #[test]
+    fn product_ids_are_prefixed_and_ten_digits() {
+        assert!(is_product_id("PROD0000000001"));
+        assert!(!is_product_id("PROD000000001"));
+        assert!(!is_product_id("prod0000000001"));
+        assert!(!is_product_id("PROD000000000x"));
+        assert!(!is_product_id("1"));
     }
 
     #[test]

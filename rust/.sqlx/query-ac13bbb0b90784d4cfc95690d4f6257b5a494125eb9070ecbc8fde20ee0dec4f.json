@@ -1,0 +1,44 @@
+{
+  "db_name": "MySQL",
+  "query": "SELECT setting_key, setting_value, setting_type FROM system_settings\n         WHERE is_public = 1 ORDER BY setting_key",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "setting_key",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NOT_NULL | UNIQUE_KEY | MULTIPLE_KEY | NO_DEFAULT_VALUE",
+          "max_size": 400
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "setting_value",
+        "type_info": {
+          "type": "Blob",
+          "flags": "BLOB",
+          "max_size": 262140
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "setting_type",
+        "type_info": {
+          "type": "String",
+          "flags": "NOT_NULL | ENUM",
+          "max_size": 28
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 0
+    },
+    "nullable": [
+      false,
+      true,
+      false
+    ]
+  },
+  "hash": "ac13bbb0b90784d4cfc95690d4f6257b5a494125eb9070ecbc8fde20ee0dec4f"
+}

@@ -13,6 +13,11 @@ pub fn failure(message: &str) -> Value {
     json!({ "status": "FAIL", "message": message, "keyValueTable": [] })
 }
 
+/// Failure carrying details (e.g. the id that wasn't found).
+pub fn failure_with(message: &str, key_value_table: impl Serialize) -> Value {
+    json!({ "status": "FAIL", "message": message, "keyValueTable": key_value_table })
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

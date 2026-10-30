@@ -184,7 +184,7 @@ pub async fn by_ids(
         .filter(|(k, _)| k == "ids" || k == "ids[]")
         .flat_map(|(_, v)| v.split(','))
         .map(str::trim)
-        .filter(|id| is_product_id(id))
+        .filter(|id| params::is_product_id(id))
         .collect();
     if ids.is_empty() {
         let body =
@@ -223,11 +223,6 @@ pub async fn by_ids(
         json!({ "products": products, "total": total }),
     ))
     .into_response())
-}
-
-/// Custom product ids look like `PROD0000000001`.
-fn is_product_id(s: &str) -> bool {
-    s.len() == 14 && s.starts_with("PROD") && s[4..].bytes().all(|b| b.is_ascii_digit())
 }
 
 /// `GET /api/products/{id}` — one approved product by id or slug, localized,
@@ -307,18 +302,4 @@ pub async fn detail(
         map.insert("reviews".into(), serde_json::to_value(reviews)?);
     }
     Ok(Json(success("Product fetched successfully", body)).into_response())
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn product_ids_are_prefixed_and_ten_digits() {
-        assert!(is_product_id("PROD0000000001"));
-        assert!(!is_product_id("PROD000000001"));
-        assert!(!is_product_id("prod0000000001"));
-        assert!(!is_product_id("PROD000000000x"));
-        assert!(!is_product_id("1"));
-    }
 }

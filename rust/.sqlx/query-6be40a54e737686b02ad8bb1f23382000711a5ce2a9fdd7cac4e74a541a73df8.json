@@ -1,0 +1,64 @@
+{
+  "db_name": "MySQL",
+  "query": "SELECT id, name, slug, CAST(base_price AS CHAR) AS \"price!: String\",\n             (SELECT pi.thumbnail_small_url FROM product_images pi\n               WHERE pi.product_id = products.id\n               ORDER BY pi.is_primary DESC, pi.sort_order ASC LIMIT 1) AS \"image: String\"\n           FROM products\n           WHERE status = 'approved'\n             AND (name LIKE ? OR description LIKE ? OR short_description LIKE ?\n                  OR JSON_UNQUOTE(JSON_EXTRACT(product_details, '$.material')) LIKE ?)\n           ORDER BY CASE\n                      WHEN name LIKE ? THEN 100\n                      WHEN name LIKE ? THEN 90\n                      WHEN name LIKE ? THEN 80\n                      WHEN description LIKE ? THEN 50\n                      ELSE 30\n                    END DESC, name ASC, id ASC\n           LIMIT 10",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NOT_NULL | PRIMARY_KEY | NO_DEFAULT_VALUE",
+          "max_size": 200
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "name",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NOT_NULL | MULTIPLE_KEY | NO_DEFAULT_VALUE",
+          "max_size": 1020
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "slug",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NOT_NULL | UNIQUE_KEY | MULTIPLE_KEY | NO_DEFAULT_VALUE",
+          "max_size": 1020
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "price!: String",
+        "type_info": {
+          "type": "VarString",
+          "flags": "",
+          "max_size": 48
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "image: String",
+        "type_info": {
+          "type": "VarString",
+          "flags": "",
+          "max_size": 2000
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 8
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      true,
+      true
+    ]
+  },
+  "hash": "6be40a54e737686b02ad8bb1f23382000711a5ce2a9fdd7cac4e74a541a73df8"
+}

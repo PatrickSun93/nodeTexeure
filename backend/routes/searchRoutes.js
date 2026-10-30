@@ -51,7 +51,7 @@ router.get('/autocomplete', async (req, res) => {
                     OR short_description LIKE ?
                     OR JSON_UNQUOTE(JSON_EXTRACT(product_details, '$.material')) LIKE ?
                 )
-            ORDER BY relevance_score DESC, name ASC
+            ORDER BY relevance_score DESC, name ASC, id ASC
             LIMIT ?
         `;
 
@@ -81,6 +81,7 @@ router.get('/autocomplete', async (req, res) => {
             WHERE 
                 c.is_active = 1
                 AND c.name LIKE ?
+            ORDER BY c.name ASC, c.id ASC
             LIMIT 5
         `;
 
@@ -151,7 +152,7 @@ router.get('/suggestions', async (req, res) => {
                     LIMIT 1) AS thumbnail_small_url
             FROM products
             WHERE status = 'approved'
-            ORDER BY created_at DESC
+            ORDER BY created_at DESC, id ASC
             LIMIT 6
         `;
 
@@ -191,7 +192,11 @@ router.get('/recent', async (req, res) => {
             return res.json(ResponseFormatter.success('Recent products', { products: [] }));
         }
 
-        const idList = ids.split(',').map(id => parseInt(id.trim(), 10)).filter(id => !isNaN(id));
+        // Product ids are custom prefixed ids (PROD0000000001). This used to
+        // parseInt them, so it never matched anything.
+        const idList = [...new Set(String(ids).split(',').map(id => id.trim()))]
+            .filter(id => /^PROD\d{10}$/.test(id))
+            .slice(0, 10);
 
         if (idList.length === 0) {
             return res.json(ResponseFormatter.success('Recent products', { products: [] }));
@@ -212,9 +217,8 @@ router.get('/recent', async (req, res) => {
                     ORDER BY pi.is_primary DESC, pi.sort_order ASC
                     LIMIT 1) AS thumbnail_small_url
             FROM products
-            WHERE id IN (${placeholders})
+            WHERE id IN (${placeholders}) AND status = 'approved'
             ORDER BY FIELD(id, ${orderPlaceholders})
-            LIMIT 10
         `;
 
         const result = await DatabaseUtil.executeQuery(query, [...idList, ...idList]);

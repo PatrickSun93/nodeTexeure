@@ -19,8 +19,8 @@ Design direction: **"Champagne & Charcoal"** (see [docs/DESIGN.md](docs/DESIGN.m
 | Email daemon | `rust/crates/email-daemon` | Rust, sqlx, AWS SES v2 | — |
 
 The backend is being ported to Rust piece by piece (`rust/`, see
-[rust/README.md](rust/README.md)): the email daemon and `/api/products/*` are
-done. The storefront proxy sends the groups in `RUST_API_ROUTES` to the Rust API;
+[rust/README.md](rust/README.md)): the email daemon and the public read-only
+APIs (`products`, `search`, `journal`, `settings/public`) are done. The storefront proxy sends the groups in `RUST_API_ROUTES` to the Rust API;
 a ported group must pass `backend/tests/parity.test.js` (identical JSON to Node).
 Write new public endpoints in `rust/crates/api`. New Rust queries use
 sqlx `query!` macros — refresh `rust/.sqlx` with `cargo sqlx prepare --workspace

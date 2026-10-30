@@ -7,7 +7,7 @@ can move without the rest noticing.
 | Crate | Replaces | Status |
 |---|---|---|
 | `crates/email-daemon` | `backend/services/emailDaemon.js` | Live: the only consumer of `email_queue` |
-| `crates/api` | Express route groups, one at a time | `/api/products/*` (list, by-ids, detail) |
+| `crates/api` | Express route groups, one at a time | `/api/products/*`, `/api/search/*`, `/api/journal/*`, `/api/settings/public` |
 | `crates/common` | — | Shared env config, MySQL connection, response envelope, timestamps |
 
 ## Why Rust here
@@ -87,7 +87,8 @@ DB). It answers only the route groups the storefront proxy sends it:
 ```bash
 # next.config.mjs reads these (baked in at `next build` for production)
 RUST_API_URL=http://api:7000
-RUST_API_ROUTES=products        # comma-separated route groups; unset = all Node
+RUST_API_ROUTES=products,search,journal,settings/public
+# comma-separated groups; an entry with a slash moves one path; unset = all Node
 ```
 
 Unsetting `RUST_API_ROUTES` (and rebuilding the frontend) sends everything back
@@ -117,5 +118,6 @@ Notes on the port:
 3. `cargo sqlx prepare --workspace -- --all-targets`, commit `.sqlx`.
 4. Add the group to `RUST_API_ROUTES` (compose + production build).
 
-Read-only public groups first (`search`, `journal`, `settings/public`), then
-authenticated ones once `common` has JWT + `token_version` + CSRF checks.
+Done so far: the public read-only groups. Next: authenticated routes, once
+`common` has JWT + `token_version` checks (then CSRF for admin writes) — users'
+own data (`wishlist`, `orders/my-orders`), then cart/checkout, then admin.
