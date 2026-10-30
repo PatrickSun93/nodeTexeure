@@ -1,12 +1,53 @@
-import React, { useState } from 'react';
+import React, { useState, type ChangeEvent } from 'react';
 import { useTranslations } from 'next-intl';
 import { useNotifications } from './NotificationSystem';
+import type { ApiResponse, StaffMember } from '@/types/api';
 
-export default function StaffDetailView({ staff, onBack }) {
+interface StaffForm {
+    fullName: string;
+    phone: string;
+    email: string;
+    password: string;
+    confirmPassword: string;
+    role: string;
+    status: string;
+    permissions: Record<string, boolean>;
+}
+
+const DEFAULT_PERMISSIONS = {
+    manageOrders: true,
+    editProducts: true,
+    manageCustomers: true,
+    viewAnalytics: true,
+    editSiteSettings: false,
+    manageStaff: false
+};
+
+// The staff list row (GET /api/admin/staff) has name/email/role/status only, so
+// the form starts from those. Using the row itself left fullName undefined and
+// the save threw on fullName.split().
+const formFromStaff = (staff: StaffMember): StaffForm => ({
+    fullName: staff.name.trim(),
+    phone: '',
+    email: staff.email,
+    password: '',
+    confirmPassword: '',
+    role: staff.role,
+    status: staff.status,
+    permissions: DEFAULT_PERMISSIONS
+});
+
+interface StaffDetailViewProps {
+    /** null = create a new staff member */
+    staff: StaffMember | null;
+    onBack: () => void;
+}
+
+export default function StaffDetailView({ staff, onBack }: StaffDetailViewProps) {
     const t = useTranslations('StaffDetailView');
     const notify = useNotifications();
     const isEditing = !!staff;
-    const [formData, setFormData] = useState(staff || {
+    const [formData, setFormData] = useState<StaffForm>(staff ? formFromStaff(staff) : {
         fullName: '',
         phone: '',
         email: '',
@@ -14,18 +55,12 @@ export default function StaffDetailView({ staff, onBack }) {
         confirmPassword: '',
         role: 'Admin',
         status: 'Active',
-        permissions: {
-            manageOrders: true,
-            editProducts: true,
-            manageCustomers: true,
-            viewAnalytics: true,
-            editSiteSettings: false,
-            manageStaff: false
-        }
+        permissions: DEFAULT_PERMISSIONS
     });
 
-    const handleChange = (e) => {
-        const { name, value, type, checked } = e.target;
+    const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+        const { name, value, type } = e.target;
+        const checked = e.target instanceof HTMLInputElement && e.target.checked;
         if (type === 'checkbox') {
             setFormData(prev => ({
                 ...prev,
@@ -52,7 +87,7 @@ export default function StaffDetailView({ staff, onBack }) {
             const firstName = nameParts[0];
             const lastName = nameParts.slice(1).join(' ') || '';
 
-            const payload = {
+            const payload: Record<string, string> = {
                 first_name: firstName,
                 last_name: lastName,
                 email: formData.email,
@@ -64,9 +99,13 @@ export default function StaffDetailView({ staff, onBack }) {
             if (formData.password) {
                 payload.password = formData.password;
             }
+            // The list has no phone; an untouched empty field must not clear it.
+            if (isEditing && !formData.phone) {
+                delete payload.phone;
+            }
 
-            let response;
-            if (isEditing) {
+            let response: ApiResponse;
+            if (staff) {
                 response = await apiFetch(`/api/admin/users/${staff.id}`, {
                     method: 'PUT',
                     body: JSON.stringify(payload)

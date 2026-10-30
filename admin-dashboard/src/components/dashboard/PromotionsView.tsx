@@ -5,16 +5,17 @@ import { useTranslations } from 'next-intl';
 import PromotionDetailView from '../PromotionDetailView';
 import PromotionModal from '../PromotionModal';
 import { useNotifications } from '../NotificationSystem';
+import type { Coupon, Table } from '@/types/api';
 
 export default function PromotionsView() {
   const t = useTranslations('Dashboard');
   const notify = useNotifications();
-  const [viewMode, setViewMode] = useState('list'); // 'list', 'edit'
+  const [viewMode, setViewMode] = useState<'list' | 'edit'>('list');
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedPromotion, setSelectedPromotion] = useState(null);
-  const [promotions, setPromotions] = useState([]);
+  const [selectedPromotion, setSelectedPromotion] = useState<Coupon | null>(null);
+  const [promotions, setPromotions] = useState<Coupon[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
@@ -23,7 +24,7 @@ export default function PromotionsView() {
     const fetchPromotions = async () => {
       try {
         const { apiFetch } = await import('../../utils/api');
-        const response = await apiFetch('/api/admin/coupons');
+        const response = await apiFetch<Table<'coupons', Coupon[]>>('/api/admin/coupons');
         if (response.status === 'SUCCESS') {
           const data = response.keyValueTable.find(item => item.coupons)?.coupons || [];
           setPromotions(data);
@@ -40,7 +41,7 @@ export default function PromotionsView() {
     fetchPromotions();
   }, [viewMode, isModalOpen]); // Re-fetch on view change or modal close
 
-  const handleEdit = (promo) => {
+  const handleEdit = (promo: Coupon) => {
     setSelectedPromotion(promo);
     setViewMode('edit');
   };
@@ -55,7 +56,7 @@ export default function PromotionsView() {
     setSelectedPromotion(null);
   };
 
-  const handleDelete = async (promo) => {
+  const handleDelete = async (promo: Coupon) => {
     if (!promo?.id) return;
     if (!confirm(t('confirmDeletePromotion', { name: promo.name || promo.code || '' }))) return;
     try {
@@ -160,11 +161,11 @@ export default function PromotionsView() {
             </thead>
             <tbody className="divide-y divide-gray-50">
               {isLoading ? (
-                <tr><td colSpan="8" className="px-6 py-10 text-center text-gray-500">{t('loadingPromotions')}</td></tr>
+                <tr><td colSpan={8} className="px-6 py-10 text-center text-gray-500">{t('loadingPromotions')}</td></tr>
               ) : error ? (
-                <tr><td colSpan="8" className="px-6 py-10 text-center text-red-500">{error}</td></tr>
+                <tr><td colSpan={8} className="px-6 py-10 text-center text-red-500">{error}</td></tr>
               ) : filteredPromotions.length === 0 ? (
-                <tr><td colSpan="8" className="px-6 py-10 text-center text-gray-500">{t('noPromotionsFound')}</td></tr>
+                <tr><td colSpan={8} className="px-6 py-10 text-center text-gray-500">{t('noPromotionsFound')}</td></tr>
               ) : (
                 filteredPromotions.map((promo) => (
                   <tr key={promo.id} className="hover:bg-gray-50 transition-colors group">

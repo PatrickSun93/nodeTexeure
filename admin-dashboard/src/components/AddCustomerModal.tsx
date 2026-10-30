@@ -1,20 +1,29 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, type ChangeEvent, type FormEvent } from 'react';
 import { useTranslations } from 'next-intl';
+import type { AuthError } from '@/utils/api';
+
+interface CustomerForm {
+    first_name: string;
+    last_name: string;
+    email: string;
+    phone: string;
+    password: string;
+}
 
 // Minimal create-customer form wired to the real backend endpoint:
 //   POST /api/admin/users  (defaults role -> 'customer', status -> 'active')
 // Writes go through the CSRF-aware apiFetch (utils/api).
-export default function AddCustomerModal({ onClose, onCreated }) {
+export default function AddCustomerModal({ onClose, onCreated }: { onClose: () => void; onCreated?: () => void }) {
     const t = useTranslations('AddCustomerModal');
-    const [form, setForm] = useState({ first_name: '', last_name: '', email: '', phone: '', password: '' });
+    const [form, setForm] = useState<CustomerForm>({ first_name: '', last_name: '', email: '', phone: '', password: '' });
     const [isSaving, setIsSaving] = useState(false);
-    const [error, setError] = useState(null);
+    const [error, setError] = useState<string | null>(null);
 
-    const update = (key) => (e) => setForm((f) => ({ ...f, [key]: e.target.value }));
+    const update = (key: keyof CustomerForm) => (e: ChangeEvent<HTMLInputElement>) => setForm((f) => ({ ...f, [key]: e.target.value }));
 
-    const handleSubmit = async (e) => {
+    const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
         setError(null);
         if (!form.first_name || !form.last_name || !form.email || !form.password) {
@@ -43,7 +52,7 @@ export default function AddCustomerModal({ onClose, onCreated }) {
             }
         } catch (err) {
             console.error('Create customer failed', err);
-            setError(err?.data?.message || t('createFailed'));
+            setError((err as Partial<AuthError>)?.data?.message || t('createFailed'));
         } finally {
             setIsSaving(false);
         }

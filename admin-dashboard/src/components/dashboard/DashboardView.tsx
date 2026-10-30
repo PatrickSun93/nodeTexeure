@@ -3,13 +3,26 @@
 import { useTranslations } from 'next-intl';
 import MetricsCard from '../MetricsCard';
 import RecentOrdersTable from '../RecentOrdersTable';
+import type { Growth, OrderListItem, SummaryMetrics } from '@/types/api';
 
-export default function DashboardView({ timePeriod, setTimePeriod, metrics, recentOrders, growth }) {
+export type TimePeriod = 'last-30-days' | 'last-90-days' | 'custom';
+
+interface DashboardViewProps {
+  timePeriod: TimePeriod;
+  setTimePeriod: (period: TimePeriod) => void;
+  metrics: SummaryMetrics;
+  recentOrders: OrderListItem[];
+  growth: Growth | null;
+}
+
+type Badge = { change: string; trend: 'up' | 'down' | 'neutral' };
+
+export default function DashboardView({ timePeriod, setTimePeriod, metrics, recentOrders, growth }: DashboardViewProps) {
   const t = useTranslations('Dashboard');
 
   // Turn a period-over-period percentage into a badge (real value, +/- sign, up/down color).
   // Unavailable metrics (null/undefined/NaN) render a neutral dash rather than a fake number.
-  const badge = (pct) => {
+  const badge = (pct: string | number | null | undefined): Badge => {
     const n = Number(pct);
     if (pct === null || pct === undefined || pct === '' || Number.isNaN(n)) {
       return { change: '--%', trend: 'neutral' };
@@ -57,7 +70,7 @@ export default function DashboardView({ timePeriod, setTimePeriod, metrics, rece
 
       {/* Metrics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <MetricsCard title={t('totalRevenue')} value={new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(metrics.totalRevenue)} change={revenueBadge.change} trend={revenueBadge.trend} />
+        <MetricsCard title={t('totalRevenue')} value={new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(Number(metrics.totalRevenue))} change={revenueBadge.change} trend={revenueBadge.trend} />
         <MetricsCard title={t('activeOrders')} value={metrics.activeOrders} change={ordersBadge.change} trend={ordersBadge.trend} />
         <MetricsCard title={t('avgOrderValue')} value={new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(metrics.avgOrderValue)} change={aovBadge.change} trend={aovBadge.trend} />
         <MetricsCard title={t('conversionRate')} value={`${metrics.conversionRate}%`} change={conversionBadge.change} trend={conversionBadge.trend} />

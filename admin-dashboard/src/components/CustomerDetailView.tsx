@@ -1,16 +1,23 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import { useNotifications } from './NotificationSystem';
+import type { CustomerAddress, CustomerDetail, CustomerListItem, IsoDate, OrderListItem, Table } from '@/types/api';
 
-export default function CustomerDetailView({ customer, onBack }) {
+interface CustomerDetailViewProps {
+    /** The list row; created_at/phone only when a caller has them */
+    customer: CustomerListItem & { created_at?: IsoDate | null; phone?: string | null };
+    onBack: () => void;
+}
+
+export default function CustomerDetailView({ customer, onBack }: CustomerDetailViewProps) {
     const t = useTranslations('CustomerDetailView');
     const notify = useNotifications();
     const [activeTab, setActiveTab] = useState('overview'); // For future tabs if needed
-    const [orders, setOrders] = useState([]);
+    const [orders, setOrders] = useState<OrderListItem[]>([]);
     const [isLoadingOrders, setIsLoadingOrders] = useState(false);
     // Real addresses + created_at come from GET /api/admin/users/:id (see effect below).
-    const [addresses, setAddresses] = useState([]);
-    const [createdAt, setCreatedAt] = useState(customer?.created_at || null);
+    const [addresses, setAddresses] = useState<CustomerAddress[]>([]);
+    const [createdAt, setCreatedAt] = useState<IsoDate | null>(customer?.created_at || null);
 
     // Editable personal-info form. Seeded from the list row we already have (name/email).
     // Phone has no source in the admin users list (see FLAG), so it starts empty.
@@ -59,7 +66,7 @@ export default function CustomerDetailView({ customer, onBack }) {
             setIsLoadingOrders(true);
             try {
                 const { apiFetch } = await import('../utils/api');
-                const response = await apiFetch(`/api/admin/orders?user_id=${customer.id}`);
+                const response = await apiFetch<Table<'orders', OrderListItem[]>>(`/api/admin/orders?user_id=${customer.id}`);
                 if (response.status === 'SUCCESS' && response.keyValueTable && response.keyValueTable[0]) {
                     setOrders(response.keyValueTable[0].orders || []);
                 }
@@ -80,7 +87,7 @@ export default function CustomerDetailView({ customer, onBack }) {
             if (!customer?.id) return;
             try {
                 const { apiFetch } = await import('../utils/api');
-                const response = await apiFetch(`/api/admin/users/${customer.id}`);
+                const response = await apiFetch<Table<'customer', CustomerDetail>>(`/api/admin/users/${customer.id}`);
                 if (response.status === 'SUCCESS') {
                     const detail = response.keyValueTable?.find?.((i) => i.customer)?.customer
                         || response.keyValueTable?.[0]?.customer;
@@ -103,10 +110,10 @@ export default function CustomerDetailView({ customer, onBack }) {
         fetchDetail();
     }, [customer?.id]);
 
-    const capitalize = (s) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s);
+    const capitalize = (s: string) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s);
 
     // Render a single real address block from the user_addresses shape.
-    const renderAddress = (addr) => (
+    const renderAddress = (addr: CustomerAddress) => (
         <div className="text-sm text-gray-600 leading-relaxed not-italic">
             <p className="font-medium text-gray-900">
                 {[addr.first_name, addr.last_name].filter(Boolean).join(' ') || customer.name}
@@ -299,11 +306,11 @@ export default function CustomerDetailView({ customer, onBack }) {
                                 <tbody className="divide-y divide-gray-50">
                                     {isLoadingOrders ? (
                                         <tr>
-                                            <td colSpan="4" className="py-8 text-center text-gray-500">{t('loadingOrders')}</td>
+                                            <td colSpan={4} className="py-8 text-center text-gray-500">{t('loadingOrders')}</td>
                                         </tr>
                                     ) : orders.length === 0 ? (
                                         <tr>
-                                            <td colSpan="4" className="py-8 text-center text-gray-500">{t('noOrdersFound')}</td>
+                                            <td colSpan={4} className="py-8 text-center text-gray-500">{t('noOrdersFound')}</td>
                                         </tr>
                                     ) : (
                                         orders.map((order) => (

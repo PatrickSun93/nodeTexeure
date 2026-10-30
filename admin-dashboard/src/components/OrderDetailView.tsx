@@ -1,18 +1,33 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslations, useFormatter } from 'next-intl';
+import type { OrderDetail, OrderItem, OrderListItem, Table } from '@/types/api';
+
+/** The list row, filled in with GET /api/admin/orders/:id once it loads. */
+type OrderState = Omit<Partial<OrderDetail>, 'status'> & Partial<Omit<OrderListItem, 'status'>> & { id: string; status: string };
+
+/** Seeded or older rows may carry name/sku/price instead of the snapshot columns. */
+type ItemRow = OrderItem & { name?: string; sku?: string; price?: string | number };
+
+type RawAddress = Record<string, unknown>;
+
+interface SaveFeedback {
+    type: 'success' | 'error';
+    message: string;
+    detail?: string;
+}
 
 // Every orders.status ENUM value, so a confirmed/refunded order isn't shown (and
 // re-saved) as "Pending".
 const STATUS_OPTIONS = ['Pending', 'Confirmed', 'Processing', 'Shipped', 'Delivered', 'Cancelled', 'Refunded'];
 
-const firstString = (...values) => values.find((v) => typeof v === 'string' && v.trim()) || '';
+const firstString = (...values: unknown[]): string => (values.find((v) => typeof v === 'string' && v.trim()) as string | undefined) || '';
 
 // Order addresses are stored in more than one shape: checkout writes snake_case
 // (first_name, address_line_1, postal_code), the example seed writes
 // { name, street, zip }, and older admin code expected camelCase. Normalize them
 // so the street lines and postcode are never silently dropped.
-function normalizeAddress(raw) {
-    let addr = raw;
+function normalizeAddress(raw: unknown) {
+    let addr = raw as RawAddress | string | null;
     if (typeof addr === 'string') {
         try { addr = JSON.parse(addr); } catch (e) { addr = null; }
     }
@@ -36,22 +51,22 @@ function normalizeAddress(raw) {
 }
 
 // DECIMAL columns arrive as strings ("12.42"); coerce before any arithmetic.
-const toNumber = (v) => {
+const toNumber = (v: unknown) => {
     const n = Number(v);
     return Number.isFinite(n) ? n : 0;
 };
 
-export default function OrderDetailView({ order, onBack }) {
+export default function OrderDetailView({ order, onBack }: { order: OrderListItem; onBack: () => void }) {
     const t = useTranslations('OrderDetailView');
     const format = useFormatter();
-    const [orderDetails, setOrderDetails] = useState(order);
+    const [orderDetails, setOrderDetails] = useState<OrderState>(order);
     const [status, setStatus] = useState(order.status || 'Processing');
     const [trackingNumber, setTrackingNumber] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     // Inline save result ({ type: 'success' | 'error', message, detail? }) instead
     // of a blocking window.alert().
-    const [saveFeedback, setSaveFeedback] = useState(null);
+    const [saveFeedback, setSaveFeedback] = useState<SaveFeedback | null>(null);
 
     // Fetch full details
     useEffect(() => {
@@ -63,9 +78,9 @@ export default function OrderDetailView({ order, onBack }) {
             setIsLoading(true);
             try {
                 const { apiFetch } = await import('../utils/api');
-                const response = await apiFetch(`/api/admin/orders/${idToFetch}`);
+                const response = await apiFetch<Table<'order', OrderDetail>>(`/api/admin/orders/${idToFetch}`);
                 if (response.status === 'SUCCESS' && response.keyValueTable.length > 0) {
-                    const data = response.keyValueTable[0].order;
+                    const data = response.keyValueTable[0].order as OrderDetail;
                     setOrderDetails(prev => ({ ...prev, ...data }));
                     if (data.status) setStatus(data.status.charAt(0).toUpperCase() + data.status.slice(1));
                     if (data.tracking_number) setTrackingNumber(data.tracking_number);
@@ -88,7 +103,7 @@ export default function OrderDetailView({ order, onBack }) {
         try {
             const { apiFetch } = await import('../utils/api');
             // Persist the tracking number alongside the status change.
-            const payload = { status };
+            const payload: { status: string; tracking_number?: string } = { status };
             const trimmedTracking = (trackingNumber || '').trim();
             if (trimmedTracking) payload.tracking_number = trimmedTracking;
             const response = await apiFetch(`/api/admin/orders/${idToUpdate}/status`, {
@@ -114,7 +129,7 @@ export default function OrderDetailView({ order, onBack }) {
     };
 
     // Safe access to items and address
-    const items = orderDetails.items || [];
+    const items: ItemRow[] = orderDetails.items || [];
 
     // Totals. The discount line must be shown, or subtotal + shipping + tax won't
     // add up to the total of a coupon order.
@@ -130,7 +145,7 @@ export default function OrderDetailView({ order, onBack }) {
         ? toNumber(rawTotal)
         : subtotal - discount + shipping + taxes;
 
-    const shippingAddress = normalizeAddress(orderDetails.shipping_address_json) || {};
+    const shippingAddress: Partial<NonNullable<ReturnType<typeof normalizeAddress>>> = normalizeAddress(orderDetails.shipping_address_json) || {};
     const cityLine = [
         [shippingAddress.city, shippingAddress.state].filter(Boolean).join(', '),
         shippingAddress.postalCode,
@@ -254,11 +269,11 @@ export default function OrderDetailView({ order, onBack }) {
                                             </td>
                                             <td className="py-4 text-sm text-gray-600">${Number(item.unit_price || item.price).toFixed(2)}</td>
                                             <td className="py-4 text-sm text-gray-600 text-center">{item.quantity}</td>
-                                            <td className="py-4 text-sm font-medium text-gray-900 text-right">${Number(item.total_price || (item.price * item.quantity)).toFixed(2)}</td>
+                                            <td className="py-4 text-sm font-medium text-gray-900 text-right">${Number(item.total_price || (Number(item.price) * item.quantity)).toFixed(2)}</td>
                                         </tr>
                                     ))}
                                     {items.length === 0 && (
-                                        <tr><td colSpan="4" className="py-8 text-center text-gray-500">{t('noItemsFound')}</td></tr>
+                                        <tr><td colSpan={4} className="py-8 text-center text-gray-500">{t('noItemsFound')}</td></tr>
                                     )}
                                 </tbody>
                             </table>
