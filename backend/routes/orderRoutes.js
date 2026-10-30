@@ -20,8 +20,8 @@ async function getTaxRate(stateCode, countryCode) {
        WHERE is_active = 1
          AND JSON_UNQUOTE(JSON_EXTRACT(location_json, '$.country')) = ?
          AND JSON_UNQUOTE(JSON_EXTRACT(location_json, '$.state')) = ?
-       LIMIT 1`,
-      [countryCode || 'US', stateCode || '']
+       ORDER BY id LIMIT 1`,
+      [String(countryCode || 'US'), String(stateCode || '')]
     );
     const rows = db.rows(result);
     if (rows.length > 0) {
@@ -33,8 +33,8 @@ async function getTaxRate(stateCode, countryCode) {
        WHERE is_active = 1
          AND JSON_UNQUOTE(JSON_EXTRACT(location_json, '$.country')) = ?
          AND (JSON_UNQUOTE(JSON_EXTRACT(location_json, '$.state')) = '' OR JSON_EXTRACT(location_json, '$.state') IS NULL)
-       LIMIT 1`,
-      [countryCode || 'US']
+       ORDER BY id LIMIT 1`,
+      [String(countryCode || 'US')]
     );
     const countryRows = db.rows(countryResult);
     if (countryRows.length > 0) {
@@ -129,7 +129,7 @@ async function ownsCart(cartId, req) {
   if (!cartId) return false;
   const result = await db.executeQuery(
     'SELECT user_id, session_id FROM shopping_carts WHERE id = ?',
-    [cartId]
+    [String(cartId)]
   );
   const cart = DatabaseUtil.first(result);
   if (!cart) return false;
@@ -153,8 +153,12 @@ async function validateCoupon(code, subtotal) {
   const couponQuery = `
     SELECT * FROM discount_codes
     WHERE code = ? AND is_active = 1 AND (starts_at <= NOW() OR starts_at IS NULL) AND (expires_at >= NOW() OR expires_at IS NULL)
+    ORDER BY id LIMIT 1
   `;
-  const couponResult = await db.executeQuery(couponQuery, [code]);
+  // Bind as a string: MySQL fixes a prepared statement's parameter type on first
+  // use, so a numeric code (`7`) would make later codes compare as numbers —
+  // every code casts to 0, and `code = 0` matches the first coupon.
+  const couponResult = await db.executeQuery(couponQuery, [String(code)]);
   const coupon = DatabaseUtil.first(couponResult);
 
   if (!coupon) {

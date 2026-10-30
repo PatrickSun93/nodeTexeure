@@ -206,3 +206,21 @@ describe('checkout details', () => {
     expect(guest.body.message).toBe('A valid email is required for guest checkout');
   });
 });
+
+test('a numeric coupon code cannot unlock other coupons', async () => {
+  // MySQL fixes a prepared statement's parameter type on first use: before the
+  // fix, sending couponCode 7 made later string codes compare as numbers, so any
+  // made-up code matched the first coupon.
+  const buyer = await registerCustomer();
+  const item = await inStockVariant(1);
+  await cartWith(buyer.accessToken, item, 1);
+  const id = await cartId(buyer.accessToken);
+  const apply = (couponCode) => request(app).post('/api/orders/apply-coupon').set(bearer(buyer.accessToken))
+    .send({ cartId: id, couponCode });
+  for (let i = 0; i < 12; i++) await apply(7);
+  for (let i = 0; i < 12; i++) {
+    const res = await apply('NOT-A-REAL-CODE');
+    expect(res.status).toBe(400);
+    expect(res.body.message).toBe('Invalid or expired coupon');
+  }
+});
