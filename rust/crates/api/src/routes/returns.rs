@@ -318,7 +318,7 @@ async fn mine(state: &AppState, user: AuthUser) -> anyhow::Result<Response> {
            FROM returns r
            JOIN orders o ON r.order_id = o.id
            WHERE r.user_id = ?
-           ORDER BY r.created_at DESC"#,
+           ORDER BY r.created_at DESC, r.id DESC"#,
         user.id
     )
     .fetch_all(&state.pool)
