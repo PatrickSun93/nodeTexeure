@@ -102,6 +102,9 @@ jobs:
       DB_PASSWORD: ci_root
       DB_NAME: bed_texture_ecommerce
       DATABASE_URL: mysql://root:ci_root@127.0.0.1:3306/bed_texture_ecommerce
+      # The example-data seed signs unsubscribe tokens with it.
+      JWT_SECRET: ci_only_jwt_secret_value_long_enough_0123456789
+      NODE_ENV: test
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
