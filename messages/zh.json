@@ -675,7 +675,12 @@
     "statusShipped": "已发货",
     "statusDelivered": "已送达",
     "statusCancelled": "已取消",
-    "statusRefunded": "已退款"
+    "statusRefunded": "已退款",
+    "loading": "正在加载您的订单...",
+    "notFoundBody": "在您的账户中找不到此订单。",
+    "free": "免费",
+    "shippingMethod": "配送方式",
+    "orderPlaced": "已下单"
   },
   "ReturnFlow": {
     "breadcrumbHome": "首页",

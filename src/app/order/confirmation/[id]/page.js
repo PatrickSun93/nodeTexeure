@@ -7,14 +7,9 @@ import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import Header from '../../../../components/Header';
 import Footer from '../../../../components/Footer';
+import OrderStatusTimeline from '../../../../components/OrderStatusTimeline';
 import { apiRequest } from '../../../../lib/api';
-
-const STATUS_STEPS = ['pending', 'confirmed', 'processing', 'shipped', 'delivered'];
-
-function getStatusIndex(status) {
-  const idx = STATUS_STEPS.indexOf(status);
-  return idx >= 0 ? idx : 0;
-}
+import { formatAddress } from '../../../orders/orderFormat';
 
 export default function OrderConfirmationPage() {
   return (
@@ -26,7 +21,6 @@ export default function OrderConfirmationPage() {
 
 function OrderConfirmationContent() {
   const t = useTranslations('OrderConfirmation');
-  const tStatus = useTranslations('Orders.statuses');
   const { data: session, status } = useSession();
   const params = useParams();
   const searchParams = useSearchParams();
@@ -111,11 +105,7 @@ function OrderConfirmationContent() {
     );
   }
 
-  const shippingAddr = typeof order.shipping_address_json === 'string'
-    ? JSON.parse(order.shipping_address_json)
-    : order.shipping_address_json || {};
-
-  const statusIdx = getStatusIndex(order.status);
+  const shippingAddr = formatAddress(order.shipping_address_json);
   const items = order.items || [];
 
   return (
@@ -132,14 +122,7 @@ function OrderConfirmationContent() {
           </div>
 
           {/* Status Timeline */}
-          <div className="nt-status-timeline">
-            {STATUS_STEPS.map((step, idx) => (
-              <div key={step} className={`nt-timeline-step ${idx <= statusIdx ? 'nt-step-active' : ''} ${idx === statusIdx ? 'nt-step-current' : ''}`}>
-                <div className="nt-timeline-dot">{idx < statusIdx ? '✓' : idx + 1}</div>
-                <span className="nt-timeline-label">{tStatus(step)}</span>
-              </div>
-            ))}
-          </div>
+          <OrderStatusTimeline status={order.status} style={{ marginBottom: '3rem' }} />
 
           <div className="nt-confirmation-grid">
             {/* Order Items */}
@@ -174,14 +157,13 @@ function OrderConfirmationContent() {
 
             {/* Shipping & Info */}
             <div className="nt-confirmation-sidebar">
-              <div className="nt-info-card">
-                <h3>{t('shippingAddress')}</h3>
-                <p>{shippingAddr.first_name} {shippingAddr.last_name}</p>
-                <p>{shippingAddr.address_line_1}</p>
-                {shippingAddr.address_line_2 && <p>{shippingAddr.address_line_2}</p>}
-                <p>{shippingAddr.city}, {shippingAddr.state} {shippingAddr.postal_code}</p>
-                <p>{shippingAddr.country}</p>
-              </div>
+              {shippingAddr && (
+                <div className="nt-info-card">
+                  <h3>{t('shippingAddress')}</h3>
+                  {shippingAddr.name && <p>{shippingAddr.name}</p>}
+                  {shippingAddr.lines.map((line, i) => <p key={i}>{line}</p>)}
+                </div>
+              )}
 
               {order.tracking_number && (
                 <div className="nt-info-card">

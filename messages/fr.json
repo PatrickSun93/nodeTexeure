@@ -675,7 +675,12 @@
     "statusShipped": "Expédiée",
     "statusDelivered": "Livrée",
     "statusCancelled": "Annulée",
-    "statusRefunded": "Remboursée"
+    "statusRefunded": "Remboursée",
+    "loading": "Chargement de votre commande...",
+    "notFoundBody": "Nous n'avons pas trouvé cette commande dans votre compte.",
+    "free": "Gratuite",
+    "shippingMethod": "Mode de livraison",
+    "orderPlaced": "Commande passée"
   },
   "ReturnFlow": {
     "breadcrumbHome": "Accueil",

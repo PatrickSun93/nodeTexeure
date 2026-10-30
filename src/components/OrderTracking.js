@@ -1,186 +1,117 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useTranslations } from 'next-intl';
+import { apiRequest } from '../lib/api';
 
-export default function OrderTracking({ trackingNumber, orderId }) {
+// Carrier tracking card for the order detail page. GET /api/shipping/track/:n
+// answers { status, message, keyValueTable: { trackingNumber, status,
+// statusDescription, estimatedDelivery, events: [{ timestamp, description,
+// location }] } } (a mock payload when FedEx credentials are absent).
+const TRACKING_CSS = `
+  .nt-tracking-card{background:var(--noirae-bg-white);border:1px solid var(--noirae-border-medium);font-family:var(--noirae-font-sans);}
+  .nt-tracking-card p{margin:0;color:inherit;}
+  .nt-tracking-card .trk-title{padding:18px 24px;border-bottom:1px solid var(--noirae-border-light);font-size:11px;font-weight:500;letter-spacing:0.12em;text-transform:uppercase;color:var(--noirae-text-secondary);}
+  .nt-tracking-card .trk-body{padding:20px 24px;display:flex;flex-direction:column;gap:14px;}
+  .nt-tracking-card .trk-label{font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:var(--noirae-text-muted);}
+  .nt-tracking-card .trk-value{margin-top:3px;font-size:14px;color:var(--noirae-text-primary);}
+  .nt-tracking-card .trk-mono{letter-spacing:0.05em;}
+  .nt-tracking-card .trk-events{list-style:none;border-top:1px solid var(--noirae-border-light);padding-top:14px;}
+  .nt-tracking-card .trk-events li{padding:0 0 12px 12px;border-left:2px solid var(--noirae-border-medium);}
+  .nt-tracking-card .trk-events li:last-child{padding-bottom:0;}
+  .nt-tracking-card .trk-event-desc{font-size:13px;color:var(--noirae-text-primary);}
+  .nt-tracking-card .trk-event-meta{margin-top:2px;font-size:12px;color:var(--noirae-text-muted);}
+  .nt-tracking-card .trk-error{font-size:13px;color:var(--noirae-error);}
+  .nt-tracking-card .trk-btn{align-self:flex-start;background:transparent;color:var(--noirae-text-primary);border:1px solid var(--noirae-border-dark);padding:9px 16px;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;font-family:var(--noirae-font-sans);cursor:pointer;transition:border-color .2s ease;}
+  .nt-tracking-card .trk-btn:hover{border-color:var(--noirae-text-primary);}
+  .nt-tracking-card .trk-btn:disabled{opacity:0.6;cursor:not-allowed;}
+`;
+
+const statusColor = (status) => {
+  const s = (status || '').toLowerCase();
+  if (s.includes('delivered')) return 'var(--noirae-success)';
+  if (s.includes('exception') || s.includes('delayed')) return 'var(--noirae-error)';
+  return 'var(--noirae-text-primary)';
+};
+
+export default function OrderTracking({ trackingNumber }) {
   const t = useTranslations('OrderTracking');
-  const [trackingData, setTrackingData] = useState(null);
-  const [trackingEvents, setTrackingEvents] = useState([]);
+  const [tracking, setTracking] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState('');
 
-  useEffect(() => {
-    if (trackingNumber) {
-      fetchTrackingInfo();
-    }
-  }, [trackingNumber]);
-
-  const fetchTrackingInfo = async () => {
+  const fetchTracking = useCallback(async () => {
+    if (!trackingNumber) return;
     setLoading(true);
-    setError(null);
-
+    setError('');
     try {
-      // Fetch tracking information
-      const trackingResponse = await fetch(`/api/shipping/track/${trackingNumber}`);
-      const trackingResult = await trackingResponse.json();
-
-      if (trackingResult.success) {
-        setTrackingData(trackingResult.data);
-      } else {
-        setError(trackingResult.message || t('fetchError'));
-      }
-
-      // Fetch detailed tracking events
-      const eventsResponse = await fetch(`/api/shipping/tracking-events/${trackingNumber}`);
-      const eventsResult = await eventsResponse.json();
-
-      if (eventsResult.success) {
-        setTrackingEvents(eventsResult.data);
-      }
+      const data = await apiRequest(`/shipping/track/${encodeURIComponent(trackingNumber)}`);
+      setTracking(data?.keyValueTable || null);
     } catch (err) {
-      setError(t('fetchError'));
       console.error('Tracking fetch error:', err);
+      setError(t('fetchError'));
     } finally {
       setLoading(false);
     }
-  };
+  }, [trackingNumber, t]);
 
-  const formatDate = (dateString) => {
-    if (!dateString) return t('notAvailable');
-    return new Date(dateString).toLocaleString();
-  };
+  useEffect(() => {
+    fetchTracking();
+  }, [fetchTracking]);
 
-  const getStatusColor = (status) => {
-    const statusLower = status?.toLowerCase() || '';
-    if (statusLower.includes('delivered')) return 'var(--noirae-success)';
-    if (statusLower.includes('transit') || statusLower.includes('shipped')) return 'var(--noirae-info)';
-    if (statusLower.includes('exception') || statusLower.includes('delayed')) return 'var(--noirae-error)';
-    return 'var(--noirae-text-secondary)';
-  };
-
-  if (loading) {
-    return (
-      <div className="rounded-lg shadow-md p-6" style={{ background: 'var(--noirae-bg-white)' }}>
-        <div className="animate-pulse">
-          <div className="h-4 rounded w-1/4 mb-4" style={{ background: 'var(--noirae-bg-sand)' }}></div>
-          <div className="h-4 rounded w-1/2 mb-2" style={{ background: 'var(--noirae-bg-sand)' }}></div>
-          <div className="h-4 rounded w-3/4" style={{ background: 'var(--noirae-bg-sand)' }}></div>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="rounded-lg shadow-md p-6" style={{ background: 'var(--noirae-bg-white)' }}>
-        <div className="mb-4" style={{ color: 'var(--noirae-error)' }}>
-          <h3 className="text-lg font-semibold">{t('errorTitle')}</h3>
-          <p>{error}</p>
-        </div>
-        <button
-          onClick={fetchTrackingInfo}
-          className="px-4 py-2 rounded"
-          style={{ background: 'var(--noirae-charcoal)', color: 'var(--noirae-bg-white)' }}
-        >
-          {t('retry')}
-        </button>
-      </div>
-    );
-  }
-
-  if (!trackingData && !trackingNumber) {
-    return (
-      <div className="rounded-lg p-6 text-center" style={{ background: 'var(--noirae-bg-light-gray)' }}>
-        <p style={{ color: 'var(--noirae-text-secondary)' }}>{t('noTracking')}</p>
-      </div>
-    );
-  }
+  const formatDate = (value) => (value ? new Date(value).toLocaleString() : t('notAvailable'));
+  const events = Array.isArray(tracking?.events) ? tracking.events : [];
 
   return (
-    <div className="rounded-lg shadow-md p-6" style={{ background: 'var(--noirae-bg-white)' }}>
-      <div className="mb-6">
-        <h3 className="text-xl font-semibold mb-2" style={{ color: 'var(--noirae-charcoal)' }}>{t('title')}</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <p className="text-sm" style={{ color: 'var(--noirae-text-secondary)' }}>{t('trackingNumber')}</p>
-            <p className="font-mono text-lg">{trackingNumber}</p>
-          </div>
-          {trackingData && (
-            <>
+    <section className="nt-tracking-card">
+      <style>{TRACKING_CSS}</style>
+      <h2 className="trk-title">{t('title')}</h2>
+      <div className="trk-body">
+        <div>
+          <p className="trk-label">{t('trackingNumber')}</p>
+          <p className="trk-value trk-mono">{trackingNumber}</p>
+        </div>
+
+        {error && <p className="trk-error">{error}</p>}
+
+        {tracking && (
+          <>
+            {(tracking.statusDescription || tracking.status) && (
               <div>
-                <p className="text-sm" style={{ color: 'var(--noirae-text-secondary)' }}>{t('status')}</p>
-                <p className="font-semibold" style={{ color: getStatusColor(trackingData.status) }}>
-                  {trackingData.status}
+                <p className="trk-label">{t('status')}</p>
+                <p className="trk-value" style={{ color: statusColor(tracking.status) }}>
+                  {tracking.statusDescription || tracking.status}
                 </p>
               </div>
-              {trackingData.estimatedDelivery && (
-                <div>
-                  <p className="text-sm" style={{ color: 'var(--noirae-text-secondary)' }}>{t('estimatedDelivery')}</p>
-                  <p className="font-semibold">{formatDate(trackingData.estimatedDelivery)}</p>
-                </div>
-              )}
-              {trackingData.actualDelivery && (
-                <div>
-                  <p className="text-sm" style={{ color: 'var(--noirae-text-secondary)' }}>{t('delivered')}</p>
-                  <p className="font-semibold" style={{ color: 'var(--noirae-success)' }}>{formatDate(trackingData.actualDelivery)}</p>
-                </div>
-              )}
-            </>
-          )}
-        </div>
-      </div>
-
-      {trackingData?.location && (
-        <div className="mb-6">
-          <h4 className="text-lg font-semibold mb-2" style={{ color: 'var(--noirae-charcoal)' }}>{t('currentLocation')}</h4>
-          <p style={{ color: 'var(--noirae-text-secondary)' }}>
-            {trackingData.location.city && `${trackingData.location.city}, `}
-            {trackingData.location.stateOrProvinceCode && `${trackingData.location.stateOrProvinceCode} `}
-            {trackingData.location.countryCode}
-          </p>
-        </div>
-      )}
-
-      {trackingEvents.length > 0 && (
-        <div>
-          <h4 className="text-lg font-semibold mb-4" style={{ color: 'var(--noirae-charcoal)' }}>{t('trackingHistory')}</h4>
-          <div className="space-y-4">
-            {trackingEvents.map((event, index) => (
-              <div key={index} className="border-l-4 pl-4 pb-4" style={{ borderColor: 'var(--noirae-border-medium)' }}>
-                <div className="flex justify-between items-start">
-                  <div>
-                    <p className="font-semibold" style={{ color: 'var(--noirae-charcoal)' }}>{event.event_description}</p>
-                    {event.event_location && (
-                      <p className="text-sm" style={{ color: 'var(--noirae-text-secondary)' }}>
-                        {event.event_location.city && `${event.event_location.city}, `}
-                        {event.event_location.stateOrProvinceCode && `${event.event_location.stateOrProvinceCode} `}
-                        {event.event_location.countryCode}
-                      </p>
-                    )}
-                  </div>
-                  <div className="text-right">
-                    <p className="text-sm" style={{ color: 'var(--noirae-text-secondary)' }}>{formatDate(event.event_timestamp)}</p>
-                    {event.event_type && (
-                      <p className="text-xs" style={{ color: 'var(--noirae-text-muted)' }}>{event.event_type}</p>
-                    )}
-                  </div>
-                </div>
+            )}
+            {tracking.estimatedDelivery && (
+              <div>
+                <p className="trk-label">{t('estimatedDelivery')}</p>
+                <p className="trk-value">{formatDate(tracking.estimatedDelivery)}</p>
               </div>
-            ))}
-          </div>
-        </div>
-      )}
+            )}
+            {events.length > 0 && (
+              <div>
+                <p className="trk-label" style={{ marginBottom: '10px' }}>{t('trackingHistory')}</p>
+                <ul className="trk-events">
+                  {events.map((event, idx) => (
+                    <li key={idx}>
+                      <p className="trk-event-desc">{event.description}</p>
+                      <p className="trk-event-meta">
+                        {[formatDate(event.timestamp), event.location].filter(Boolean).join(' · ')}
+                      </p>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </>
+        )}
 
-      <div className="mt-6 pt-4 border-t" style={{ borderColor: 'var(--noirae-border-light)' }}>
-        <button
-          onClick={fetchTrackingInfo}
-          className="px-4 py-2 rounded transition-colors"
-          style={{ background: 'var(--noirae-charcoal)', color: 'var(--noirae-bg-white)' }}
-        >
-          {t('refresh')}
+        <button type="button" className="trk-btn" onClick={fetchTracking} disabled={loading}>
+          {error ? t('retry') : t('refresh')}
         </button>
       </div>
-    </div>
+    </section>
   );
 }
