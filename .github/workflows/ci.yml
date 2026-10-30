@@ -131,6 +131,15 @@ jobs:
       - name: tests (unit + MySQL integration)
         working-directory: rust
         run: cargo test --locked -- --include-ignored --test-threads=1
+      - name: Node ↔ Rust API parity (same requests, same JSON)
+        run: |
+          (cd rust && cargo build --locked -p api)   # in rust/ so rust-toolchain.toml applies
+          API_PORT=7000 rust/target/debug/api > api.log 2>&1 &
+          for i in $(seq 1 30); do curl -sf http://127.0.0.1:7000/health && break; sleep 1; done
+          cd backend && RUST_API_URL=http://127.0.0.1:7000 npx jest tests/parity.test.js
+      - name: API log (on failure)
+        if: failure()
+        run: cat api.log || true
       - name: .sqlx offline data is up to date
         working-directory: rust
         # touch: make the macros re-run offline instead of reusing the cached build

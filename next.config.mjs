@@ -34,9 +34,17 @@ const nextConfig = {
       routes.push('debug', 'logs');
     }
     
+    // Route groups already ported to the Rust API (rust/crates/api) go there
+    // instead, e.g. RUST_API_URL=http://api:7000 RUST_API_ROUTES=products.
+    // Unset = everything on the Node backend (instant rollback).
+    const rustUrl = (process.env.RUST_API_URL || '').trim().replace(/\/$/, '');
+    const rustRoutes = new Set(
+      rustUrl ? (process.env.RUST_API_ROUTES || '').split(',').map((r) => r.trim()).filter(Boolean) : []
+    );
+
     return routes.map(route => ({
       source: `/api/${route}/:path*`,
-      destination: `${backendUrl}/api/${route}/:path*`,
+      destination: `${rustRoutes.has(route) ? rustUrl : backendUrl}/api/${route}/:path*`,
     }));
   },
   images: {

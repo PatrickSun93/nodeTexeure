@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use email_daemon::config::{self, Config, Transport};
+use email_daemon::config::{Config, Transport};
 use email_daemon::mailer::{OutboxMailer, SesMailer};
 use email_daemon::{queue, run};
 use sqlx::mysql::MySqlPoolOptions;
@@ -10,7 +10,7 @@ use tracing_subscriber::EnvFilter;
 /// Connect, waiting for MySQL to come up and for the backend to have applied the
 /// migrations this daemon needs (it runs them on start).
 async fn connect() -> anyhow::Result<sqlx::MySqlPool> {
-    let options = config::database_options()?;
+    let options = common::database_options()?;
     loop {
         match MySqlPoolOptions::new()
             .max_connections(4)

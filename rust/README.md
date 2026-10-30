@@ -7,6 +7,8 @@ can move without the rest noticing.
 | Crate | Replaces | Status |
 |---|---|---|
 | `crates/email-daemon` | `backend/services/emailDaemon.js` | Live: the only consumer of `email_queue` |
+| `crates/api` | Express route groups, one at a time | `/api/products/*` (list, by-ids, detail) |
+| `crates/common` | — | Shared env config, MySQL connection, response envelope, timestamps |
 
 ## Why Rust here
 
@@ -16,9 +18,11 @@ can move without the rest noticing.
   the line, not a silent runtime failure (several Node bugs were exactly that).
 - **Errors can't be ignored.** Database calls return `Result`; there is no
   equivalent of `executeQuery` quietly returning `{ success: false }`.
-- **Small footprint.** Draining 2,000 queued emails: ~11 MB peak RSS and ~30% less
-  CPU than the Node daemon (82 MB). Wall time was the same — that job is bound by
-  database round-trips.
+- **Faster and smaller.** Product API under load (50 concurrent): ~1,550 req/s for
+  the list and ~1,000 for detail vs ~600–830 / ~570 from Express doing the same
+  queries (Rust matches Node's *cached* responses without caching), p99 roughly a
+  third, 13 MB vs 210 MB RSS. The email daemon is DB-bound, so same wall time, but
+  11 MB vs 82 MB and ~30% less CPU.
 
 ## Working on it
 
@@ -73,17 +77,45 @@ when the row has variables), sends via **AWS SES v2**, and records the outcome i
 | `EMAIL_TRANSPORT`, `EMAIL_OUTBOX_DIR` | auto, `email-outbox` |
 | `RUST_LOG` | `info` |
 
-Runs as the `email-daemon` service in both compose files (image: `rust/Dockerfile`).
+Runs as the `email-daemon` service in both compose files (image: `rust/Dockerfile`, `command: ["email-daemon"]`).
 
-## Porting the API next
+## api
 
-The plan for the Express routes (154 endpoints, see `docs/API.md`):
+Axum + sqlx HTTP service (port `API_PORT`, default 7000; `GET /health` checks the
+DB). It answers only the route groups the storefront proxy sends it:
 
-1. Add an `api` crate on **Axum + sqlx**, sharing a small `db`/`auth` crate
-   (JWT with `token_version` checks, the response envelope, CSRF).
-2. Move one route group at a time. The storefront's `/api/*` proxy is configured
-   per route in `next.config.mjs`, so e.g. `/api/products` can point at the Rust
-   service while the rest stays on Express.
-3. The backend's Jest/supertest suite tests behaviour over HTTP — point it at the
-   Rust service's URL and a ported group must pass the same tests before its
-   proxy route switches over.
+```bash
+# next.config.mjs reads these (baked in at `next build` for production)
+RUST_API_URL=http://api:7000
+RUST_API_ROUTES=products        # comma-separated route groups; unset = all Node
+```
+
+Unsetting `RUST_API_ROUTES` (and rebuilding the frontend) sends everything back
+to Express — the Node routes stay in place until a group has been on Rust for a
+while. Responses carry `X-Served-By: rust-api`.
+
+**Parity is tested, not assumed.** `backend/tests/parity.test.js` sends the same
+requests (pagination edge cases, filters, search incl. SQL-injection strings,
+locales via query and cookie, slugs, unknown ids, bad input) to Node and Rust and
+requires identical status and JSON. CI runs it against a fresh API build.
+
+Notes on the port:
+- Optional filters are one static query with `(? IS NULL OR …)` clauses, so the
+  whole query stays compile-time checked (no string-built SQL).
+- Query parsing mirrors Express exactly (`parseInt` semantics, `qs` arrays for
+  `materials[]`, `NEXT_LOCALE` cookie) — see `src/params.rs`.
+- No response cache yet: Rust without a cache is as fast as Node with its
+  5-minute cache, and never serves stale data.
+- Not yet ported: rate limiting (the Express global limiter) — the Rust service
+  sits behind the storefront proxy and is not exposed publicly in compose.
+
+### Porting the next route group
+
+1. Read the Express route; write a `src/routes/<group>.rs` with `query_as!`
+   structs that list the public columns explicitly.
+2. Add its URLs to `backend/tests/parity.test.js` and make them pass.
+3. `cargo sqlx prepare --workspace -- --all-targets`, commit `.sqlx`.
+4. Add the group to `RUST_API_ROUTES` (compose + production build).
+
+Read-only public groups first (`search`, `journal`, `settings/public`), then
+authenticated ones once `common` has JWT + `token_version` + CSRF checks.

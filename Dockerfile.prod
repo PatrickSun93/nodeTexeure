@@ -7,6 +7,10 @@ COPY . .
 # The API proxy target is baked into the build; point it at the backend service.
 ARG PRODUCTION_BACKEND_URL=http://backend:6666
 ENV PRODUCTION_BACKEND_URL=$PRODUCTION_BACKEND_URL
+# Rust API route groups (see next.config.mjs); baked in at build like the above.
+ARG RUST_API_URL=
+ARG RUST_API_ROUTES=
+ENV RUST_API_URL=$RUST_API_URL RUST_API_ROUTES=$RUST_API_ROUTES
 ENV NODE_ENV=production
 RUN npm run build
 

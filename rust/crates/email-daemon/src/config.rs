@@ -1,9 +1,9 @@
 //! Configuration from environment variables — the same names the Node backend
 //! uses (see backend/.env.example), so one `.env` serves both.
 
-use std::{env, path::PathBuf, time::Duration};
+use std::{path::PathBuf, time::Duration};
 
-use sqlx::mysql::MySqlConnectOptions;
+use common::env::{number, var};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Transport {
@@ -26,17 +26,6 @@ pub struct Config {
     pub from: String,
     pub reply_to: String,
     pub ses_region: String,
-}
-
-fn var(name: &str) -> Option<String> {
-    env::var(name)
-        .ok()
-        .map(|v| v.trim().to_owned())
-        .filter(|v| !v.is_empty())
-}
-
-fn number<T: std::str::FromStr>(name: &str, default: T) -> T {
-    var(name).and_then(|v| v.parse().ok()).unwrap_or(default)
 }
 
 /// SES is used when real-looking AWS keys are present (the Node service's rule),
@@ -79,19 +68,4 @@ impl Config {
                 .unwrap_or_else(|| "us-east-1".into()),
         }
     }
-}
-
-/// MySQL connection from `DB_HOST`/`DB_PORT`/`DB_USER`/`DB_PASSWORD`/`DB_NAME`,
-/// or a full `DATABASE_URL` when set (used by the tests and sqlx tooling).
-pub fn database_options() -> anyhow::Result<MySqlConnectOptions> {
-    if let Some(url) = var("DATABASE_URL") {
-        return Ok(url.parse()?);
-    }
-    Ok(MySqlConnectOptions::new()
-        .host(&var("DB_HOST").unwrap_or_else(|| "localhost".into()))
-        .port(number("DB_PORT", 3306))
-        .username(&var("DB_USER").unwrap_or_else(|| "root".into()))
-        .password(&var("DB_PASSWORD").unwrap_or_default())
-        .database(&var("DB_NAME").unwrap_or_else(|| "bed_texture_ecommerce".into()))
-        .charset("utf8mb4"))
 }

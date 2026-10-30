@@ -1,5 +1,5 @@
 # Rust services for NodeTexeure. The Node backend is being ported here piece by
-# piece; the email daemon is the first. See rust/README.md.
+# piece. See rust/README.md.
 [workspace]
 resolver = "3"
 members = ["crates/*"]
@@ -12,6 +12,8 @@ publish = false
 
 [workspace.dependencies]
 anyhow = "1"
+axum = "0.8"
+common = { path = "crates/common" }
 chrono = { version = "0.4", default-features = false, features = ["clock", "std"] }
 dotenvy = "0.15"
 regex = "1"
@@ -24,6 +26,8 @@ tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt"] }
 aws-config = { version = "1", features = ["behavior-version-latest"] }
 aws-sdk-sesv2 = "1"
 tempfile = "3"
+tower = "0.5"
+tower-http = { version = "0.6", features = ["trace", "set-header", "timeout"] }
 
 [workspace.lints.rust]
 unsafe_code = "forbid"

@@ -15,10 +15,14 @@ Design direction: **"Champagne & Charcoal"** (see [docs/DESIGN.md](docs/DESIGN.m
 | Storefront (frontend) | `src/` | Next.js 15, React 19, Tailwind 4 | 3000 |
 | Backend API | `backend/` | Express.js, MySQL (`mysql2`), JWT | 6666 |
 | Admin dashboard | `admin-dashboard/` | Next.js 15, React 19 | 3005 |
+| Rust API | `rust/crates/api` | Axum, sqlx | 7000 |
 | Email daemon | `rust/crates/email-daemon` | Rust, sqlx, AWS SES v2 | — |
 
 The backend is being ported to Rust piece by piece (`rust/`, see
-[rust/README.md](rust/README.md)); the email daemon is done. New Rust queries use
+[rust/README.md](rust/README.md)): the email daemon and `/api/products/*` are
+done. The storefront proxy sends the groups in `RUST_API_ROUTES` to the Rust API;
+a ported group must pass `backend/tests/parity.test.js` (identical JSON to Node).
+Write new public endpoints in `rust/crates/api`. New Rust queries use
 sqlx `query!` macros — refresh `rust/.sqlx` with `cargo sqlx prepare --workspace
 -- --all-targets` after changing one, or CI fails.
 
