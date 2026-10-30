@@ -79,6 +79,25 @@ services:
     depends_on:
       - backend
 
+  # Rust email daemon (rust/crates/email-daemon): delivers email_queue. Without
+  # SES keys it writes each email to ./backend/email-outbox as an HTML file.
+  email-daemon:
+    build:
+      context: ./rust
+    environment:
+      DB_HOST: mysql
+      DB_PORT: "3306"
+      DB_NAME: bed_texture_ecommerce
+      DB_USER: root
+      DB_PASSWORD: ${DB_PASSWORD:-noirae_dev}
+      EMAIL_TRANSPORT: outbox
+      EMAIL_OUTBOX_DIR: /outbox
+    user: root # write to the bind-mounted outbox regardless of host ownership
+    volumes:
+      - ./backend/email-outbox:/outbox
+    depends_on:
+      - backend # waits itself until the backend has applied migrations
+
 volumes:
   mysql_data:
   backend_node_modules:

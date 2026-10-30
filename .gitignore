@@ -191,3 +191,6 @@ backend/uploads/general/
 # Uploaded product images (served from S3 or written at runtime)
 backend/uploads/products/
 .vercel
+
+# Rust build output
+rust/target/

@@ -10,7 +10,7 @@ Express + MySQL API on port 6666. Repo-wide setup is in the root
 | `middleware/authMiddleware.js` | `protect`, `protectOptional`, `admin`, `staffOrAdmin` |
 | `middleware/csrfMiddleware.js` | Double-submit CSRF for admin writes |
 | `services/` | Stripe, SES email + queue, S3 images, FedEx/shipping, inventory, abandoned carts |
-| `services/emailDaemon.js` | Separate process that delivers `email_queue` |
+| `../rust/crates/email-daemon` | Rust process that delivers `email_queue` (see [rust/README.md](../rust/README.md)) |
 | `migrations/` + `scripts/migrate.js` | Schema migrations ([docs/DATABASE.md](../docs/DATABASE.md)) |
 | `tests/` | Jest + supertest API tests |
 
@@ -20,7 +20,7 @@ npm run migrate        # apply schema migrations
 npm run seed:rnd       # demo accounts + catalogue
 npm run seed:example   # orders, reviews, wishlist, images
 npm test               # API tests (needs the seeded MySQL; see below)
-npm run email-daemon   # deliver queued email
+npm run email-daemon   # deliver queued email (runs the Rust daemon via cargo)
 npm run create-admin   # ADMIN_EMAIL=… ADMIN_PASSWORD=… create/promote an admin
 ```
 

@@ -1,0 +1,12 @@
+{
+  "db_name": "MySQL",
+  "query": "UPDATE email_queue SET status = 'processing', claimed_at = NOW()\n         WHERE id = ? AND status = 'pending'",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": []
+  },
+  "hash": "a38b434c37c2046793da6dccd27cc44dff5057bc2b4dab5f7b11e72c374e7bb4"
+}

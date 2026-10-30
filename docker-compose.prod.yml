@@ -88,5 +88,24 @@ services:
       backend:
         condition: service_healthy
 
+  # Rust email daemon: the only consumer of email_queue (SES credentials and
+  # sender settings come from backend/.env).
+  email-daemon:
+    build:
+      context: ./rust
+    env_file:
+      - path: ./backend/.env
+        required: false
+    environment:
+      DB_HOST: mysql
+      DB_PORT: "3306"
+      DB_NAME: bed_texture_ecommerce
+      DB_USER: root
+      DB_PASSWORD: ${DB_PASSWORD:?set DB_PASSWORD}
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+
 volumes:
   mysql_prod_data:

@@ -1,0 +1,24 @@
+{
+  "db_name": "MySQL",
+  "query": "SELECT CAST(COALESCE(MAX(version), 0) AS SIGNED) AS \"version!: i64\" FROM schema_migrations",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "version!: i64",
+        "type_info": {
+          "type": "LongLong",
+          "flags": "NOT_NULL | BINARY",
+          "max_size": 21
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 0
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "4d90672addf2481a28a8422d48a79361e6ab5673a2327b45116f99f5d690a4e9"
+}

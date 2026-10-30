@@ -38,7 +38,9 @@ docker compose -f docker-compose.prod.yml up -d --build
   `docker compose -f docker-compose.prod.yml exec -e ADMIN_EMAIL=you@example.com -e ADMIN_PASSWORD='…' backend npm run create-admin`
   (12+ characters, mixed case and a digit).
 - Every start: the backend applies pending migrations (`backend/migrations`), then
-  starts the API and the email daemon.
+  starts the API. The `email-daemon` container (Rust, `rust/`) waits for those
+  migrations, then delivers queued email via SES using the `AWS_*` settings in
+  `backend/.env`.
 - The backend container is healthy only when `GET /api/status/health` returns
   200, which requires a working DB connection (503 otherwise). Storefront and
   admin wait for it.
@@ -56,7 +58,9 @@ handlers return non-2xx if the order can't be updated, so Stripe retries.
   `https://<storefront>/api/status/health`).
 - **Errors:** set `SENTRY_DSN` in `backend/.env` to report unhandled backend
   errors (no PII is sent).
-- **Logs:** `docker compose -f docker-compose.prod.yml logs -f backend`.
+- **Logs:** `docker compose -f docker-compose.prod.yml logs -f backend email-daemon`.
+- **Email queue:** the admin's Email Queue view shows pending/sending/failed rows;
+  failed sends retry with backoff and can be requeued there.
 - **Backups:** `database/db-manager.sh backup` / `restore <file>`, or `mysqldump`
   against the `mysql` service. Back up before deploying a migration.
 - **Revoking access:** changing a user's role or status, a password reset, or an

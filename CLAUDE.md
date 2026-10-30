@@ -15,6 +15,12 @@ Design direction: **"Champagne & Charcoal"** (see [docs/DESIGN.md](docs/DESIGN.m
 | Storefront (frontend) | `src/` | Next.js 15, React 19, Tailwind 4 | 3000 |
 | Backend API | `backend/` | Express.js, MySQL (`mysql2`), JWT | 6666 |
 | Admin dashboard | `admin-dashboard/` | Next.js 15, React 19 | 3005 |
+| Email daemon | `rust/crates/email-daemon` | Rust, sqlx, AWS SES v2 | — |
+
+The backend is being ported to Rust piece by piece (`rust/`, see
+[rust/README.md](rust/README.md)); the email daemon is done. New Rust queries use
+sqlx `query!` macros — refresh `rust/.sqlx` with `cargo sqlx prepare --workspace
+-- --all-targets` after changing one, or CI fails.
 
 Database: MySQL 8.0 (schema migrations in `backend/migrations/`, applied on
 backend start via `npm run migrate`), ~42 tables, custom prefixed IDs (`PROD0000000001`), triggers,
@@ -113,8 +119,11 @@ proxy + design tokens → seed example data → smoke test).
   MySQL (`tests/*.test.js`: auth, revocation, CSRF, IDOR, checkout, SQLi). Point
   `DB_HOST`/`DB_PORT` at the Docker MySQL (`DB_PORT=3307`).
 - `npm run smoke` — checks the running stack (frontend pages + backend via proxy).
-- CI (`.github/workflows/ci.yml`) runs all of the above for both Next apps and the
-  backend (MySQL service → `init.sql` → `migrate` → seed → tests) plus `npm audit`.
+- `cd rust && cargo test -- --include-ignored --test-threads=1` — Rust unit +
+  MySQL integration tests (needs `DATABASE_URL`).
+- CI (`.github/workflows/ci.yml`) runs all of the above for both Next apps, the
+  backend and `rust/` (MySQL service → `init.sql` → `migrate` → seed → tests; plus
+  rustfmt, clippy, the `.sqlx` freshness check and the image build) plus `npm audit`.
 - Security posture is enforced by those tests: privilege escalation, IDOR, JWT
   forgery (incl. `alg:none`), revoked sessions, and SQL injection are blocked.
   Keep it that way — new admin routes go in `backend/routes/admin/` with an `admin` or
