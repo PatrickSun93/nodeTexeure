@@ -1,11 +1,13 @@
 // Simple API utilities for cookie-based auth and CSRF protection
 // Note: /api/* paths are automatically proxied to backend via next.config.mjs rewrites
 
+import type { ApiResponse } from '@/types/api';
+
 const BACKEND_URL = typeof window === 'undefined'
   ? (process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:6666')
   : '';
 
-function readCookie(name) {
+function readCookie(name: string): string | undefined {
   if (typeof document === 'undefined') return undefined;
   const matches = document.cookie.match(new RegExp('(?:^|; )' + name.replace(/([.$?*|{}()[\]\\/+^])/g, '\\$1') + '=([^;]*)'));
   return matches ? decodeURIComponent(matches[1]) : undefined;
@@ -16,7 +18,7 @@ function readCookie(name) {
  * - Returns the token from the csrf_token cookie if present.
  * - Otherwise, calls GET /api/users/csrf-token to obtain and set it.
  */
-async function ensureCsrfToken({ refresh = false } = {}) {
+async function ensureCsrfToken({ refresh = false }: { refresh?: boolean } = {}): Promise<string> {
   const token = refresh ? undefined : readCookie('csrf_token');
   if (token) return token;
 
@@ -30,11 +32,17 @@ async function ensureCsrfToken({ refresh = false } = {}) {
     throw new Error(`Failed to obtain CSRF token: ${res.status}`);
   }
 
-  const data = await res.json();
+  const data: ApiResponse<{ csrfToken: string }> = await res.json();
   if (data.status == 'SUCCESS') {
     return data.keyValueTable.csrfToken;
   }
   throw new Error('CSRF token missing in response');
+}
+
+/** Thrown by apiFetch on a 401/403, with the response body. */
+export interface AuthError extends Error {
+  status: number;
+  data: ApiResponse;
 }
 
 /**
@@ -43,7 +51,7 @@ async function ensureCsrfToken({ refresh = false } = {}) {
  * - Automatically attaches X-CSRF-Token for non-GET/HEAD/OPTIONS methods
  * - Returns parsed JSON from ResponseFormatter
  */
-async function apiFetch(pathOrUrl, options = {}) {
+async function apiFetch<T = unknown>(pathOrUrl: string, options: RequestInit = {}): Promise<ApiResponse<T>> {
   const url = pathOrUrl.startsWith('http') ? pathOrUrl : `${BACKEND_URL}${pathOrUrl}`;
   const method = (options.method || 'GET').toUpperCase();
 
@@ -78,7 +86,7 @@ async function apiFetch(pathOrUrl, options = {}) {
 
   // Surface auth/permission issues to caller
   if (res.status === 401 || res.status === 403) {
-    const error = new Error('Unauthorized');
+    const error = new Error('Unauthorized') as AuthError;
     error.status = res.status;
     error.data = data;
     throw error;
