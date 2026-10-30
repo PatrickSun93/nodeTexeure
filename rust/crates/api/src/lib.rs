@@ -30,6 +30,9 @@ pub mod express_send;
 pub mod multer;
 pub mod mysql_json;
 
+// /api/admin/analytics (wf/analytics): JavaScript Date semantics for getDateRange.
+pub mod js_date;
+
 use std::time::Duration;
 
 use axum::Router;
