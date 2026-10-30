@@ -1,0 +1,12 @@
+{
+  "db_name": "MySQL",
+  "query": "UPDATE users SET status = 'inactive', token_version = token_version + 1 WHERE id = ?",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": []
+  },
+  "hash": "8bc4d265a11ecec8b7af71563dad117d22b94b019cba29dc1036210ccf72115f"
+}

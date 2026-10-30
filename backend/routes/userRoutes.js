@@ -596,10 +596,16 @@ router.post('/addresses', protect, async (req, res) => {
       );
     }
 
-    await DatabaseUtil.executeQuery(
+    // executeQuery never throws: an INSERT the DB rejects (a name over 100
+    // chars, a phone over 20, a country that isn't 2 letters — idx_country is a
+    // CHAR(2) functional index) used to answer 201 with nothing saved.
+    const inserted = await DatabaseUtil.executeQuery(
       'INSERT INTO user_addresses (id, user_id, type, is_default, first_name, last_name, phone, address_json) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
       [addressId, req.user.id, type || 'shipping', is_default ? 1 : 0, first_name, last_name, phone || null, addressJson]
     );
+    if (!inserted.success) {
+      throw new Error(`Failed to insert address: ${inserted.error}`);
+    }
 
     res.status(201).json(ResponseFormatter.success('Address created', { addressId }));
   } catch (error) {
@@ -662,7 +668,11 @@ router.put('/addresses/:id', protect, async (req, res) => {
     }
 
     params.push(id);
-    await DatabaseUtil.executeQuery(`UPDATE user_addresses SET ${updates.join(', ')} WHERE id = ?`, params);
+    // Same as the create route: a rejected UPDATE is not "Address updated".
+    const updated = await DatabaseUtil.executeQuery(`UPDATE user_addresses SET ${updates.join(', ')} WHERE id = ?`, params);
+    if (!updated.success) {
+      throw new Error(`Failed to update address: ${updated.error}`);
+    }
     res.json(ResponseFormatter.success('Address updated'));
   } catch (error) {
     console.error('Update address error:', error);

@@ -119,6 +119,21 @@ pub fn router_with_limiter(state: AppState, global: ratelimit::RateLimiter) -> R
         // /api/users auth half (routes/users_auth.rs), each route behind its
         // Node rate limiter.
         .merge(routes::users_auth::router(state.trust_proxy))
+        // /api/users account routes (profile, addresses, admin users) and the
+        // group's Express 404s. The auth paths (login, register, …) are exact
+        // routes and take precedence over this catch-all.
+        .route(
+            "/api/users",
+            axum::routing::any(routes::users_account::dispatch),
+        )
+        .route(
+            "/api/users/",
+            axum::routing::any(routes::users_account::dispatch),
+        )
+        .route(
+            "/api/users/{*rest}",
+            axum::routing::any(routes::users_account::dispatch),
+        )
         .fallback(|| async {
             (
                 StatusCode::NOT_FOUND,
