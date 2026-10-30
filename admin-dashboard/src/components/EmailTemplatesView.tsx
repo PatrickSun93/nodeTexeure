@@ -2,6 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import EmailTemplateEditorView from './EmailTemplateEditorView';
 import { useNotifications } from './NotificationSystem';
+import type { EmailTemplateSummary } from '@/types/api';
+
+/** The list sends no bgColor or content; the card and preview fall back without them. */
+type TemplateCard = EmailTemplateSummary & { bgColor?: string; template_content?: string; body_html?: string };
 
 export default function EmailTemplatesView() {
     const t = useTranslations('EmailTemplates');
@@ -9,20 +13,20 @@ export default function EmailTemplatesView() {
     const [filter, setFilter] = useState('All');
     const [sort, setSort] = useState('Newest');
     const [searchQuery, setSearchQuery] = useState('');
-    const [viewMode, setViewMode] = useState('list'); // 'list', 'create', 'edit'
-    const [selectedTemplate, setSelectedTemplate] = useState(null);
+    const [viewMode, setViewMode] = useState<'list' | 'create' | 'edit'>('list');
+    const [selectedTemplate, setSelectedTemplate] = useState<TemplateCard | null>(null);
 
-    const [templates, setTemplates] = useState([]);
+    const [templates, setTemplates] = useState<TemplateCard[]>([]);
     const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState(null);
-    const [previewTemplate, setPreviewTemplate] = useState(null); // For preview modal
+    const [error, setError] = useState<string | null>(null);
+    const [previewTemplate, setPreviewTemplate] = useState<TemplateCard | null>(null); // For preview modal
 
     // Fetch templates from API
     useEffect(() => {
         const fetchTemplates = async () => {
             try {
                 const { apiFetch } = await import('../utils/api');
-                const response = await apiFetch('/api/admin/email-templates');
+                const response = await apiFetch<TemplateCard[]>('/api/admin/email-templates');
 
                 if (response.status === 'SUCCESS') {
                     // Check if response.keyValueTable is array (the list of templates)
@@ -55,7 +59,7 @@ export default function EmailTemplatesView() {
         setViewMode('create');
     };
 
-    const handleEdit = (template) => {
+    const handleEdit = (template: TemplateCard) => {
         setSelectedTemplate(template);
         setViewMode('edit');
     };
@@ -65,7 +69,7 @@ export default function EmailTemplatesView() {
         setSelectedTemplate(null);
     };
 
-    const handlePreview = (template) => {
+    const handlePreview = (template: TemplateCard) => {
         setPreviewTemplate(template);
     };
 
@@ -74,7 +78,7 @@ export default function EmailTemplatesView() {
     };
 
     // Wire the card delete button to DELETE /api/admin/email-templates/:id (real endpoint).
-    const handleDelete = async (template) => {
+    const handleDelete = async (template: TemplateCard) => {
         if (!template?.id) return;
         if (!confirm(t('confirmDeleteNamed', { name: template.name }))) return;
         try {

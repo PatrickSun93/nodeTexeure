@@ -1,8 +1,27 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, type ChangeEvent } from 'react';
 import { useTranslations } from 'next-intl';
 import { ensureCsrfToken } from '../utils/api';
+import type { ApiResponse } from '@/types/api';
+
+/** POST /api/admin/bulk/products/validate */
+interface CsvValidation {
+    valid: boolean;
+    totalRows: number;
+    validRows: number;
+    errorCount: number;
+    warningCount: number;
+    errors: string[];
+    warnings: string[];
+}
+
+/** POST /api/admin/bulk/products/upload */
+interface UploadResult {
+    successful: number;
+    failed: number;
+    errors: { row: number; sku: string; error: string }[];
+}
 
 /**
  * BulkUploadView Component
@@ -10,15 +29,15 @@ import { ensureCsrfToken } from '../utils/api';
  */
 export default function BulkUploadView() {
     const t = useTranslations('BulkUpload');
-    const [file, setFile] = useState(null);
-    const [validation, setValidation] = useState(null);
-    const [uploadResult, setUploadResult] = useState(null);
+    const [file, setFile] = useState<File | null>(null);
+    const [validation, setValidation] = useState<CsvValidation | null>(null);
+    const [uploadResult, setUploadResult] = useState<UploadResult | null>(null);
     const [isValidating, setIsValidating] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
     const [error, setError] = useState('');
 
-    const handleFileChange = (e) => {
-        const selectedFile = e.target.files[0];
+    const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
+        const selectedFile = e.target.files?.[0];
         if (selectedFile) {
             if (!selectedFile.name.endsWith('.csv')) {
                 setError(t('errSelectCsv'));
@@ -82,7 +101,7 @@ export default function BulkUploadView() {
                 body: formData
             });
 
-            const data = await response.json();
+            const data: ApiResponse<CsvValidation> = await response.json();
 
             if (data.status === 'SUCCESS') {
                 setValidation(data.keyValueTable);
@@ -124,7 +143,7 @@ export default function BulkUploadView() {
                 body: formData
             });
 
-            const data = await response.json();
+            const data: ApiResponse<UploadResult> = await response.json();
 
             if (data.status === 'SUCCESS') {
                 setUploadResult(data.keyValueTable);

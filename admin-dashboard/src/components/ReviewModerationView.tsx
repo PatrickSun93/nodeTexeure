@@ -23,9 +23,28 @@ import { useTranslations } from 'next-intl';
  * reviews (<= 2 stars) that need extra attention.
  */
 
+/** A product_reviews row joined with the reviewer and product (GET /api/reviews/admin/pending). */
+interface RawReview {
+  id: string;
+  rating: number | string;
+  title?: string | null;
+  review_text?: string | null;
+  review_details?: Record<string, string> | string | null;
+  first_name?: string | null;
+  last_name?: string | null;
+  email?: string | null;
+  product_name?: string | null;
+  created_at?: string | null;
+  status?: string | null;
+  is_approved?: number | boolean;
+  is_verified_purchase?: number | boolean;
+}
+
+type Review = ReturnType<typeof normalizeReview>;
+
 // ---- helpers ---------------------------------------------------------------
 
-function parseDetails(raw) {
+function parseDetails(raw: RawReview): Record<string, string> {
   const d = raw.review_details;
   if (!d) return {};
   if (typeof d === 'object') return d;
@@ -39,7 +58,7 @@ function parseDetails(raw) {
   return {};
 }
 
-function normalizeReview(raw) {
+function normalizeReview(raw: RawReview) {
   const details = parseDetails(raw);
   const name = [raw.first_name, raw.last_name].filter(Boolean).join(' ').trim();
   const status = String(raw.status || (raw.is_approved ? 'approved' : 'pending')).toLowerCase();
@@ -57,7 +76,7 @@ function normalizeReview(raw) {
   };
 }
 
-function initialsOf(name) {
+function initialsOf(name: string) {
   if (!name) return '?';
   const parts = name.trim().split(/\s+/).filter(Boolean);
   if (parts.length === 0) return '?';
@@ -65,7 +84,7 @@ function initialsOf(name) {
   return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
 }
 
-function Stars({ rating }) {
+function Stars({ rating }: { rating: number }) {
   const full = Math.max(0, Math.min(5, Math.round(rating)));
   return (
     <span className="tracking-wide text-sm" aria-label={`${rating} / 5`}>
@@ -75,13 +94,13 @@ function Stars({ rating }) {
   );
 }
 
-const STATUS_BADGE = {
+const STATUS_BADGE: Record<string, string> = {
   pending: 'bg-amber-100 text-amber-800',
   approved: 'bg-green-100 text-green-800',
   rejected: 'bg-red-100 text-red-800',
 };
 
-const STATUS_ACCENT = {
+const STATUS_ACCENT: Record<string, string> = {
   pending: 'border-l-amber-400',
   approved: 'border-l-green-500',
   rejected: 'border-l-red-400',
@@ -92,19 +111,19 @@ const STATUS_ACCENT = {
 export default function ReviewModerationView() {
   const t = useTranslations('ReviewModeration');
 
-  const [reviews, setReviews] = useState([]);
+  const [reviews, setReviews] = useState<Review[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState('pending');
-  const [actioningId, setActioningId] = useState(null);
-  const [actionError, setActionError] = useState(null);
+  const [actioningId, setActioningId] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   const loadReviews = async () => {
     setIsLoading(true);
     setError(null);
     try {
       const { apiFetch } = await import('../utils/api');
-      const response = await apiFetch('/api/reviews/admin/pending');
+      const response = await apiFetch<Array<{ reviews?: RawReview[] }> | { reviews?: RawReview[] }>('/api/reviews/admin/pending');
       if (response.status === 'SUCCESS') {
         const kv = response.keyValueTable;
         const rawList = Array.isArray(kv)
@@ -126,7 +145,7 @@ export default function ReviewModerationView() {
     loadReviews();
   }, []);
 
-  const handleAction = async (id, action) => {
+  const handleAction = async (id: string, action: 'approve' | 'reject') => {
     setActioningId(id);
     setActionError(null);
     // optimistic snapshot for rollback
@@ -138,12 +157,12 @@ export default function ReviewModerationView() {
       const response = await apiFetch(`/api/reviews/admin/${id}/${action}`, { method: 'PUT' });
       if (response.status !== 'SUCCESS') {
         // rollback
-        setReviews((prev) => prev.map((r) => (r.id === id ? { ...r, status: prevStatus } : r)));
+        setReviews((prev) => prev.map((r) => (r.id === id ? { ...r, status: prevStatus ?? r.status } : r)));
         setActionError(t('actionFailed'));
       }
     } catch (err) {
       console.error(`Error on review ${action}:`, err);
-      setReviews((prev) => prev.map((r) => (r.id === id ? { ...r, status: prevStatus } : r)));
+      setReviews((prev) => prev.map((r) => (r.id === id ? { ...r, status: prevStatus ?? r.status } : r)));
       setActionError(t('actionError'));
     } finally {
       setActioningId(null);
@@ -151,7 +170,7 @@ export default function ReviewModerationView() {
   };
 
   // derived data
-  const counts = {
+  const counts: Record<string, number> = {
     all: reviews.length,
     pending: reviews.filter((r) => r.status === 'pending').length,
     approved: reviews.filter((r) => r.status === 'approved').length,
@@ -185,12 +204,12 @@ export default function ReviewModerationView() {
     { key: 'flagged', label: t('labelFlagged') },
   ];
 
-  const statusLabel = (status) =>
+  const statusLabel = (status: string) =>
     ({
       pending: t('labelPending'),
       approved: t('labelApproved'),
       rejected: t('labelRejected'),
-    }[status] || status);
+    } as Record<string, string>)[status] || status;
 
   return (
     <div className="p-8 bg-gray-50 min-h-full">

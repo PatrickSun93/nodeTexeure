@@ -1,11 +1,64 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, type ReactNode } from 'react';
 import { useTranslations } from 'next-intl';
-import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, BarElement, ArcElement, Title, Tooltip, Legend } from 'chart.js';
+import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, BarElement, ArcElement, Title, Tooltip, Legend, type ChartData, type ChartOptions } from 'chart.js';
 import { Line, Bar, Pie } from 'react-chartjs-2';
 import { apiFetch } from '../utils/api';
 import { useNotifications } from './NotificationSystem';
+
+// Response shapes of /api/admin/analytics/*. Amounts are DECIMAL sums or
+// toFixed() strings on some routes and numbers on others, hence Num.
+type Num = number | string;
+
+/** parseFloat for a value that may already be a number (same result). */
+const num = (v: Num) => parseFloat(String(v));
+
+interface SalesSummary {
+    metrics: { total_revenue: Num; total_orders: Num; avg_order_value: Num; delivered_orders: Num; pending_orders: Num };
+    growth: { revenue: Num; orders: Num };
+}
+interface RevenueTrend { data: { period: string; revenue: Num; order_count: Num }[] }
+interface ProductPerformance {
+    id: string;
+    name: string;
+    times_sold: Num;
+    total_quantity: Num;
+    total_revenue: Num;
+    avg_rating: Num | null;
+    review_count: Num;
+}
+interface CustomerStats { metrics: { new_customers: Num; active_customers: Num; repeat_customers: Num; retention_rate: Num } }
+interface InventoryStatus {
+    overview: { total_products: Num; total_stock: Num; low_stock_items: Num; out_of_stock_items: Num; total_retail_value: Num };
+}
+interface RevenueByCategory { categories: { category: string; total_revenue: Num }[] }
+interface MonthExtreme { label: string; revenue: Num; vs_avg_pct: Num }
+interface RevenueVsTarget {
+    series: { label: string; revenue: Num; status: keyof typeof TARGET_STATUS_COLORS }[];
+    target: Num;
+    target_basis: string;
+    summary: { peak: MonthExtreme | null; trough: MonthExtreme | null; ytd_actual: Num; ytd_variance_pct: Num };
+}
+interface WeekdayShare { label: string; share_pct: Num }
+interface RevenueByWeekday { days: WeekdayShare[]; best_day: WeekdayShare | null; worst_day: WeekdayShare | null; weekend_share_pct: Num }
+interface ConversionFunnel {
+    stages: { key: string; label: string; count: Num; pct_of_top: Num; drop_from_prev_pct: Num | null }[];
+    biggest_drop: { to: string } | null;
+    overall_conversion_pct: Num;
+    note: string;
+}
+interface NewVsReturning {
+    split: { new_share_pct: Num; returning_share_pct: Num };
+    metrics: { repeat_purchase_rate_pct: Num; avg_orders_per_customer: Num; customer_lifetime_value: Num };
+}
+interface ShortfallDriver { key: string; label: string; pct: Num; direction: 'up' | 'down' }
+interface RevenueShortfall {
+    change: { revenue_pct: Num };
+    drivers: ShortfallDriver[];
+    customer_mix: ShortfallDriver[];
+    takeaway: string;
+}
 
 // Register ChartJS components
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, ArcElement, Title, Tooltip, Legend);
@@ -17,6 +70,8 @@ ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarEleme
 // Bar colors for revenue-vs-target status and funnel/insight tones.
 const TARGET_STATUS_COLORS = { above: '#10B981', on: '#F59E0B', below: '#D6C4A8', none: '#D1D5DB' };
 
+type Period = 'today' | 'week' | 'month' | 'quarter' | 'year' | 'custom' | string;
+
 export default function AnalyticsDashboard() {
     const t = useTranslations('AnalyticsDashboard');
     const notify = useNotifications();
@@ -24,26 +79,26 @@ export default function AnalyticsDashboard() {
     // plain-English default. The Revenue Drivers strings are not yet in the
     // message catalogs (owned by another workstream), so we degrade gracefully
     // instead of throwing on a missing key.
-    const tt = (key, fallback) => (t.has(key) ? t(key) : fallback);
-    const [period, setPeriod] = useState('month');
+    const tt = (key: string, fallback: string) => (t.has(key) ? t(key) : fallback);
+    const [period, setPeriod] = useState<Period>('month');
     const [dateRange, setDateRange] = useState({ start: '', end: '' });
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState('');
 
     // Data states
-    const [salesSummary, setSalesSummary] = useState(null);
-    const [revenueTrend, setRevenueTrend] = useState(null);
-    const [topProducts, setTopProducts] = useState([]);
-    const [customerStats, setCustomerStats] = useState(null);
-    const [inventoryStatus, setInventoryStatus] = useState(null);
-    const [revenueByCategory, setRevenueByCategory] = useState(null);
+    const [salesSummary, setSalesSummary] = useState<SalesSummary | null>(null);
+    const [revenueTrend, setRevenueTrend] = useState<RevenueTrend | null>(null);
+    const [topProducts, setTopProducts] = useState<ProductPerformance[]>([]);
+    const [customerStats, setCustomerStats] = useState<CustomerStats | null>(null);
+    const [inventoryStatus, setInventoryStatus] = useState<InventoryStatus | null>(null);
+    const [revenueByCategory, setRevenueByCategory] = useState<RevenueByCategory | null>(null);
     // Revenue Drivers data
-    const [revenueVsTarget, setRevenueVsTarget] = useState(null);
-    const [revenueByWeekday, setRevenueByWeekday] = useState(null);
-    const [bottomProducts, setBottomProducts] = useState([]);
-    const [conversionFunnel, setConversionFunnel] = useState(null);
-    const [newVsReturning, setNewVsReturning] = useState(null);
-    const [revenueShortfall, setRevenueShortfall] = useState(null);
+    const [revenueVsTarget, setRevenueVsTarget] = useState<RevenueVsTarget | null>(null);
+    const [revenueByWeekday, setRevenueByWeekday] = useState<RevenueByWeekday | null>(null);
+    const [bottomProducts, setBottomProducts] = useState<ProductPerformance[]>([]);
+    const [conversionFunnel, setConversionFunnel] = useState<ConversionFunnel | null>(null);
+    const [newVsReturning, setNewVsReturning] = useState<NewVsReturning | null>(null);
+    const [revenueShortfall, setRevenueShortfall] = useState<RevenueShortfall | null>(null);
 
     useEffect(() => {
         fetchAllAnalytics();
@@ -64,18 +119,18 @@ export default function AnalyticsDashboard() {
                 summary, trend, products, customers, inventory, categories,
                 vsTarget, weekday, bottom, funnel, newReturning, shortfall
             ] = await Promise.all([
-                apiFetch(`/api/admin/analytics/sales-summary?${params}`),
-                apiFetch(`/api/admin/analytics/revenue-trend?${params}&group_by=day`),
-                apiFetch(`/api/admin/analytics/top-products?${params}&limit=10`),
-                apiFetch(`/api/admin/analytics/customer-stats?${params}`),
-                apiFetch(`/api/admin/analytics/inventory-status`),
-                apiFetch(`/api/admin/analytics/revenue-by-category?${params}`),
-                apiFetch(`/api/admin/analytics/revenue-vs-target?months=12`),
-                apiFetch(`/api/admin/analytics/revenue-by-weekday?${params}`),
-                apiFetch(`/api/admin/analytics/bottom-products?${params}&limit=5`),
-                apiFetch(`/api/admin/analytics/conversion-funnel?${params}`),
-                apiFetch(`/api/admin/analytics/new-vs-returning?${params}`),
-                apiFetch(`/api/admin/analytics/revenue-shortfall?${params}`)
+                apiFetch<SalesSummary>(`/api/admin/analytics/sales-summary?${params}`),
+                apiFetch<RevenueTrend>(`/api/admin/analytics/revenue-trend?${params}&group_by=day`),
+                apiFetch<{ products?: ProductPerformance[] }>(`/api/admin/analytics/top-products?${params}&limit=10`),
+                apiFetch<CustomerStats>(`/api/admin/analytics/customer-stats?${params}`),
+                apiFetch<InventoryStatus>(`/api/admin/analytics/inventory-status`),
+                apiFetch<RevenueByCategory>(`/api/admin/analytics/revenue-by-category?${params}`),
+                apiFetch<RevenueVsTarget>(`/api/admin/analytics/revenue-vs-target?months=12`),
+                apiFetch<RevenueByWeekday>(`/api/admin/analytics/revenue-by-weekday?${params}`),
+                apiFetch<{ products?: ProductPerformance[] }>(`/api/admin/analytics/bottom-products?${params}&limit=5`),
+                apiFetch<ConversionFunnel>(`/api/admin/analytics/conversion-funnel?${params}`),
+                apiFetch<NewVsReturning>(`/api/admin/analytics/new-vs-returning?${params}`),
+                apiFetch<RevenueShortfall>(`/api/admin/analytics/revenue-shortfall?${params}`)
             ]);
 
             if (summary.status === 'SUCCESS') setSalesSummary(summary.keyValueTable);
@@ -99,7 +154,7 @@ export default function AnalyticsDashboard() {
         }
     };
 
-    const handleExportCSV = async (type) => {
+    const handleExportCSV = async (type: string) => {
         try {
             const params = period === 'custom' && dateRange.start && dateRange.end
                 ? `?period=custom&start_date=${dateRange.start}&end_date=${dateRange.end}`
@@ -128,19 +183,19 @@ export default function AnalyticsDashboard() {
     };
 
     // Chart configurations
-    const revenueChartData = revenueTrend ? {
+    const revenueChartData: ChartData<'line'> | null = revenueTrend ? {
         labels: revenueTrend.data.map(d => d.period),
         datasets: [
             {
                 label: t('revenue'),
-                data: revenueTrend.data.map(d => parseFloat(d.revenue)),
+                data: revenueTrend.data.map(d => num(d.revenue)),
                 borderColor: 'rgb(59, 130, 246)',
                 backgroundColor: 'rgba(59, 130, 246, 0.1)',
                 tension: 0.4
             },
             {
                 label: t('orders'),
-                data: revenueTrend.data.map(d => d.order_count),
+                data: revenueTrend.data.map(d => Number(d.order_count)),
                 borderColor: 'rgb(16, 185, 129)',
                 backgroundColor: 'rgba(16, 185, 129, 0.1)',
                 tension: 0.4,
@@ -149,7 +204,7 @@ export default function AnalyticsDashboard() {
         ]
     } : null;
 
-    const revenueChartOptions = {
+    const revenueChartOptions: ChartOptions<'line'> = {
         responsive: true,
         interaction: { mode: 'index', intersect: false },
         plugins: {
@@ -162,10 +217,10 @@ export default function AnalyticsDashboard() {
         }
     };
 
-    const categoryChartData = revenueByCategory ? {
+    const categoryChartData: ChartData<'pie'> | null = revenueByCategory ? {
         labels: revenueByCategory.categories.map(c => c.category),
         datasets: [{
-            data: revenueByCategory.categories.map(c => parseFloat(c.total_revenue)),
+            data: revenueByCategory.categories.map(c => num(c.total_revenue)),
             backgroundColor: [
                 'rgba(59, 130, 246, 0.8)',
                 'rgba(16, 185, 129, 0.8)',
@@ -180,13 +235,14 @@ export default function AnalyticsDashboard() {
     } : null;
 
     // Revenue vs Target — grouped bars (colored by above/on/below) + target line.
-    const revenueVsTargetChartData = revenueVsTarget ? {
+    // A bar chart with one line dataset (the target): Bar's data type has to admit both.
+    const revenueVsTargetChartData: ChartData<'bar' | 'line'> | null = revenueVsTarget ? {
         labels: revenueVsTarget.series.map(s => s.label),
         datasets: [
             {
                 type: 'line',
                 label: tt('target', 'Target'),
-                data: revenueVsTarget.series.map(() => parseFloat(revenueVsTarget.target)),
+                data: revenueVsTarget.series.map(() => num(revenueVsTarget.target)),
                 borderColor: '#B59A4E',
                 borderDash: [6, 4],
                 borderWidth: 2,
@@ -196,14 +252,14 @@ export default function AnalyticsDashboard() {
             {
                 type: 'bar',
                 label: t('revenue'),
-                data: revenueVsTarget.series.map(s => parseFloat(s.revenue)),
+                data: revenueVsTarget.series.map(s => num(s.revenue)),
                 backgroundColor: revenueVsTarget.series.map(s => TARGET_STATUS_COLORS[s.status] || TARGET_STATUS_COLORS.none),
                 borderWidth: 0
             }
         ]
     } : null;
 
-    const revenueVsTargetOptions = {
+    const revenueVsTargetOptions: ChartOptions<'bar'> = {
         responsive: true,
         plugins: {
             legend: { position: 'top' },
@@ -213,11 +269,11 @@ export default function AnalyticsDashboard() {
     };
 
     // Day-of-week revenue share — horizontal bars, best day green / slowest red.
-    const weekdayChartData = revenueByWeekday ? {
+    const weekdayChartData: ChartData<'bar'> | null = revenueByWeekday ? {
         labels: revenueByWeekday.days.map(d => d.label),
         datasets: [{
             label: tt('shareOfRevenue', 'Share of revenue'),
-            data: revenueByWeekday.days.map(d => parseFloat(d.share_pct)),
+            data: revenueByWeekday.days.map(d => num(d.share_pct)),
             backgroundColor: revenueByWeekday.days.map(d => {
                 if (revenueByWeekday.best_day && d.label === revenueByWeekday.best_day.label) return '#10B981';
                 if (revenueByWeekday.worst_day && d.label === revenueByWeekday.worst_day.label) return '#F87171';
@@ -227,7 +283,7 @@ export default function AnalyticsDashboard() {
         }]
     } : null;
 
-    const weekdayChartOptions = {
+    const weekdayChartOptions: ChartOptions<'bar'> = {
         indexAxis: 'y',
         responsive: true,
         plugins: { legend: { display: false } },
@@ -326,7 +382,7 @@ export default function AnalyticsDashboard() {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                     <MetricCard
                         title={t('totalRevenue')}
-                        value={`$${parseFloat(salesSummary.metrics.total_revenue).toLocaleString()}`}
+                        value={`$${num(salesSummary.metrics.total_revenue).toLocaleString()}`}
                         change={salesSummary.growth.revenue}
                         icon="💰"
                     />
@@ -338,7 +394,7 @@ export default function AnalyticsDashboard() {
                     />
                     <MetricCard
                         title={t('avgOrderValue')}
-                        value={`$${parseFloat(salesSummary.metrics.avg_order_value).toFixed(2)}`}
+                        value={`$${num(salesSummary.metrics.avg_order_value).toFixed(2)}`}
                         icon="💳"
                     />
                     <MetricCard
@@ -358,7 +414,7 @@ export default function AnalyticsDashboard() {
                             tone="good"
                             label={tt('peakMonth', 'Peak · strongest month')}
                             value={revenueVsTarget.summary.peak.label}
-                            sub={`$${parseFloat(revenueVsTarget.summary.peak.revenue).toLocaleString()} · ${revenueVsTarget.summary.peak.vs_avg_pct >= 0 ? '▲' : '▼'} ${Math.abs(revenueVsTarget.summary.peak.vs_avg_pct)}% ${tt('vsAvg', 'vs avg')}`}
+                            sub={`$${num(revenueVsTarget.summary.peak.revenue).toLocaleString()} · ${Number(revenueVsTarget.summary.peak.vs_avg_pct) >= 0 ? '▲' : '▼'} ${Math.abs(Number(revenueVsTarget.summary.peak.vs_avg_pct))}% ${tt('vsAvg', 'vs avg')}`}
                         />
                     )}
                     {revenueVsTarget?.summary?.trough && (
@@ -366,7 +422,7 @@ export default function AnalyticsDashboard() {
                             tone="bad"
                             label={tt('troughMonth', 'Trough · weakest month')}
                             value={revenueVsTarget.summary.trough.label}
-                            sub={`$${parseFloat(revenueVsTarget.summary.trough.revenue).toLocaleString()} · ${revenueVsTarget.summary.trough.vs_avg_pct >= 0 ? '▲' : '▼'} ${Math.abs(revenueVsTarget.summary.trough.vs_avg_pct)}% ${tt('vsAvg', 'vs avg')}`}
+                            sub={`$${num(revenueVsTarget.summary.trough.revenue).toLocaleString()} · ${Number(revenueVsTarget.summary.trough.vs_avg_pct) >= 0 ? '▲' : '▼'} ${Math.abs(Number(revenueVsTarget.summary.trough.vs_avg_pct))}% ${tt('vsAvg', 'vs avg')}`}
                         />
                     )}
                     {revenueByWeekday?.best_day && (
@@ -389,15 +445,15 @@ export default function AnalyticsDashboard() {
             )}
 
             {/* Revenue vs Target */}
-            {revenueVsTargetChartData && (
+            {revenueVsTarget && revenueVsTargetChartData && (
                 <div className="bg-white rounded-lg shadow-sm p-6 mb-8">
                     <div className="flex items-center justify-between flex-wrap gap-2 mb-4">
                         <div>
                             <h3 className="text-lg font-semibold">{tt('revenueVsTarget', 'Revenue vs target')}</h3>
                             <p className="text-sm text-gray-500">
-                                {tt('targetBaseline', 'Target')}: ${parseFloat(revenueVsTarget.target).toLocaleString()}/mo · {tt('ytd', 'YTD')} ${parseFloat(revenueVsTarget.summary.ytd_actual).toLocaleString()}{' '}
-                                <span className={revenueVsTarget.summary.ytd_variance_pct >= 0 ? 'text-green-600' : 'text-red-600'}>
-                                    ({revenueVsTarget.summary.ytd_variance_pct >= 0 ? '▲' : '▼'} {Math.abs(revenueVsTarget.summary.ytd_variance_pct)}% {tt('vsTargetShort', 'vs target')})
+                                {tt('targetBaseline', 'Target')}: ${num(revenueVsTarget.target).toLocaleString()}/mo · {tt('ytd', 'YTD')} ${num(revenueVsTarget.summary.ytd_actual).toLocaleString()}{' '}
+                                <span className={Number(revenueVsTarget.summary.ytd_variance_pct) >= 0 ? 'text-green-600' : 'text-red-600'}>
+                                    ({Number(revenueVsTarget.summary.ytd_variance_pct) >= 0 ? '▲' : '▼'} {Math.abs(Number(revenueVsTarget.summary.ytd_variance_pct))}% {tt('vsTargetShort', 'vs target')})
                                 </span>
                             </p>
                         </div>
@@ -407,7 +463,7 @@ export default function AnalyticsDashboard() {
                             <span className="inline-flex items-center gap-1"><span className="w-3 h-3 rounded-sm inline-block" style={{ background: TARGET_STATUS_COLORS.below }}></span>{tt('belowTarget', 'Below')}</span>
                         </div>
                     </div>
-                    <Bar data={revenueVsTargetChartData} options={revenueVsTargetOptions} />
+                    <Bar data={revenueVsTargetChartData as ChartData<'bar'>} options={revenueVsTargetOptions} />
                     <p className="text-xs text-gray-400 mt-3">{revenueVsTarget.target_basis}</p>
                 </div>
             )}
@@ -455,14 +511,14 @@ export default function AnalyticsDashboard() {
                             <StatRow
                                 label={t('lowStockItems')}
                                 value={inventoryStatus.overview.low_stock_items}
-                                highlight={inventoryStatus.overview.low_stock_items > 0}
+                                highlight={Number(inventoryStatus.overview.low_stock_items) > 0}
                             />
                             <StatRow
                                 label={t('outOfStock')}
                                 value={inventoryStatus.overview.out_of_stock_items}
-                                highlight={inventoryStatus.overview.out_of_stock_items > 0}
+                                highlight={Number(inventoryStatus.overview.out_of_stock_items) > 0}
                             />
-                            <StatRow label={t('inventoryValue')} value={`$${parseFloat(inventoryStatus.overview.total_retail_value).toLocaleString()}`} />
+                            <StatRow label={t('inventoryValue')} value={`$${num(inventoryStatus.overview.total_retail_value).toLocaleString()}`} />
                         </div>
                     </div>
                 )}
@@ -494,7 +550,7 @@ export default function AnalyticsDashboard() {
                                         </td>
                                         <td className="text-right py-3 px-4">{product.times_sold}</td>
                                         <td className="text-right py-3 px-4">{product.total_quantity}</td>
-                                        <td className="text-right py-3 px-4 font-medium">${parseFloat(product.total_revenue).toLocaleString()}</td>
+                                        <td className="text-right py-3 px-4 font-medium">${num(product.total_revenue).toLocaleString()}</td>
                                         <td className="text-right py-3 px-4">
                                             {product.avg_rating ? (
                                                 <span className="inline-flex items-center">
@@ -541,7 +597,7 @@ export default function AnalyticsDashboard() {
                                     {topProducts.slice(0, 3).map(p => (
                                         <div key={`top-${p.id}`} className="flex items-center justify-between text-sm">
                                             <span className="text-gray-800 truncate pr-2">{p.name}</span>
-                                            <span className="text-emerald-600 whitespace-nowrap">${parseFloat(p.total_revenue).toLocaleString()}</span>
+                                            <span className="text-emerald-600 whitespace-nowrap">${num(p.total_revenue).toLocaleString()}</span>
                                         </div>
                                     ))}
                                 </div>
@@ -554,7 +610,7 @@ export default function AnalyticsDashboard() {
                                     {bottomProducts.slice(0, 3).map(p => (
                                         <div key={`bot-${p.id}`} className="flex items-center justify-between text-sm">
                                             <span className="text-gray-800 truncate pr-2">{p.name}</span>
-                                            <span className="text-rose-600 whitespace-nowrap">${parseFloat(p.total_revenue).toLocaleString()}</span>
+                                            <span className="text-rose-600 whitespace-nowrap">${num(p.total_revenue).toLocaleString()}</span>
                                         </div>
                                     ))}
                                 </div>
@@ -595,7 +651,7 @@ export default function AnalyticsDashboard() {
                                                 <div className="h-6 bg-gray-100 rounded overflow-hidden">
                                                     <div
                                                         className="h-full rounded"
-                                                        style={{ width: `${Math.max(parseFloat(s.pct_of_top), 3)}%`, background: i === conversionFunnel.stages.length - 1 ? '#1F2937' : '#5E7052' }}
+                                                        style={{ width: `${Math.max(num(s.pct_of_top), 3)}%`, background: i === conversionFunnel.stages.length - 1 ? '#1F2937' : '#5E7052' }}
                                                     ></div>
                                                 </div>
                                             </div>
@@ -635,7 +691,7 @@ export default function AnalyticsDashboard() {
                                 <div className="space-y-2">
                                     <StatRow label={tt('repeatPurchaseRate', 'Repeat purchase rate')} value={`${newVsReturning.metrics.repeat_purchase_rate_pct}%`} />
                                     <StatRow label={tt('avgOrdersPerCustomer', 'Avg orders / customer')} value={newVsReturning.metrics.avg_orders_per_customer} />
-                                    <StatRow label={tt('customerLifetimeValue', 'Customer lifetime value')} value={`$${parseFloat(newVsReturning.metrics.customer_lifetime_value).toLocaleString()}`} />
+                                    <StatRow label={tt('customerLifetimeValue', 'Customer lifetime value')} value={`$${num(newVsReturning.metrics.customer_lifetime_value).toLocaleString()}`} />
                                 </div>
                             </div>
                         )}
@@ -650,8 +706,8 @@ export default function AnalyticsDashboard() {
                                     <p className="text-sm text-gray-500">{tt('contributionVsPrev', 'Contribution to the change vs the prior period')}</p>
                                 </div>
                                 <div className="text-right">
-                                    <p className={`text-xl font-bold ${revenueShortfall.change.revenue_pct >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                        {revenueShortfall.change.revenue_pct >= 0 ? '▲' : '▼'} {Math.abs(revenueShortfall.change.revenue_pct)}%
+                                    <p className={`text-xl font-bold ${Number(revenueShortfall.change.revenue_pct) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                        {Number(revenueShortfall.change.revenue_pct) >= 0 ? '▲' : '▼'} {Math.abs(Number(revenueShortfall.change.revenue_pct))}%
                                     </p>
                                     <p className="text-xs text-gray-500">{tt('revenueVsPrevPeriod', 'revenue vs prior period')}</p>
                                 </div>
@@ -659,7 +715,7 @@ export default function AnalyticsDashboard() {
 
                             <div className="mt-5 space-y-3">
                                 {[...revenueShortfall.drivers, ...revenueShortfall.customer_mix].map(d => {
-                                    const pct = parseFloat(d.pct);
+                                    const pct = num(d.pct);
                                     const width = Math.min(Math.abs(pct), 100) / 2; // half-width diverging bar
                                     const positive = d.direction === 'up';
                                     return (
@@ -700,7 +756,7 @@ export default function AnalyticsDashboard() {
 }
 
 // Insight Card — colored left border, uppercase label, big value + subtext.
-function InsightCard({ tone, label, value, sub }) {
+function InsightCard({ tone, label, value, sub }: { tone: 'good' | 'bad' | 'neutral'; label: string; value: ReactNode; sub?: string }) {
     const border = tone === 'good' ? 'border-emerald-500' : tone === 'bad' ? 'border-rose-500' : 'border-gray-300';
     const labelColor = tone === 'good' ? 'text-emerald-700' : tone === 'bad' ? 'text-rose-700' : 'text-gray-500';
     return (
@@ -713,7 +769,7 @@ function InsightCard({ tone, label, value, sub }) {
 }
 
 // Metric Card Component
-function MetricCard({ title, value, change, subtitle, icon }) {
+function MetricCard({ title, value, change, subtitle, icon }: { title: string; value: ReactNode; change?: Num; subtitle?: string; icon?: ReactNode }) {
     const t = useTranslations('AnalyticsDashboard');
     return (
         <div className="bg-white rounded-lg shadow-sm p-6">
@@ -723,8 +779,8 @@ function MetricCard({ title, value, change, subtitle, icon }) {
             </div>
             <p className="text-3xl font-bold text-gray-900 mb-1">{value}</p>
             {change !== undefined && (
-                <p className={`text-sm ${change >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                    {change >= 0 ? '↑' : '↓'} {t('vsPreviousPeriod', { change: Math.abs(change) })}
+                <p className={`text-sm ${Number(change) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                    {Number(change) >= 0 ? '↑' : '↓'} {t('vsPreviousPeriod', { change: Math.abs(Number(change)) })}
                 </p>
             )}
             {subtitle && <p className="text-sm text-gray-500">{subtitle}</p>}
@@ -733,7 +789,7 @@ function MetricCard({ title, value, change, subtitle, icon }) {
 }
 
 // Stat Row Component
-function StatRow({ label, value, highlight }) {
+function StatRow({ label, value, highlight }: { label: string; value: ReactNode; highlight?: boolean }) {
     return (
         <div className="flex items-center justify-between py-2 border-b border-gray-100">
             <span className="text-gray-700">{label}</span>

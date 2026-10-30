@@ -5,14 +5,26 @@ import VariablesPalette from './email-editor/VariablesPalette';
 import { blocksToHtml } from './email-editor/utils/blockToHtml';
 import { htmlToBlocks } from './email-editor/utils/htmlToBlocks';
 import { useNotifications } from './NotificationSystem';
+import type { Block } from './email-editor/utils/blockTypes';
+import type { EmailTemplateSummary } from '@/types/api';
 
-export default function EmailTemplateEditorView({ onBack, initialData = null }) {
+/** template_content: JSON { blocks, html }, older { html }, or raw HTML */
+type TemplateDetail = EmailTemplateSummary & { template_content: unknown };
+type StoredContent = { blocks?: Block[]; html?: string };
+
+interface EmailTemplateEditorViewProps {
+    onBack: () => void;
+    /** the list row being edited; null creates a template */
+    initialData?: Partial<EmailTemplateSummary> | null;
+}
+
+export default function EmailTemplateEditorView({ onBack, initialData = null }: EmailTemplateEditorViewProps) {
     const notify = useNotifications();
     // State
     const [isLoading, setIsLoading] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     const [showPreview, setShowPreview] = useState(false);
-    const [lastSaved, setLastSaved] = useState(null);
+    const [lastSaved, setLastSaved] = useState<Date | null>(null);
     const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
     // Form Fields
@@ -24,10 +36,10 @@ export default function EmailTemplateEditorView({ onBack, initialData = null }) 
     const [type, setType] = useState(initialData?.type || 'Marketing');
 
     // Block-based content
-    const [blocks, setBlocks] = useState([]);
+    const [blocks, setBlocks] = useState<Block[]>([]);
 
     // Refs for auto-save
-    const autoSaveTimerRef = useRef(null);
+    const autoSaveTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
     const blocksRef = useRef(blocks);
 
     // Keep blocksRef updated
@@ -36,7 +48,7 @@ export default function EmailTemplateEditorView({ onBack, initialData = null }) 
     }, [blocks]);
 
     // Handle blocks change
-    const handleBlocksChange = useCallback((newBlocks) => {
+    const handleBlocksChange = useCallback((newBlocks: Block[]) => {
         setBlocks(newBlocks);
         setHasUnsavedChanges(true);
     }, []);
@@ -67,7 +79,7 @@ export default function EmailTemplateEditorView({ onBack, initialData = null }) 
                 setIsLoading(true);
                 try {
                     const { apiFetch } = await import('../utils/api');
-                    const response = await apiFetch(`/api/admin/email-templates/${initialData.id}`);
+                    const response = await apiFetch<TemplateDetail[]>(`/api/admin/email-templates/${initialData.id}`);
                     if (response.status === 'SUCCESS' && response.keyValueTable.length > 0) {
                         const data = response.keyValueTable[0];
                         setInternalName(data.name || '');
@@ -78,7 +90,7 @@ export default function EmailTemplateEditorView({ onBack, initialData = null }) 
                         setType(data.type || 'Marketing');
 
                         // Parse content
-                        let loadedContent = data.template_content;
+                        const loadedContent = data.template_content;
 
                         // Handle JSON stringified content
                         if (typeof loadedContent === 'string') {
@@ -99,10 +111,11 @@ export default function EmailTemplateEditorView({ onBack, initialData = null }) 
                                 setBlocks(htmlToBlocks(loadedContent));
                             }
                         } else if (typeof loadedContent === 'object') {
-                            if (loadedContent?.blocks) {
-                                setBlocks(loadedContent.blocks);
-                            } else if (loadedContent?.html) {
-                                setBlocks(htmlToBlocks(loadedContent.html));
+                            const stored = loadedContent as StoredContent | null;
+                            if (stored?.blocks) {
+                                setBlocks(stored.blocks);
+                            } else if (stored?.html) {
+                                setBlocks(htmlToBlocks(stored.html));
                             }
                         }
                     }
@@ -163,7 +176,7 @@ export default function EmailTemplateEditorView({ onBack, initialData = null }) 
         } catch (e) {
             console.error('Save failed', e);
             if (!silent) {
-                notify.error('Error saving template: ' + e.message);
+                notify.error('Error saving template: ' + (e instanceof Error ? e.message : String(e)));
             }
         } finally {
             setIsSaving(false);
@@ -173,7 +186,7 @@ export default function EmailTemplateEditorView({ onBack, initialData = null }) 
     // Format last saved time
     const getLastSavedText = () => {
         if (!lastSaved) return 'Not saved yet';
-        const seconds = Math.floor((new Date() - lastSaved) / 1000);
+        const seconds = Math.floor((Date.now() - lastSaved.getTime()) / 1000);
         if (seconds < 60) return 'Saved just now';
         const minutes = Math.floor(seconds / 60);
         return `Auto-saved ${minutes} minute${minutes > 1 ? 's' : ''} ago`;
