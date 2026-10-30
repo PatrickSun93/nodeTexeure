@@ -39,6 +39,8 @@ services:
       NODE_ENV: production
       JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET}
       NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:?set NEXTAUTH_SECRET}
+      # The worker service runs the background jobs (rollback: remove this).
+      BACKGROUND_JOBS: "off"
       # TRUST_PROXY (rate-limit client IP) comes from backend/.env: opt in with 1
       # only when 3000/3005 are reachable solely through a TLS proxy that sets
       # X-Forwarded-For (docs/DEPLOYMENT.md).
@@ -154,6 +156,34 @@ services:
       timeout: 5s
       start_period: 10s
       retries: 3
+
+  # Rust background worker: migrations, then the expired stock-reservation
+  # release and abandoned-cart detection every 15 minutes (BACKGROUND_JOBS=off
+  # turns the backend's own timers off; both use the same MySQL locks).
+  # Rollback: stop this service and remove BACKGROUND_JOBS from the backend.
+  worker:
+    build:
+      context: ./rust
+    command: ["worker"]
+    env_file:
+      - path: ./backend/.env
+        required: false
+    environment:
+      DB_HOST: mysql
+      DB_PORT: "3306"
+      DB_NAME: bed_texture_ecommerce
+      DB_USER: root
+      DB_PASSWORD: ${DB_PASSWORD:?set DB_PASSWORD}
+      NODE_ENV: production
+      # Signs the unsubscribe links in abandoned-cart emails: same as the backend.
+      JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET}
+      MIGRATIONS_DIR: /app/migrations
+    volumes:
+      - ./backend/migrations:/app/migrations:ro
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
 
   # Rust email daemon: the only consumer of email_queue (SES credentials and
   # sender settings come from backend/.env).

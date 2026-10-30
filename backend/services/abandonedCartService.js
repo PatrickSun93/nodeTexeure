@@ -1,5 +1,6 @@
 const EmailQueueService = require('./emailQueueService');
 const db = require('../utils/database');
+const { LOCKS, withJobLock, backgroundJobsEnabled } = require('../utils/jobLock');
 
 // Simple logger wrapper
 const logger = {
@@ -12,9 +13,10 @@ class AbandonedCartService {
   /**
    * @param {Object} [opts]
    * @param {boolean} [opts.autoStart] - run detection now and every 15 minutes.
-   *   Off under NODE_ENV=test so tests drive detectAbandonedCarts() themselves.
+   *   Off under NODE_ENV=test so tests drive detectAbandonedCarts() themselves,
+   *   and with BACKGROUND_JOBS=off (the Rust worker runs it).
    */
-  constructor({ autoStart = process.env.NODE_ENV !== 'test' } = {}) {
+  constructor({ autoStart = process.env.NODE_ENV !== 'test' && backgroundJobsEnabled() } = {}) {
     this.emailQueueService = new EmailQueueService();
     this.abandonmentThreshold = 30 * 60 * 1000; // 30 minutes in milliseconds
     this.emailSequenceDelays = {
@@ -405,13 +407,14 @@ class AbandonedCartService {
    * Start the abandoned cart detection process (runs every 15 minutes)
    */
   startAbandonedCartDetection() {
-    // Run immediately
-    this.detectAbandonedCarts();
+    // Under the lock shared with the Rust worker: one run at a time across all
+    // instances, or two would both pick the same carts.
+    const run = () => withJobLock(LOCKS.abandonedCarts, () => this.detectAbandonedCarts())
+      .catch((error) => logger.error('Failed to detect abandoned carts', { error: error.message }));
 
-    // Set up interval to run every 15 minutes
-    setInterval(() => {
-      this.detectAbandonedCarts();
-    }, 15 * 60 * 1000).unref(); // 15 minutes
+    // Run immediately, then every 15 minutes
+    run();
+    setInterval(run, 15 * 60 * 1000).unref();
 
     logger.info('Abandoned cart detection started - running every 15 minutes');
   }

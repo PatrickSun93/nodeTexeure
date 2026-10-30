@@ -41,9 +41,18 @@ async function connect() {
   });
 }
 
+// Same name as the Rust runner (rust/crates/api/src/jobs/migrate.rs): only one
+// runner applies migrations at a time; the other waits, then finds none pending.
+const MIGRATIONS_LOCK = 'nodetexeure:migrations';
+const LOCK_WAIT_SECS = 600;
+
 async function runMigrations({ log = console.log } = {}) {
   const conn = await connect();
   try {
+    const [[{ locked }]] = await conn.query('SELECT GET_LOCK(?, ?) AS locked', [MIGRATIONS_LOCK, LOCK_WAIT_SECS]);
+    if (Number(locked) !== 1) {
+      throw new Error('timed out waiting for the migration lock (another runner is busy)');
+    }
     const [[{ present }]] = await conn.query(
       `SELECT COUNT(*) AS present FROM information_schema.tables
        WHERE table_schema = DATABASE() AND table_name = 'schema_migrations'`
@@ -75,6 +84,7 @@ async function runMigrations({ log = console.log } = {}) {
     log(pending.length ? `✅ Applied ${pending.length} migration(s)` : '✅ Schema is up to date');
     return pending.map((m) => m.file);
   } finally {
+    // Closing the connection also drops the lock.
     await conn.end();
   }
 }

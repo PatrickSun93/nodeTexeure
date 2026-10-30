@@ -1,0 +1,24 @@
+{
+  "db_name": "MySQL",
+  "query": "SELECT RELEASE_LOCK(?)",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "RELEASE_LOCK(?)",
+        "type_info": {
+          "type": "LongLong",
+          "flags": "BINARY",
+          "max_size": 1
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      true
+    ]
+  },
+  "hash": "dbe9fcf72d0d993f0cad81cdb30842cd34210716a4ee6b06972bf2b37ade5764"
+}

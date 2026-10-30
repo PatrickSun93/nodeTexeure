@@ -1,0 +1,74 @@
+{
+  "db_name": "MySQL",
+  "query": "SELECT DISTINCT\n             sc.id AS cart_id,\n             sc.updated_at AS last_activity,\n             u.email AS user_email,\n             u.first_name,\n             u.last_name,\n             CAST(SUM(ci.quantity * ci.price) AS CHAR) AS cart_total\n           FROM shopping_carts sc\n           LEFT JOIN users u ON sc.user_id = u.id\n           INNER JOIN cart_items ci ON sc.id = ci.cart_id\n           LEFT JOIN abandoned_cart_recovery acr ON sc.id = acr.cart_id AND acr.recovered_at IS NULL\n           WHERE sc.updated_at < DATE_SUB(NOW(), INTERVAL 30 MINUTE)\n           AND acr.id IS NULL\n           GROUP BY sc.id, sc.user_id, sc.session_id, sc.updated_at, u.email, u.first_name, u.last_name\n           HAVING COUNT(ci.id) > 0\n           ORDER BY sc.updated_at DESC\n           LIMIT 50",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "cart_id",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NOT_NULL | PRIMARY_KEY | NO_DEFAULT_VALUE",
+          "max_size": 200
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "last_activity",
+        "type_info": {
+          "type": "Timestamp",
+          "flags": "BINARY | TIMESTAMP | ON_UPDATE_NOW",
+          "max_size": 19
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "user_email",
+        "type_info": {
+          "type": "VarString",
+          "flags": "UNIQUE_KEY | MULTIPLE_KEY | NO_DEFAULT_VALUE",
+          "max_size": 1020
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "first_name",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NO_DEFAULT_VALUE",
+          "max_size": 400
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "last_name",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NO_DEFAULT_VALUE",
+          "max_size": 400
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "cart_total",
+        "type_info": {
+          "type": "VarString",
+          "flags": "",
+          "max_size": 176
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 0
+    },
+    "nullable": [
+      false,
+      true,
+      true,
+      true,
+      true,
+      true
+    ]
+  },
+  "hash": "9d084a88cf6c0307ff16cea543f171274d3e1e88e65f369fcd50fe0fe265a059"
+}

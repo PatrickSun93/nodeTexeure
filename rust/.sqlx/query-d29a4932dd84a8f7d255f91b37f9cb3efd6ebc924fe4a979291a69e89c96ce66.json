@@ -1,0 +1,12 @@
+{
+  "db_name": "MySQL",
+  "query": "UPDATE inventory\n         SET quantity_reserved = GREATEST(CAST(quantity_reserved AS SIGNED) - CAST(? AS SIGNED), 0)\n         WHERE product_id = ? AND variant_id <=> ?",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 3
+    },
+    "nullable": []
+  },
+  "hash": "d29a4932dd84a8f7d255f91b37f9cb3efd6ebc924fe4a979291a69e89c96ce66"
+}

@@ -7,7 +7,8 @@ can move without the rest noticing.
 | Crate | Replaces | Status |
 |---|---|---|
 | `crates/email-daemon` | `backend/services/emailDaemon.js` | Live: the only consumer of `email_queue` |
-| `crates/api` | Express route groups, one at a time | Every `/api` group `backend/server.js` mounts: `/api/products/*`, `/api/search/*`, `/api/journal/*`, all of `/api/settings/*` (public + admin `/all`), `/api/wishlist/*` (signed in), `/api/orders/*` (my orders, detail, tracking, tax, coupons, **order creation**), all of `/api/cart/*` (signed in or guest, incl. reserve-stock and abandonment tracking), `/api/abandoned-cart/*`, all of `/api/users/*` (register, login, refresh, session, CSRF token, password reset, email verification, profile, addresses, admin user management), `/api/reviews/*`, `/api/returns/*`, `/api/unsubscribe/*`, `/api/newsletter/*`, `/api/contact`, `/api/status/*`, `/api/shipping/*` (FedEx rates, labels, tracking), `/api/payments/*` (Stripe checkout session, payment intent, webhook, refund, session lookup), `/api/images/*` (uploads, product images + thumbnails, local or S3), `/api/database/*` (admin DB tools), and all of `/api/admin/*` (analytics, email queue, email templates, bulk CSV import/export, logout, products, categories, coupons, inventory, users/staff, orders, settings, shipping zones). Still on Node: the background jobs (expired stock-reservation release, abandoned-cart detection), migrations and seeds, and `/uploads` static files |
+| `crates/api` | Express route groups, one at a time | Every `/api` group `backend/server.js` mounts: `/api/products/*`, `/api/search/*`, `/api/journal/*`, all of `/api/settings/*` (public + admin `/all`), `/api/wishlist/*` (signed in), `/api/orders/*` (my orders, detail, tracking, tax, coupons, **order creation**), all of `/api/cart/*` (signed in or guest, incl. reserve-stock and abandonment tracking), `/api/abandoned-cart/*`, all of `/api/users/*` (register, login, refresh, session, CSRF token, password reset, email verification, profile, addresses, admin user management), `/api/reviews/*`, `/api/returns/*`, `/api/unsubscribe/*`, `/api/newsletter/*`, `/api/contact`, `/api/status/*`, `/api/shipping/*` (FedEx rates, labels, tracking), `/api/payments/*` (Stripe checkout session, payment intent, webhook, refund, session lookup), `/api/images/*` (uploads, product images + thumbnails, local or S3), `/api/database/*` (admin DB tools), and all of `/api/admin/*` (analytics, email queue, email templates, bulk CSV import/export, logout, products, categories, coupons, inventory, users/staff, orders, settings, shipping zones). Still on Node: seeds and `/uploads` static files |
+| `crates/api` `worker` binary | `server.js`'s reservation timer, `AbandonedCartService.startAbandonedCartDetection`, `scripts/migrate.js` | Live (the `worker` compose service): migrations, then expired stock-reservation release and abandoned-cart detection every 15 minutes. The backend's timers are off (`BACKGROUND_JOBS=off`) |
 | `crates/common` | — | Shared env config, MySQL connection, response envelope, timestamps |
 
 ## Why Rust here
@@ -34,6 +35,7 @@ cargo build                                   # queries checked against the live
 cargo clippy --all-targets -- -D warnings
 cargo test -- --include-ignored --test-threads=1   # unit + MySQL integration tests
 cargo run -p email-daemon                     # reads DB_* / AWS_* like the Node backend
+cargo run -p api --bin worker -- migrate --status   # or: migrate, once [JOB], run
 ```
 
 Without `DATABASE_URL`, builds use the committed **`.sqlx/`** query data (this is
@@ -45,10 +47,33 @@ cargo install sqlx-cli --no-default-features --features mysql,rustls   # once
 cargo sqlx prepare --workspace -- --all-targets
 ```
 
-The schema itself is still owned by the Node side: `docker/mysql/init.sql` plus
-`backend/migrations/` (applied by `npm run migrate`). A Rust service that needs a
-schema change adds the next numbered migration there and waits for it at start
-(see `queue::REQUIRED_MIGRATION`).
+The schema lives in `docker/mysql/init.sql` plus `backend/migrations/`. Both
+runners apply the migrations the same way: `npm run migrate` (Node, the
+backend's entrypoint) and `worker migrate` (Rust, also the first step of
+`worker run`). They share a MySQL named lock, so whichever starts second waits
+and then finds nothing pending. A Rust service that needs a schema change adds
+the next numbered migration there and waits for it at start (see
+`queue::REQUIRED_MIGRATION`).
+
+## worker
+
+`src/bin/worker.rs` (jobs in `src/jobs/`) runs what the Node backend ran on
+timers:
+
+| Command | Does |
+|---|---|
+| `worker` / `worker run` | `migrate` (skip with `WORKER_MIGRATE=false`), then every `WORKER_INTERVAL_SECS` (900): release expired stock reservations, detect abandoned carts |
+| `worker migrate [--status]` | `scripts/migrate.js` (same baseline, `schema_migrations` rows and `✔`/`·` listing); files from `MIGRATIONS_DIR` (default `../backend/migrations`) |
+| `worker once [release-reservations\|abandoned-carts]` | one run, a JSON line per job (`skipped: true` if the lock is held) |
+
+Each job holds a MySQL `GET_LOCK` (names in `jobs/mod.rs`, the same in
+`backend/utils/jobLock.js`), so Node and Rust never run one at the same time;
+`BACKGROUND_JOBS=off` turns the backend's own timers off. The release deletes
+each expired reservation by id and returns its stock in one transaction
+(clamped at 0), so no run releases twice. It needs the backend's `JWT_SECRET`
+(unsubscribe links in the abandoned-cart emails) and `FRONTEND_URL`. Parity:
+`backend/tests/parity-worker.test.js`. Rollback: stop the `worker` service and
+remove `BACKGROUND_JOBS` from the backend.
 
 ## email-daemon
 
@@ -185,6 +210,5 @@ cookie, HS256 only, `exp`/`nbf` with no leeway, user row re-read per request
 (status + `token_version` revocation), identical 401/403 bodies. The parity test
 covers forged/expired/`alg:none`/revoked/deactivated tokens. Admin writes use
 `Csrf<Admin>` (or the dispatcher's `Csrf` step under `/api/admin`). What is left
-on Node: the background jobs (expired stock-reservation release in `server.js`,
-abandoned-cart detection in `services/abandonedCartService.js`), migrations and
-seeds, and the `/uploads` static route.
+on Node: the seeds and the `/uploads` static route (the background jobs and
+migrations are in the [worker](#worker)).

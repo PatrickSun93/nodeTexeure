@@ -1,7 +1,7 @@
 # Deployment
 
 Production runs as one Docker Compose stack: `docker-compose.prod.yml`
-(MySQL + backend + storefront + admin). Put a TLS-terminating reverse proxy
+(MySQL + backend + storefront + admin + the Rust `api`, `worker` and `email-daemon`). Put a TLS-terminating reverse proxy
 (Caddy, nginx, a cloud load balancer) in front of ports 3000 and 3005.
 
 ## 1. Configure
@@ -81,7 +81,11 @@ docker compose -f docker-compose.prod.yml up -d --build
   `docker compose -f docker-compose.prod.yml exec -e ADMIN_EMAIL=you@example.com -e ADMIN_PASSWORD='…' backend npm run create-admin`
   (12+ characters, mixed case and a digit).
 - Every start: the backend applies pending migrations (`backend/migrations`), then
-  starts the API. The `email-daemon` container (Rust, `rust/`) waits for those
+  starts the API. The `worker` container (Rust) runs the same migrations (a MySQL
+  lock lets only one runner apply them), then releases expired stock
+  reservations and queues abandoned-cart emails every 15 minutes; the backend's
+  own timers are off (`BACKGROUND_JOBS=off`). **Rollback:** stop `worker` and
+  remove `BACKGROUND_JOBS` from the backend's environment. The `email-daemon` container (Rust, `rust/`) waits for those
   migrations, then delivers queued email via SES using the `AWS_*` settings in
   `backend/.env`.
 - **Upgrading across migration 014** (HTML escaping moved into the email daemon):
@@ -107,7 +111,8 @@ handlers return non-2xx if the order can't be updated, so Stripe retries.
   `https://<storefront>/api/status/health`).
 - **Errors:** set `SENTRY_DSN` in `backend/.env` to report unhandled backend
   errors (no PII is sent).
-- **Logs:** `docker compose -f docker-compose.prod.yml logs -f backend email-daemon`.
+- **Logs:** `docker compose -f docker-compose.prod.yml logs -f backend worker email-daemon`.
+- **Migrations:** `docker compose -f docker-compose.prod.yml exec worker worker migrate --status`.
 - **Email queue:** the admin's Email Queue view shows pending/sending/failed rows;
   failed sends retry with backoff and can be requeued there.
 - **Backups:** `database/db-manager.sh backup` / `restore <file>`, or `mysqldump`

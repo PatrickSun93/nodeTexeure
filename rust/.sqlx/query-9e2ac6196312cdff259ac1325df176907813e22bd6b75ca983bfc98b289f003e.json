@@ -1,0 +1,12 @@
+{
+  "db_name": "MySQL",
+  "query": "UPDATE abandoned_cart_recovery\n         SET email_sent_count = ?, last_email_sent_at = NOW()\n         WHERE id = ?",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": []
+  },
+  "hash": "9e2ac6196312cdff259ac1325df176907813e22bd6b75ca983bfc98b289f003e"
+}

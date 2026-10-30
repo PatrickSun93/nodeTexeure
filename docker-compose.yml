@@ -34,6 +34,8 @@ services:
       NODE_ENV: development
       JWT_SECRET: ${JWT_SECRET:-dev_only_jwt_secret_change_me_min_32_characters}
       NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:-dev_only_nextauth_secret}
+      # The worker service runs the background jobs (rollback: remove this).
+      BACKGROUND_JOBS: "off"
     ports:
       - "6666:6666"
     volumes:
@@ -118,6 +120,34 @@ services:
       - ./backend/uploads:/uploads
     ports:
       - "7000:7000"
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+  # Rust background worker (rust/crates/api/src/bin/worker.rs): applies
+  # backend/migrations, then every 15 minutes releases expired stock
+  # reservations and queues abandoned-cart emails. The backend's own timers are
+  # off (BACKGROUND_JOBS=off); both take the same MySQL locks, so running the
+  # two at once is safe. Rollback: stop this service, drop BACKGROUND_JOBS.
+  worker:
+    build:
+      context: ./rust
+    command: ["worker"]
+    env_file:
+      - path: ./backend/.env
+        required: false
+    environment:
+      DB_HOST: mysql
+      DB_PORT: "3306"
+      DB_NAME: bed_texture_ecommerce
+      DB_USER: root
+      DB_PASSWORD: ${DB_PASSWORD:-noirae_dev}
+      NODE_ENV: development
+      # Signs the unsubscribe links in abandoned-cart emails: same as the backend.
+      JWT_SECRET: ${JWT_SECRET:-dev_only_jwt_secret_change_me_min_32_characters}
+      MIGRATIONS_DIR: /app/migrations
+    volumes:
+      - ./backend/migrations:/app/migrations:ro
     depends_on:
       mysql:
         condition: service_healthy

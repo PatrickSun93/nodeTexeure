@@ -17,6 +17,7 @@ Design direction: **"Champagne & Charcoal"** (see [docs/DESIGN.md](docs/DESIGN.m
 | Admin dashboard | `admin-dashboard/` | Next.js 15, React 19 | 3005 |
 | Rust API | `rust/crates/api` | Axum, sqlx | 7000 |
 | Email daemon | `rust/crates/email-daemon` | Rust, sqlx, AWS SES v2 | — |
+| Background worker | `rust/crates/api` (`worker` bin) | Rust, sqlx | — |
 
 The backend is being ported to Rust piece by piece (`rust/`, see
 [rust/README.md](rust/README.md)): the email daemon and every `/api` group
@@ -26,10 +27,12 @@ creation), all of `cart` and `abandoned-cart`, all of `users` (auth + account +
 admin user management), `reviews`, `returns`, `unsubscribe`, `newsletter`,
 `contact`, `status`, `shipping`, `payments` (Stripe), `images`, `database`, and
 the whole `/api/admin` subtree (dispatcher `admin.rs`, one
-`routes/admin/<area>.rs` per Node router). Still on Node: the background jobs
-(expired stock-reservation release, abandoned-cart detection), migrations and
-seeds, and the `/uploads` static route; the Node routes stay as the rollback
-target. Shared Rust building blocks: `ratelimit.rs` + `client_ip.rs`
+`routes/admin/<area>.rs` per Node router), plus the `worker` binary
+(`src/bin/worker.rs`, `src/jobs/`): migrations, expired stock-reservation
+release and abandoned-cart detection, under MySQL named locks shared with
+`backend/utils/jobLock.js` (the backend's timers are off with
+`BACKGROUND_JOBS=off`). Still on Node: seeds and the `/uploads` static route;
+the Node routes and jobs stay as the rollback target. Shared Rust building blocks: `ratelimit.rs` + `client_ip.rs`
 (express-rate-limit / `TRUST_PROXY`), `password.rs` (bcryptjs), `tokens.rs`
 (JWT/refresh), `csrf.rs` (`Csrf<Admin>`), `cookies.rs`, `email_queue.rs`,
 `express.rs` / `express_router.rs` / `qs.rs` (Express body parsing, 404/error

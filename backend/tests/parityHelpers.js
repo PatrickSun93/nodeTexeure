@@ -467,6 +467,6 @@ module.exports = {
   compare, compareWith, step, call, both,
   setCookies, parseSetCookie, expectSameSetCookies,
   rateLimitHeaders, expectSameRateLimit,
-  rustBin, startNode, startRust,
+  rustBin, dbEnv, startNode, startRust,
   backOffice, describeBackOffice, freePort,
 };

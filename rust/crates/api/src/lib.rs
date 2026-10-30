@@ -41,6 +41,10 @@ pub mod s3;
 pub mod stripe;
 pub mod v8_json;
 
+// The background worker (src/bin/worker.rs): migrations, the expired
+// stock-reservation release and abandoned-cart detection.
+pub mod jobs;
+
 use std::time::Duration;
 
 use axum::Router;
