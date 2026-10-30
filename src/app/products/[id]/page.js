@@ -101,6 +101,11 @@ export default function ProductDetails() {
   const isOutOfStock = stockQty !== null && stockQty <= 0;
   const isLowStock = stockQty !== null && stockQty > 0 && stockQty <= 5;
 
+  // Headline price follows the selected variant: base + its price adjustment,
+  // the same unit price the cart charges.
+  const selectedVariant = product.variants?.find((v) => v.id === selectedVariantId) || null;
+  const displayPrice = (Number(product.base_price) || 0) + (Number(selectedVariant?.price_adjustment) || 0);
+
   return (
     <div className="aesop-page">
       <Header />
@@ -126,7 +131,7 @@ export default function ProductDetails() {
             <div className="noirae-product-detail-header">
               <h1 className="noirae-heading-1">{product.name}</h1>
               <div className="noirae-product-detail-price">
-                <span className="noirae-price-main">${product.base_price}</span>
+                <span className="noirae-price-main">${displayPrice.toFixed(2)}</span>
                 {product.originalPrice && (
                   <span className="noirae-price-original">${product.originalPrice}</span>
                 )}

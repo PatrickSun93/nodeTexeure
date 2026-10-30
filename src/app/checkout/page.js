@@ -313,6 +313,15 @@ function CheckoutContent() {
     }
   };
 
+  const clearCouponError = () => {
+    setErrors(prev => {
+      if (!prev.coupon) return prev;
+      const n = { ...prev };
+      delete n.coupon;
+      return n;
+    });
+  };
+
   const handleApplyCoupon = async () => {
     if (!couponCode.trim()) return;
     try {
@@ -324,6 +333,10 @@ function CheckoutContent() {
         const d = data.keyValueTable?.discount ?? 0;
         setDiscount(d);
         setCouponApplied(true);
+        // An earlier failed attempt's "Invalid or expired coupon" no longer applies.
+        clearCouponError();
+      } else {
+        setErrors(prev => ({ ...prev, coupon: data?.message || t('errSomethingWrong') }));
       }
     } catch (err) {
       setErrors(prev => ({ ...prev, coupon: err.message }));
@@ -644,7 +657,7 @@ function CheckoutContent() {
                   <div className="nt-form-section">
                     <h3>{t('discountCode')}</h3>
                     <div className="nt-coupon-row">
-                      <input type="text" value={couponCode} onChange={e => setCouponCode(e.target.value)}
+                      <input type="text" value={couponCode} onChange={e => { setCouponCode(e.target.value); clearCouponError(); }}
                         placeholder={t('couponPlaceholder')} disabled={couponApplied} />
                       <button className="nt-btn nt-btn-secondary" onClick={handleApplyCoupon} disabled={couponApplied}>
                         {couponApplied ? t('applied') : t('apply')}

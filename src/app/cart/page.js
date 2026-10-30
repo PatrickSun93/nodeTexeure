@@ -7,6 +7,16 @@ import Header from '../../components/Header';
 import Footer from '../../components/Footer';
 import { apiRequest, extractResponseData } from '../../lib/api';
 
+// Unit price of a cart line: the API's `price` already includes the variant's
+// price adjustment (base_price alone would undercharge e.g. a +$10 King size).
+const unitPrice = (item) => {
+  const price = Number(item.price);
+  if (item.price != null && Number.isFinite(price)) return price;
+  return (Number(item.base_price) || 0) + (Number(item.price_adjustment) || 0);
+};
+
+// "King - Gray": the chosen variant, as the product page labels it.
+const variantLabel = (item) => [item.size, item.color].filter(Boolean).join(' - ');
 
 export default function Cart() {
   const t = useTranslations('Cart');
@@ -82,7 +92,7 @@ export default function Cart() {
     }
   };
 
-  const subtotal = cart.items.reduce((sum, it) => sum + (Number(it.base_price) || 0) * (Number(it.quantity) || 0), 0);
+  const subtotal = cart.items.reduce((sum, it) => sum + unitPrice(it) * (Number(it.quantity) || 0), 0);
 
   if (loading) {
     return (
@@ -185,16 +195,34 @@ export default function Cart() {
               <h2 className="aesop-section-title">{t('cartItems')}</h2>
               <ul className="aesop-cart-page-items" aria-live="polite">
                 {cart.items.map((item) => {
-                  const price = Number(item.base_price) || 0;
+                  const price = unitPrice(item);
                   const qty = Number(item.quantity) || 0;
                   const line = price * qty;
+                  const variant = variantLabel(item);
                   return (
                     <li key={item.id} className="aesop-cart-page-item">
-                      <div className="aesop-cart-item-image">
-                        <div className="aesop-placeholder-image">Image</div>
-                      </div>
+                      <Link href={`/products/${item.product_id}`} className="aesop-cart-item-image">
+                        {item.image ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={item.image}
+                            alt={item.name || ''}
+                            style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 'var(--radius-sm)', display: 'block' }}
+                          />
+                        ) : (
+                          <div className="aesop-placeholder-image" aria-hidden="true" />
+                        )}
+                      </Link>
                       <div className="aesop-cart-item-details">
                         <h3 className="aesop-cart-item-name">{item.name || item.product_id}</h3>
+                        {variant && (
+                          <p
+                            className="aesop-cart-item-variant"
+                            style={{ margin: 0, color: 'var(--noirae-text-muted)', fontSize: 'var(--noirae-text-sm)' }}
+                          >
+                            {variant}
+                          </p>
+                        )}
                         <p className="aesop-cart-item-price">${price.toFixed(2)}</p>
                         <div className="aesop-cart-item-controls">
                           <div className="aesop-qty-control" aria-label={`Quantity for ${item.name || item.product_id}`}>

@@ -69,7 +69,9 @@ router.get('/', protectOptional, async (req, res) => {
         pv.price_adjustment,
         pv.sku as variant_sku,
         i.quantity_available,
-        i.quantity_reserved
+        i.quantity_reserved,
+        (SELECT COALESCE(pi.thumbnail_medium_url, pi.original_url) FROM product_images pi
+          WHERE pi.product_id = p.id ORDER BY pi.is_primary DESC, pi.sort_order ASC LIMIT 1) AS image
       FROM cart_items ci 
       JOIN products p ON ci.product_id = p.id 
       LEFT JOIN product_variants pv ON ci.variant_id = pv.id
