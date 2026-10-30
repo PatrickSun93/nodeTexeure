@@ -1,0 +1,24 @@
+{
+  "db_name": "MySQL",
+  "query": "SELECT get_next_id('CARTITEM') AS \"id: String\"",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id: String",
+        "type_info": {
+          "type": "VarString",
+          "flags": "",
+          "max_size": 200
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 0
+    },
+    "nullable": [
+      true
+    ]
+  },
+  "hash": "b9cd6c37e9202858b9a1b097ac5515ccf8e3cf3caead1957ad13b96c41c608a6"
+}

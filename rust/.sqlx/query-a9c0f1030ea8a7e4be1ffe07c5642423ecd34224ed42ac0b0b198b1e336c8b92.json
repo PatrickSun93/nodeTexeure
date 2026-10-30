@@ -1,0 +1,24 @@
+{
+  "db_name": "MySQL",
+  "query": "SELECT get_next_id('CART') AS \"id: String\"",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id: String",
+        "type_info": {
+          "type": "VarString",
+          "flags": "",
+          "max_size": 200
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 0
+    },
+    "nullable": [
+      true
+    ]
+  },
+  "hash": "a9c0f1030ea8a7e4be1ffe07c5642423ecd34224ed42ac0b0b198b1e336c8b92"
+}

@@ -1,0 +1,34 @@
+{
+  "db_name": "MySQL",
+  "query": "SELECT product_id, variant_id FROM cart_items WHERE id = ? AND cart_id = ?",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "product_id",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NOT_NULL | MULTIPLE_KEY | NO_DEFAULT_VALUE",
+          "max_size": 200
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "variant_id",
+        "type_info": {
+          "type": "VarString",
+          "flags": "MULTIPLE_KEY",
+          "max_size": 200
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": [
+      false,
+      true
+    ]
+  },
+  "hash": "bae9654a23f346befd7ba53f2159e9cac1fbe169bab82db5df9e85127d8ecf01"
+}

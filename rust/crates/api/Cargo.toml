@@ -13,6 +13,7 @@ axum.workspace = true
 chrono = { workspace = true, features = ["serde"] }
 common.workspace = true
 dotenvy.workspace = true
+getrandom = "0.2"
 jsonwebtoken.workspace = true
 serde.workspace = true
 serde_json.workspace = true

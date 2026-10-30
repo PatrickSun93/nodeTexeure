@@ -45,8 +45,10 @@ const nextConfig = {
     // Groups only partly ported: listing the group moves just these paths (Next
     // path patterns); the rest of the group stays on Node. Drop the entry once the
     // whole group is ported. orders: the GET routes — create, apply-coupon and
-    // calculate-tax (POST) are still Node.
+    // calculate-tax (POST) are still Node. cart: view/add/update/remove —
+    // reserve-stock and the abandonment endpoints are still Node.
     const partialGroups = {
+      cart: ['cart', 'cart/add', 'cart/update/:itemId', 'cart/remove/:itemId'],
       orders: [
         'orders/my-orders',
         'orders/track/:orderNumber',

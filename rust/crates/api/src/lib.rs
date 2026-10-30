@@ -3,6 +3,7 @@
 //! decides which groups this service answers.
 
 pub mod auth;
+pub mod body;
 pub mod error;
 pub mod params;
 pub mod routes;
@@ -11,7 +12,7 @@ use std::time::Duration;
 
 use axum::Router;
 use axum::http::{HeaderName, HeaderValue, StatusCode, header};
-use axum::routing::{delete, get};
+use axum::routing::{delete, get, post, put};
 use sqlx::MySqlPool;
 use tower_http::set_header::SetResponseHeaderLayer;
 use tower_http::timeout::TimeoutLayer;
@@ -38,6 +39,10 @@ pub fn router(state: AppState) -> Router {
         .route("/api/journal", get(routes::journal::list))
         .route("/api/journal/{id_or_slug}", get(routes::journal::detail))
         .route("/api/settings/public", get(routes::settings::public))
+        .route("/api/cart", get(routes::cart::get))
+        .route("/api/cart/add", post(routes::cart::add))
+        .route("/api/cart/update/{item_id}", put(routes::cart::update))
+        .route("/api/cart/remove/{item_id}", delete(routes::cart::remove))
         .route("/api/orders/my-orders", get(routes::orders::my_orders))
         .route(
             "/api/orders/track/{order_number}",

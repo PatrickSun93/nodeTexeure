@@ -1,0 +1,24 @@
+{
+  "db_name": "MySQL",
+  "query": "SELECT quantity_available FROM inventory WHERE product_id = ? AND variant_id <=> ? LIMIT 1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "quantity_available",
+        "type_info": {
+          "type": "Long",
+          "flags": "NOT_NULL | MULTIPLE_KEY | UNSIGNED",
+          "max_size": 10
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "7587fc8a0c8329a4dc8ab6fe691e457a36c9cbd6a3beb4eb0f8143c7a4d51414"
+}

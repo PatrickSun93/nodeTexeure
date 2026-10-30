@@ -7,7 +7,7 @@ can move without the rest noticing.
 | Crate | Replaces | Status |
 |---|---|---|
 | `crates/email-daemon` | `backend/services/emailDaemon.js` | Live: the only consumer of `email_queue` |
-| `crates/api` | Express route groups, one at a time | `/api/products/*`, `/api/search/*`, `/api/journal/*`, `/api/settings/public`, `/api/wishlist/*` (signed in), `/api/orders` reads (my orders, detail, tracking) |
+| `crates/api` | Express route groups, one at a time | `/api/products/*`, `/api/search/*`, `/api/journal/*`, `/api/settings/public`, `/api/wishlist/*` (signed in), `/api/orders` reads (my orders, detail, tracking), `/api/cart` view/add/update/remove (signed in or guest) |
 | `crates/common` | — | Shared env config, MySQL connection, response envelope, timestamps |
 
 ## Why Rust here
@@ -87,9 +87,9 @@ DB). It answers only the route groups the storefront proxy sends it:
 ```bash
 # next.config.mjs reads these (baked in at `next build` for production)
 RUST_API_URL=http://api:7000
-RUST_API_ROUTES=products,search,journal,settings/public,wishlist,orders
+RUST_API_ROUTES=products,search,journal,settings/public,wishlist,orders,cart
 # comma-separated groups; an entry with a slash moves one path; unset = all Node
-# a partly ported group (orders) moves only its ported paths — see partialGroups in next.config.mjs
+# a partly ported group (orders, cart) moves only its ported paths — see partialGroups in next.config.mjs
 ```
 
 Unsetting `RUST_API_ROUTES` (and rebuilding the frontend) sends everything back
@@ -123,11 +123,13 @@ Done so far: the public read-only groups, `wishlist` (first signed-in group) and
 the `orders` reads. A group can move in parts: `partialGroups` in `next.config.mjs`
 lists the paths of a partly ported group (Next path patterns, regex allowed), so
 listing `orders` moves `my-orders`, `track/:orderNumber` and `GET /:id` while
-`create`, `apply-coupon` and `calculate-tax` stay on Node.
+`create`, `apply-coupon` and `calculate-tax` stay on Node. `cart` likewise moves
+view/add/update/remove (incl. the guest `sessionId` cookie, issued exactly as
+Express does) while `reserve-stock` and the abandonment endpoints stay on Node.
 **Auth** lives in `src/auth.rs`: handlers take `AuthUser` / `OptionalUser` /
 `StaffOrAdmin` / `Admin` extractors, which mirror Node's `protect` /
 `protectOptional` / `staffOrAdmin` / `admin` — Bearer header then `admin_auth`
 cookie, HS256 only, `exp`/`nbf` with no leeway, user row re-read per request
 (status + `token_version` revocation), identical 401/403 bodies. The parity test
-covers forged/expired/`alg:none`/revoked/deactivated tokens. Next: the rest of
-`orders` with cart/checkout, then CSRF + admin.
+covers forged/expired/`alg:none`/revoked/deactivated tokens. Next: checkout
+(`orders/create`, `cart/reserve-stock`, coupons, tax), then CSRF + admin.

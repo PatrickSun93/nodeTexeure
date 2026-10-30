@@ -268,3 +268,97 @@ describeIfRust('orders (read routes): Node and Rust answer identically', () => {
     await compareWith('get', '/api/orders/track/NOR-NOPE-NOPE');
   });
 });
+
+describeIfRust('cart: same sequence, same answers', () => {
+  const { inStockVariant } = require('./helpers');
+  const norm = (v) => JSON.parse(JSON.stringify(v)
+    .replace(/CARTITEM\d{10}/g, 'CARTITEM*')
+    .replace(/CART\d{10}/g, 'CART*')
+    .replace(/\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{3}Z/g, 'TIME'));
+
+  // One side of the comparison: Node via supertest, Rust via fetch. `auth` is a
+  // header object (Bearer or guest cookie) kept per side.
+  async function call(side, method, url, auth, body) {
+    if (side === 'node') {
+      let req = request(app)[method](url).set(auth);
+      if (body !== undefined) req = req.send(body);
+      const res = await req;
+      return { status: res.status, body: res.body, cookie: res.headers['set-cookie']?.[0] };
+    }
+    const res = await fetch(RUST + url, {
+      method: method.toUpperCase(),
+      headers: { ...auth, ...(body !== undefined && { 'Content-Type': 'application/json' }) },
+      body: body !== undefined ? JSON.stringify(body) : undefined,
+    });
+    return { status: res.status, body: await res.json(), cookie: res.headers.get('set-cookie') ?? undefined };
+  }
+
+  // Run the same step on both sides; `url` may be a function of the side's own cart.
+  async function both(sides, method, url, body) {
+    const out = {};
+    for (const [side, s] of Object.entries(sides)) {
+      const u = typeof url === 'function' ? url(s) : url;
+      out[side] = await call(side, method, u, s.auth, body);
+      if (out[side].body?.keyValueTable?.items) s.items = out[side].body.keyValueTable.items;
+    }
+    const label = `${method.toUpperCase()} ${typeof url === 'function' ? url(sides.node) : url} ${JSON.stringify(body ?? '')}`;
+    const view = (r) => ({ label, status: r.status, body: norm(r.body) });
+    expect(view(out.rust)).toEqual(view(out.node));
+    return out;
+  }
+
+  const item0 = (s) => `/api/cart/update/${s.items[0]?.id ?? 'none'}`;
+  const remove0 = (s) => `/api/cart/remove/${s.items[0]?.id ?? 'none'}`;
+
+  async function sequence(sides) {
+    const v = await inStockVariant(3);
+    const other = DatabaseUtil.first(await DatabaseUtil.executeQuery(
+      'SELECT id FROM product_variants WHERE product_id <> ? LIMIT 1', [v.product_id]));
+    const add = (body) => both(sides, 'post', '/api/cart/add', body);
+
+    await both(sides, 'get', '/api/cart');
+    await add({});
+    await add({ product_id: 5 });
+    await add({ product_id: 'PROD9999999999' });
+    await add({ product_id: v.product_id, variant_id: other.id });
+    await add({ product_id: v.product_id, variant_id: 7 });
+    await add({ product_id: v.product_id }); // no variant-less stock row
+    for (const quantity of [0, -1, 1000, 'abc', '2 pcs', 1.9, [1], true]) {
+      await add({ product_id: v.product_id, variant_id: v.variant_id, quantity });
+    }
+    await add({ product_id: v.product_id, variant_id: v.variant_id, quantity: v.quantity_available + 1 });
+    await add({ product_id: v.product_id, variant_id: v.variant_id });
+    await add({ product_id: v.product_id, variant_id: v.variant_id, quantity: v.quantity_available });
+    await both(sides, 'get', '/api/cart');
+    for (const quantity of [undefined, 0, 1000, v.quantity_available + 1, 2, 2]) {
+      await both(sides, 'put', item0, quantity === undefined ? {} : { quantity });
+    }
+    await both(sides, 'put', '/api/cart/update/CARTITEM9999999999', { quantity: 1 });
+    await both(sides, 'get', '/api/cart');
+    await both(sides, 'delete', remove0);
+    await both(sides, 'delete', '/api/cart/remove/CARTITEM9999999999');
+    await both(sides, 'get', '/api/cart');
+  }
+
+  test('signed-in customer', async () => {
+    const a = (await registerCustomer()).accessToken;
+    const b = (await registerCustomer()).accessToken;
+    await sequence({
+      node: { auth: { Authorization: `Bearer ${a}` } },
+      rust: { auth: { Authorization: `Bearer ${b}` } },
+    });
+  });
+
+  test('guest: issues the same sessionId cookie, then keeps the cart on it', async () => {
+    const first = await both({ node: { auth: {} }, rust: { auth: {} } }, 'get', '/api/cart');
+    const shape = (c) => c.replace(/sessionId=[0-9a-f]{32}/, 'sessionId=ID').replace(/Expires=[^;]+/, 'Expires=DATE');
+    expect(shape(first.rust.cookie)).toBe(shape(first.node.cookie));
+    const jar = (c) => ({ Cookie: c.split(';')[0] });
+    await sequence({ node: { auth: jar(first.node.cookie) }, rust: { auth: jar(first.rust.cookie) } });
+  });
+
+  test('a bad token is a guest', async () => {
+    await both({ node: { auth: { Authorization: 'Bearer nope' } }, rust: { auth: { Authorization: 'Bearer nope' } } },
+      'post', '/api/cart/add', {});
+  });
+});
