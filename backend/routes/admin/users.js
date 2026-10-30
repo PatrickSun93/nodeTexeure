@@ -71,10 +71,11 @@ router.post('/users', admin, adminWriteLimiter, csrfProtection, async (req, res)
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Default values
+    // Default values. phone is optional: mysql2 refuses an undefined parameter,
+    // so a body without phone used to fail the insert (500); store NULL instead.
     const insertResult = await DatabaseUtil.executeQuery(
       'INSERT INTO users (id, email, password_hash, first_name, last_name, role, status, phone) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-      [id, email, hashedPassword, first_name, last_name, role || 'customer', status || 'active', phone]
+      [id, email, hashedPassword, first_name, last_name, role || 'customer', status || 'active', phone ?? null]
     );
 
     if (!insertResult.success) throw new Error(insertResult.error);
