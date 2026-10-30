@@ -43,15 +43,20 @@ impl AuthUser {
 
 /// Signing secret, shared with the Node backend (`JWT_SECRET`).
 #[derive(Clone)]
-pub struct JwtKey(Option<DecodingKey>);
+pub struct JwtKey(Option<DecodingKey>, Option<std::sync::Arc<[u8]>>);
 
 impl JwtKey {
     pub fn from_secret(secret: Option<&str>) -> Self {
+        let secret = secret.filter(|s| !s.is_empty());
         Self(
-            secret
-                .filter(|s| !s.is_empty())
-                .map(|s| DecodingKey::from_secret(s.as_bytes())),
+            secret.map(|s| DecodingKey::from_secret(s.as_bytes())),
+            secret.map(|s| s.as_bytes().into()),
         )
+    }
+
+    /// The raw secret, for signing (see [`crate::tokens`]).
+    pub fn secret(&self) -> Option<&[u8]> {
+        self.1.as_deref()
     }
 }
 

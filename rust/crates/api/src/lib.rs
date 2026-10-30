@@ -4,9 +4,16 @@
 
 pub mod auth;
 pub mod body;
+pub mod client_ip;
+pub mod cookies;
+pub mod csrf;
+pub mod email_queue;
 pub mod error;
 pub mod params;
+pub mod password;
+pub mod ratelimit;
 pub mod routes;
+pub mod tokens;
 
 use std::time::Duration;
 
@@ -23,6 +30,22 @@ use tower_http::trace::TraceLayer;
 pub struct AppState {
     pub pool: MySqlPool,
     pub jwt: auth::JwtKey,
+    /// `CSRF_SECRET || JWT_SECRET`.
+    pub csrf: csrf::CsrfKey,
+    /// `TRUST_PROXY` hops, for `req.ip` (rate limits).
+    pub trust_proxy: client_ip::TrustProxy,
+}
+
+impl AppState {
+    /// State from the environment (`JWT_SECRET`, `CSRF_SECRET`, `TRUST_PROXY`).
+    pub fn new(pool: MySqlPool, jwt_secret: Option<&str>) -> Self {
+        Self {
+            pool,
+            jwt: auth::JwtKey::from_secret(jwt_secret),
+            csrf: csrf::CsrfKey::from_env(),
+            trust_proxy: client_ip::TrustProxy::from_env(),
+        }
+    }
 }
 
 /// `GET /api/orders/<name>` for a POST-only order path: Express treats `name`
@@ -35,7 +58,16 @@ fn get_order_named(name: &'static str) -> axum::routing::MethodRouter<AppState> 
     )
 }
 
+/// The API with the global `/api` rate limiter configured from the
+/// environment (`RATE_LIMIT_*`, like backend/server.js).
 pub fn router(state: AppState) -> Router {
+    let global =
+        ratelimit::RateLimiter::under(ratelimit::presets::global(), state.trust_proxy, "/api");
+    router_with_limiter(state, global)
+}
+
+/// The API with a given global limiter (tests).
+pub fn router_with_limiter(state: AppState, global: ratelimit::RateLimiter) -> Router {
     Router::new()
         .route("/health", get(routes::health::health))
         .route("/api/products", get(routes::products::list))
@@ -91,6 +123,8 @@ pub fn router(state: AppState) -> Router {
             )
         })
         .with_state(state)
+        // express-rate-limit on `/api`, before anything else answers.
+        .layer(global.layer())
         .layer(TraceLayer::new_for_http())
         .layer(TimeoutLayer::with_status_code(
             StatusCode::GATEWAY_TIMEOUT,

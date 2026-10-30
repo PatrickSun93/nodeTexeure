@@ -1,0 +1,94 @@
+{
+  "db_name": "MySQL",
+  "query": "SELECT to_name, subject, status AS \"status: String\", attempts, max_attempts,\n                      template_data AS \"data: Value\", email_content AS \"content: Value\",\n                      TIMESTAMPDIFF(SECOND, scheduled_at, NOW()) AS \"age!: i64\"\n               FROM email_queue WHERE id = ?",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "to_name",
+        "type_info": {
+          "type": "VarString",
+          "flags": "",
+          "max_size": 1020
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "subject",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NOT_NULL | NO_DEFAULT_VALUE",
+          "max_size": 1020
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "status: String",
+        "type_info": {
+          "type": "String",
+          "flags": "NOT_NULL | MULTIPLE_KEY | ENUM",
+          "max_size": 40
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "attempts",
+        "type_info": {
+          "type": "Long",
+          "flags": "UNSIGNED",
+          "max_size": 10
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "max_attempts",
+        "type_info": {
+          "type": "Long",
+          "flags": "UNSIGNED",
+          "max_size": 10
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "data: Value",
+        "type_info": {
+          "type": "Json",
+          "flags": "BLOB | BINARY",
+          "max_size": 4294967295
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "content: Value",
+        "type_info": {
+          "type": "Json",
+          "flags": "NOT_NULL | BLOB | BINARY | NO_DEFAULT_VALUE",
+          "max_size": 4294967295
+        }
+      },
+      {
+        "ordinal": 7,
+        "name": "age!: i64",
+        "type_info": {
+          "type": "LongLong",
+          "flags": "BINARY",
+          "max_size": 21
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      true,
+      false,
+      false,
+      true,
+      true,
+      true,
+      false,
+      true
+    ]
+  },
+  "hash": "fa8960ab695e90e2ca796e45af0491a82e17af9f6c3b172cb8254723673fb3d4"
+}

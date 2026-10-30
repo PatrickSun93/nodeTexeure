@@ -1,0 +1,24 @@
+{
+  "db_name": "MySQL",
+  "query": "SELECT password_hash AS \"hash!: String\" FROM users WHERE email = ?",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "hash!: String",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NOT_NULL | NO_DEFAULT_VALUE",
+          "max_size": 1020
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "a05a1a9ea2f2a9b6134507db1f5b8a84a9ba8ab007b1e6c293b6e9fcaf85cafe"
+}

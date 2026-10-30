@@ -33,6 +33,10 @@ if (!isDev && (jwtSecret.length < 32 || jwtLooksPlaceholder)) {
   process.exit(1);
 }
 
+// req.ip — the key of every rate limiter — honours X-Forwarded-For only for the
+// TRUST_PROXY hops (default 0: the socket peer). See utils/trustProxy.js.
+app.set('trust proxy', require('./utils/trustProxy').parseTrustProxy(process.env.TRUST_PROXY));
+
 // Global rate limiter for all API routes (configurable via RATE_LIMIT_* env vars).
 // Enforced everywhere except dev/test (or when DISABLE_RATE_LIMIT=true) so local
 // dev, automated tests, and screenshot capture aren't throttled.

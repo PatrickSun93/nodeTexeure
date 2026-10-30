@@ -1,0 +1,24 @@
+{
+  "db_name": "MySQL",
+  "query": "SELECT 1 AS found FROM email_unsubscribes WHERE email = ? LIMIT 1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "found",
+        "type_info": {
+          "type": "LongLong",
+          "flags": "NOT_NULL | BINARY",
+          "max_size": 2
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "6d377f4bce36b16e7c417ae6020bfe3aa29cc2fdd452ab9747ed1973fcdc51e9"
+}
