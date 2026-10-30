@@ -3,13 +3,25 @@
 import { useRouter, usePathname } from 'next/navigation';
 import { useAdmin } from '@/contexts/AdminContext';
 
+interface NavigateOptions {
+  showLoading?: boolean;
+  successMessage?: string | null;
+  errorMessage?: string;
+}
+
+interface Breadcrumb {
+  name: string;
+  path: string;
+  isLast?: boolean;
+}
+
 export function useNavigation() {
   const router = useRouter();
   const pathname = usePathname();
   const { showSuccess, showError, setLoading } = useAdmin();
 
   // Navigate with loading state and error handling
-  const navigateTo = async (path, options = {}) => {
+  const navigateTo = async (path: string, options: NavigateOptions = {}) => {
     const { 
       showLoading = true, 
       successMessage = null,
@@ -79,12 +91,12 @@ export function useNavigation() {
   };
 
   // Check if current path matches
-  const isCurrentPath = (path) => {
+  const isCurrentPath = (path: string) => {
     return pathname === path;
   };
 
   // Check if current path starts with
-  const isInSection = (sectionPath) => {
+  const isInSection = (sectionPath: string) => {
     return pathname.startsWith(sectionPath);
   };
 
@@ -97,7 +109,7 @@ export function useNavigation() {
   // Get breadcrumb items
   const getBreadcrumbs = () => {
     const segments = pathname.split('/').filter(Boolean);
-    const breadcrumbs = [{ name: 'Dashboard', path: '/' }];
+    const breadcrumbs: Breadcrumb[] = [{ name: 'Dashboard', path: '/' }];
 
     let currentPath = '';
     segments.forEach((segment, index) => {
@@ -114,7 +126,7 @@ export function useNavigation() {
   };
 
   // Navigation helpers for common patterns
-  const openInNewTab = (path) => {
+  const openInNewTab = (path: string) => {
     window.open(path, '_blank', 'noopener,noreferrer');
   };
 

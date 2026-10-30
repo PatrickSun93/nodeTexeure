@@ -9,14 +9,24 @@ const DEFAULT_CACHE_CONFIG = {
   staleWhileRevalidate: true
 };
 
+interface CacheConfig {
+  ttl?: number;
+  maxSize?: number;
+  staleWhileRevalidate?: boolean;
+}
+
+interface CacheEntry {
+  value: unknown;
+  timestamp: number;
+  ttl: number;
+}
+
 // In-memory cache store
 class CacheStore {
-  constructor() {
-    this.cache = new Map();
-    this.timers = new Map();
-  }
+  cache = new Map<string, CacheEntry>();
+  timers = new Map<string, ReturnType<typeof setTimeout>>();
 
-  set(key, value, ttl = DEFAULT_CACHE_CONFIG.ttl) {
+  set(key: string, value: unknown, ttl = DEFAULT_CACHE_CONFIG.ttl) {
     // Clear existing timer
     if (this.timers.has(key)) {
       clearTimeout(this.timers.get(key));
@@ -39,11 +49,11 @@ class CacheStore {
     // Enforce max size
     if (this.cache.size > DEFAULT_CACHE_CONFIG.maxSize) {
       const firstKey = this.cache.keys().next().value;
-      this.delete(firstKey);
+      if (firstKey !== undefined) this.delete(firstKey);
     }
   }
 
-  get(key) {
+  get(key: string): unknown {
     const item = this.cache.get(key);
     if (!item) return null;
 
@@ -58,11 +68,11 @@ class CacheStore {
     return value;
   }
 
-  has(key) {
+  has(key: string) {
     return this.cache.has(key) && this.get(key) !== null;
   }
 
-  delete(key) {
+  delete(key: string) {
     if (this.timers.has(key)) {
       clearTimeout(this.timers.get(key));
       this.timers.delete(key);
@@ -89,22 +99,22 @@ class CacheStore {
 const globalCache = new CacheStore();
 
 // Cache hook
-export function useCache(config = {}) {
+export function useCache(config: CacheConfig = {}) {
   const cacheConfig = { ...DEFAULT_CACHE_CONFIG, ...config };
 
-  const set = useCallback((key, value, ttl = cacheConfig.ttl) => {
+  const set = useCallback((key: string, value: unknown, ttl = cacheConfig.ttl) => {
     globalCache.set(key, value, ttl);
   }, [cacheConfig.ttl]);
 
-  const get = useCallback((key) => {
+  const get = useCallback((key: string) => {
     return globalCache.get(key);
   }, []);
 
-  const has = useCallback((key) => {
+  const has = useCallback((key: string) => {
     return globalCache.has(key);
   }, []);
 
-  const remove = useCallback((key) => {
+  const remove = useCallback((key: string) => {
     return globalCache.delete(key);
   }, []);
 
@@ -124,12 +134,24 @@ export function useCache(config = {}) {
 }
 
 // Cached API call hook
-export function useCachedApi(apiCall, dependencies = [], options = {}) {
-  const [data, setData] = useState(null);
+interface CachedApiOptions<T> {
+  cache?: CacheConfig;
+  enabled?: boolean;
+  staleWhileRevalidate?: boolean;
+  onSuccess?: (result: T) => void;
+  onError?: (error: unknown) => void;
+}
+
+export function useCachedApi<T>(
+  apiCall: (init: { signal: AbortSignal }) => Promise<T>,
+  dependencies: unknown[] = [],
+  options: CachedApiOptions<T> = {}
+) {
+  const [data, setData] = useState<T | null>(null);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<unknown>(null);
   const cache = useCache(options.cache);
-  const abortControllerRef = useRef(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   const {
     enabled = true,
@@ -141,12 +163,12 @@ export function useCachedApi(apiCall, dependencies = [], options = {}) {
   // Generate cache key from dependencies
   const cacheKey = `api_${JSON.stringify(dependencies)}`;
 
-  const fetchData = useCallback(async (forceRefresh = false) => {
+  const fetchData = useCallback(async (forceRefresh = false): Promise<T | undefined> => {
     if (!enabled) return;
 
     // Check cache first
     if (!forceRefresh && cache.has(cacheKey)) {
-      const cachedData = cache.get(cacheKey);
+      const cachedData = cache.get(cacheKey) as T;
       setData(cachedData);
       setError(null);
       
@@ -183,7 +205,7 @@ export function useCachedApi(apiCall, dependencies = [], options = {}) {
 
       return result;
     } catch (err) {
-      if (err.name !== 'AbortError') {
+      if (!(err instanceof Error && err.name === 'AbortError')) {
         setError(err);
         if (onError) {
           onError(err);
@@ -224,8 +246,8 @@ export function useCachedApi(apiCall, dependencies = [], options = {}) {
 }
 
 // Local storage cache hook
-export function useLocalStorageCache(key, defaultValue = null, ttl = DEFAULT_CACHE_CONFIG.ttl) {
-  const [value, setValue] = useState(() => {
+export function useLocalStorageCache<T>(key: string, defaultValue: T | null = null, ttl = DEFAULT_CACHE_CONFIG.ttl) {
+  const [value, setValue] = useState<T | null>(() => {
     if (typeof window === 'undefined') return defaultValue;
 
     try {
@@ -247,7 +269,7 @@ export function useLocalStorageCache(key, defaultValue = null, ttl = DEFAULT_CAC
     }
   });
 
-  const setCachedValue = useCallback((newValue) => {
+  const setCachedValue = useCallback((newValue: T | null) => {
     try {
       setValue(newValue);
       
@@ -274,12 +296,12 @@ export function useLocalStorageCache(key, defaultValue = null, ttl = DEFAULT_CAC
     }
   }, [key, defaultValue]);
 
-  return [value, setCachedValue, removeCachedValue];
+  return [value, setCachedValue, removeCachedValue] as const;
 }
 
 // Session storage cache hook
-export function useSessionStorageCache(key, defaultValue = null) {
-  const [value, setValue] = useState(() => {
+export function useSessionStorageCache<T>(key: string, defaultValue: T | null = null) {
+  const [value, setValue] = useState<T | null>(() => {
     if (typeof window === 'undefined') return defaultValue;
 
     try {
@@ -291,7 +313,7 @@ export function useSessionStorageCache(key, defaultValue = null) {
     }
   });
 
-  const setCachedValue = useCallback((newValue) => {
+  const setCachedValue = useCallback((newValue: T | null) => {
     try {
       setValue(newValue);
       if (typeof window !== 'undefined') {
@@ -313,7 +335,7 @@ export function useSessionStorageCache(key, defaultValue = null) {
     }
   }, [key, defaultValue]);
 
-  return [value, setCachedValue, removeCachedValue];
+  return [value, setCachedValue, removeCachedValue] as const;
 }
 
 export default useCache;

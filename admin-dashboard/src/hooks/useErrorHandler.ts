@@ -4,10 +4,38 @@ import { useCallback } from 'react';
 import { useAdmin } from '@/contexts/AdminContext';
 import { getErrorMessage } from '@/lib/api';
 
+export interface ErrorHandlerOptions {
+  showNotification?: boolean;
+  logToConsole?: boolean;
+  customMessage?: string | null;
+}
+
+export interface AsyncOperationOptions extends ErrorHandlerOptions {
+  loadingMessage?: string;
+  successMessage?: string;
+  showSuccess?: boolean;
+  showLoading?: boolean;
+}
+
+export interface Validation {
+  isValid: boolean;
+  errors: string[];
+}
+
+export interface ValidationRule {
+  label?: string;
+  required?: boolean;
+  minLength?: number;
+  maxLength?: number;
+  pattern?: RegExp;
+  custom?: (value: unknown) => boolean;
+  message?: string;
+}
+
 export function useErrorHandler() {
   const { setError, clearError, showError, showWarning } = useAdmin();
 
-  const handleError = useCallback((error, section = 'general', options = {}) => {
+  const handleError = useCallback((error: unknown, section = 'general', options: ErrorHandlerOptions = {}) => {
     const {
       showNotification = true,
       logToConsole = true,
@@ -32,7 +60,7 @@ export function useErrorHandler() {
     return errorMessage;
   }, [setError, showError]);
 
-  const handleApiError = useCallback(async (apiCall, section = 'api', options = {}) => {
+  const handleApiError = useCallback(async <T,>(apiCall: () => Promise<T>, section = 'api', options: ErrorHandlerOptions = {}) => {
     try {
       clearError(section);
       const result = await apiCall();
@@ -43,10 +71,10 @@ export function useErrorHandler() {
     }
   }, [clearError, handleError]);
 
-  const handleAsyncOperation = useCallback(async (
-    operation, 
+  const handleAsyncOperation = useCallback(async <T,>(
+    operation: () => Promise<T>, 
     section = 'operation',
-    options = {}
+    options: AsyncOperationOptions = {}
   ) => {
     const {
       loadingMessage = 'Processing...',
@@ -75,7 +103,7 @@ export function useErrorHandler() {
     }
   }, [clearError, handleError]);
 
-  const validateAndHandle = useCallback((validation, section = 'validation') => {
+  const validateAndHandle = useCallback((validation: Validation, section = 'validation') => {
     if (validation.isValid) {
       clearError(section);
       return true;
@@ -87,7 +115,7 @@ export function useErrorHandler() {
     return false;
   }, [clearError, setError, showWarning]);
 
-  const clearSectionError = useCallback((section) => {
+  const clearSectionError = useCallback((section: string) => {
     clearError(section);
   }, [clearError]);
 
@@ -101,9 +129,9 @@ export function useErrorHandler() {
 }
 
 // Validation utilities
-export function createValidator(rules) {
-  return (data) => {
-    const errors = [];
+export function createValidator(rules: Record<string, ValidationRule[]>) {
+  return (data: Record<string, unknown>): Validation => {
+    const errors: string[] = [];
 
     for (const [field, fieldRules] of Object.entries(rules)) {
       const value = data[field];
@@ -140,7 +168,7 @@ export function createValidator(rules) {
 }
 
 // Common validation rules
-export const validationRules = {
+export const validationRules: Record<string, ValidationRule> = {
   email: {
     pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
     message: 'Please enter a valid email address'
@@ -163,7 +191,7 @@ export const validationRules = {
   
   positiveInteger: {
     pattern: /^\d+$/,
-    custom: (value) => parseInt(value) > 0,
+    custom: (value) => parseInt(String(value)) > 0,
     message: 'Please enter a positive number'
   }
 };

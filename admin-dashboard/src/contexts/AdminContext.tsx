@@ -1,7 +1,68 @@
 'use client';
 
-import { createContext, useContext, useReducer, useEffect } from 'react';
+import { createContext, useContext, useReducer, useEffect, type Dispatch, type ReactNode } from 'react';
 import { useAuth } from './AuthContext';
+
+export type NotificationType = 'info' | 'success' | 'error' | 'warning';
+
+export interface Notification {
+  id: string;
+  message: string;
+  type?: NotificationType;
+  /** ms before it is removed; 0 or unset keeps it until dismissed */
+  duration?: number;
+  timestamp: Date;
+}
+
+export type LoadingSection = 'dashboard' | 'products' | 'orders' | 'customers' | 'inventory' | 'reports';
+export type FilterSection = 'products' | 'orders' | 'customers' | 'inventory';
+export type SelectionSection = 'products' | 'orders' | 'customers';
+
+export interface AdminSettings {
+  autoRefresh: boolean;
+  refreshInterval: number;
+  dateFormat: string;
+  timezone: string;
+  itemsPerPage: number;
+  /** SessionManager stores its session preferences here too */
+  [key: string]: unknown;
+}
+
+export interface AdminState {
+  sidebarCollapsed: boolean;
+  theme: string;
+  notifications: Notification[];
+  dashboardData: unknown;
+  inventoryAlerts: unknown[];
+  recentActivity: unknown[];
+  isLoading: Record<string, boolean>;
+  errors: Record<string, string>;
+  settings: AdminSettings;
+  filters: Record<string, Record<string, unknown>>;
+  selectedItems: Record<SelectionSection, string[]>;
+}
+
+type AdminAction =
+  | { type: 'TOGGLE_SIDEBAR' }
+  | { type: 'SET_THEME'; payload: string }
+  | { type: 'ADD_NOTIFICATION'; payload: Partial<Notification> & Pick<Notification, 'message'> }
+  | { type: 'REMOVE_NOTIFICATION'; payload: string }
+  | { type: 'CLEAR_NOTIFICATIONS' }
+  | { type: 'SET_DASHBOARD_DATA'; payload: unknown }
+  | { type: 'SET_INVENTORY_ALERTS'; payload: unknown[] }
+  | { type: 'SET_RECENT_ACTIVITY'; payload: unknown[] }
+  | { type: 'SET_LOADING'; payload: { section: string; loading: boolean } }
+  | { type: 'SET_ERROR'; payload: { section: string; error: string } }
+  | { type: 'CLEAR_ERROR'; payload: string }
+  | { type: 'CLEAR_ALL_ERRORS' }
+  | { type: 'UPDATE_SETTINGS'; payload: Partial<AdminSettings> }
+  | { type: 'SET_FILTER'; payload: { section: string; filters: Record<string, unknown> } }
+  | { type: 'CLEAR_FILTERS'; payload: string }
+  | { type: 'SET_SELECTED_ITEMS'; payload: { section: SelectionSection; items: string[] } }
+  | { type: 'ADD_SELECTED_ITEM'; payload: { section: SelectionSection; item: string } }
+  | { type: 'REMOVE_SELECTED_ITEM'; payload: { section: SelectionSection; item: string } }
+  | { type: 'CLEAR_SELECTED_ITEMS'; payload: SelectionSection }
+  | { type: 'RESET_STATE' };
 
 // Notification ids must be unique even when two toasts fire in the same
 // millisecond (Date.now() alone gave duplicate React keys and removed both).
@@ -9,7 +70,7 @@ let notificationSeq = 0;
 const nextNotificationId = () => `${Date.now()}-${++notificationSeq}`;
 
 // Initial admin state
-const initialState = {
+const initialState: AdminState = {
   // UI State
   sidebarCollapsed: false,
   theme: 'light',
@@ -95,10 +156,10 @@ const ADMIN_ACTIONS = {
   
   // Reset
   RESET_STATE: 'RESET_STATE'
-};
+} as const;
 
 // Reducer function
-function adminReducer(state, action) {
+function adminReducer(state: AdminState, action: AdminAction): AdminState {
   switch (action.type) {
     case ADMIN_ACTIONS.TOGGLE_SIDEBAR:
       return {
@@ -170,13 +231,14 @@ function adminReducer(state, action) {
         }
       };
       
-    case ADMIN_ACTIONS.CLEAR_ERROR:
+    case ADMIN_ACTIONS.CLEAR_ERROR: {
       const newErrors = { ...state.errors };
       delete newErrors[action.payload];
       return {
         ...state,
         errors: newErrors
       };
+    }
       
     case ADMIN_ACTIONS.CLEAR_ALL_ERRORS:
       return {
@@ -263,11 +325,144 @@ function adminReducer(state, action) {
   }
 }
 
+// Action creators
+function createActions(dispatch: Dispatch<AdminAction>) {
+  const actions = {
+    // UI Actions
+    toggleSidebar: () => dispatch({ type: ADMIN_ACTIONS.TOGGLE_SIDEBAR }),
+    
+    setTheme: (theme: string) => dispatch({ 
+      type: ADMIN_ACTIONS.SET_THEME, 
+      payload: theme 
+    }),
+    
+    addNotification: (notification: Partial<Notification> & Pick<Notification, 'message'>) => dispatch({
+      type: ADMIN_ACTIONS.ADD_NOTIFICATION,
+      payload: notification
+    }),
+    
+    removeNotification: (id: string) => dispatch({
+      type: ADMIN_ACTIONS.REMOVE_NOTIFICATION,
+      payload: id
+    }),
+    
+    clearNotifications: () => dispatch({ type: ADMIN_ACTIONS.CLEAR_NOTIFICATIONS }),
+    
+    // Data Actions
+    setDashboardData: (data: unknown) => dispatch({
+      type: ADMIN_ACTIONS.SET_DASHBOARD_DATA,
+      payload: data
+    }),
+    
+    setInventoryAlerts: (alerts: unknown[]) => dispatch({
+      type: ADMIN_ACTIONS.SET_INVENTORY_ALERTS,
+      payload: alerts
+    }),
+    
+    setRecentActivity: (activity: unknown[]) => dispatch({
+      type: ADMIN_ACTIONS.SET_RECENT_ACTIVITY,
+      payload: activity
+    }),
+    
+    // Loading Actions
+    setLoading: (section: string, loading: boolean) => dispatch({
+      type: ADMIN_ACTIONS.SET_LOADING,
+      payload: { section, loading }
+    }),
+    
+    // Error Actions
+    setError: (section: string, error: string) => dispatch({
+      type: ADMIN_ACTIONS.SET_ERROR,
+      payload: { section, error }
+    }),
+    
+    clearError: (section: string) => dispatch({
+      type: ADMIN_ACTIONS.CLEAR_ERROR,
+      payload: section
+    }),
+    
+    clearAllErrors: () => dispatch({ type: ADMIN_ACTIONS.CLEAR_ALL_ERRORS }),
+    
+    // Settings Actions
+    updateSettings: (settings: Partial<AdminSettings>) => dispatch({
+      type: ADMIN_ACTIONS.UPDATE_SETTINGS,
+      payload: settings
+    }),
+    
+    // Filter Actions
+    setFilter: (section: string, filters: Record<string, unknown>) => dispatch({
+      type: ADMIN_ACTIONS.SET_FILTER,
+      payload: { section, filters }
+    }),
+    
+    clearFilters: (section: string) => dispatch({
+      type: ADMIN_ACTIONS.CLEAR_FILTERS,
+      payload: section
+    }),
+    
+    // Selection Actions
+    setSelectedItems: (section: SelectionSection, items: string[]) => dispatch({
+      type: ADMIN_ACTIONS.SET_SELECTED_ITEMS,
+      payload: { section, items }
+    }),
+    
+    addSelectedItem: (section: SelectionSection, item: string) => dispatch({
+      type: ADMIN_ACTIONS.ADD_SELECTED_ITEM,
+      payload: { section, item }
+    }),
+    
+    removeSelectedItem: (section: SelectionSection, item: string) => dispatch({
+      type: ADMIN_ACTIONS.REMOVE_SELECTED_ITEM,
+      payload: { section, item }
+    }),
+    
+    clearSelectedItems: (section: SelectionSection) => dispatch({
+      type: ADMIN_ACTIONS.CLEAR_SELECTED_ITEMS,
+      payload: section
+    }),
+    
+    // Utility Actions
+    showNotification: (message: string, type: NotificationType = 'info', duration = 5000): string => {
+      const id = nextNotificationId();
+      dispatch({
+        type: ADMIN_ACTIONS.ADD_NOTIFICATION,
+        payload: { id, message, type, duration }
+      });
+      
+      // Auto-remove notification after duration
+      if (duration > 0) {
+        setTimeout(() => {
+          dispatch({
+            type: ADMIN_ACTIONS.REMOVE_NOTIFICATION,
+            payload: id
+          });
+        }, duration);
+      }
+      
+      return id;
+    },
+    
+    showSuccess: (message: string, duration = 3000): string => {
+      return actions.showNotification(message, 'success', duration);
+    },
+    
+    showError: (message: string, duration = 5000): string => {
+      return actions.showNotification(message, 'error', duration);
+    },
+    
+    showWarning: (message: string, duration = 4000): string => {
+      return actions.showNotification(message, 'warning', duration);
+    }
+  };
+
+  return actions;
+}
+
 // Create context
-const AdminContext = createContext();
+const AdminContext = createContext<AdminContextValue | null>(null);
 
 // Admin provider component
-export function AdminProvider({ children }) {
+export function AdminProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(adminReducer, initialState);
   const { isAuthenticated } = useAuth();
 
@@ -303,137 +498,10 @@ export function AdminProvider({ children }) {
     }
   }, [isAuthenticated]);
 
-  // Action creators
-  const actions = {
-    // UI Actions
-    toggleSidebar: () => dispatch({ type: ADMIN_ACTIONS.TOGGLE_SIDEBAR }),
-    
-    setTheme: (theme) => dispatch({ 
-      type: ADMIN_ACTIONS.SET_THEME, 
-      payload: theme 
-    }),
-    
-    addNotification: (notification) => dispatch({
-      type: ADMIN_ACTIONS.ADD_NOTIFICATION,
-      payload: notification
-    }),
-    
-    removeNotification: (id) => dispatch({
-      type: ADMIN_ACTIONS.REMOVE_NOTIFICATION,
-      payload: id
-    }),
-    
-    clearNotifications: () => dispatch({ type: ADMIN_ACTIONS.CLEAR_NOTIFICATIONS }),
-    
-    // Data Actions
-    setDashboardData: (data) => dispatch({
-      type: ADMIN_ACTIONS.SET_DASHBOARD_DATA,
-      payload: data
-    }),
-    
-    setInventoryAlerts: (alerts) => dispatch({
-      type: ADMIN_ACTIONS.SET_INVENTORY_ALERTS,
-      payload: alerts
-    }),
-    
-    setRecentActivity: (activity) => dispatch({
-      type: ADMIN_ACTIONS.SET_RECENT_ACTIVITY,
-      payload: activity
-    }),
-    
-    // Loading Actions
-    setLoading: (section, loading) => dispatch({
-      type: ADMIN_ACTIONS.SET_LOADING,
-      payload: { section, loading }
-    }),
-    
-    // Error Actions
-    setError: (section, error) => dispatch({
-      type: ADMIN_ACTIONS.SET_ERROR,
-      payload: { section, error }
-    }),
-    
-    clearError: (section) => dispatch({
-      type: ADMIN_ACTIONS.CLEAR_ERROR,
-      payload: section
-    }),
-    
-    clearAllErrors: () => dispatch({ type: ADMIN_ACTIONS.CLEAR_ALL_ERRORS }),
-    
-    // Settings Actions
-    updateSettings: (settings) => dispatch({
-      type: ADMIN_ACTIONS.UPDATE_SETTINGS,
-      payload: settings
-    }),
-    
-    // Filter Actions
-    setFilter: (section, filters) => dispatch({
-      type: ADMIN_ACTIONS.SET_FILTER,
-      payload: { section, filters }
-    }),
-    
-    clearFilters: (section) => dispatch({
-      type: ADMIN_ACTIONS.CLEAR_FILTERS,
-      payload: section
-    }),
-    
-    // Selection Actions
-    setSelectedItems: (section, items) => dispatch({
-      type: ADMIN_ACTIONS.SET_SELECTED_ITEMS,
-      payload: { section, items }
-    }),
-    
-    addSelectedItem: (section, item) => dispatch({
-      type: ADMIN_ACTIONS.ADD_SELECTED_ITEM,
-      payload: { section, item }
-    }),
-    
-    removeSelectedItem: (section, item) => dispatch({
-      type: ADMIN_ACTIONS.REMOVE_SELECTED_ITEM,
-      payload: { section, item }
-    }),
-    
-    clearSelectedItems: (section) => dispatch({
-      type: ADMIN_ACTIONS.CLEAR_SELECTED_ITEMS,
-      payload: section
-    }),
-    
-    // Utility Actions
-    showNotification: (message, type = 'info', duration = 5000) => {
-      const id = nextNotificationId();
-      dispatch({
-        type: ADMIN_ACTIONS.ADD_NOTIFICATION,
-        payload: { id, message, type, duration }
-      });
-      
-      // Auto-remove notification after duration
-      if (duration > 0) {
-        setTimeout(() => {
-          dispatch({
-            type: ADMIN_ACTIONS.REMOVE_NOTIFICATION,
-            payload: id
-          });
-        }, duration);
-      }
-      
-      return id;
-    },
-    
-    showSuccess: (message, duration = 3000) => {
-      return actions.showNotification(message, 'success', duration);
-    },
-    
-    showError: (message, duration = 5000) => {
-      return actions.showNotification(message, 'error', duration);
-    },
-    
-    showWarning: (message, duration = 4000) => {
-      return actions.showNotification(message, 'warning', duration);
-    }
-  };
+  const actions = createActions(dispatch);
 
   // Context value
-  const value = {
+  const value: AdminContextValue = {
     ...state,
     ...actions
   };
@@ -444,6 +512,9 @@ export function AdminProvider({ children }) {
     </AdminContext.Provider>
   );
 }
+
+type AdminActions = ReturnType<typeof createActions>;
+export type AdminContextValue = AdminState & AdminActions;
 
 // Custom hook to use admin context
 export function useAdmin() {

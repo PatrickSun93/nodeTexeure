@@ -182,3 +182,32 @@ export interface Coupon {
   status: 'Draft' | 'Expired' | 'Scheduled' | 'Active';
   [key: string]: unknown;
 }
+
+export type Role = 'customer' | 'staff' | 'admin';
+
+/** GET /api/users/session: always 200; profile columns only when signed in. */
+export interface SessionInfo {
+  authenticated: boolean;
+  id?: string;
+  isAdmin?: boolean;
+  isStaff?: boolean;
+  first_name?: string | null;
+  last_name?: string | null;
+  email?: string;
+  phone?: string | null;
+  role?: Role;
+}
+
+/** POST /api/users/login. The admin also gets an HttpOnly admin_auth cookie. */
+export interface LoginResult {
+  userId: string;
+  email: string;
+  accessToken: string;
+  refreshToken: string;
+  role: Role;
+  isAdmin: boolean;
+  isStaff: boolean;
+}
+
+/** The signed-in back-office user: a session probe or a login response. */
+export type AuthUser = SessionInfo | LoginResult;

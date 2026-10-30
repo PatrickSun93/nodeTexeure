@@ -96,12 +96,12 @@ export const adminAuth = {
    * @param password - Admin password
    * @returns - Login response
    */
-  async login(email: string, password: string) {
+  async login<T = unknown>(email: string, password: string) {
     // Login goes through the public users/login endpoint (there is no
     // /api/admin/auth/login — /api/admin/* is auth-protected). The backend sets an
     // HttpOnly admin_auth cookie which the admin routes accept, and apiRequest sends
     // cookies (credentials: 'include'), so subsequent admin calls are authenticated.
-    return apiRequest('users/login', {
+    return apiRequest<T>('users/login', {
       method: 'POST',
       body: JSON.stringify({ email, password }),
     });
@@ -124,10 +124,10 @@ export const adminAuth = {
    * Verify admin session
    * @returns - Verification response
    */
-  async verify() {
+  async verify<T = unknown>() {
     // Lightweight session probe: returns 200 with { authenticated } whether or not
     // a session cookie exists, so the on-load auth check never logs a 401.
-    return apiRequest('users/session');
+    return apiRequest<T>('users/session');
   },
 
   /**

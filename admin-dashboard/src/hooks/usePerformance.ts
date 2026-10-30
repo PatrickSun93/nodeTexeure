@@ -1,18 +1,55 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
+import type { Metric } from 'web-vitals';
+
+export interface PerformanceMetrics {
+  loadTime: number;
+  renderTime: number;
+  interactionTime: number;
+  memoryUsage: number;
+}
+
+interface PerformanceOptions {
+  trackMemory?: boolean;
+  trackInteractions?: boolean;
+  onMetricsUpdate?: (metrics: PerformanceMetrics) => void;
+}
+
+export type VitalName = 'CLS' | 'FID' | 'FCP' | 'LCP' | 'TTFB';
+
+export interface ResourceTiming {
+  name: string;
+  type: string;
+  size: number;
+  duration: number;
+  startTime: number;
+  responseEnd: number;
+}
+
+export interface BudgetViolation {
+  metric: string;
+  value: number;
+  limit: number;
+  severity: 'high' | 'medium';
+}
+
+/** Chrome's non-standard performance.memory */
+interface PerformanceWithMemory extends Performance {
+  memory: { usedJSHeapSize: number };
+}
 
 // Performance monitoring hook
-export function usePerformance(name, options = {}) {
-  const [metrics, setMetrics] = useState({
+export function usePerformance(name: string, options: PerformanceOptions = {}) {
+  const [metrics, setMetrics] = useState<PerformanceMetrics>({
     loadTime: 0,
     renderTime: 0,
     interactionTime: 0,
     memoryUsage: 0
   });
 
-  const startTimeRef = useRef(null);
-  const renderStartRef = useRef(null);
+  const startTimeRef = useRef<number | null>(null);
+  const renderStartRef = useRef<number | null>(null);
   const {
     trackMemory = true,
     trackInteractions = true,
@@ -48,7 +85,7 @@ export function usePerformance(name, options = {}) {
   }, [name, metrics.interactionTime, trackMemory, onMetricsUpdate]);
 
   // Track interaction time
-  const trackInteraction = useCallback((interactionName) => {
+  const trackInteraction = useCallback((interactionName?: string) => {
     if (!trackInteractions) return () => {};
 
     const startTime = performance.now();
@@ -65,7 +102,7 @@ export function usePerformance(name, options = {}) {
   // Get memory usage
   const getMemoryUsage = useCallback(() => {
     if (typeof window !== 'undefined' && 'memory' in performance) {
-      return performance.memory.usedJSHeapSize / 1024 / 1024; // MB
+      return (performance as PerformanceWithMemory).memory.usedJSHeapSize / 1024 / 1024; // MB
     }
     return 0;
   }, []);
@@ -89,8 +126,8 @@ export function usePerformance(name, options = {}) {
 }
 
 // Web Vitals hook
-export function useWebVitals(onVitalsUpdate) {
-  const [vitals, setVitals] = useState({
+export function useWebVitals(onVitalsUpdate?: (name: VitalName, metric: Metric) => void) {
+  const [vitals, setVitals] = useState<Record<VitalName, number>>({
     CLS: 0,
     FID: 0,
     FCP: 0,
@@ -135,13 +172,13 @@ export function useWebVitals(onVitalsUpdate) {
 
 // Resource loading performance hook
 export function useResourcePerformance() {
-  const [resources, setResources] = useState([]);
+  const [resources, setResources] = useState<ResourceTiming[]>([]);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
     const observer = new PerformanceObserver((list) => {
-      const entries = list.getEntries();
+      const entries = list.getEntries() as PerformanceResourceTiming[];
       const resourceEntries = entries.map(entry => ({
         name: entry.name,
         type: entry.initiatorType,
@@ -161,7 +198,7 @@ export function useResourcePerformance() {
     };
   }, []);
 
-  const getResourcesByType = useCallback((type) => {
+  const getResourcesByType = useCallback((type: string) => {
     return resources.filter(resource => resource.type === type);
   }, [resources]);
 
@@ -182,7 +219,7 @@ export function useResourcePerformance() {
 }
 
 // Component render performance hook
-export function useRenderPerformance(componentName) {
+export function useRenderPerformance(componentName: string) {
   const renderCountRef = useRef(0);
   const lastRenderTimeRef = useRef(0);
   const [renderStats, setRenderStats] = useState({
@@ -218,7 +255,11 @@ export function useRenderPerformance(componentName) {
 
 // Bundle size analyzer hook
 export function useBundleAnalysis() {
-  const [bundleInfo, setBundleInfo] = useState({
+  const [bundleInfo, setBundleInfo] = useState<{
+    totalSize: number;
+    gzippedSize: number;
+    chunks: { url: string; size: number; type: string }[];
+  }>({
     totalSize: 0,
     gzippedSize: 0,
     chunks: []
@@ -228,7 +269,7 @@ export function useBundleAnalysis() {
     if (typeof window === 'undefined') return;
 
     // Analyze loaded scripts
-    const scripts = Array.from(document.querySelectorAll('script[src]'));
+    const scripts = Array.from(document.querySelectorAll<HTMLScriptElement>('script[src]'));
     const chunks = scripts.map(script => ({
       url: script.src,
       size: 0, // Would need server-side info for actual size
@@ -246,7 +287,7 @@ export function useBundleAnalysis() {
 }
 
 // Performance budget hook
-export function usePerformanceBudget(budget = {}) {
+export function usePerformanceBudget(budget: Partial<Record<string, number>> = {}) {
   const defaultBudget = {
     loadTime: 3000, // 3 seconds
     renderTime: 100, // 100ms
@@ -254,19 +295,20 @@ export function usePerformanceBudget(budget = {}) {
     memoryUsage: 50 * 1024 * 1024 // 50MB
   };
 
-  const performanceBudget = { ...defaultBudget, ...budget };
-  const [violations, setViolations] = useState([]);
+  const performanceBudget = { ...defaultBudget, ...budget } as Record<string, number>;
+  const [violations, setViolations] = useState<BudgetViolation[]>([]);
 
-  const checkBudget = useCallback((metrics) => {
-    const newViolations = [];
+  const checkBudget = useCallback((metrics: Record<string, number | undefined>) => {
+    const newViolations: BudgetViolation[] = [];
 
     Object.entries(performanceBudget).forEach(([metric, limit]) => {
-      if (metrics[metric] && metrics[metric] > limit) {
+      const value = metrics[metric];
+      if (value && value > limit) {
         newViolations.push({
           metric,
-          value: metrics[metric],
+          value,
           limit,
-          severity: metrics[metric] > limit * 1.5 ? 'high' : 'medium'
+          severity: value > limit * 1.5 ? 'high' : 'medium'
         });
       }
     });

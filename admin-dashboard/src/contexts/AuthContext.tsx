@@ -1,11 +1,39 @@
 'use client';
 
-import { createContext, useContext, useReducer, useEffect } from 'react';
-import { adminAuth, isAuthError } from '@/lib/api';
+import { createContext, useContext, useReducer, useEffect, type ComponentType, type ReactNode } from 'react';
+import { adminAuth } from '@/lib/api';
 import { apiFetch } from '@/utils/api';
+import type { AuthUser, LoginResult, SessionInfo } from '@/types/api';
+
+interface AuthState {
+  user: AuthUser | null;
+  isAuthenticated: boolean;
+  isLoading: boolean;
+  error: string | null;
+}
+
+type AuthAction =
+  | { type: 'SET_LOADING'; payload: boolean }
+  | { type: 'LOGIN_SUCCESS'; payload: AuthUser }
+  | { type: 'LOGOUT' }
+  | { type: 'SET_ERROR'; payload: string }
+  | { type: 'CLEAR_ERROR' }
+  | { type: 'UPDATE_USER'; payload: Partial<AuthUser> };
+
+type Outcome = { success: true } | { success: false; error: string };
+
+interface AuthContextValue extends AuthState {
+  login: (email: string, password: string) => Promise<Outcome>;
+  logout: () => Promise<void>;
+  updateProfile: (profileData: Record<string, unknown>) => Promise<Outcome>;
+  clearError: () => void;
+  checkAuthStatus: () => Promise<void>;
+}
+
+const errorMessage = (error: unknown) => (error instanceof Error ? error.message : String(error));
 
 // Auth state
-const initialState = {
+const initialState: AuthState = {
   user: null,
   isAuthenticated: false,
   isLoading: true,
@@ -20,10 +48,10 @@ const AUTH_ACTIONS = {
   SET_ERROR: 'SET_ERROR',
   CLEAR_ERROR: 'CLEAR_ERROR',
   UPDATE_USER: 'UPDATE_USER',
-};
+} as const;
 
 // Auth reducer
-function authReducer(state, action) {
+function authReducer(state: AuthState, action: AuthAction): AuthState {
   switch (action.type) {
     case AUTH_ACTIONS.SET_LOADING:
       return {
@@ -60,7 +88,7 @@ function authReducer(state, action) {
     case AUTH_ACTIONS.UPDATE_USER:
       return {
         ...state,
-        user: { ...state.user, ...action.payload },
+        user: { ...state.user, ...action.payload } as AuthUser,
       };
     default:
       return state;
@@ -68,10 +96,10 @@ function authReducer(state, action) {
 }
 
 // Create context
-const AuthContext = createContext();
+const AuthContext = createContext<AuthContextValue | null>(null);
 
 // Auth provider component
-export function AuthProvider({ children }) {
+export function AuthProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(authReducer, initialState);
 
   // Check authentication status on mount
@@ -83,7 +111,7 @@ export function AuthProvider({ children }) {
     try {
       dispatch({ type: AUTH_ACTIONS.SET_LOADING, payload: true });
       
-      const response = await adminAuth.verify();
+      const response = await adminAuth.verify<SessionInfo>();
 
       if (response.status === 'SUCCESS' && response.keyValueTable && response.keyValueTable.authenticated) {
         dispatch({
@@ -98,12 +126,12 @@ export function AuthProvider({ children }) {
     }
   };
 
-  const login = async (email, password) => {
+  const login = async (email: string, password: string): Promise<Outcome> => {
     try {
       dispatch({ type: AUTH_ACTIONS.SET_LOADING, payload: true });
       dispatch({ type: AUTH_ACTIONS.CLEAR_ERROR });
 
-      const response = await adminAuth.login(email, password);
+      const response = await adminAuth.login<LoginResult>(email, password);
 
       // Backend envelope uses status: 'SUCCESS' (not success: true).
       if (response.status === 'SUCCESS' && response.keyValueTable) {
@@ -125,9 +153,9 @@ export function AuthProvider({ children }) {
     } catch (error) {
       dispatch({
         type: AUTH_ACTIONS.SET_ERROR,
-        payload: error.message,
+        payload: errorMessage(error),
       });
-      return { success: false, error: error.message };
+      return { success: false, error: errorMessage(error) };
     }
   };
 
@@ -144,7 +172,7 @@ export function AuthProvider({ children }) {
     }
   };
 
-  const updateProfile = async (profileData) => {
+  const updateProfile = async (profileData: Record<string, unknown>): Promise<Outcome> => {
     try {
       const response = await adminAuth.updateProfile(profileData);
 
@@ -157,7 +185,7 @@ export function AuthProvider({ children }) {
         throw new Error(response.message || 'Profile update failed');
       }
     } catch (error) {
-      return { success: false, error: error.message };
+      return { success: false, error: errorMessage(error) };
     }
   };
 
@@ -166,7 +194,7 @@ export function AuthProvider({ children }) {
   };
 
   // Context value
-  const value = {
+  const value: AuthContextValue = {
     ...state,
     login,
     logout,
@@ -194,8 +222,8 @@ export function useAuth() {
 }
 
 // HOC for protected routes
-export function withAuth(Component) {
-  return function AuthenticatedComponent(props) {
+export function withAuth<P extends object>(Component: ComponentType<P>) {
+  return function AuthenticatedComponent(props: P) {
     const { isAuthenticated, isLoading } = useAuth();
     
     if (isLoading) {
