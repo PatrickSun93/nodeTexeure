@@ -22,6 +22,7 @@ use crate::routes::cart::{guest_session, random_bytes};
 /// Static shipping rates (`shippingService.DEFAULT_RATES`).
 const SHIPPING_RATES: [(&str, f64); 3] =
     [("STANDARD", 9.99), ("EXPRESS", 19.99), ("OVERNIGHT", 34.99)];
+/// Subtotal from which STANDARD shipping is free (Express/Overnight are always charged).
 const FREE_SHIPPING_FROM: f64 = 100.0;
 /// Crockford base32 (no I, L, O, U).
 const ORDER_ALPHABET: &[u8; 32] = b"0123456789ABCDEFGHJKMNPQRSTVWXYZ";
@@ -800,7 +801,7 @@ pub async fn create(
     {
         (shipping_method, shipping) = (name, rate);
     }
-    if subtotal >= FREE_SHIPPING_FROM || free_shipping {
+    if (subtotal >= FREE_SHIPPING_FROM && shipping_method == "STANDARD") || free_shipping {
         shipping = 0.0;
     }
     let total = cents((subtotal + tax + shipping - discount).max(0.0));

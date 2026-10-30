@@ -137,6 +137,7 @@ function CheckoutContent() {
   const [total, setTotal] = useState(0);
   const [couponCode, setCouponCode] = useState('');
   const [couponApplied, setCouponApplied] = useState(false);
+  const [couponFreeShipping, setCouponFreeShipping] = useState(false);
 
   // Shipping rates
   const [shippingRates, setShippingRates] = useState([]);
@@ -219,15 +220,22 @@ function CheckoutContent() {
     fetchTaxRate();
   }, [shippingAddress.state, shippingAddress.country]);
 
+  // Free STANDARD shipping from $100 (Express/Overnight are always charged); a
+  // free-shipping coupon zeroes any method. Same rule as orderRoutes.js / checkout.rs.
+  const qualifiesFreeStandard = subtotal >= 100;
+  const isFreeShipping = useCallback(
+    (serviceType) => couponFreeShipping || (qualifiesFreeStandard && serviceType === 'STANDARD'),
+    [couponFreeShipping, qualifiesFreeStandard]
+  );
+
   // Recalculate total
   useEffect(() => {
     const taxable = subtotal - discount;
     const newTax = Math.round(Math.max(0, taxable) * taxRate * 100) / 100;
     setTax(newTax);
-    const freeShipping = subtotal >= 100;
-    const shippingCost = freeShipping ? 0 : shipping;
+    const shippingCost = isFreeShipping(selectedShipping) ? 0 : shipping;
     setTotal(subtotal + newTax + shippingCost - discount);
-  }, [subtotal, discount, shipping, taxRate]);
+  }, [subtotal, discount, shipping, taxRate, selectedShipping, isFreeShipping]);
 
   // Fetch shipping rates
   const fetchShippingRates = useCallback(async () => {
@@ -332,6 +340,7 @@ function CheckoutContent() {
       if (data?.status === 'SUCCESS') {
         const d = data.keyValueTable?.discount ?? 0;
         setDiscount(d);
+        setCouponFreeShipping(Boolean(data.keyValueTable?.freeShipping));
         setCouponApplied(true);
         // An earlier failed attempt's "Invalid or expired coupon" no longer applies.
         clearCouponError();
@@ -432,8 +441,6 @@ function CheckoutContent() {
       </div>
     );
   }
-
-  const freeShipping = subtotal >= 100;
 
   return (
     <div className="aesop-page">
@@ -601,7 +608,7 @@ function CheckoutContent() {
                 <div className="nt-checkout-section">
                   <div className="nt-form-section">
                     <h2>{t('shippingMethod')}</h2>
-                    {freeShipping && (
+                    {qualifiesFreeStandard && !couponFreeShipping && (
                       <div className="nt-free-shipping-banner">🎉 {t('freeShippingQualify')}</div>
                     )}
                     {loadingRates ? (
@@ -612,13 +619,13 @@ function CheckoutContent() {
                           <label key={rate.serviceType} className={`nt-shipping-option ${selectedShipping === rate.serviceType ? 'nt-option-selected' : ''}`}>
                             <input type="radio" name="shipping" value={rate.serviceType}
                               checked={selectedShipping === rate.serviceType}
-                              onChange={() => { setSelectedShipping(rate.serviceType); setShipping(freeShipping ? 0 : rate.rate); }}
+                              onChange={() => { setSelectedShipping(rate.serviceType); setShipping(rate.rate); }}
                             />
                             <div className="nt-option-details">
                               <span className="nt-option-name">{rate.serviceName}</span>
                               <span className="nt-option-est">{rate.estimatedDays || rate.estimatedDelivery}</span>
                             </div>
-                            <span className="nt-option-price">{freeShipping ? t('free') : `$${rate.rate.toFixed(2)}`}</span>
+                            <span className="nt-option-price">{isFreeShipping(rate.serviceType) ? t('free') : `$${rate.rate.toFixed(2)}`}</span>
                           </label>
                         ))}
                       </div>
@@ -706,7 +713,7 @@ function CheckoutContent() {
                 <div className="nt-summary-row"><span>{t('tax')}</span><span>${tax.toFixed(2)}</span></div>
                 <div className="nt-summary-row">
                   <span>{t('shipping')}</span>
-                  <span>{freeShipping ? t('free') : shipping > 0 ? `$${shipping.toFixed(2)}` : '—'}</span>
+                  <span>{isFreeShipping(selectedShipping) ? t('free') : shipping > 0 ? `$${shipping.toFixed(2)}` : '—'}</span>
                 </div>
                 {discount > 0 && (
                   <div className="nt-summary-row nt-discount"><span>{t('discount')}</span><span>-${discount.toFixed(2)}</span></div>
@@ -716,7 +723,7 @@ function CheckoutContent() {
                 </div>
               </div>
 
-              {subtotal < 100 && (
+              {!qualifiesFreeStandard && !couponFreeShipping && (
                 <div className="nt-free-shipping-hint">
                   {t('freeShippingHint', { amount: (100 - subtotal).toFixed(2) })}
                 </div>

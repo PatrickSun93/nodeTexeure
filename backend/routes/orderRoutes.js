@@ -285,8 +285,8 @@ router.post('/create', protectOptional, async (req, res) => {
         shippingMethodName = selected.serviceType;
       }
     }
-    // Free shipping over $100
-    if (subtotal >= 100) {
+    // Free STANDARD shipping over $100; Express and Overnight are always charged.
+    if (subtotal >= 100 && shippingMethodName === 'STANDARD') {
       shippingAmount = 0;
     }
     // A free_shipping coupon zeroes the shipping cost regardless of subtotal.

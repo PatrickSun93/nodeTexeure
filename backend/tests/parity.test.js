@@ -528,6 +528,17 @@ describeIfRust('checkout: tax, coupons and order creation', () => {
     });
   });
 
+  test.each(['STANDARD', 'OVERNIGHT'])('create: order over $100 with %s shipping', async (shippingMethod) => {
+    const sides = await signedIn();
+    const v = await inStockVariant(10);
+    await fill(sides, v, 4);
+    await placeAndCompare(sides, {
+      variant: v, quantity: 4, hasDiscount: false,
+      addressLines: ['Ada L', '1 Silk Way', 'Austin, TX 73301', 'US'],
+      order: { shippingAddress: address, billingAddress: address, shippingMethod },
+    });
+  });
+
   test('create: guest order on the session cookie', async () => {
     const first = await both({ node: { auth: {} }, rust: { auth: {} } }, 'get', '/api/cart');
     const jar = (c) => ({ Cookie: c.split(';')[0] });

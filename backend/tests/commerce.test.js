@@ -192,6 +192,23 @@ describe('checkout details', () => {
     expect(mail).toBeTruthy();
   });
 
+  test.each([
+    ['STANDARD', 0],
+    ['EXPRESS', 19.99],
+    ['OVERNIGHT', 34.99],
+  ])('over $100 only STANDARD ships free (%s costs %d)', async (shippingMethod, expected) => {
+    const buyer = await registerCustomer();
+    const item = await inStockVariant(4);
+    expect((await cartWith(buyer.accessToken, item, 4)).status).toBe(200);
+    const id = await cartId(buyer.accessToken);
+    const res = await create(buyer.accessToken, { cartId: id, shippingAddress: address, billingAddress: address, shippingMethod });
+    expect(res.status).toBe(200);
+    const order = DatabaseUtil.first(await DatabaseUtil.executeQuery(
+      'SELECT subtotal, shipping_amount, shipping_method FROM orders WHERE id = ?', [res.body.keyValueTable.orderId]));
+    expect(Number(order.subtotal)).toBeGreaterThanOrEqual(100);
+    expect([order.shipping_method, Number(order.shipping_amount)]).toEqual([shippingMethod, expected]);
+  });
+
   test('rejects missing addresses and guest checkout without an email', async () => {
     const buyer = await registerCustomer();
     const item = await inStockVariant(1);

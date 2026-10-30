@@ -106,7 +106,7 @@
     "selectOptions": "Sélectionner les options",
     "addingToCart": "Ajout au panier...",
     "addToCart": "Ajouter au panier",
-    "freeShipping": "Livraison gratuite sur les commandes supérieures à $100",
+    "freeShipping": "Livraison standard offerte dès $100 d’achat",
     "returnPolicy": "Politique de retour de 30 jours",
     "warranty": "Garantie 1 an",
     "customerReviews": "Avis clients",
@@ -316,7 +316,7 @@
     "silkCareQuestion": "Comment entretenir ma literie en soie ?",
     "silkCareAnswer": "La literie en soie se lave à la main à l'eau froide avec une lessive douce, ou se nettoie à sec. Évitez la lumière directe du soleil lors du séchage et n'utilisez jamais d'eau de Javel. Pour un résultat optimal, repassez à basse température lorsqu'elle est légèrement humide.",
     "shippingOptionsQuestion": "Quelles sont vos options et délais d'expédition ?",
-    "shippingOptionsAnswer": "Nous proposons une livraison standard (5-7 jours ouvrés) et une livraison express (2-3 jours ouvrés). Toutes les commandes sont traitées sous 1-2 jours ouvrés. La livraison standard est offerte pour toute commande supérieure à $200.",
+    "shippingOptionsAnswer": "Nous proposons une livraison standard (5-7 jours ouvrés) et une livraison express (2-3 jours ouvrés). Toutes les commandes sont traitées sous 1-2 jours ouvrés. La livraison standard est offerte pour toute commande supérieure à $100.",
     "openReturnsQuestion": "Acceptez-vous les retours d'articles ouverts ?",
     "openReturnsAnswer": "Oui, nous acceptons les retours dans les 30 jours suivant l'achat, même si l'emballage a été ouvert. Les articles doivent être à l'état neuf, avec toutes leurs étiquettes d'origine. Veuillez contacter notre service client pour initier un retour.",
     "returnPolicyQuestion": "Quelle est votre politique de retour pour les articles ouverts ?",
@@ -475,7 +475,7 @@
     "billingAddress": "Adresse de facturation",
     "continueToShipping": "Continuer vers la livraison",
     "shippingMethod": "Mode de livraison",
-    "freeShippingQualify": "Vous bénéficiez de la livraison offerte !",
+    "freeShippingQualify": "Vous bénéficiez de la livraison standard offerte !",
     "free": "Offerte",
     "back": "Retour",
     "continueToPayment": "Continuer vers le paiement",
@@ -496,7 +496,7 @@
     "shipping": "Livraison",
     "discount": "Réduction",
     "total": "Total",
-    "freeShippingHint": "Ajoutez ${amount} de plus pour la livraison offerte !"
+    "freeShippingHint": "Ajoutez ${amount} de plus pour la livraison standard offerte !"
   },
   "Profile": {
     "failedFetchProfile": "Échec du chargement du profil",

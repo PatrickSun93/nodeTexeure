@@ -110,7 +110,7 @@
     "selectOptions": "Select Options",
     "addingToCart": "Adding to Cart...",
     "addToCart": "Add to Cart",
-    "freeShipping": "Free shipping on orders over $100",
+    "freeShipping": "Free standard shipping on orders over $100",
     "returnPolicy": "30-day return policy",
     "warranty": "1-year warranty",
     "customerReviews": "Customer Reviews",
@@ -316,7 +316,7 @@
     "silkCareQuestion": "How do I care for my silk bedding?",
     "silkCareAnswer": "Silk bedding should be hand washed in cold water with a gentle detergent or dry cleaned. Avoid direct sunlight when drying and never use bleach. For best results, iron on low heat while slightly damp.",
     "shippingOptionsQuestion": "What are your shipping options and times?",
-    "shippingOptionsAnswer": "We offer standard shipping (5-7 business days) and express shipping (2-3 business days). All orders are processed within 1-2 business days. Free standard shipping is available on orders over $200.",
+    "shippingOptionsAnswer": "We offer standard shipping (5-7 business days) and express shipping (2-3 business days). All orders are processed within 1-2 business days. Free standard shipping is available on orders over $100.",
     "openReturnsQuestion": "Do you offer returns for opened items?",
     "openReturnsAnswer": "Yes, we accept returns within 30 days of purchase, even if the packaging has been opened. Items must be in unused condition with all original tags attached. Please contact our customer service team to initiate a return.",
     "returnPolicyQuestion": "What is your return policy for opened items?",
@@ -475,7 +475,7 @@
     "billingAddress": "Billing Address",
     "continueToShipping": "Continue to Shipping",
     "shippingMethod": "Shipping Method",
-    "freeShippingQualify": "You qualify for free shipping!",
+    "freeShippingQualify": "You qualify for free standard shipping!",
     "free": "Free",
     "back": "Back",
     "continueToPayment": "Continue to Payment",
@@ -496,7 +496,7 @@
     "shipping": "Shipping",
     "discount": "Discount",
     "total": "Total",
-    "freeShippingHint": "Add ${amount} more for free shipping!"
+    "freeShippingHint": "Add ${amount} more for free standard shipping!"
   },
   "Profile": {
     "failedFetchProfile": "Failed to fetch profile",
