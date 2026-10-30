@@ -3,8 +3,8 @@
 [![CI](https://github.com/PatrickSun93/nodeTexeure/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/PatrickSun93/nodeTexeure/actions/workflows/ci.yml)
 
 A full-stack luxury bedding e-commerce platform (silk & cashmere) — customer
-storefront, REST API, and admin dashboard. JavaScript (Next.js, Express) and
-Rust (Axum, sqlx), MySQL. Design
+storefront, REST API, and admin dashboard. JavaScript (Next.js, Express),
+TypeScript (the admin dashboard) and Rust (Axum, sqlx), MySQL. Design
 direction: **"Champagne & Charcoal"** (warm, editorial, with a light + dark theme).
 
 ![Home](docs/screenshots/01-home.png)
@@ -20,7 +20,7 @@ direction: **"Champagne & Charcoal"** (warm, editorial, with a light + dark them
 |-----|------|-------|------|
 | **Storefront** | `src/` | Next.js 15, React 19, Tailwind 4 | 3000 |
 | **Backend API** | `backend/` | Express.js, MySQL, JWT | 6666 |
-| **Admin dashboard** | `admin-dashboard/` | Next.js 15, React 19 | 3005 |
+| **Admin dashboard** | `admin-dashboard/` | Next.js 15, React 19, TypeScript (strict) | 3005 |
 | **Rust API** | `rust/crates/api` | Axum, sqlx | 7000 |
 | **Email daemon / worker** | `rust/crates/email-daemon`, `api` `worker` bin | Rust, sqlx | — |
 
@@ -176,6 +176,8 @@ Browser ─► Storefront (Next.js, :3000)
 ## Testing & quality
 
 - **`npm run test`** — ESLint + production `next build`.
+- **`cd admin-dashboard && npm run typecheck`** — strict TypeScript check of the
+  admin dashboard (CI runs it with the admin's lint and build).
 - **`cd backend && npm test`** — API tests (Jest + supertest) against the seeded
   MySQL. CI runs both apps' lint/build, these tests, and `npm audit` on every PR.
 - **`npm run smoke`** — checks the running stack (storefront pages + backend via

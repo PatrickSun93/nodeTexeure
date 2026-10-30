@@ -17,33 +17,36 @@ import ProductsView from '../../components/dashboard/ProductsView';
 import CustomersView from '../../components/dashboard/CustomersView';
 import PromotionsView from '../../components/dashboard/PromotionsView';
 import StaffView from '../../components/dashboard/StaffView';
+import type { TimePeriod } from '../../components/dashboard/DashboardView';
+import type { Growth, OrderListItem, SummaryMetrics, Table } from '@/types/api';
 
 export default function Dashboard() {
   const t = useTranslations('Dashboard');
   const [activeTab, setActiveTab] = useState('dashboard');
-  const [timePeriod, setTimePeriod] = useState('last-30-days');
+  const [timePeriod, setTimePeriod] = useState<TimePeriod>('last-30-days');
   const router = useRouter();
   const { logout } = useAuth();
 
   // Analytics state
-  const [metrics, setMetrics] = useState({
+  const [metrics, setMetrics] = useState<SummaryMetrics>({
     totalRevenue: 0,
     activeOrders: 0,
     avgOrderValue: 0,
     conversionRate: 0
   });
-  const [recentOrders, setRecentOrders] = useState([]);
+  const [recentOrders, setRecentOrders] = useState<OrderListItem[]>([]);
   // Period-over-period change percentages for the metric badges (null until loaded / when unavailable)
-  const [growth, setGrowth] = useState(null);
+  const [growth, setGrowth] = useState<Growth | null>(null);
 
   useEffect(() => {
     if (activeTab === 'dashboard') {
       const fetchAnalytics = async () => {
         try {
           const { apiFetch } = await import('../../utils/api');
-          const response = await apiFetch('/api/admin/analytics/summary');
-          if (response.status === 'SUCCESS' && response.keyValueTable?.[0]?.metrics) {
-            setMetrics(response.keyValueTable[0].metrics);
+          const response = await apiFetch<Table<'metrics', SummaryMetrics>>('/api/admin/analytics/summary');
+          const summary = response.keyValueTable?.[0]?.metrics;
+          if (response.status === 'SUCCESS' && summary) {
+            setMetrics(summary);
           }
         } catch (e) {
           console.error("Failed to load analytics", e);
@@ -52,7 +55,8 @@ export default function Dashboard() {
         // Period-over-period change % for the metric badges (revenue / orders / AOV)
         try {
           const { apiFetch } = await import('../../utils/api');
-          const response = await apiFetch('/api/admin/analytics/revenue-shortfall');
+          type Shortfall = { change?: Growth };
+          const response = await apiFetch<Shortfall[] | Shortfall>('/api/admin/analytics/revenue-shortfall');
           if (response.status === 'SUCCESS') {
             const kvt = response.keyValueTable;
             const payload = Array.isArray(kvt) ? kvt[0] : kvt;
@@ -71,7 +75,7 @@ export default function Dashboard() {
         // Also fetch recent orders
         try {
           const { apiFetch } = await import('../../utils/api');
-          const response = await apiFetch('/api/admin/orders');
+          const response = await apiFetch<Table<'orders', OrderListItem[]>>('/api/admin/orders');
           if (response.status === 'SUCCESS') {
             const allOrders = response.keyValueTable.find(item => item.orders)?.orders || [];
             if (allOrders.length > 0) {

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, Suspense, type ChangeEvent, type FormEvent } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Eye, EyeOff, AlertCircle, Shield } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
@@ -31,7 +31,7 @@ function LoginForm() {
     }
   }, [isAuthenticated, isLoading, router, searchParams]);
 
-  const handleInputChange = (e) => {
+  const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
@@ -55,7 +55,7 @@ function LoginForm() {
     return null;
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     
     const validationError = validateForm();

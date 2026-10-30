@@ -3,7 +3,7 @@ import { fileURLToPath } from 'url';
 import createNextIntlPlugin from 'next-intl/plugin';
 import { apiRewrites } from './rustRoutes.mjs';
 
-const withNextIntl = createNextIntlPlugin('./src/i18n/request.js');
+const withNextIntl = createNextIntlPlugin('./src/i18n/request.ts');
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
