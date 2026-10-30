@@ -1,6 +1,35 @@
 import React, { useState, useCallback } from 'react';
 import { useTranslations } from 'next-intl';
 import { useNotifications } from './NotificationSystem';
+import type { Table } from '@/types/api';
+
+/** GET /api/admin/shipping/zones */
+interface ShippingZone {
+    id: string;
+    name: string;
+    countries: string[] | null;
+    is_active: boolean | number;
+}
+
+/** The zone being created (no id) or edited; countries as typed, comma-separated. */
+interface ZoneDraft {
+    id?: string;
+    name: string;
+    countries: string;
+    is_active: boolean;
+}
+
+interface GeneralSettings {
+    storeName?: string;
+    supportEmail?: string;
+    currency?: string;
+    timezone?: string;
+}
+
+interface SettingRow {
+    setting_key: string;
+    setting_value: unknown;
+}
 
 export default function SettingsView() {
     const t = useTranslations('SettingsView');
@@ -13,21 +42,21 @@ export default function SettingsView() {
     const [paypalEnabled, setPaypalEnabled] = useState(false);
 
     // Shipping zones (real rows from GET /api/admin/shipping/zones).
-    const [zones, setZones] = useState([]);
+    const [zones, setZones] = useState<ShippingZone[]>([]);
     // Add/edit zone modal: null when closed, else { id?, name, countries (string), is_active }.
-    const [zoneModal, setZoneModal] = useState(null);
+    const [zoneModal, setZoneModal] = useState<ZoneDraft | null>(null);
     const [zoneSaving, setZoneSaving] = useState(false);
 
     // API state
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
 
-    const truthy = (v) => v === true || v === 'true' || v === '1' || v === 1;
+    const truthy = (v: unknown) => v === true || v === 'true' || v === '1' || v === 1;
 
     const loadZones = useCallback(async () => {
         try {
             const { apiFetch } = await import('../utils/api');
-            const response = await apiFetch('/api/admin/shipping/zones');
+            const response = await apiFetch<Table<'zones', ShippingZone[]>>('/api/admin/shipping/zones');
             if (response.status === 'SUCCESS') {
                 const z = response.keyValueTable?.find?.((i) => i.zones)?.zones
                     || response.keyValueTable?.[0]?.zones || [];
@@ -44,9 +73,9 @@ export default function SettingsView() {
 
             // General settings (store name / email / currency / timezone).
             try {
-                const response = await apiFetch('/api/admin/settings/general');
+                const response = await apiFetch<Table<'general', GeneralSettings>>('/api/admin/settings/general');
                 if (response.status === 'SUCCESS' && response.keyValueTable?.[0]?.general) {
-                    const gen = response.keyValueTable[0].general;
+                    const gen = response.keyValueTable[0].general as GeneralSettings;
                     setStoreName(gen.storeName || '');
                     setSupportEmail(gen.supportEmail || '');
                     setCurrency(gen.currency || 'USD');
@@ -58,11 +87,11 @@ export default function SettingsView() {
 
             // Payment-gateway enablement flags (payment_stripe_enabled / payment_paypal_enabled).
             try {
-                const response = await apiFetch('/api/admin/settings');
+                const response = await apiFetch<Table<'settings', SettingRow[]>>('/api/admin/settings');
                 if (response.status === 'SUCCESS') {
                     const list = response.keyValueTable?.find?.((i) => i.settings)?.settings
                         || response.keyValueTable?.[0]?.settings || [];
-                    const map = {};
+                    const map: Record<string, unknown> = {};
                     (Array.isArray(list) ? list : []).forEach((s) => { map[s.setting_key] = s.setting_value; });
                     if ('payment_stripe_enabled' in map) setStripeEnabled(truthy(map.payment_stripe_enabled));
                     if ('payment_paypal_enabled' in map) setPaypalEnabled(truthy(map.payment_paypal_enabled));
@@ -101,7 +130,7 @@ export default function SettingsView() {
     };
 
     // Persist a single payment-gateway flag immediately (optimistic; revert on failure).
-    const persistGateway = async (key, value) => {
+    const persistGateway = async (key: string, value: boolean) => {
         try {
             const { apiFetch } = await import('../utils/api');
             const response = await apiFetch(`/api/admin/settings/${key}`, {
@@ -158,7 +187,7 @@ export default function SettingsView() {
         }
     };
 
-    const deleteZone = async (zone) => {
+    const deleteZone = async (zone: ShippingZone) => {
         if (!zone?.id) return;
         if (!confirm(t('confirmDeleteZone', { name: zone.name }))) return;
         try {
@@ -343,7 +372,7 @@ export default function SettingsView() {
                             <tbody className="divide-y divide-gray-50">
                                 {zones.length === 0 ? (
                                     <tr>
-                                        <td colSpan="4" className="px-6 py-8 text-center text-sm text-gray-500">
+                                        <td colSpan={4} className="px-6 py-8 text-center text-sm text-gray-500">
                                             {t('noZonesConfigured')}
                                         </td>
                                     </tr>
@@ -401,7 +430,7 @@ export default function SettingsView() {
                                 <input
                                     type="text"
                                     value={zoneModal.name}
-                                    onChange={(e) => setZoneModal((z) => ({ ...z, name: e.target.value }))}
+                                    onChange={(e) => setZoneModal((z) => z && { ...z, name: e.target.value })}
                                     placeholder={t('zoneNamePlaceholder')}
                                     className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900"
                                 />
@@ -411,7 +440,7 @@ export default function SettingsView() {
                                 <input
                                     type="text"
                                     value={zoneModal.countries}
-                                    onChange={(e) => setZoneModal((z) => ({ ...z, countries: e.target.value }))}
+                                    onChange={(e) => setZoneModal((z) => z && { ...z, countries: e.target.value })}
                                     placeholder={t('countriesPlaceholder')}
                                     className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900"
                                 />
@@ -421,7 +450,7 @@ export default function SettingsView() {
                                 <input
                                     type="checkbox"
                                     checked={!!zoneModal.is_active}
-                                    onChange={(e) => setZoneModal((z) => ({ ...z, is_active: e.target.checked }))}
+                                    onChange={(e) => setZoneModal((z) => z && { ...z, is_active: e.target.checked })}
                                     className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                                 />
                                 {t('zoneActiveLabel')}

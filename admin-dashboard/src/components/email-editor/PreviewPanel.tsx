@@ -41,7 +41,8 @@ export default function PreviewPanel({
     blocks: Block[];
     subject?: string;
     templateName?: string;
-    status?: string;
+    /** true = Active */
+    status?: boolean;
     type?: string;
 }) {
     const [selectedDevice, setSelectedDevice] = useState<Device>('desktop');

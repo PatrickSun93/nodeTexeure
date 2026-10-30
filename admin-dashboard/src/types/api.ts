@@ -288,3 +288,17 @@ export interface ProductDetail {
   stock: number;
   variants: (ProductVariant & { price: string; stock: number })[];
 }
+
+/** GET /api/admin/email-templates: keyValueTable is the array itself. */
+export interface EmailTemplateSummary {
+  id: string;
+  name: string;
+  subject: string;
+  category: string | null;
+  type: string;
+  status: string;
+  preheader: string | null;
+  lastEdited: IsoDate;
+  updated_at: IsoDate;
+  created_at: IsoDate;
+}

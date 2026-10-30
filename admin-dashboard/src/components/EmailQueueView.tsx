@@ -23,9 +23,41 @@ import { useTranslations } from 'next-intl';
  * so a manual flush would be misleading; the header offers an honest Refresh.
  */
 
+type QueueStatus = 'queued' | 'sending' | 'sent' | 'failed' | 'cancelled';
+type WorkerHealth = 'active' | 'idle' | 'waiting' | 'backlog' | 'unknown';
+
+interface QueuedEmail {
+  id: string;
+  to: string;
+  toName: string | null;
+  subject: string;
+  template: string | null;
+  status: QueueStatus;
+  rawStatus: string;
+  attempts: number;
+  maxAttempts: number;
+  scheduledAt: string | null;
+  sentAt: string | null;
+  createdAt: string;
+  error: string | null;
+}
+
+type QueueCounts = Record<QueueStatus | 'total', number>;
+
+interface WorkerStatus {
+  health: WorkerHealth;
+  oldestQueuedAgeSeconds: number | null;
+  lastSentAt: string | null;
+  pendingCount: number;
+  sentLastHour: number;
+}
+
+/** keyValueTable of GET /api/admin/email-queue */
+type QueueTable = Array<{ emails?: QueuedEmail[]; counts?: Partial<QueueCounts>; worker?: WorkerStatus; pagination?: unknown }>;
+
 // ---- helpers ---------------------------------------------------------------
 
-const STATUS_BADGE = {
+const STATUS_BADGE: Record<QueueStatus, string> = {
   queued: 'bg-amber-100 text-amber-800',
   sending: 'bg-blue-100 text-blue-800',
   sent: 'bg-green-100 text-green-800',
@@ -33,7 +65,7 @@ const STATUS_BADGE = {
   cancelled: 'bg-gray-100 text-gray-600',
 };
 
-const HEALTH_DOT = {
+const HEALTH_DOT: Record<WorkerHealth, string> = {
   active: 'bg-green-500 animate-pulse',
   idle: 'bg-gray-400',
   waiting: 'bg-amber-400',
@@ -41,14 +73,16 @@ const HEALTH_DOT = {
   unknown: 'bg-gray-400',
 };
 
-function kv(keyValueTable, key) {
+type QueueEntry = QueueTable[number];
+
+function kv<K extends keyof QueueEntry>(keyValueTable: QueueTable | QueueEntry | null | undefined, key: K): QueueEntry[K] {
   if (Array.isArray(keyValueTable)) {
     return keyValueTable.find((item) => item && item[key] !== undefined)?.[key];
   }
   return keyValueTable ? keyValueTable[key] : undefined;
 }
 
-function formatAge(seconds) {
+function formatAge(seconds: number | null | undefined) {
   if (seconds == null) return null;
   const s = Math.max(0, Math.floor(seconds));
   if (s < 60) return `${s}s`;
@@ -57,7 +91,7 @@ function formatAge(seconds) {
   return `${Math.floor(s / 86400)}d`;
 }
 
-function formatTime(value) {
+function formatTime(value: string | null | undefined) {
   if (!value) return '—';
   const d = new Date(value);
   if (Number.isNaN(d.getTime())) return '—';
@@ -69,15 +103,15 @@ function formatTime(value) {
 export default function EmailQueueView() {
   const t = useTranslations('EmailQueue');
 
-  const [emails, setEmails] = useState([]);
-  const [counts, setCounts] = useState({ queued: 0, sending: 0, sent: 0, failed: 0, cancelled: 0, total: 0 });
-  const [worker, setWorker] = useState(null);
+  const [emails, setEmails] = useState<QueuedEmail[]>([]);
+  const [counts, setCounts] = useState<QueueCounts>({ queued: 0, sending: 0, sent: 0, failed: 0, cancelled: 0, total: 0 });
+  const [worker, setWorker] = useState<WorkerStatus | null>(null);
   const [filter, setFilter] = useState('all');
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [actioningId, setActioningId] = useState(null);
+  const [error, setError] = useState<string | null>(null);
+  const [actioningId, setActioningId] = useState<string | null>(null);
   const [retryingAll, setRetryingAll] = useState(false);
-  const [actionError, setActionError] = useState(null);
+  const [actionError, setActionError] = useState<string | null>(null);
   const filterRef = useRef(filter);
   filterRef.current = filter;
 
@@ -88,7 +122,7 @@ export default function EmailQueueView() {
       const { apiFetch } = await import('../utils/api');
       const activeFilter = filterRef.current;
       const query = activeFilter !== 'all' ? `?status=${encodeURIComponent(activeFilter)}` : '';
-      const response = await apiFetch(`/api/admin/email-queue${query}`);
+      const response = await apiFetch<QueueTable>(`/api/admin/email-queue${query}`);
       if (response.status === 'SUCCESS') {
         setEmails(kv(response.keyValueTable, 'emails') || []);
         const c = kv(response.keyValueTable, 'counts');
@@ -116,7 +150,7 @@ export default function EmailQueueView() {
     return () => clearInterval(id);
   }, [load]);
 
-  const handleRetryOne = async (id) => {
+  const handleRetryOne = async (id: string) => {
     setActioningId(id);
     setActionError(null);
     try {
@@ -162,23 +196,23 @@ export default function EmailQueueView() {
     { key: 'failed', label: t('tabFailed'), count: counts.failed },
   ];
 
-  const statusLabel = (status) =>
+  const statusLabel = (status: string) =>
     ({
       queued: t('statusQueued'),
       sending: t('statusSending'),
       sent: t('statusSent'),
       failed: t('statusFailed'),
       cancelled: t('statusCancelled'),
-    }[status] || status);
+    } as Record<string, string>)[status] || status;
 
-  const healthLabel = (health) =>
+  const healthLabel = (health: string | undefined) =>
     ({
       active: t('workerActive'),
       idle: t('workerIdle'),
       waiting: t('workerWaiting'),
       backlog: t('workerBacklog'),
       unknown: t('workerUnknown'),
-    }[health] || t('workerUnknown'));
+    } as Record<string, string>)[health ?? ''] || t('workerUnknown');
 
   const cards = [
     { key: 'queued', label: t('cardQueued'), value: counts.queued, hint: t('cardQueuedHint'), accent: 'border-t-amber-400', hintColor: 'text-amber-600' },
@@ -302,11 +336,11 @@ export default function EmailQueueView() {
             </thead>
             <tbody className="divide-y divide-gray-50">
               {isLoading ? (
-                <tr><td colSpan="6" className="px-6 py-10 text-center text-gray-500">{t('loading')}</td></tr>
+                <tr><td colSpan={6} className="px-6 py-10 text-center text-gray-500">{t('loading')}</td></tr>
               ) : error ? (
-                <tr><td colSpan="6" className="px-6 py-10 text-center text-red-500">{error}</td></tr>
+                <tr><td colSpan={6} className="px-6 py-10 text-center text-red-500">{error}</td></tr>
               ) : emails.length === 0 ? (
-                <tr><td colSpan="6" className="px-6 py-10 text-center text-gray-500">{filter === 'all' ? t('empty') : t('emptyFiltered')}</td></tr>
+                <tr><td colSpan={6} className="px-6 py-10 text-center text-gray-500">{filter === 'all' ? t('empty') : t('emptyFiltered')}</td></tr>
               ) : (
                 emails.map((email) => {
                   const canRetry = email.status === 'failed' || email.status === 'cancelled';
