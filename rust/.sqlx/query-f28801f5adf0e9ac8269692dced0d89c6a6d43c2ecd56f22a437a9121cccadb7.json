@@ -1,0 +1,24 @@
+{
+  "db_name": "MySQL",
+  "query": "SELECT CAST(p.base_price + COALESCE(pv.price_adjustment, 0) AS CHAR) AS \"price!: String\"\n                   FROM products p JOIN product_variants pv ON p.id = pv.product_id\n                   WHERE p.id = ? AND pv.id = ? AND p.status = 'approved'",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "price!: String",
+        "type_info": {
+          "type": "VarString",
+          "flags": "",
+          "max_size": 52
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": [
+      true
+    ]
+  },
+  "hash": "f28801f5adf0e9ac8269692dced0d89c6a6d43c2ecd56f22a437a9121cccadb7"
+}

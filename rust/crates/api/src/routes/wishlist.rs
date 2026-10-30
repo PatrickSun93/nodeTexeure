@@ -4,7 +4,7 @@
 use axum::Json;
 use axum::body::Bytes;
 use axum::extract::{Path, State};
-use axum::http::{HeaderMap, StatusCode, header};
+use axum::http::{HeaderMap, StatusCode};
 use axum::response::{IntoResponse, Response};
 use chrono::{DateTime, Utc};
 use common::json::js_number;
@@ -86,19 +86,6 @@ pub async fn list(State(state): State<AppState>, user: AuthUser) -> Result<Json<
     Ok(Json(success("Wishlist fetched", json!({ "items": items }))))
 }
 
-/// Express `req.body`: parsed JSON when the request is JSON, else `{}`.
-fn json_body(headers: &HeaderMap, body: &Bytes) -> Value {
-    let is_json = headers
-        .get(header::CONTENT_TYPE)
-        .and_then(|v| v.to_str().ok())
-        .is_some_and(|ct| ct.contains("json"));
-    if is_json {
-        serde_json::from_slice(body).unwrap_or_else(|_| json!({}))
-    } else {
-        json!({})
-    }
-}
-
 /// A truthy JS value rendered as the string it binds as; falsy → `None`.
 fn truthy_string(v: Option<&Value>) -> Option<String> {
     match v? {
@@ -121,7 +108,7 @@ pub async fn add(
     headers: HeaderMap,
     body: Bytes,
 ) -> Result<Response, ApiError> {
-    let body = json_body(&headers, &body);
+    let body = crate::body::json(&headers, &body);
     let Some(product_id) = truthy_string(body.get("product_id")) else {
         return Ok(reply(
             StatusCode::BAD_REQUEST,

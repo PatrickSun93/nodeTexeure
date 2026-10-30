@@ -57,7 +57,8 @@ pub fn locale(pairs: &Pairs, headers: &HeaderMap) -> &'static str {
         .unwrap_or("en")
 }
 
-fn cookie(headers: &HeaderMap, name: &str) -> Option<String> {
+/// A request cookie's raw value (first occurrence wins, like the `cookie` package).
+pub fn cookie(headers: &HeaderMap, name: &str) -> Option<String> {
     headers
         .get_all(axum::http::header::COOKIE)
         .iter()

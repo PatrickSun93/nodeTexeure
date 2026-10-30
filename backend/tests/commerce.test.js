@@ -117,3 +117,46 @@ describe('product listings', () => {
     expect(res.body.keyValueTable.products.map((p) => p.id)).toEqual(ids);
   });
 });
+
+describe('cart', () => {
+  const add = (token, body) => request(app).post('/api/cart/add').set(bearer(token)).send(body);
+  const items = async (token) => (await request(app).get('/api/cart').set(bearer(token))).body.keyValueTable.items;
+
+  test('adding the same item twice merges into one line', async () => {
+    const buyer = await registerCustomer();
+    const item = await inStockVariant(3);
+    expect((await add(buyer.accessToken, { ...item, quantity: 1 })).status).toBe(200);
+    expect((await add(buyer.accessToken, { ...item, quantity: 2 })).status).toBe(200);
+    const lines = await items(buyer.accessToken);
+    expect(lines).toHaveLength(1);
+    expect(lines[0]).toMatchObject({ product_id: item.product_id, variant_id: item.variant_id, quantity: 3, in_stock: true });
+  });
+
+  test('rejects missing, unknown and mismatched products without creating lines', async () => {
+    const buyer = await registerCustomer();
+    const item = await inStockVariant(1);
+    const other = DatabaseUtil.first(await DatabaseUtil.executeQuery(
+      'SELECT id FROM product_variants WHERE product_id <> ? LIMIT 1', [item.product_id]));
+    expect((await add(buyer.accessToken, {})).body.message).toBe('product_id is required');
+    expect((await add(buyer.accessToken, { product_id: 'PROD9999999999' })).body.message).toBe('Product not found');
+    const mismatch = await add(buyer.accessToken, { product_id: item.product_id, variant_id: other.id });
+    expect(mismatch.status).toBe(400);
+    expect(mismatch.body.message).toBe('Product variant not found');
+    expect(await items(buyer.accessToken)).toEqual([]);
+  });
+
+  test('update and remove only touch your own cart', async () => {
+    const owner = await registerCustomer();
+    const other = await registerCustomer();
+    const item = await inStockVariant(2);
+    await add(owner.accessToken, { ...item, quantity: 1 });
+    const [line] = await items(owner.accessToken);
+    const put = (token, id, quantity) => request(app).put(`/api/cart/update/${id}`).set(bearer(token)).send({ quantity });
+    expect((await put(other.accessToken, line.id, 2)).status).toBe(404);
+    expect((await request(app).delete(`/api/cart/remove/${line.id}`).set(bearer(other.accessToken))).status).toBe(404);
+    expect((await put(owner.accessToken, line.id, 2)).status).toBe(200);
+    expect((await items(owner.accessToken))[0].quantity).toBe(2);
+    expect((await request(app).delete(`/api/cart/remove/${line.id}`).set(bearer(owner.accessToken))).status).toBe(200);
+    expect(await items(owner.accessToken)).toEqual([]);
+  });
+});
