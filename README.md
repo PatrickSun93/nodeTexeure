@@ -1,7 +1,10 @@
 # NodeTexeure
 
+[![CI](https://github.com/PatrickSun93/nodeTexeure/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/PatrickSun93/nodeTexeure/actions/workflows/ci.yml)
+
 A full-stack luxury bedding e-commerce platform (silk & cashmere) — customer
-storefront, REST API, and admin dashboard. Pure JavaScript, MySQL. Design
+storefront, REST API, and admin dashboard. JavaScript (Next.js, Express) and
+Rust (Axum, sqlx), MySQL. Design
 direction: **"Champagne & Charcoal"** (warm, editorial, with a light + dark theme).
 
 ![Home](docs/screenshots/01-home.png)
@@ -17,9 +20,13 @@ direction: **"Champagne & Charcoal"** (warm, editorial, with a light + dark them
 |-----|------|-------|------|
 | **Storefront** | `src/` | Next.js 15, React 19, Tailwind 4 | 3000 |
 | **Backend API** | `backend/` | Express.js, MySQL, JWT | 6666 |
-| **Admin dashboard** | `admin-dashboard/` | Next.js 14, React 18 | 3005 |
+| **Admin dashboard** | `admin-dashboard/` | Next.js 15, React 19 | 3005 |
+| **Rust API** | `rust/crates/api` | Axum, sqlx | 7000 |
+| **Email daemon / worker** | `rust/crates/email-daemon`, `api` `worker` bin | Rust, sqlx | — |
 
-The frontend never touches the DB directly — it proxies `/api/*` to the backend.
+The frontend never touches the DB directly — it proxies `/api/*` to the backend
+(every `/api` group is served by the Rust API today; Express stays as the rollback
+target, see [docs/adr/](docs/adr/)).
 The DB (MySQL 8.0, ~42 tables) is seeded with **real example data** (orders, reviews,
 product images, journal articles) — no mock data.
 
@@ -190,7 +197,9 @@ Browser ─► Storefront (Next.js, :3000)
 - **[docs/API.md](docs/API.md)** — every endpoint and its access rule (generated from the routes).
 - **[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)** — production stack, Stripe webhook, ops, launch checklist.
 - **[backend/README.md](backend/README.md)** — backend layout, scripts, running the tests.
-- **[rust/README.md](rust/README.md)** — the Rust port (email daemon done; API next).
+- **[rust/README.md](rust/README.md)** — the Rust services: API, worker, email daemon.
+- **[docs/adr/](docs/adr/)** — architecture decision records (the Rust port, parity
+  tests, sqlx offline data).
 
 ---
 
