@@ -1,5 +1,6 @@
 // Server-side SEO for product pages: the page itself is a client component, so
 // title/description/Open Graph and Product JSON-LD are produced here.
+import { getLocale } from 'next-intl/server';
 import { getBackendJson } from '@/lib/server/backend';
 import { defaultSEO, generateStructuredData, jsonLd } from '@/lib/seo';
 
@@ -7,17 +8,20 @@ import { defaultSEO, generateStructuredData, jsonLd } from '@/lib/seo';
 const REVALIDATE_MS = 10 * 60 * 1000;
 const cache = new Map();
 
-async function getProduct(id) {
-  const hit = cache.get(id);
+// The backend translates name/descriptions per locale, so cache per locale too.
+async function getProduct(id, locale) {
+  const key = `${locale}:${id}`;
+  const hit = cache.get(key);
   if (hit && Date.now() - hit.at < REVALIDATE_MS) return hit.product;
   let product = null;
   try {
-    const res = await getBackendJson(`/api/products/${encodeURIComponent(id)}`);
+    const res = await getBackendJson(
+      `/api/products/${encodeURIComponent(id)}?locale=${encodeURIComponent(locale)}`);
     product = res?.status === 'SUCCESS' ? res.keyValueTable : null;
   } catch (err) {
     console.error('Product metadata: backend unavailable:', err.message);
   }
-  cache.set(id, { product, at: Date.now() });
+  cache.set(key, { product, at: Date.now() });
   return product;
 }
 
@@ -32,11 +36,15 @@ const plain = (text = '') => String(text).replace(/<[^>]*>/g, '').replace(/\s+/g
 
 export async function generateMetadata({ params }) {
   const { id } = await params;
-  const product = await getProduct(id);
+  const locale = await getLocale();
+  const product = await getProduct(id, locale);
   if (!product) return { title: defaultSEO.title };
 
-  const title = product.meta_title || product.name;
-  const description = plain(product.meta_description || product.short_description || product.description).slice(0, 160);
+  // meta_title/meta_description are English-only columns; in other locales use
+  // the translated name and copy the backend returns instead.
+  const english = locale === 'en';
+  const title = (english && product.meta_title) || product.name;
+  const description = plain((english && product.meta_description) || product.short_description || product.description).slice(0, 160);
   const image = (product.images || []).find((img) => img.is_primary) || (product.images || [])[0];
   const url = `${defaultSEO.siteUrl}/products/${product.id}`;
   const images = image ? [{ url: `${defaultSEO.siteUrl}${image.original_url}`, alt: image.alt_text || product.name }] : [];
@@ -52,7 +60,7 @@ export async function generateMetadata({ params }) {
 
 export default async function ProductLayout({ children, params }) {
   const { id } = await params;
-  const product = await getProduct(id);
+  const product = await getProduct(id, await getLocale());
   return (
     <>
       {product && (

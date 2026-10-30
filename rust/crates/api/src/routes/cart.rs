@@ -259,6 +259,7 @@ pub struct CartItem {
     pub variant_sku: Option<String>,
     pub quantity_available: Option<u32>,
     pub quantity_reserved: Option<u32>,
+    pub image: Option<String>,
     pub in_stock: bool,
     pub available_quantity: u32,
 }
@@ -279,7 +280,9 @@ pub async fn get(
              CAST(pv.price_adjustment AS CHAR) AS "price_adjustment: String",
              pv.sku AS "variant_sku: String",
              i.quantity_available AS "quantity_available: u32",
-             i.quantity_reserved AS "quantity_reserved: u32"
+             i.quantity_reserved AS "quantity_reserved: u32",
+             (SELECT COALESCE(pi.thumbnail_medium_url, pi.original_url) FROM product_images pi
+               WHERE pi.product_id = p.id ORDER BY pi.is_primary DESC, pi.sort_order ASC LIMIT 1) AS "image: String"
            FROM cart_items ci
            JOIN products p ON ci.product_id = p.id
            LEFT JOIN product_variants pv ON ci.variant_id = pv.id
@@ -315,6 +318,7 @@ pub async fn get(
             variant_sku: r.variant_sku,
             quantity_available: r.quantity_available,
             quantity_reserved: r.quantity_reserved,
+            image: r.image,
         })
         .collect();
 

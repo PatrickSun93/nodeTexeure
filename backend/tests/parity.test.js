@@ -377,7 +377,13 @@ describeIfRust('cart: same sequence, same answers', () => {
     await add({ product_id: v.product_id, variant_id: v.variant_id, quantity: v.quantity_available + 1 });
     await add({ product_id: v.product_id, variant_id: v.variant_id });
     await add({ product_id: v.product_id, variant_id: v.variant_id, quantity: v.quantity_available });
-    await both(sides, 'get', '/api/cart');
+    const view = await both(sides, 'get', '/api/cart');
+    // Each line carries its product's primary image (the seeded products all have one).
+    for (const side of ['node', 'rust']) {
+      const items = view[side].body.keyValueTable.items;
+      expect(items.length).toBeGreaterThan(0);
+      for (const item of items) expect(item.image).toEqual(expect.stringMatching(/\S/));
+    }
     for (const quantity of [undefined, 0, 1000, v.quantity_available + 1, 2, 2]) {
       await both(sides, 'put', item0, quantity === undefined ? {} : { quantity });
     }

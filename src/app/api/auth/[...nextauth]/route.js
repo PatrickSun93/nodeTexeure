@@ -69,6 +69,23 @@ const fetchBackend = async (url, options = {}) => {
 
 const REFRESH_MARGIN_MS = 5 * 60 * 1000;
 
+// The backend merges the guest cart (keyed by the `sessionId` cookie) into the
+// user's cart on login, but this login call is made server-side, so the
+// browser's cookies don't come along. Forward that one cookie — and only when
+// it has the shape the backend issues (16 random bytes, hex) — so the merge runs.
+const GUEST_SESSION_RE = /^[0-9a-f]{32}$/;
+
+const guestSessionCookie = (cookieHeader) => {
+  if (typeof cookieHeader !== 'string') return null;
+  for (const part of cookieHeader.split(';')) {
+    const eq = part.indexOf('=');
+    if (eq === -1 || part.slice(0, eq).trim() !== 'sessionId') continue;
+    const value = part.slice(eq + 1).trim();
+    return GUEST_SESSION_RE.test(value) ? `sessionId=${value}` : null;
+  }
+  return null;
+};
+
 // Read `exp` from the backend JWT (no verification needed: it's our own token,
 // only used to schedule the refresh).
 const accessTokenExpiry = (accessToken) => {
@@ -106,7 +123,7 @@ const handler = NextAuth({
         email: { label: 'Email', type: 'email' },
         password: { label: 'Password', type: 'password' }
       },
-      async authorize(credentials) {
+      async authorize(credentials, req) {
         if (!credentials?.email || !credentials?.password) {
           console.log('[NextAuth] Missing credentials');
           return null;
@@ -114,8 +131,10 @@ const handler = NextAuth({
 
         try {
           // Make API call to backend login endpoint using fetchBackend helper
+          const guestCookie = guestSessionCookie(req?.headers?.cookie);
           const response = await fetchBackend('/api/users/login', {
             method: 'POST',
+            ...(guestCookie && { headers: { Cookie: guestCookie } }),
             body: JSON.stringify({
               email: credentials.email,
               password: credentials.password
