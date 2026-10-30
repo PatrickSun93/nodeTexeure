@@ -95,6 +95,9 @@ services:
       DB_USER: root
       DB_PASSWORD: ${DB_PASSWORD:-noirae_dev}
       API_PORT: "7000"
+      # Must match the backend: the API verifies the tokens Node signs.
+      NODE_ENV: development
+      JWT_SECRET: ${JWT_SECRET:-dev_only_jwt_secret_change_me_min_32_characters}
     ports:
       - "7000:7000"
     depends_on:
