@@ -1,4 +1,6 @@
 import './globals.css'
+import type { Metadata } from 'next'
+import type { ReactNode } from 'react'
 import { NextIntlClientProvider } from 'next-intl'
 import { getLocale, getMessages } from 'next-intl/server'
 import { AuthProvider } from '@/contexts/AuthContext'
@@ -9,12 +11,12 @@ import GlobalErrorHandler from '@/components/GlobalErrorHandler'
 import SessionManager from '@/components/SessionManager'
 import { GlobalLoadingOverlay } from '@/components/LoadingStateManager'
 
-export const metadata = {
+export const metadata: Metadata = {
   title: 'Admin Dashboard - Noiraé Admin',
   description: 'Administrative interface for Noiraé Admin e-commerce platform',
 }
 
-export default async function RootLayout({ children }) {
+export default async function RootLayout({ children }: { children: ReactNode }) {
   const locale = await getLocale();
   const messages = await getMessages();
   return (

@@ -6,15 +6,16 @@ truth — [AGENTS.md](AGENTS.md) points here.
 
 ## What this is
 
-NodeTexeure is a luxury silk & cashmere bedding e-commerce platform. Pure
-JavaScript (no TypeScript in the app), MySQL, three independent apps in one repo.
+NodeTexeure is a luxury silk & cashmere bedding e-commerce platform. JavaScript
+storefront and Express backend, a TypeScript admin dashboard, Rust services,
+MySQL, three independent apps in one repo.
 Design direction: **"Champagne & Charcoal"** (see [docs/DESIGN.md](docs/DESIGN.md)).
 
 | App | Path | Stack | Port |
 |-----|------|-------|------|
 | Storefront (frontend) | `src/` | Next.js 15, React 19, Tailwind 4 | 3000 |
 | Backend API | `backend/` | Express.js, MySQL (`mysql2`), JWT | 6666 |
-| Admin dashboard | `admin-dashboard/` | Next.js 15, React 19 | 3005 |
+| Admin dashboard | `admin-dashboard/` | Next.js 15, React 19, TypeScript (strict) | 3005 |
 | Rust API | `rust/crates/api` | Axum, sqlx | 7000 |
 | Email daemon | `rust/crates/email-daemon` | Rust, sqlx, AWS SES v2 | — |
 | Background worker | `rust/crates/api` (`worker` bin) | Rust, sqlx | — |
@@ -142,6 +143,8 @@ proxy + design tokens → seed example data → smoke test).
 ## Testing
 
 - `npm run test` — storefront ESLint + production `next build`.
+- `cd admin-dashboard && npm run lint && npm run typecheck && npm run build` — the
+  admin's checks (strict `tsc --noEmit`).
 - `cd backend && npm test` — Jest + supertest API tests against a real, seeded
   MySQL (`tests/*.test.js`: auth, revocation, CSRF, IDOR, checkout, SQLi). Point
   `DB_HOST`/`DB_PORT` at the Docker MySQL (`DB_PORT=3307`).
@@ -159,7 +162,11 @@ proxy + design tokens → seed example data → smoke test).
 
 ## Conventions
 
-- **No TypeScript** in the app (plain JS, ESNext; the admin has one `middleware.ts`).
+- **TypeScript only in the admin dashboard.** The storefront and backend are plain JS
+  (ESNext). `admin-dashboard/src` is all `.ts`/`.tsx` under `strict` with
+  `allowJs: false`; `npm run typecheck` (`tsc --noEmit`) runs in CI. Response
+  shapes live in `admin-dashboard/src/types/api.ts`: type the `apiFetch<T>` call
+  instead of casting the result.
 - Backend is CommonJS (`require`); frontend is ES modules; `@/*` → `src/*`.
 - Prepared statements for all user input. Services degrade gracefully when
   integration credentials (Stripe/AWS/FedEx) are absent.

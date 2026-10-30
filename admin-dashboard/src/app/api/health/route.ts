@@ -1,5 +1,14 @@
 import { NextResponse } from 'next/server';
 
+type CheckStatus = 'healthy' | 'unhealthy' | 'warning' | 'error' | 'timeout' | 'unknown';
+
+interface Check {
+  status: CheckStatus;
+  [detail: string]: unknown;
+}
+
+const errorMessage = (error: unknown) => (error instanceof Error ? error.message : String(error));
+
 // Health check endpoint for monitoring
 export async function GET() {
   try {
@@ -32,13 +41,13 @@ export async function GET() {
     return NextResponse.json({
       status: 'unhealthy',
       timestamp: new Date().toISOString(),
-      error: error.message
+      error: errorMessage(error)
     }, { status: 503 });
   }
 }
 
 // Check memory usage
-function getMemoryUsage() {
+function getMemoryUsage(): Check {
   try {
     const memUsage = process.memoryUsage();
     const totalMemory = memUsage.heapTotal;
@@ -54,13 +63,13 @@ function getMemoryUsage() {
   } catch (error) {
     return {
       status: 'error',
-      error: error.message
+      error: errorMessage(error)
     };
   }
 }
 
 // Check API connection
-async function checkApiConnection() {
+async function checkApiConnection(): Promise<Check> {
   try {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:6666';
     const controller = new AbortController();
@@ -82,7 +91,7 @@ async function checkApiConnection() {
       statusCode: response.status
     };
   } catch (error) {
-    if (error.name === 'AbortError') {
+    if (error instanceof Error && error.name === 'AbortError') {
       return {
         status: 'timeout',
         error: 'API connection timeout'
@@ -91,7 +100,7 @@ async function checkApiConnection() {
     
     return {
       status: 'error',
-      error: error.message
+      error: errorMessage(error)
     };
   }
 }
@@ -101,7 +110,7 @@ async function checkApiConnection() {
 // backend API. We cannot truthfully assert DB health from here, so we report "unknown"
 // (surfaced as degraded, non-fatal) rather than a fabricated "healthy". The backend is
 // the source of truth for DB status (see backend /api/status/health).
-async function checkDatabaseConnection() {
+async function checkDatabaseConnection(): Promise<Check> {
   return {
     status: 'unknown',
     measured: false,
