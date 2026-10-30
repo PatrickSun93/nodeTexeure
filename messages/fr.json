@@ -60,7 +60,9 @@
     "sortPriceHigh": "Prix : décroissant",
     "sortName": "Nom : A à Z",
     "loading": "Chargement des produits...",
-    "noProducts": "Aucun produit ne correspond à vos critères."
+    "noProducts": "Aucun produit ne correspond à vos critères.",
+    "searchChip": "Recherche : « {term} »",
+    "removeFilter": "Retirer le filtre : {label}"
   },
   "Home": {
     "heroTitle": "L'Art du Confort",

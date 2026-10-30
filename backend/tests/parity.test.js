@@ -33,6 +33,24 @@ describeIfRust('products: Node and Rust answer identically', () => {
     '/api/products?materials=100%25%20cotton,%20silk',
     '/api/products?materials[]=100%25%20Cotton',
     '/api/products?material=Silk',
+    // Material terms match when the material contains them, ignoring case.
+    '/api/products?material=silk',
+    '/api/products?material=SILK',
+    '/api/products?material=Blend',
+    '/api/products?materials=mulberry%20SILK,%20blend',
+    '/api/products?materials=Cashmere',
+    // An array item is not split, so its comma is part of the term.
+    '/api/products?materials[]=Silk,%20Cotton',
+    '/api/products?materials[]=Silk,Cotton&materials[]=blend',
+    '/api/products?materials=silk&materials=cotton',
+    '/api/products?materials[]=',
+    // LIKE wildcards and the escape character in a term are literal.
+    '/api/products?materials=100%25',
+    '/api/products?materials=%25',
+    '/api/products?materials=_',
+    '/api/products?materials=1_0',
+    '/api/products?materials=%5C',
+    '/api/products?materials=%5C%25',
     '/api/products?search=Silk',
     '/api/products?search=blanket&locale=zh',
     "/api/products?search=%27%20OR%201%3D1%20--",
@@ -53,6 +71,25 @@ describeIfRust('products: Node and Rust answer identically', () => {
 
   test('locale from the NEXT_LOCALE cookie', () =>
     compare('/api/products?limit=3', { Cookie: 'theme=dark; NEXT_LOCALE=zh' }));
+
+  // Identical is not enough: both must match what the shop's filter asks for.
+  test.each([
+    ['material=Silk', ['Mulberry Silk']],
+    ['material=blend', ['Polyester Blend']],
+    ['materials=SILK,blend', ['Mulberry Silk', 'Polyester Blend']],
+    ['materials[]=Silk,%20Cotton', []],
+    ['materials=100%25', ['100% Cotton']],
+    ['materials=1_0', []],
+  ])('material filter %s', async (query, expected) => {
+    const url = `/api/products?limit=100&${query}`;
+    const node = await request(app).get(fresh(url));
+    const rust = await (await fetch(RUST + url)).json();
+    for (const body of [node.body, rust]) {
+      const found = body.keyValueTable.products.map((p) => p.product_details.material).sort();
+      expect({ query, found }).toEqual({ query, found: expected });
+      expect(body.keyValueTable.total).toBe(expected.length);
+    }
+  });
 });
 
 describeIfRust('search: Node and Rust answer identically', () => {

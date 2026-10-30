@@ -3906,9 +3906,13 @@ p {
 
 .noirae-shop-container {
   display: grid;
-  grid-template-columns: 280px 1fr;
+  grid-template-columns: 280px minmax(0, 1fr);
   gap: var(--space-10);
   align-items: start;
+  /* .aesop-container centres its children (flex column), which shrink-wraps this
+     grid to its content: with no products the panel narrowed and the sort control
+     ran into the title. Span the full width whatever the results. */
+  width: 100%;
 }
 
 /* Filter Sidebar */
@@ -4059,12 +4063,15 @@ p {
   display: flex;
   flex-direction: column;
   min-height: 600px; /* Maintain consistent minimum height */
+  min-width: 0;
 }
 
 .noirae-shop-header {
   display: flex;
+  flex-wrap: wrap; /* sort drops below the title rather than overlapping it */
   justify-content: space-between;
   align-items: center;
+  gap: var(--space-4);
   margin-bottom: var(--space-8);
 }
 
