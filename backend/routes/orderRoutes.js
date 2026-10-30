@@ -451,11 +451,18 @@ router.post('/create', protectOptional, async (req, res) => {
     // queueing failure is logged, never fails the order.
     const customerEmail = req.user ? req.user.email : guestEmail;
     const customerName = shippingAddress.first_name || shippingAddress.firstName || 'Valued Customer';
-    const queued = await emailQueueProducer.enqueue(customerEmail, customerName, 'order_confirmation', {
-      order_number: orderNumber,
-      customer_name: customerName,
-      total_amount: totalAmount.toFixed(2),
-    });
+    const queued = await emailQueueProducer.enqueue(customerEmail, customerName, 'order_confirmation',
+      emailQueueProducer.orderConfirmationVariables({
+        orderNumber,
+        customerName,
+        items: cartItems,
+        subtotal,
+        discount: discountAmount,
+        shipping: shippingAmount,
+        tax: taxAmount,
+        total: totalAmount,
+        shippingAddress,
+      }));
     if (!queued.queued) console.error('Non-fatal: order confirmation not queued:', queued.reason);
 
     res.json(ResponseFormatter.success('Order created successfully', { orderId, orderNumber }));

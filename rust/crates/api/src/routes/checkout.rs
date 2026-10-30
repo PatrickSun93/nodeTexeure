@@ -606,6 +606,82 @@ async fn queue_confirmation(
     Ok(())
 }
 
+/// `Number(n).toFixed(2)` for the cents-rounded amounts used here.
+fn money(x: f64) -> String {
+    format!("{x:.2}")
+}
+
+/// `addressPart`: strings and numbers as `String(v)`, anything else dropped.
+fn address_part(value: Option<&Value>) -> String {
+    match value {
+        Some(v @ (Value::String(_) | Value::Number(_))) => js_string(v),
+        _ => String::new(),
+    }
+}
+
+/// `joinParts`: non-empty parts joined with `sep`.
+fn join_parts<const N: usize>(parts: [String; N], sep: &str) -> String {
+    parts
+        .into_iter()
+        .filter(|p| !p.is_empty())
+        .collect::<Vec<_>>()
+        .join(sep)
+}
+
+/// `addressLines`: name / street / street 2 / "city, state zip" / country.
+fn address_lines(address: &Value) -> Vec<String> {
+    let part = |key: &str| address_part(address.get(key));
+    let locality = join_parts([part("state"), part("postal_code")], " ");
+    [
+        join_parts([part("first_name"), part("last_name")], " "),
+        part("address_line_1"),
+        part("address_line_2"),
+        join_parts([part("city"), locality], ", "),
+        part("country"),
+    ]
+    .into_iter()
+    .filter(|l| !l.is_empty())
+    .collect()
+}
+
+/// `emailQueueProducer.orderConfirmationVariables`: the order_confirmation
+/// template's variables (migration 014). Raw values — the email daemon escapes
+/// them for the HTML body.
+fn confirmation_variables(
+    c: &Checkout,
+    name: &Value,
+    shipping_address: &Value,
+) -> Map<String, Value> {
+    let items: Vec<Value> = c
+        .lines
+        .iter()
+        .map(|l| {
+            json!({
+                "name": l.name,
+                "sku": l.sku,
+                "quantity": l.quantity,
+                "unit_price": money(price(l)),
+                "line_total": money(cents(price(l) * f64::from(l.quantity))),
+            })
+        })
+        .collect();
+    let mut variables = Map::new();
+    variables.insert("order_number".into(), json!(c.order_number));
+    variables.insert("customer_name".into(), name.clone());
+    variables.insert("items".into(), Value::Array(items));
+    variables.insert("subtotal".into(), json!(money(c.subtotal)));
+    variables.insert("has_discount".into(), json!(c.discount > 0.0));
+    variables.insert("discount_amount".into(), json!(money(c.discount)));
+    variables.insert("shipping_amount".into(), json!(money(c.shipping)));
+    variables.insert("tax_amount".into(), json!(money(c.tax)));
+    variables.insert("total_amount".into(), json!(money(c.total)));
+    variables.insert(
+        "shipping_address_lines".into(),
+        json!(address_lines(shipping_address)),
+    );
+    variables
+}
+
 /// The producer's subject interpolation: each `{{ key }}` → `String(value)`.
 fn interpolate_subject(template: &str, variables: &Map<String, Value>) -> String {
     let mut out = template.to_owned();
@@ -773,13 +849,7 @@ pub async fn create(
         .find(|v| truthy(Some(v)))
         .cloned()
         .unwrap_or_else(|| json!("Valued Customer"));
-    let mut variables = Map::new();
-    variables.insert("order_number".into(), json!(checkout.order_number));
-    variables.insert("customer_name".into(), name.clone());
-    variables.insert(
-        "total_amount".into(),
-        json!(format!("{:.2}", checkout.total)),
-    );
+    let variables = confirmation_variables(&checkout, &name, shipping_address);
     match to {
         Some(to) => {
             if let Err(error) =
@@ -864,6 +934,28 @@ mod tests {
             ),
             "Order NOR-1 / NOR-1 {{other}}"
         );
+    }
+
+    #[test]
+    fn address_lines_skip_blanks_like_node() {
+        let a = json!({ "first_name": "Ada", "last_name": "", "address_line_1": "1 Silk Way",
+            "address_line_2": "", "city": "Austin", "state": "TX", "postal_code": 73301,
+            "country": "US", "phone": "555" });
+        assert_eq!(
+            address_lines(&a),
+            ["Ada", "1 Silk Way", "Austin, TX 73301", "US"]
+        );
+        let b = json!({ "first_name": ["x"], "city": "", "state": "", "postal_code": "10001" });
+        assert_eq!(address_lines(&b), ["10001"]);
+        assert!(address_lines(&json!({})).is_empty());
+    }
+
+    #[test]
+    fn money_has_two_decimals() {
+        assert_eq!(money(0.0), "0.00");
+        assert_eq!(money(9.99), "9.99");
+        assert_eq!(money(cents(39.99 * 3.0)), "119.97");
+        assert_eq!(money(12.5), "12.50");
     }
 
     #[test]
