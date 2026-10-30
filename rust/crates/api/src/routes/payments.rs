@@ -51,7 +51,7 @@ pub const PREFIX: &str = "/api/payments";
 /// body-parser's default limit ('100kb').
 const BODY_LIMIT: usize = 100 * 1024;
 /// Largest body buffered; parsers fail anything past [`BODY_LIMIT`] anyway.
-const READ_LIMIT: usize = 2 * 1024 * 1024;
+const READ_LIMIT: usize = BODY_LIMIT + 1;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 enum R {
@@ -174,9 +174,19 @@ pub async fn dispatch(State(state): State<AppState>, req: Request) -> Response {
     if parts.method == Method::OPTIONS {
         return StatusCode::NO_CONTENT.into_response();
     }
-    let (bytes, too_large) = match axum::body::to_bytes(body, READ_LIMIT).await {
-        Ok(bytes) => (bytes, false),
-        Err(_) => (Bytes::new(), true),
+    // Only a body one of the parsers (json, urlencoded, the webhook's raw)
+    // would read is buffered at all; Node leaves any other body unread.
+    let readable = matches!(
+        media_type(&parts.headers).as_deref(),
+        Some("application/json" | "application/x-www-form-urlencoded")
+    );
+    let (bytes, too_large) = if !readable {
+        (Bytes::new(), false)
+    } else {
+        match axum::body::to_bytes(body, READ_LIMIT).await {
+            Ok(bytes) => (bytes, false),
+            Err(_) => (Bytes::new(), true),
+        }
     };
     let parsed = if too_large {
         // Only a body some parser reads can fail for its size.

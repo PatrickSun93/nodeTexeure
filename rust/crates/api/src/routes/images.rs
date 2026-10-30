@@ -255,17 +255,15 @@ async fn upload_product_image(
     original_name: &str,
     product_id: &str,
 ) -> Result<(Uploaded, Vec<Option<Uploaded>>), String> {
-    let ext = match extname(original_name).to_lowercase() {
-        e if e.is_empty() => ".jpg".to_owned(),
-        e => e,
-    };
+    // Allowlisted, as the /upload route does: never the client's .svg/.html.
+    let ext = safe_extension(original_name);
     let base = uuid_v4().map_err(|e| e.to_string())?;
     let prefix = format!("products/{product_id}");
     let original = STORAGE
         .upload_file(
             buffer.clone(),
             &format!("{prefix}/{base}_original{ext}"),
-            mime_type(&ext),
+            mime_type(ext),
         )
         .await?;
     let mut thumbnails = Vec::new();

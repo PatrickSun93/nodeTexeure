@@ -673,7 +673,12 @@ pub fn construct_event(
             // Same UTF-16 length, different UTF-8 length: timingSafeEqual throws.
             return Err("Input buffers must have the same byte length".into());
         }
-        found |= sig.as_bytes() == expected.as_bytes();
+        // crypto.timingSafeEqual: no early exit on the first differing byte.
+        found |= sig
+            .bytes()
+            .zip(expected.bytes())
+            .fold(0u8, |acc, (a, b)| acc | (a ^ b))
+            == 0;
     }
     let whitespace = if secret_has_whitespace {
         WHITESPACE_NOTE

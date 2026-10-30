@@ -141,7 +141,8 @@ pub fn parse_body(headers: &HeaderMap, bytes: &[u8]) -> Result<Value, String> {
             if !matches!(first_token(&text), Some(('{' | '[', _))) {
                 return Err(strict_violation_message(&text));
             }
-            serde_json::from_str::<Value>(&text).map_err(|_| json_syntax_message(&text))
+            // V8's JSON.parse: correctly rounded doubles, lone surrogates as U+FFFD.
+            crate::v8_json::parse(&text)
         }
         "application/x-www-form-urlencoded" => {
             let charset = charset.unwrap_or_else(|| "utf-8".into());
@@ -312,6 +313,11 @@ mod tests {
             json!({})
         );
         assert_eq!(parse_body(&HeaderMap::new(), b"").unwrap(), json!({}));
+        // JSON.parse: correctly rounded doubles, a lone surrogate is U+FFFD.
+        let b = br#"{"v":418.68644866104756,"s":"a\ud800b"}"#;
+        let v = parse_body(&headers("application/json", b.len()), b).unwrap();
+        assert_eq!(v["v"].as_f64(), Some(418.686_448_661_047_56));
+        assert_eq!(v["s"], "a\u{FFFD}b");
     }
 
     /// express.urlencoded({ extended: true }) on the same bodies

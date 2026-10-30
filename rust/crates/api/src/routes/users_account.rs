@@ -523,7 +523,7 @@ async fn list_addresses(state: &AppState, parts: &mut Parts) -> Response {
     let rows = sqlx::query!(
         r#"SELECT id, type AS "addr_type: String", is_default AS "is_default: i8", first_name, last_name, phone,
              address_json AS "address_json: Value"
-           FROM user_addresses WHERE user_id = ? ORDER BY is_default DESC, created_at DESC"#,
+           FROM user_addresses WHERE user_id = ? ORDER BY is_default DESC, created_at DESC, id DESC"#,
         user.id
     )
     .fetch_all(&state.pool)

@@ -553,7 +553,7 @@ const isAddressType = (type) => type === undefined || type === null || type === 
 router.get('/addresses', protect, async (req, res) => {
   try {
     const result = await DatabaseUtil.executeQuery(
-      'SELECT id, type, is_default, first_name, last_name, phone, address_json FROM user_addresses WHERE user_id = ? ORDER BY is_default DESC, created_at DESC',
+      'SELECT id, type, is_default, first_name, last_name, phone, address_json FROM user_addresses WHERE user_id = ? ORDER BY is_default DESC, created_at DESC, id DESC',
       [req.user.id]
     );
     if (!result.success) throw new Error('Failed to fetch addresses');

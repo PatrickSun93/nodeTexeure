@@ -637,7 +637,15 @@ fn upload_filename(info: &FileInfo) -> String {
             }
         }
     }
-    format!("{}-{safe}", chrono::Utc::now().timestamp_millis())
+    // /uploads serves by extension: anything but an image one gets .jpg
+    // appended, so a declared image/png named x.html or x.svg stays an image.
+    let ext = crate::routes::images::extname(&safe).to_lowercase();
+    let suffix = if [".jpg", ".jpeg", ".png", ".gif", ".webp"].contains(&ext.as_str()) {
+        ""
+    } else {
+        ".jpg"
+    };
+    format!("{}-{safe}{suffix}", chrono::Utc::now().timestamp_millis())
 }
 
 fn image_filter(info: &FileInfo) -> Result<bool, String> {
@@ -885,6 +893,9 @@ mod tests {
         let (ts, rest) = name.split_once('-').unwrap();
         assert!(ts.bytes().all(|b| b.is_ascii_digit()));
         assert_eq!(rest, "my_photo__.png");
+        let name = upload_filename(&info("x.HTML"));
+        assert!(name.ends_with("-x.HTML.jpg"));
+        assert!(upload_filename(&info("a.PNG")).ends_with("-a.PNG"));
         assert!(image_filter(&info("x")).is_ok());
         assert!(is_safe_id("PROD0000000001"));
         assert!(!is_safe_id("a.b"));

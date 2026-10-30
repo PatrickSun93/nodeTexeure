@@ -1,6 +1,6 @@
 {
   "db_name": "MySQL",
-  "query": "SELECT id, type AS \"addr_type: String\", is_default AS \"is_default: i8\", first_name, last_name, phone,\n             address_json AS \"address_json: Value\"\n           FROM user_addresses WHERE user_id = ? ORDER BY is_default DESC, created_at DESC",
+  "query": "SELECT id, type AS \"addr_type: String\", is_default AS \"is_default: i8\", first_name, last_name, phone,\n             address_json AS \"address_json: Value\"\n           FROM user_addresses WHERE user_id = ? ORDER BY is_default DESC, created_at DESC, id DESC",
   "describe": {
     "columns": [
       {
@@ -80,5 +80,5 @@
       false
     ]
   },
-  "hash": "3d55c40bd975884c6c8cca22c632553363e273396071d7b11e25ef0a88fa4c72"
+  "hash": "ba59cc21ff44c2786a17db89d761dcc155428e51a10d1cf8f4e073c7df25a285"
 }

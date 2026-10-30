@@ -15,7 +15,7 @@ RUN --mount=type=cache,target=/usr/local/cargo/registry \
  && cp target/release/email-daemon target/release/api /usr/local/bin/
 
 FROM ${REGISTRY}debian:bookworm-slim
-RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates \
+RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates tzdata \
  && rm -rf /var/lib/apt/lists/* \
  && useradd --system --uid 10001 --home-dir /app app \
  && mkdir -p /app/email-outbox && chown app /app/email-outbox

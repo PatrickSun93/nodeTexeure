@@ -372,8 +372,12 @@ function createMulterForProduct(productId) {
     filename: function (req, file, cb) {
       // Simple filename: timestamp-originalName sanitized
       const safeBase = path.basename(file.originalname).replace(/[^a-zA-Z0-9_.-]/g, '_');
+      // /uploads serves by extension: anything but an image one gets .jpg
+      // appended, so a declared image/png named x.html or x.svg stays an image.
+      const ext = path.extname(safeBase).toLowerCase();
+      const suffix = ['.jpg', '.jpeg', '.png', '.gif', '.webp'].includes(ext) ? '' : '.jpg';
       const ts = Date.now();
-      cb(null, `${ts}-${safeBase}`);
+      cb(null, `${ts}-${safeBase}${suffix}`);
     },
   });
   return multer({
