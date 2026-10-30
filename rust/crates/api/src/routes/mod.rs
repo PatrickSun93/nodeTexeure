@@ -1,4 +1,5 @@
 pub mod cart;
+pub mod checkout;
 pub mod health;
 pub mod journal;
 pub mod orders;

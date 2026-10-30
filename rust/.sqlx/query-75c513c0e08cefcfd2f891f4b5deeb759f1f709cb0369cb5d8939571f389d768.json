@@ -1,0 +1,12 @@
+{
+  "db_name": "MySQL",
+  "query": "INSERT INTO orders (id, order_number, user_id, guest_email, status, subtotal, tax_amount,\n           shipping_amount, discount_amount, total_amount, shipping_address_json,\n           billing_address_json, shipping_method)\n         VALUES (?, ?, ?, ?, 'pending', ?, ?, ?, ?, ?, ?, ?, ?)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 12
+    },
+    "nullable": []
+  },
+  "hash": "75c513c0e08cefcfd2f891f4b5deeb759f1f709cb0369cb5d8939571f389d768"
+}

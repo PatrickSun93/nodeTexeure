@@ -1,0 +1,24 @@
+{
+  "db_name": "MySQL",
+  "query": "SELECT CAST(COALESCE(SUM(quantity_available), 0) AS SIGNED) AS \"available!: i64\"\n               FROM inventory WHERE product_id = ? AND variant_id <=> ?",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "available!: i64",
+        "type_info": {
+          "type": "LongLong",
+          "flags": "NOT_NULL | BINARY",
+          "max_size": 21
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "dc15a86c011de7238d9dc8a14c24ca5693510a9f51fe292f099032e51ea91952"
+}

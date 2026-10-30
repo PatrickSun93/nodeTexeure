@@ -1,0 +1,74 @@
+{
+  "db_name": "MySQL",
+  "query": "SELECT id, type AS \"kind!: String\", CAST(value AS CHAR) AS \"value!: String\",\n             CAST(minimum_order_amount AS CHAR) AS \"minimum_order_amount: String\",\n             CAST(maximum_discount_amount AS CHAR) AS \"maximum_discount_amount: String\",\n             usage_limit_per_customer\n           FROM discount_codes\n           WHERE code = ? AND is_active = 1\n             AND (starts_at <= NOW() OR starts_at IS NULL)\n             AND (expires_at >= NOW() OR expires_at IS NULL)\n           ORDER BY id LIMIT 1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NOT_NULL | PRIMARY_KEY | NO_DEFAULT_VALUE",
+          "max_size": 200
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "kind!: String",
+        "type_info": {
+          "type": "String",
+          "flags": "NOT_NULL | ENUM | NO_DEFAULT_VALUE",
+          "max_size": 52
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "value!: String",
+        "type_info": {
+          "type": "VarString",
+          "flags": "",
+          "max_size": 48
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "minimum_order_amount: String",
+        "type_info": {
+          "type": "VarString",
+          "flags": "",
+          "max_size": 48
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "maximum_discount_amount: String",
+        "type_info": {
+          "type": "VarString",
+          "flags": "",
+          "max_size": 48
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "usage_limit_per_customer",
+        "type_info": {
+          "type": "Long",
+          "flags": "UNSIGNED",
+          "max_size": 10
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false,
+      false,
+      true,
+      true,
+      true,
+      true
+    ]
+  },
+  "hash": "3c785e205609de0ecad13848d916e54bd4520c3e17d517cfa9a8256c331f358e"
+}

@@ -1,0 +1,12 @@
+{
+  "db_name": "MySQL",
+  "query": "DELETE FROM cart_items WHERE cart_id = ?",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": []
+  },
+  "hash": "f3c60532a82c0916fb14353f2e4da95e8e82f19d0164db2c9caf4c6256b4b8c1"
+}

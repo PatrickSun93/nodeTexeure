@@ -1,0 +1,74 @@
+{
+  "db_name": "MySQL",
+  "query": "SELECT ci.product_id, ci.variant_id, ci.quantity,\n             CAST(ci.price AS CHAR) AS \"price!: String\", p.name,\n             COALESCE(pv.sku, p.sku) AS \"sku!: String\"\n           FROM cart_items ci\n           JOIN products p ON ci.product_id = p.id\n           LEFT JOIN product_variants pv ON ci.variant_id = pv.id\n           WHERE ci.cart_id = ?\n           ORDER BY ci.created_at ASC, ci.id ASC",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "product_id",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NOT_NULL | MULTIPLE_KEY | NO_DEFAULT_VALUE",
+          "max_size": 200
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "variant_id",
+        "type_info": {
+          "type": "VarString",
+          "flags": "MULTIPLE_KEY",
+          "max_size": 200
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "quantity",
+        "type_info": {
+          "type": "Long",
+          "flags": "NOT_NULL | UNSIGNED",
+          "max_size": 10
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "price!: String",
+        "type_info": {
+          "type": "VarString",
+          "flags": "",
+          "max_size": 48
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "name",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NOT_NULL | MULTIPLE_KEY | NO_DEFAULT_VALUE",
+          "max_size": 1020
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "sku!: String",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NOT_NULL",
+          "max_size": 400
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false,
+      true,
+      false,
+      true,
+      false,
+      false
+    ]
+  },
+  "hash": "d878b896870133a5669e8bb5f7b3988f955cc3c06f898e9ca9004b558c8dacb5"
+}

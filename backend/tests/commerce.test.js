@@ -160,3 +160,67 @@ describe('cart', () => {
     expect(await items(owner.accessToken)).toEqual([]);
   });
 });
+
+describe('checkout details', () => {
+  const create = (token, body) => request(app).post('/api/orders/create').set(token ? bearer(token) : {}).send(body);
+
+  test('stored order: cents-exact totals, SKU, shipping method, queued confirmation', async () => {
+    const buyer = await registerCustomer();
+    const item = await inStockVariant(3);
+    expect((await cartWith(buyer.accessToken, item, 3)).status).toBe(200);
+    const id = await cartId(buyer.accessToken);
+    const res = await create(buyer.accessToken, {
+      cartId: id, shippingAddress: address, billingAddress: address,
+      couponCode: 'WELCOME10', shippingMethod: 'EXPRESS',
+    });
+    expect(res.status).toBe(200);
+    const { orderId, orderNumber } = res.body.keyValueTable;
+
+    const order = DatabaseUtil.first(await DatabaseUtil.executeQuery('SELECT * FROM orders WHERE id = ?', [orderId]));
+    const parts = Number(order.subtotal) + Number(order.tax_amount) + Number(order.shipping_amount) - Number(order.discount_amount);
+    expect(Number(order.total_amount)).toBeCloseTo(parts, 10);
+    expect(Number(order.discount_amount)).toBeGreaterThan(0);
+    expect(order.shipping_method).toBeTruthy();
+
+    const [line] = DatabaseUtil.rows(await DatabaseUtil.executeQuery('SELECT * FROM order_items WHERE order_id = ?', [orderId]));
+    const variant = DatabaseUtil.first(await DatabaseUtil.executeQuery('SELECT sku FROM product_variants WHERE id = ?', [item.variant_id]));
+    expect(line.product_sku).toBe(variant.sku);
+    expect(Number(line.total_price)).toBeCloseTo(Number(line.unit_price) * 3, 10);
+
+    const mail = DatabaseUtil.first(await DatabaseUtil.executeQuery(
+      "SELECT subject FROM email_queue WHERE to_email = ? AND subject LIKE ?", [buyer.email, `%${orderNumber}%`]));
+    expect(mail).toBeTruthy();
+  });
+
+  test('rejects missing addresses and guest checkout without an email', async () => {
+    const buyer = await registerCustomer();
+    const item = await inStockVariant(1);
+    await cartWith(buyer.accessToken, item, 1);
+    const id = await cartId(buyer.accessToken);
+    const noAddress = await create(buyer.accessToken, { cartId: id });
+    expect(noAddress.status).toBe(400);
+    expect(noAddress.body.message).toBe('Shipping and billing addresses are required');
+
+    const guest = await create(null, { cartId: id, shippingAddress: address, billingAddress: address, guestEmail: 'nope' });
+    expect(guest.status).toBe(400);
+    expect(guest.body.message).toBe('A valid email is required for guest checkout');
+  });
+});
+
+test('a numeric coupon code cannot unlock other coupons', async () => {
+  // MySQL fixes a prepared statement's parameter type on first use: before the
+  // fix, sending couponCode 7 made later string codes compare as numbers, so any
+  // made-up code matched the first coupon.
+  const buyer = await registerCustomer();
+  const item = await inStockVariant(1);
+  await cartWith(buyer.accessToken, item, 1);
+  const id = await cartId(buyer.accessToken);
+  const apply = (couponCode) => request(app).post('/api/orders/apply-coupon').set(bearer(buyer.accessToken))
+    .send({ cartId: id, couponCode });
+  for (let i = 0; i < 12; i++) await apply(7);
+  for (let i = 0; i < 12; i++) {
+    const res = await apply('NOT-A-REAL-CODE');
+    expect(res.status).toBe(400);
+    expect(res.body.message).toBe('Invalid or expired coupon');
+  }
+});

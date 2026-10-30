@@ -40,6 +40,63 @@ pub fn js_string(value: &Value) -> String {
     }
 }
 
+/// `Number(value)` in JavaScript, for values that came from JSON (NaN for
+/// anything that isn't numeric).
+pub fn js_to_number(value: &Value) -> f64 {
+    match value {
+        Value::Null => 0.0,
+        Value::Bool(b) => f64::from(u8::from(*b)),
+        Value::Number(n) => n.as_f64().unwrap_or(f64::NAN),
+        Value::String(s) => string_to_number(s),
+        Value::Array(items) if items.is_empty() => 0.0,
+        Value::Array(items) if items.len() == 1 => string_to_number(&js_string(value)),
+        Value::Array(_) | Value::Object(_) => f64::NAN,
+    }
+}
+
+/// `Number(string)`: trimmed; empty is 0; decimal, exponent, `Infinity` and
+/// `0x`/`0o`/`0b` integers; anything else NaN.
+fn string_to_number(s: &str) -> f64 {
+    let t = s.trim_matches(|c: char| c.is_whitespace() || c == '\u{feff}');
+    if t.is_empty() {
+        return 0.0;
+    }
+    for (prefix, radix) in [
+        ("0x", 16),
+        ("0X", 16),
+        ("0o", 8),
+        ("0O", 8),
+        ("0b", 2),
+        ("0B", 2),
+    ] {
+        if let Some(digits) = t.strip_prefix(prefix) {
+            return u64::from_str_radix(digits, radix).map_or(f64::NAN, |n| n as f64);
+        }
+    }
+    match t {
+        "Infinity" | "+Infinity" => return f64::INFINITY,
+        "-Infinity" => return f64::NEG_INFINITY,
+        _ => {}
+    }
+    // Rust accepts "inf"/"nan"/"infinity" spellings that JavaScript doesn't.
+    if t.chars()
+        .any(|c| c.is_ascii_alphabetic() && c != 'e' && c != 'E')
+    {
+        return f64::NAN;
+    }
+    t.parse().unwrap_or(f64::NAN)
+}
+
+/// JavaScript truthiness of a JSON value.
+pub fn truthy(value: Option<&Value>) -> bool {
+    match value {
+        None | Some(Value::Null) | Some(Value::Bool(false)) => false,
+        Some(Value::String(s)) => !s.is_empty(),
+        Some(Value::Number(n)) => n.as_f64().is_some_and(|f| f != 0.0 && !f.is_nan()),
+        Some(_) => true,
+    }
+}
+
 /// `Number.parseInt(value, 10)` for a JSON value; `None` is NaN.
 pub fn parse_int(value: &Value) -> Option<i64> {
     crate::params::js_parse_int(&js_string(value))
@@ -59,5 +116,31 @@ mod tests {
         assert_eq!(parse_int(&json!(true)), None);
         assert_eq!(parse_int(&json!({ "a": 1 })), None);
         assert_eq!(parse_int(&json!(null)), None);
+    }
+
+    #[test]
+    fn to_number_matches_javascript() {
+        assert_eq!(js_to_number(&json!("12.5")), 12.5);
+        assert_eq!(js_to_number(&json!(" 7 ")), 7.0);
+        assert_eq!(js_to_number(&json!("")), 0.0);
+        assert_eq!(js_to_number(&json!("0x10")), 16.0);
+        assert_eq!(js_to_number(&json!("1e3")), 1000.0);
+        assert_eq!(js_to_number(&json!(true)), 1.0);
+        assert_eq!(js_to_number(&json!([])), 0.0);
+        assert_eq!(js_to_number(&json!(["4"])), 4.0);
+        assert!(js_to_number(&json!("abc")).is_nan());
+        assert!(js_to_number(&json!("inf")).is_nan());
+        assert!(js_to_number(&json!([1, 2])).is_nan());
+        assert!(js_to_number(&json!({})).is_nan());
+        assert_eq!(js_to_number(&json!("-Infinity")), f64::NEG_INFINITY);
+    }
+
+    #[test]
+    fn truthiness() {
+        assert!(truthy(Some(&json!("a"))));
+        assert!(truthy(Some(&json!([]))));
+        assert!(!truthy(Some(&json!(""))));
+        assert!(!truthy(Some(&json!(0))));
+        assert!(!truthy(None));
     }
 }

@@ -1,0 +1,12 @@
+{
+  "db_name": "MySQL",
+  "query": "UPDATE inventory\n               SET quantity_available = quantity_available - ?,\n                   quantity_sold = quantity_sold + ?,\n                   updated_at = CURRENT_TIMESTAMP\n             WHERE product_id = ? AND variant_id <=> ? AND quantity_available >= ?",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 5
+    },
+    "nullable": []
+  },
+  "hash": "ec28cfb7defc993fbb1260893dc2101893d638884451b9b417c964a49317393d"
+}

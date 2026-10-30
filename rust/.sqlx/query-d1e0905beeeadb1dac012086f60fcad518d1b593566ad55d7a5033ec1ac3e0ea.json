@@ -1,0 +1,24 @@
+{
+  "db_name": "MySQL",
+  "query": "SELECT 1 AS taken FROM orders WHERE order_number = ? LIMIT 1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "taken",
+        "type_info": {
+          "type": "LongLong",
+          "flags": "NOT_NULL | BINARY",
+          "max_size": 2
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "d1e0905beeeadb1dac012086f60fcad518d1b593566ad55d7a5033ec1ac3e0ea"
+}

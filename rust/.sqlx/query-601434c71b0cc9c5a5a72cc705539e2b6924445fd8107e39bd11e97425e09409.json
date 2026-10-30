@@ -1,0 +1,24 @@
+{
+  "db_name": "MySQL",
+  "query": "SELECT COUNT(*) FROM discount_code_usage WHERE discount_code_id = ? AND user_id = ?",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "COUNT(*)",
+        "type_info": {
+          "type": "LongLong",
+          "flags": "NOT_NULL | BINARY",
+          "max_size": 21
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "601434c71b0cc9c5a5a72cc705539e2b6924445fd8107e39bd11e97425e09409"
+}
