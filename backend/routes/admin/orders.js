@@ -13,11 +13,39 @@ const { adminReadLimiter, adminWriteLimiter } = require('./limiters');
 
 const router = express.Router();
 
+// Same set as the orders / order_status_history `status` ENUM.
+const ALLOWED_STATUSES = ['pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled', 'refunded'];
+const TRACKING_NUMBER_MAX = 100; // orders.tracking_number VARCHAR(100)
+
+// shipping_address_json is a JSON column: mysql2 hands it back already parsed,
+// but tolerate a string (older drivers / hand-written rows) too.
+function parseAddress(raw) {
+  if (!raw) return {};
+  if (typeof raw === 'object') return raw;
+  try {
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === 'object' ? parsed : {};
+  } catch (e) {
+    return {};
+  }
+}
+
+// "City, Country" (or whichever half exists) for the orders list.
+function formatDestination(raw) {
+  const addr = parseAddress(raw);
+  return [addr.city, addr.country].filter((v) => typeof v === 'string' && v.trim()).join(', ');
+}
+
 // Order Management
 // List orders
 router.get('/orders', admin, adminReadLimiter, async (req, res) => {
   try {
     // Basic listing. In real app, add pagination/filters.
+    // ?user_id=a&user_id=b arrives as an array (and qs can build objects); only a
+    // plain string may be bound against the VARCHAR user_id column.
+    if (req.query.user_id !== undefined && typeof req.query.user_id !== 'string') {
+      return res.status(400).json(ResponseFormatter.failure('user_id must be a string'));
+    }
     const queryParams = [];
     const query = `
       SELECT o.id, o.order_number, o.created_at, o.status, o.total_amount,
@@ -35,12 +63,10 @@ router.get('/orders', admin, adminReadLimiter, async (req, res) => {
     if (!listResult.success) throw new Error(listResult.error);
 
     // Process rows to match frontend expectation if needed
-    const orders = listResult.data.map(r => {
-      let destination = '';
-      try {
-        const addr = JSON.parse(r.shipping_address_json || '{}');
-        destination = `${addr.city || ''}, ${addr.country || ''}`;
-      } catch (e) { }
+    // The JSON column is already an object here, so the old JSON.parse() threw
+    // on every row and the destination was always 'N/A'.
+    const orders = DatabaseUtil.rows(listResult).map(r => {
+      const destination = formatDestination(r.shipping_address_json);
 
       return {
         id: r.order_number || r.id, // Display order number if available
@@ -94,14 +120,30 @@ router.get('/orders/:id', admin, adminReadLimiter, async (req, res) => {
 router.put('/orders/:id/status', staffOrAdmin, adminWriteLimiter, csrfProtection, async (req, res) => {
   try {
     const { id } = req.params;
-    const { status, notes, tracking_number } = req.body;
+    const { status, notes, tracking_number } = req.body || {};
+    // A non-string status used to crash on .toLowerCase() (500), and an unknown
+    // string reached the ENUM column; both are client errors.
+    if (typeof status !== 'string' || !ALLOWED_STATUSES.includes(status.toLowerCase())) {
+      return res.status(400).json(ResponseFormatter.failure(`Invalid status. Allowed: ${ALLOWED_STATUSES.join(', ')}`));
+    }
     const normalizedStatus = status.toLowerCase();
+    // tracking_number is optional (absent/null/'' leaves the stored one alone), but
+    // when given it must be a string that fits the VARCHAR(100) column.
+    const hasTracking = tracking_number !== undefined && tracking_number !== null && tracking_number !== '';
+    if (hasTracking && (typeof tracking_number !== 'string' || tracking_number.length > TRACKING_NUMBER_MAX)) {
+      return res.status(400).json(ResponseFormatter.failure(`tracking_number must be a string of at most ${TRACKING_NUMBER_MAX} characters`));
+    }
 
     // Update order status (and the tracking number when the admin provided one)
-    const updateResult = tracking_number
+    const updateResult = hasTracking
       ? await DatabaseUtil.executeQuery('UPDATE orders SET status = ?, tracking_number = ? WHERE id = ?', [normalizedStatus, tracking_number, id])
       : await DatabaseUtil.executeQuery('UPDATE orders SET status = ? WHERE id = ?', [normalizedStatus, id]);
     if (!updateResult.success) throw new Error(updateResult.error);
+    // Unknown id: say so instead of reporting success (the history insert below
+    // would also fail its FK silently).
+    if (!updateResult.affectedRows) {
+      return res.status(404).json(ResponseFormatter.failure('Order not found'));
+    }
 
     // Insert into order_status_history
     const historyId = uuidv4();
@@ -180,10 +222,13 @@ router.post('/orders/bulk-update', staffOrAdmin, adminWriteLimiter, csrfProtecti
     if (!Array.isArray(orderIds) || orderIds.length === 0) {
       return res.status(400).json(ResponseFormatter.failure('orderIds must be a non-empty array'));
     }
+    // Each id is bound against the VARCHAR orders.id column: strings only.
+    if (!orderIds.every((orderId) => typeof orderId === 'string' && orderId.length > 0)) {
+      return res.status(400).json(ResponseFormatter.failure('orderIds must contain only non-empty strings'));
+    }
 
-    // Same status set as the orders / order_status_history ENUM the single handler writes.
-    const ALLOWED_STATUSES = ['pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled', 'refunded'];
-    const normalizedStatus = String(status || '').toLowerCase();
+    // Same status set as the single PUT /orders/:id/status handler.
+    const normalizedStatus = typeof status === 'string' ? status.toLowerCase() : '';
     if (!ALLOWED_STATUSES.includes(normalizedStatus)) {
       return res.status(400).json(ResponseFormatter.failure(`Invalid status. Allowed: ${ALLOWED_STATUSES.join(', ')}`));
     }

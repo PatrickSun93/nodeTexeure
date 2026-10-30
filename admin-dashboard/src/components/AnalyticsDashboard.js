@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl';
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, BarElement, ArcElement, Title, Tooltip, Legend } from 'chart.js';
 import { Line, Bar, Pie } from 'react-chartjs-2';
 import { apiFetch } from '../utils/api';
+import { useNotifications } from './NotificationSystem';
 
 // Register ChartJS components
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, ArcElement, Title, Tooltip, Legend);
@@ -18,6 +19,7 @@ const TARGET_STATUS_COLORS = { above: '#10B981', on: '#F59E0B', below: '#D6C4A8'
 
 export default function AnalyticsDashboard() {
     const t = useTranslations('AnalyticsDashboard');
+    const notify = useNotifications();
     // Fallback-safe translator: use the shared message when present, otherwise a
     // plain-English default. The Revenue Drivers strings are not yet in the
     // message catalogs (owned by another workstream), so we degrade gracefully
@@ -121,7 +123,7 @@ export default function AnalyticsDashboard() {
             document.body.removeChild(a);
         } catch (err) {
             console.error('Error exporting:', err);
-            alert(t('exportFailed'));
+            notify.error(t('exportFailed'));
         }
     };
 

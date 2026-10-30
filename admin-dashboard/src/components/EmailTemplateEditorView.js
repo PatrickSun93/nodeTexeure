@@ -4,8 +4,10 @@ import PreviewPanel from './email-editor/PreviewPanel';
 import VariablesPalette from './email-editor/VariablesPalette';
 import { blocksToHtml } from './email-editor/utils/blockToHtml';
 import { htmlToBlocks } from './email-editor/utils/htmlToBlocks';
+import { useNotifications } from './NotificationSystem';
 
 export default function EmailTemplateEditorView({ onBack, initialData = null }) {
+    const notify = useNotifications();
     // State
     const [isLoading, setIsLoading] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
@@ -156,12 +158,12 @@ export default function EmailTemplateEditorView({ onBack, initialData = null }) 
                     onBack();
                 }
             } else if (!silent) {
-                alert('Failed to save: ' + (response.message || 'Unknown error'));
+                notify.error('Failed to save: ' + (response.message || 'Unknown error'));
             }
         } catch (e) {
             console.error('Save failed', e);
             if (!silent) {
-                alert('Error saving template: ' + e.message);
+                notify.error('Error saving template: ' + e.message);
             }
         } finally {
             setIsSaving(false);
