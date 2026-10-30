@@ -1,6 +1,32 @@
 'use client';
 
+import type { EChartsOption, LineSeriesOption } from 'echarts';
 import BaseChart from './BaseChart';
+
+/** One point on the x axis: a label plus numeric series (revenue, orderCount, ...). */
+export type SeriesPoint = Record<string, string | number | undefined> & {
+  period?: string;
+  date?: string;
+  label?: string;
+};
+
+interface AxisTooltipParam {
+  axisValue: string;
+  color: string;
+  value: unknown;
+  seriesName: string;
+}
+
+interface LineChartProps {
+  data?: SeriesPoint[];
+  title?: string;
+  loading?: boolean;
+  height?: number;
+  showGrid?: boolean;
+  smooth?: boolean;
+  areaStyle?: boolean;
+  colors?: string[];
+}
 
 /**
  * Line Chart Component for Revenue Trends and Time Series Data
@@ -14,9 +40,9 @@ export default function LineChart({
   smooth = true,
   areaStyle = false,
   colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444']
-}) {
+}: LineChartProps) {
   // Prepare chart option
-  const option = {
+  const option: EChartsOption = {
     title: {
       text: title,
       left: 'left',
@@ -34,7 +60,8 @@ export default function LineChart({
       textStyle: {
         color: '#374151'
       },
-      formatter: function(params) {
+      formatter: function(raw) {
+        const params = raw as unknown as AxisTooltipParam[];
         let tooltip = `<div style="font-weight: bold; margin-bottom: 4px;">${params[0].axisValue}</div>`;
         params.forEach((param, index) => {
           const color = param.color;
@@ -67,7 +94,7 @@ export default function LineChart({
     xAxis: {
       type: 'category',
       boundaryGap: false,
-      data: data.map(item => item.period || item.date || item.label),
+      data: data.map(item => item.period || item.date || item.label || ''),
       axisLine: {
         lineStyle: {
           color: '#e5e7eb'
@@ -89,13 +116,13 @@ export default function LineChart({
       axisLabel: {
         color: '#6b7280',
         fontSize: 12,
-        formatter: function(value) {
+        formatter: function(value: number) {
           if (value >= 1000000) {
             return (value / 1000000).toFixed(1) + 'M';
           } else if (value >= 1000) {
             return (value / 1000).toFixed(1) + 'K';
           }
-          return value;
+          return String(value);
         }
       },
       splitLine: {
@@ -121,14 +148,14 @@ export default function LineChart({
 /**
  * Generate series data for the chart
  */
-function generateSeries(data, colors, smooth, areaStyle) {
+function generateSeries(data: SeriesPoint[], colors: string[], smooth: boolean, areaStyle: boolean): LineSeriesOption[] {
   if (!data || data.length === 0) {
     return [];
   }
 
   // Determine which metrics to show based on data structure
   const sampleItem = data[0];
-  const metrics = [];
+  const metrics: { key: string; name: string; formatter: (value: number) => string }[] = [];
 
   if (sampleItem.revenue !== undefined) {
     metrics.push({

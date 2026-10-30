@@ -1,6 +1,44 @@
 'use client';
 
+import type { BarSeriesOption, EChartsOption, XAXisComponentOption, YAXisComponentOption } from 'echarts';
 import BaseChart from './BaseChart';
+
+/** One bar group: a name plus numeric series (totalRevenue, totalQuantity, ...). */
+export type BarDatum = Record<string, string | number | undefined> & {
+  name?: string;
+  label?: string;
+};
+
+interface AxisTooltipParam {
+  axisValue: string;
+  color: string;
+  value: number;
+  seriesName: string;
+}
+
+interface BarChartProps {
+  data?: BarDatum[];
+  title?: string;
+  loading?: boolean;
+  height?: number;
+  horizontal?: boolean;
+  showGrid?: boolean;
+  colors?: string[];
+}
+
+// Axis labels: compact numbers on the value axis, long category names cut.
+function formatAxisLabel(value: string | number, isValueAxis: boolean, truncate: boolean): string {
+  if (isValueAxis && typeof value === 'number') {
+    if (value >= 1000000) {
+      return (value / 1000000).toFixed(1) + 'M';
+    } else if (value >= 1000) {
+      return (value / 1000).toFixed(1) + 'K';
+    }
+    return String(value);
+  }
+  const text = String(value);
+  return truncate && text.length > 15 ? text.substring(0, 15) + '...' : text;
+}
 
 /**
  * Bar Chart Component for Top Products and Category Performance
@@ -13,9 +51,11 @@ export default function BarChart({
   horizontal = false,
   showGrid = true,
   colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444']
-}) {
+}: BarChartProps) {
+  const categories = data.map(item => item.name || item.label || '');
+
   // Prepare chart option
-  const option = {
+  const option: EChartsOption = {
     title: {
       text: title,
       left: 'left',
@@ -36,17 +76,18 @@ export default function BarChart({
       axisPointer: {
         type: 'shadow'
       },
-      formatter: function(params) {
+      formatter: function(raw) {
+        const params = raw as unknown as AxisTooltipParam[];
         let tooltip = `<div style="font-weight: bold; margin-bottom: 4px;">${params[0].axisValue}</div>`;
         params.forEach((param, index) => {
           const color = param.color;
-          let value = param.value;
+          let value: string;
           
           // Format value based on series name
           if (param.seriesName.toLowerCase().includes('revenue')) {
-            value = `$${value.toLocaleString()}`;
+            value = `$${param.value.toLocaleString()}`;
           } else {
-            value = value.toLocaleString();
+            value = param.value.toLocaleString();
           }
           
           tooltip += `<div style="margin: 2px 0;">
@@ -74,7 +115,7 @@ export default function BarChart({
     },
     xAxis: {
       type: horizontal ? 'value' : 'category',
-      data: horizontal ? undefined : data.map(item => item.name || item.label),
+      data: horizontal ? undefined : categories,
       axisLine: {
         lineStyle: {
           color: '#e5e7eb'
@@ -85,17 +126,7 @@ export default function BarChart({
         fontSize: 12,
         interval: 0,
         rotate: horizontal ? 0 : (data.length > 8 ? 45 : 0),
-        formatter: function(value) {
-          if (horizontal && typeof value === 'number') {
-            if (value >= 1000000) {
-              return (value / 1000000).toFixed(1) + 'M';
-            } else if (value >= 1000) {
-              return (value / 1000).toFixed(1) + 'K';
-            }
-            return value;
-          }
-          return value.length > 15 ? value.substring(0, 15) + '...' : value;
-        }
+        formatter: (value: string | number) => formatAxisLabel(value, horizontal, true)
       },
       splitLine: horizontal ? {
         lineStyle: {
@@ -103,10 +134,10 @@ export default function BarChart({
           type: 'dashed'
         }
       } : undefined
-    },
+    } as XAXisComponentOption,
     yAxis: {
       type: horizontal ? 'category' : 'value',
-      data: horizontal ? data.map(item => item.name || item.label) : undefined,
+      data: horizontal ? categories : undefined,
       axisLine: {
         show: false
       },
@@ -116,17 +147,7 @@ export default function BarChart({
       axisLabel: {
         color: '#6b7280',
         fontSize: 12,
-        formatter: function(value) {
-          if (!horizontal && typeof value === 'number') {
-            if (value >= 1000000) {
-              return (value / 1000000).toFixed(1) + 'M';
-            } else if (value >= 1000) {
-              return (value / 1000).toFixed(1) + 'K';
-            }
-            return value;
-          }
-          return horizontal && value.length > 15 ? value.substring(0, 15) + '...' : value;
-        }
+        formatter: (value: string | number) => formatAxisLabel(value, !horizontal, horizontal)
       },
       splitLine: !horizontal ? {
         lineStyle: {
@@ -134,7 +155,7 @@ export default function BarChart({
           type: 'dashed'
         }
       } : undefined
-    },
+    } as YAXisComponentOption,
     series: generateBarSeries(data, colors, horizontal)
   };
 
@@ -151,14 +172,14 @@ export default function BarChart({
 /**
  * Generate series data for the bar chart
  */
-function generateBarSeries(data, colors, horizontal) {
+function generateBarSeries(data: BarDatum[], colors: string[], horizontal: boolean): BarSeriesOption[] {
   if (!data || data.length === 0) {
     return [];
   }
 
   // Determine which metrics to show based on data structure
   const sampleItem = data[0];
-  const metrics = [];
+  const metrics: { key: string; name: string; formatter: (value: number) => string }[] = [];
 
   if (sampleItem.totalRevenue !== undefined) {
     metrics.push({

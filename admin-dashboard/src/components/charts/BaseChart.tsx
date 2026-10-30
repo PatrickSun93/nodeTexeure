@@ -1,12 +1,13 @@
 'use client';
 
-import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
+import { useEffect, useRef, useState, useCallback, useMemo, type CSSProperties } from 'react';
+import type { ECharts, EChartsOption } from 'echarts';
 import { useTranslations } from 'next-intl';
 import { useCache } from '@/hooks/useCache';
 import { usePerformance } from '@/hooks/usePerformance';
 
 // Lazy load ECharts to reduce initial bundle size
-let echarts = null;
+let echarts: typeof import('echarts') | null = null;
 const loadECharts = async () => {
   if (!echarts) {
     echarts = await import('echarts');
@@ -18,6 +19,20 @@ const loadECharts = async () => {
  * Optimized Base Chart Component
  * Provides common functionality for all ECharts components with performance optimizations
  */
+export interface BaseChartProps {
+  option: EChartsOption | null | undefined;
+  style?: CSSProperties;
+  className?: string;
+  loading?: boolean;
+  onChartReady?: (chart: ECharts) => void;
+  onEvents?: Record<string, (params: unknown) => void>;
+  theme?: string;
+  cacheKey?: string | null;
+  enableCache?: boolean;
+  debounceResize?: number;
+  lazyLoad?: boolean;
+}
+
 export default function BaseChart({ 
   option, 
   style = { height: '400px', width: '100%' }, 
@@ -30,11 +45,11 @@ export default function BaseChart({
   enableCache = true,
   debounceResize = 300,
   lazyLoad = true
-}) {
+}: BaseChartProps) {
   const t = useTranslations('Charts');
-  const chartRef = useRef(null);
-  const chartInstance = useRef(null);
-  const resizeTimeoutRef = useRef(null);
+  const chartRef = useRef<HTMLDivElement>(null);
+  const chartInstance = useRef<ECharts | null>(null);
+  const resizeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [isLoading, setIsLoading] = useState(loading);
   const [echartsLoaded, setEchartsLoaded] = useState(!lazyLoad);
   
@@ -49,7 +64,7 @@ export default function BaseChart({
     if (enableCache && cacheKey) {
       const cachedOption = cache.get(`chart_option_${cacheKey}`);
       if (cachedOption && JSON.stringify(cachedOption) === JSON.stringify(option)) {
-        return cachedOption;
+        return cachedOption as EChartsOption;
       }
       cache.set(`chart_option_${cacheKey}`, option);
     }
@@ -85,21 +100,22 @@ export default function BaseChart({
         const echartsModule = await loadECharts();
 
         // Create new chart instance with performance optimizations
-        chartInstance.current = echartsModule.init(chartRef.current, theme, {
+        const chart = echartsModule.init(chartRef.current, theme, {
           renderer: 'canvas', // Use canvas for better performance with large datasets
           useDirtyRect: true, // Enable dirty rectangle optimization
           useCoarsePointer: true // Optimize for touch devices
         });
+        chartInstance.current = chart;
 
         // Set up event listeners with debouncing for performance
         Object.entries(onEvents).forEach(([eventName, handler]) => {
           const debouncedHandler = debounce(handler, 100);
-          chartInstance.current.on(eventName, debouncedHandler);
+          chart.on(eventName, debouncedHandler);
         });
 
         // Notify parent component that chart is ready
         if (onChartReady) {
-          onChartReady(chartInstance.current);
+          onChartReady(chart);
         }
       } catch (error) {
         console.error('Chart initialization failed:', error);
@@ -120,7 +136,7 @@ export default function BaseChart({
 
   // Debounced chart update function
   const updateChart = useCallback(
-    debounce((newOption) => {
+    debounce((newOption: EChartsOption) => {
       if (chartInstance.current && newOption) {
         const endTracking = trackInteraction('chart-update');
         try {
@@ -240,9 +256,9 @@ export default function BaseChart({
 }
 
 // Utility function for debouncing
-function debounce(func, wait) {
-  let timeout;
-  return function executedFunction(...args) {
+function debounce<A extends unknown[]>(func: (...args: A) => void, wait: number) {
+  let timeout: ReturnType<typeof setTimeout> | undefined;
+  return function executedFunction(...args: A) {
     const later = () => {
       clearTimeout(timeout);
       func(...args);
