@@ -131,8 +131,18 @@ fn reply(status: StatusCode, body: Value) -> Response {
 /// `GET /api/orders/{idOrNumber}`
 pub async fn detail(
     State(state): State<AppState>,
-    OptionalUser(user): OptionalUser,
+    user: OptionalUser,
     Path(id): Path<String>,
+) -> Result<Response, ApiError> {
+    detail_of(&state, user, id).await
+}
+
+/// Detail lookup for a fixed id. Express also routes `GET` on the POST-only
+/// paths (`create`, `apply-coupon`, `calculate-tax`) here, as order ids.
+pub async fn detail_of(
+    state: &AppState,
+    OptionalUser(user): OptionalUser,
+    id: String,
 ) -> Result<Response, ApiError> {
     let order = sqlx::query_as!(
         Order,

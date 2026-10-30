@@ -11,6 +11,7 @@ pub mod routes;
 use std::time::Duration;
 
 use axum::Router;
+use axum::extract::State;
 use axum::http::{HeaderName, HeaderValue, StatusCode, header};
 use axum::routing::{delete, get, post, put};
 use sqlx::MySqlPool;
@@ -22,6 +23,16 @@ use tower_http::trace::TraceLayer;
 pub struct AppState {
     pub pool: MySqlPool,
     pub jwt: auth::JwtKey,
+}
+
+/// `GET /api/orders/<name>` for a POST-only order path: Express treats `name`
+/// as an order id (so the answer is "Order not found"), not as 405.
+fn get_order_named(name: &'static str) -> axum::routing::MethodRouter<AppState> {
+    get(
+        move |State(state): State<AppState>, user: auth::OptionalUser| async move {
+            routes::orders::detail_of(&state, user, name.to_owned()).await
+        },
+    )
 }
 
 pub fn router(state: AppState) -> Router {
@@ -43,6 +54,18 @@ pub fn router(state: AppState) -> Router {
         .route("/api/cart/add", post(routes::cart::add))
         .route("/api/cart/update/{item_id}", put(routes::cart::update))
         .route("/api/cart/remove/{item_id}", delete(routes::cart::remove))
+        .route(
+            "/api/orders/create",
+            post(routes::checkout::create).merge(get_order_named("create")),
+        )
+        .route(
+            "/api/orders/apply-coupon",
+            post(routes::checkout::apply_coupon).merge(get_order_named("apply-coupon")),
+        )
+        .route(
+            "/api/orders/calculate-tax",
+            post(routes::checkout::calculate_tax).merge(get_order_named("calculate-tax")),
+        )
         .route("/api/orders/my-orders", get(routes::orders::my_orders))
         .route(
             "/api/orders/track/{order_number}",

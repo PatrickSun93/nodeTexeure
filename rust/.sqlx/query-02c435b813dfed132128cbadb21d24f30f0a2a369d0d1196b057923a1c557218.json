@@ -1,0 +1,24 @@
+{
+  "db_name": "MySQL",
+  "query": "SELECT CAST(tax_rate AS CHAR) AS \"rate!: String\" FROM tax_rates\n               WHERE is_active = 1\n                 AND JSON_UNQUOTE(JSON_EXTRACT(location_json, '$.country')) = ?\n                 AND JSON_UNQUOTE(JSON_EXTRACT(location_json, '$.state')) = ?\n               ORDER BY id LIMIT 1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "rate!: String",
+        "type_info": {
+          "type": "VarString",
+          "flags": "",
+          "max_size": 40
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": [
+      true
+    ]
+  },
+  "hash": "02c435b813dfed132128cbadb21d24f30f0a2a369d0d1196b057923a1c557218"
+}

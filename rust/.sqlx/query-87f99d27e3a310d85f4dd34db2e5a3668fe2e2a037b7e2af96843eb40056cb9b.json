@@ -1,0 +1,12 @@
+{
+  "db_name": "MySQL",
+  "query": "DELETE FROM shopping_carts WHERE id = ?",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": []
+  },
+  "hash": "87f99d27e3a310d85f4dd34db2e5a3668fe2e2a037b7e2af96843eb40056cb9b"
+}

@@ -269,44 +269,55 @@ describeIfRust('orders (read routes): Node and Rust answer identically', () => {
   });
 });
 
+// Two-sided runner for write sequences: each side keeps its own auth (Bearer
+// or guest cookie) and its own data; responses are compared after normalizing
+// generated ids and timestamps.
+const { inStockVariant } = require('./helpers');
+const norm = (v) => JSON.parse(JSON.stringify(v)
+  .replace(/CARTITEM\d{10}/g, 'CARTITEM*')
+  .replace(/[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}/g, 'UUID')
+  .replace(/NOR-[0-9A-Z]{5}-[0-9A-Z]{5}/g, 'NOR-*')
+  .replace(/CART\d{10}/g, 'CART*')
+  .replace(/USER\d{10}/g, 'USER*')
+  .replace(/test\.\d+\.[a-z0-9]+@example\.com/g, 'EMAIL')
+  .replace(/\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{3}Z/g, 'TIME'));
+
+// One side of the comparison: Node via supertest, Rust via fetch. `auth` is a
+// header object (Bearer or guest cookie) kept per side.
+async function call(side, method, url, auth, body) {
+  if (side === 'node') {
+    let req = request(app)[method](url).set(auth);
+    if (body !== undefined) req = req.send(body);
+    const res = await req;
+    return { status: res.status, body: res.body, cookie: res.headers['set-cookie']?.[0] };
+  }
+  const res = await fetch(RUST + url, {
+    method: method.toUpperCase(),
+    headers: { ...auth, ...(body !== undefined && { 'Content-Type': 'application/json' }) },
+    body: body !== undefined ? JSON.stringify(body) : undefined,
+  });
+  return { status: res.status, body: await res.json(), cookie: res.headers.get('set-cookie') ?? undefined };
+}
+
+// Run the same step on both sides; `url` and `body` may be functions of the
+// side's own state (its cart items, cart id, last order).
+async function both(sides, method, url, body) {
+  const out = {};
+  const pick = (v, s) => (typeof v === 'function' ? v(s) : v);
+  for (const [side, s] of Object.entries(sides)) {
+    out[side] = await call(side, method, pick(url, s), s.auth, pick(body, s));
+    const kvt = out[side].body?.keyValueTable;
+    if (kvt?.items) s.items = kvt.items;
+    if (kvt?.cartId) s.cartId = kvt.cartId;
+    if (kvt?.orderId) s.orderId = kvt.orderId;
+  }
+  const label = `${method.toUpperCase()} ${pick(url, sides.node)} ${JSON.stringify(pick(body, sides.node) ?? '')}`;
+  const view = (r) => ({ label, status: r.status, body: norm(r.body) });
+  expect(view(out.rust)).toEqual(view(out.node));
+  return out;
+}
+
 describeIfRust('cart: same sequence, same answers', () => {
-  const { inStockVariant } = require('./helpers');
-  const norm = (v) => JSON.parse(JSON.stringify(v)
-    .replace(/CARTITEM\d{10}/g, 'CARTITEM*')
-    .replace(/CART\d{10}/g, 'CART*')
-    .replace(/\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{3}Z/g, 'TIME'));
-
-  // One side of the comparison: Node via supertest, Rust via fetch. `auth` is a
-  // header object (Bearer or guest cookie) kept per side.
-  async function call(side, method, url, auth, body) {
-    if (side === 'node') {
-      let req = request(app)[method](url).set(auth);
-      if (body !== undefined) req = req.send(body);
-      const res = await req;
-      return { status: res.status, body: res.body, cookie: res.headers['set-cookie']?.[0] };
-    }
-    const res = await fetch(RUST + url, {
-      method: method.toUpperCase(),
-      headers: { ...auth, ...(body !== undefined && { 'Content-Type': 'application/json' }) },
-      body: body !== undefined ? JSON.stringify(body) : undefined,
-    });
-    return { status: res.status, body: await res.json(), cookie: res.headers.get('set-cookie') ?? undefined };
-  }
-
-  // Run the same step on both sides; `url` may be a function of the side's own cart.
-  async function both(sides, method, url, body) {
-    const out = {};
-    for (const [side, s] of Object.entries(sides)) {
-      const u = typeof url === 'function' ? url(s) : url;
-      out[side] = await call(side, method, u, s.auth, body);
-      if (out[side].body?.keyValueTable?.items) s.items = out[side].body.keyValueTable.items;
-    }
-    const label = `${method.toUpperCase()} ${typeof url === 'function' ? url(sides.node) : url} ${JSON.stringify(body ?? '')}`;
-    const view = (r) => ({ label, status: r.status, body: norm(r.body) });
-    expect(view(out.rust)).toEqual(view(out.node));
-    return out;
-  }
-
   const item0 = (s) => `/api/cart/update/${s.items[0]?.id ?? 'none'}`;
   const remove0 = (s) => `/api/cart/remove/${s.items[0]?.id ?? 'none'}`;
 
@@ -360,5 +371,126 @@ describeIfRust('cart: same sequence, same answers', () => {
   test('a bad token is a guest', async () => {
     await both({ node: { auth: { Authorization: 'Bearer nope' } }, rust: { auth: { Authorization: 'Bearer nope' } } },
       'post', '/api/cart/add', {});
+  });
+});
+
+describeIfRust('checkout: tax, coupons and order creation', () => {
+  const post = (url, body) => compareWith('post', url, { body });
+
+  test('calculate-tax', async () => {
+    for (const body of [{}, { subtotal: null }, { subtotal: -1 }, { subtotal: 0 }, { subtotal: 100 },
+      { subtotal: '59.99' }, { subtotal: 'abc' }, { subtotal: true }, { subtotal: [12] },
+      { subtotal: 59.99, stateCode: 'NY', countryCode: 'US' }, { subtotal: 10, countryCode: 'CA' }]) {
+      await post('/api/orders/calculate-tax', body);
+    }
+  });
+
+  const address = { first_name: 'Ada', last_name: 'L', address_line_1: '1 Silk Way', city: 'Austin',
+    state: 'TX', postal_code: '73301', country: 'US' };
+
+  // Fill each side's cart with the same lines.
+  async function fill(sides, v, quantity) {
+    await both(sides, 'get', '/api/cart');
+    await both(sides, 'post', '/api/cart/add', { product_id: v.product_id, variant_id: v.variant_id, quantity });
+  }
+
+  async function signedIn() {
+    const a = (await registerCustomer()).accessToken;
+    const b = (await registerCustomer()).accessToken;
+    return { node: { auth: { Authorization: `Bearer ${a}` } }, rust: { auth: { Authorization: `Bearer ${b}` } } };
+  }
+
+  test('apply-coupon', async () => {
+    const sides = await signedIn();
+    const v = await inStockVariant(4);
+    const coupon = (couponCode) => both(sides, 'post', '/api/orders/apply-coupon', (s) => ({ cartId: s.cartId, couponCode }));
+    await both(sides, 'post', '/api/orders/apply-coupon', {});
+    await both(sides, 'post', '/api/orders/apply-coupon', { cartId: 'CART0000000001', couponCode: 'WELCOME10' });
+    await both(sides, 'get', '/api/cart');
+    await coupon('WELCOME10'); // empty cart
+    await fill(sides, v, 1);
+    for (const code of [undefined, '', 'WELCOME10', 'welcome10', 'SAVE20', 'FREESHIP', 'NOPE', 7]) await coupon(code);
+    await both(sides, 'post', '/api/cart/add', { product_id: v.product_id, variant_id: v.variant_id, quantity: 2 });
+    for (const code of ['WELCOME10', 'SAVE20', 'FREESHIP']) await coupon(code);
+  });
+
+  test('create: validation, ownership, empty cart', async () => {
+    const sides = await signedIn();
+    const create = (body) => both(sides, 'post', '/api/orders/create', body);
+    await create({});
+    await create({ shippingAddress: address });
+    await create({ shippingAddress: [], billingAddress: address });
+    await create({ shippingAddress: address, billingAddress: address });
+    await create({ cartId: 'CART0000000001', shippingAddress: address, billingAddress: address });
+    await both(sides, 'get', '/api/cart');
+    await create((s) => ({ cartId: s.cartId, shippingAddress: address, billingAddress: address }));
+    // Guests: email required and checked before anything else.
+    const guests = { node: { auth: {} }, rust: { auth: {} } };
+    for (const guestEmail of [undefined, '', 'nope', 'a@b', 'a b@c.d', 42]) {
+      await both(guests, 'post', '/api/orders/create', { cartId: 'CART0000000001', shippingAddress: address, billingAddress: address, guestEmail });
+    }
+    await both(guests, 'post', '/api/orders/create', { cartId: 'CART0000000001', shippingAddress: address, billingAddress: address, guestEmail: 'g@example.com' });
+  });
+
+  async function placeAndCompare(sides, body) {
+    const before = DatabaseUtil.first(await DatabaseUtil.executeQuery(
+      'SELECT quantity_available FROM inventory WHERE variant_id = ?', [body.variant.variant_id])).quantity_available;
+    const placed = await both(sides, 'post', '/api/orders/create', (s) => ({ cartId: s.cartId, ...body.order }));
+    expect(placed.node.status).toBe(200);
+    const after = DatabaseUtil.first(await DatabaseUtil.executeQuery(
+      'SELECT quantity_available FROM inventory WHERE variant_id = ?', [body.variant.variant_id])).quantity_available;
+    expect(before - after).toBe(2 * body.quantity); // both sides decremented the same amount
+
+    // The stored orders match field for field (as each owner sees them).
+    await both(sides, 'get', (s) => `/api/orders/${s.orderId}`);
+    // The cart is gone and a new one starts empty.
+    await both(sides, 'get', '/api/cart');
+    // Each queued exactly one confirmation with the same subject/content shape.
+    const mails = [];
+    for (const s of Object.values(sides)) {
+      const order = DatabaseUtil.first(await DatabaseUtil.executeQuery('SELECT order_number FROM orders WHERE id = ?', [s.orderId]));
+      const rows = DatabaseUtil.rows(await DatabaseUtil.executeQuery(
+        'SELECT to_name, subject, email_content, template_data, status, max_attempts FROM email_queue WHERE subject LIKE ?',
+        [`%${order.order_number}%`]));
+      expect(rows).toHaveLength(1);
+      mails.push(norm(rows[0]));
+    }
+    expect(mails[1]).toEqual(mails[0]);
+    // Coupon redemptions were recorded the same way.
+    const usage = [];
+    for (const s of Object.values(sides)) {
+      usage.push(DatabaseUtil.rows(await DatabaseUtil.executeQuery(
+        'SELECT discount_amount FROM discount_code_usage WHERE order_id = ?', [s.orderId])));
+    }
+    expect(usage[1]).toEqual(usage[0]);
+  }
+
+  test('create: signed-in order with a coupon and express shipping', async () => {
+    const sides = await signedIn();
+    const v = await inStockVariant(10);
+    await fill(sides, v, 3);
+    await placeAndCompare(sides, {
+      variant: v, quantity: 3,
+      order: { shippingAddress: address, billingAddress: { ...address, first_name: 'Bill' }, couponCode: 'WELCOME10', shippingMethod: 'EXPRESS' },
+    });
+  });
+
+  test('create: guest order on the session cookie', async () => {
+    const first = await both({ node: { auth: {} }, rust: { auth: {} } }, 'get', '/api/cart');
+    const jar = (c) => ({ Cookie: c.split(';')[0] });
+    const sides = { node: { auth: jar(first.node.cookie) }, rust: { auth: jar(first.rust.cookie) } };
+    const v = await inStockVariant(10);
+    await fill(sides, v, 1);
+    // Another browser cannot use this cart.
+    await both({ node: { auth: {} }, rust: { auth: {} } }, 'post', '/api/orders/create',
+      { cartId: sides.node.cartId, shippingAddress: address, billingAddress: address, guestEmail: 'g@example.com' });
+    await placeAndCompare(sides, {
+      variant: v, quantity: 1,
+      order: { shippingAddress: address, billingAddress: address, guestEmail: 'guest.parity@example.com', shippingMethod: 'NOPE' },
+    });
+  });
+
+  test('GET on the POST-only paths is an order lookup', async () => {
+    for (const p of ['create', 'apply-coupon', 'calculate-tax']) await compareWith('get', `/api/orders/${p}`);
   });
 });

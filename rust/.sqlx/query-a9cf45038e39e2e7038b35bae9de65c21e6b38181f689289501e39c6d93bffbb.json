@@ -1,0 +1,12 @@
+{
+  "db_name": "MySQL",
+  "query": "INSERT INTO inventory_movements\n           (id, inventory_id, movement_type, quantity_change, reference_type, reference_id,\n            movement_details, created_by)\n         VALUES (?, ?, 'sale', ?, 'order', ?, ?, ?)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 6
+    },
+    "nullable": []
+  },
+  "hash": "a9cf45038e39e2e7038b35bae9de65c21e6b38181f689289501e39c6d93bffbb"
+}

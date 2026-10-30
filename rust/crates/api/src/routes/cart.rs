@@ -90,10 +90,23 @@ fn session_cookie(id: &str, now: DateTime<Utc>) -> HeaderValue {
     HeaderValue::from_str(&value).expect("hex id and date are valid header text")
 }
 
-fn new_session_id() -> anyhow::Result<String> {
-    let mut buf = [0u8; 16];
+/// `n` bytes from the OS CSPRNG.
+pub(crate) fn random_bytes<const N: usize>() -> anyhow::Result<[u8; N]> {
+    let mut buf = [0u8; N];
     getrandom::getrandom(&mut buf).map_err(|e| anyhow::anyhow!("no randomness: {e}"))?;
-    Ok(buf.iter().map(|b| format!("{b:02x}")).collect())
+    Ok(buf)
+}
+
+fn new_session_id() -> anyhow::Result<String> {
+    Ok(random_bytes::<16>()?
+        .iter()
+        .map(|b| format!("{b:02x}"))
+        .collect())
+}
+
+/// The guest's `sessionId` cookie as Express's `req.cookies.sessionId` sees it.
+pub(crate) fn guest_session(headers: &HeaderMap) -> Option<String> {
+    cookie(headers, SESSION_COOKIE).map(|raw| decode_cookie(&raw))
 }
 
 async fn create_cart(
@@ -139,10 +152,7 @@ async fn get_or_create(
         });
     }
 
-    let (session_id, set_cookie) = match cookie(headers, SESSION_COOKIE)
-        .map(|raw| decode_cookie(&raw))
-        .filter(|s| !s.is_empty())
-    {
+    let (session_id, set_cookie) = match guest_session(headers).filter(|s| !s.is_empty()) {
         Some(s) => (s, None),
         None => {
             let s = new_session_id()?;

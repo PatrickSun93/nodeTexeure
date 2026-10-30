@@ -1,0 +1,12 @@
+{
+  "db_name": "MySQL",
+  "query": "UPDATE discount_codes SET usage_count = usage_count + 1\n             WHERE id = ? AND (usage_limit IS NULL OR usage_count < usage_limit)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": []
+  },
+  "hash": "bca226c2cf532a6182ecbab7c47643929d8341b0e84e44c06c37f4d22b0a82c4"
+}

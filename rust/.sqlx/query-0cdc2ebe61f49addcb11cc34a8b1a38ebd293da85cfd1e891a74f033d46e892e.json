@@ -1,0 +1,24 @@
+{
+  "db_name": "MySQL",
+  "query": "SELECT get_next_id('INVMOV') AS \"id: String\"",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id: String",
+        "type_info": {
+          "type": "VarString",
+          "flags": "",
+          "max_size": 200
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 0
+    },
+    "nullable": [
+      true
+    ]
+  },
+  "hash": "0cdc2ebe61f49addcb11cc34a8b1a38ebd293da85cfd1e891a74f033d46e892e"
+}

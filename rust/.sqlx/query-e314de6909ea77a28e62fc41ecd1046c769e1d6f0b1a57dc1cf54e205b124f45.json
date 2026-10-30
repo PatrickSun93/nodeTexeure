@@ -1,0 +1,34 @@
+{
+  "db_name": "MySQL",
+  "query": "SELECT user_id, session_id FROM shopping_carts WHERE id = ?",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "user_id",
+        "type_info": {
+          "type": "VarString",
+          "flags": "MULTIPLE_KEY",
+          "max_size": 200
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "session_id",
+        "type_info": {
+          "type": "VarString",
+          "flags": "MULTIPLE_KEY",
+          "max_size": 1020
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      true,
+      true
+    ]
+  },
+  "hash": "e314de6909ea77a28e62fc41ecd1046c769e1d6f0b1a57dc1cf54e205b124f45"
+}
