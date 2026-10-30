@@ -1,6 +1,6 @@
 {
   "db_name": "MySQL",
-  "query": "SELECT r.id, r.return_number, r.order_id, r.status, r.reason,\n             CAST(r.refund_amount AS CHAR) AS \"refund_amount: String\",\n             r.return_tracking_number, r.created_at, r.updated_at,\n             o.order_number\n           FROM returns r\n           JOIN orders o ON r.order_id = o.id\n           WHERE r.user_id = ?\n           ORDER BY r.created_at DESC",
+  "query": "SELECT r.id, r.return_number, r.order_id, r.status, r.reason,\n             CAST(r.refund_amount AS CHAR) AS \"refund_amount: String\",\n             r.return_tracking_number, r.created_at, r.updated_at,\n             o.order_number\n           FROM returns r\n           JOIN orders o ON r.order_id = o.id\n           WHERE r.user_id = ?\n           ORDER BY r.created_at DESC, r.id DESC",
   "describe": {
     "columns": [
       {
@@ -110,5 +110,5 @@
       false
     ]
   },
-  "hash": "f92040c33c6cd95fcaf1a8fca3e74e064a9a00ecf6ed44975fa5f1491bb999d0"
+  "hash": "aaec056c60148df2339f3c50eb4006d79b1d1349e76e15d5a0429a8a8bf0aebc"
 }
