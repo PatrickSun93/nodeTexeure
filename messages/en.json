@@ -673,7 +673,12 @@
     "statusShipped": "Shipped",
     "statusDelivered": "Delivered",
     "statusCancelled": "Cancelled",
-    "statusRefunded": "Refunded"
+    "statusRefunded": "Refunded",
+    "loading": "Loading your order...",
+    "notFoundBody": "We could not find this order in your account.",
+    "free": "Free",
+    "shippingMethod": "Shipping method",
+    "orderPlaced": "Order placed"
   },
   "ReturnFlow": {
     "breadcrumbHome": "Home",

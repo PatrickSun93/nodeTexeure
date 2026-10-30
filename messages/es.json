@@ -673,7 +673,12 @@
     "statusShipped": "Enviado",
     "statusDelivered": "Entregado",
     "statusCancelled": "Cancelado",
-    "statusRefunded": "Reembolsado"
+    "statusRefunded": "Reembolsado",
+    "loading": "Cargando tu pedido...",
+    "notFoundBody": "No encontramos este pedido en tu cuenta.",
+    "free": "Gratis",
+    "shippingMethod": "Método de envío",
+    "orderPlaced": "Pedido realizado"
   },
   "ReturnFlow": {
     "breadcrumbHome": "Inicio",
