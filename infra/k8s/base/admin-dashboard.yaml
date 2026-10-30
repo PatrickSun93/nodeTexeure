@@ -1,0 +1,58 @@
+# Next.js admin dashboard. /api/health is 503 when the backend is down, so the
+# admin only takes traffic while it can work; liveness is the process.
+apiVersion: v1
+kind: Service
+metadata:
+  name: admin-dashboard
+spec:
+  selector:
+    app: admin-dashboard
+  ports:
+    - name: http
+      port: 3005
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: admin-dashboard
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: admin-dashboard
+  template:
+    metadata:
+      labels:
+        app: admin-dashboard
+    spec:
+      imagePullSecrets:
+        - name: ghcr-pull
+      containers:
+        - name: admin-dashboard
+          image: nodetexeure-admin
+          env:
+            - name: BACKEND_URL
+              value: http://backend:6666
+            - name: NODE_ENV
+              value: production
+          ports:
+            - name: http
+              containerPort: 3005
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 15
+            timeoutSeconds: 8
+          livenessProbe:
+            tcpSocket:
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 20
+          resources:
+            requests:
+              cpu: 50m
+              memory: 160Mi
+            limits:
+              memory: 512Mi

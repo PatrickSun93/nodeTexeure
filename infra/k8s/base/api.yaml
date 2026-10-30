@@ -1,0 +1,82 @@
+# Rust API: answers the /api groups the frontend and admin images route to it.
+apiVersion: v1
+kind: Service
+metadata:
+  name: api
+spec:
+  selector:
+    app: api
+  ports:
+    - name: http
+      port: 7000
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: api
+  template:
+    metadata:
+      labels:
+        app: api
+    spec:
+      imagePullSecrets:
+        - name: ghcr-pull
+      containers:
+        - name: api
+          image: nodetexeure-rust
+          args: ["api"]
+          envFrom:
+            - secretRef:
+                name: app-env
+          env:
+            - name: DB_HOST
+              value: mysql
+            - name: DB_PORT
+              value: "3306"
+            - name: DB_NAME
+              value: bed_texture_ecommerce
+            - name: DB_USER
+              value: root
+            - name: API_PORT
+              value: "7000"
+            - name: NODE_ENV
+              value: production
+            - name: UPLOADS_DIR
+              value: /app/uploads
+          # root like the backend, so both can write the shared uploads volume
+          # (the same choice as docker-compose.prod.yml).
+          securityContext:
+            runAsUser: 0
+          ports:
+            - name: http
+              containerPort: 7000
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 5
+          livenessProbe:
+            tcpSocket:
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 20
+          resources:
+            requests:
+              cpu: 50m
+              memory: 32Mi
+            limits:
+              memory: 256Mi
+          volumeMounts:
+            - name: uploads
+              mountPath: /app/uploads
+      volumes:
+        - name: uploads
+          persistentVolumeClaim:
+            claimName: uploads

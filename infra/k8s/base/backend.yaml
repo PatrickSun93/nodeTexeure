@@ -1,0 +1,82 @@
+# Node/Express backend: the rollback target for every /api group, /uploads,
+# and the schema migrations (its entrypoint runs scripts/migrate.js under a
+# MySQL lock before starting). Its own background timers are off: the worker
+# runs those jobs.
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend
+spec:
+  selector:
+    app: backend
+  ports:
+    - name: http
+      port: 6666
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: backend
+  template:
+    metadata:
+      labels:
+        app: backend
+    spec:
+      imagePullSecrets:
+        - name: ghcr-pull
+      containers:
+        - name: backend
+          image: nodetexeure-backend
+          envFrom:
+            - secretRef:
+                name: app-env
+          env:
+            - name: DB_HOST
+              value: mysql
+            - name: DB_PORT
+              value: "3306"
+            - name: DB_NAME
+              value: bed_texture_ecommerce
+            - name: DB_USER
+              value: root
+            - name: PORT
+              value: "6666"
+            - name: NODE_ENV
+              value: production
+            - name: BACKGROUND_JOBS
+              value: "off"
+          ports:
+            - name: http
+              containerPort: 6666
+          # Ready only while MySQL answers (503 otherwise); alive while the
+          # process listens, so a database outage doesn't restart the pod.
+          readinessProbe:
+            httpGet:
+              path: /api/status/health
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+          livenessProbe:
+            tcpSocket:
+              port: http
+            initialDelaySeconds: 60
+            periodSeconds: 20
+          resources:
+            requests:
+              cpu: 50m
+              memory: 192Mi
+            limits:
+              memory: 512Mi
+          volumeMounts:
+            - name: uploads
+              mountPath: /app/uploads
+      volumes:
+        - name: uploads
+          persistentVolumeClaim:
+            claimName: uploads

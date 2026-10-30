@@ -1,8 +1,27 @@
 # Deployment
 
-Production runs as one Docker Compose stack: `docker-compose.prod.yml`
-(MySQL + backend + storefront + admin + the Rust `api`, `worker` and `email-daemon`). Put a TLS-terminating reverse proxy
-(Caddy, nginx, a cloud load balancer) in front of ports 3000 and 3005.
+Two ways to run production, both with the same images and the same settings:
+
+- **Kubernetes (the default): a single-node k3s cluster on one VM, deployed by
+  GitHub Actions.** Terraform creates the server (`infra/terraform`). Every
+  green push to `main` then builds the images, pushes them to GHCR, rolls the
+  cluster forward, checks `https://shop.<domain>/health` for the new commit,
+  and rolls back if any of that fails (`.github/workflows/deploy.yml`). Setup,
+  secrets and operations: **[infra/README.md](../infra/README.md)**. The
+  reasoning: [adr/0004](adr/0004-single-node-k3s-with-in-cluster-mysql.md).
+- **Docker Compose** on any host: `docker-compose.prod.yml` (MySQL + backend +
+  storefront + admin + the Rust `api`, `worker` and `email-daemon`) behind a
+  TLS-terminating reverse proxy (Caddy, nginx, a cloud load balancer) in front
+  of ports 3000 and 3005.
+
+The rest of this page applies to both. For Kubernetes:
+
+- the variables below go into the `APP_ENV` secret (dotenv format) instead of
+  `.env` files;
+- Traefik is the TLS proxy;
+- MySQL is the `mysql` StatefulSet;
+- run one-off commands with `kubectl -n nodetexeure exec deploy/backend -- …`
+  in place of `docker compose exec backend …`.
 
 ## 1. Configure
 
@@ -55,6 +74,11 @@ set it: put `TRUST_PROXY=1` in `backend/.env` (read by both `backend` and
 around it (e.g. publish them as `127.0.0.1:3000:3000`). Never expose 6666/7000
 publicly with a non-zero value. The value must be a hop count (`true`, IP lists, etc. are
 rejected and treated as `0`).
+
+On the k3s cluster, Traefik is that proxy. It keeps the client address
+(`externalTrafficPolicy: Local`, set by cloud-init) and sets
+`X-Forwarded-For`, and the app Services are ClusterIP only, so put
+`TRUST_PROXY=1` in `APP_ENV`.
 
 The storefront's `/api` proxy target is baked in at build time
 (`PRODUCTION_BACKEND_URL`, set to `http://backend:6666` in the compose file).

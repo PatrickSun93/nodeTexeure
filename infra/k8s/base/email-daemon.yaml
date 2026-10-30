@@ -1,0 +1,40 @@
+# Rust email daemon: the only consumer of email_queue (SES settings come from
+# app-env). No HTTP port, so no probes.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: email-daemon
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: email-daemon
+  template:
+    metadata:
+      labels:
+        app: email-daemon
+    spec:
+      imagePullSecrets:
+        - name: ghcr-pull
+      containers:
+        - name: email-daemon
+          image: nodetexeure-rust
+          args: ["email-daemon"]
+          envFrom:
+            - secretRef:
+                name: app-env
+          env:
+            - name: DB_HOST
+              value: mysql
+            - name: DB_PORT
+              value: "3306"
+            - name: DB_NAME
+              value: bed_texture_ecommerce
+            - name: DB_USER
+              value: root
+          resources:
+            requests:
+              cpu: 10m
+              memory: 16Mi
+            limits:
+              memory: 128Mi

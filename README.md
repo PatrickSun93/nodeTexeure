@@ -1,6 +1,7 @@
 # NodeTexeure
 
 [![CI](https://github.com/PatrickSun93/nodeTexeure/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/PatrickSun93/nodeTexeure/actions/workflows/ci.yml)
+[![Deploy](https://github.com/PatrickSun93/nodeTexeure/actions/workflows/deploy.yml/badge.svg)](https://github.com/PatrickSun93/nodeTexeure/actions/workflows/deploy.yml)
 
 A full-stack luxury bedding e-commerce platform (silk & cashmere) — customer
 storefront, REST API, and admin dashboard. JavaScript (Next.js, Express) and
@@ -173,6 +174,32 @@ Browser ─► Storefront (Next.js, :3000)
 
 ---
 
+## Deployment
+
+```
+push to main ─▶ CI (lint, typecheck, builds, API + parity tests, Rust, infra checks)
+             ─▶ Deploy: build 4 images ─▶ GHCR :<sha> ─▶ kubectl apply (k3s over an SSH tunnel)
+             ─▶ rollout status + https://shop.<domain>/health == <sha> ─▶ else rollout undo
+```
+
+- **Infrastructure as code:** `infra/terraform` creates one Hetzner VM with a
+  firewall that opens only 22, 80 and 443. cloud-init installs k3s (Traefik,
+  local-path storage) and cert-manager.
+- **Kubernetes:** `infra/k8s` (kustomize base + prod overlay) runs every
+  service of the compose stack. MySQL is a StatefulSet. Each service has
+  readiness/liveness probes on its health endpoint. TLS comes from Let's
+  Encrypt; `nip.io` works when there is no domain.
+- **CD:** `.github/workflows/deploy.yml` runs after CI passes on `main`.
+  Secrets come from GitHub Secrets into a Kubernetes Secret, never the repo. A
+  release that doesn't become ready, or doesn't serve its own commit at
+  `/health`, is rolled back automatically.
+
+Setup: [infra/README.md](infra/README.md). Compose-only hosting and
+production settings: [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md). Why single-node
+k3s: [docs/adr/0004](docs/adr/0004-single-node-k3s-with-in-cluster-mysql.md).
+
+---
+
 ## Testing & quality
 
 - **`npm run test`** — ESLint + production `next build`.
@@ -195,6 +222,8 @@ Browser ─► Storefront (Next.js, :3000)
 - **[docs/ADD_A_FEATURE.md](docs/ADD_A_FEATURE.md)** — how to add a feature end-to-end.
 - **[docs/DATABASE.md](docs/DATABASE.md)** — schema, custom IDs, migrations, status values.
 - **[docs/API.md](docs/API.md)** — every endpoint and its access rule (generated from the routes).
+- **[infra/README.md](infra/README.md)** — Terraform (Hetzner VM + k3s), the
+  Kubernetes manifests and the deploy pipeline.
 - **[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)** — production stack, Stripe webhook, ops, launch checklist.
 - **[backend/README.md](backend/README.md)** — backend layout, scripts, running the tests.
 - **[rust/README.md](rust/README.md)** — the Rust services: API, worker, email daemon.

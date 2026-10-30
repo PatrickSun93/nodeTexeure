@@ -1,0 +1,69 @@
+# Next.js storefront. GIT_SHA is the deployed commit; GET /health reports it,
+# which is how deploy.yml checks that the new version is live.
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend
+spec:
+  selector:
+    app: frontend
+  ports:
+    - name: http
+      port: 3000
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: frontend
+  template:
+    metadata:
+      labels:
+        app: frontend
+    spec:
+      imagePullSecrets:
+        - name: ghcr-pull
+      containers:
+        - name: frontend
+          image: nodetexeure-frontend
+          env:
+            - name: PRODUCTION_BACKEND_URL
+              value: http://backend:6666
+            - name: NODE_ENV
+              value: production
+            - name: NEXTAUTH_URL
+              value: https://shop.__DOMAIN__
+            - name: NEXTAUTH_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: app-env
+                  key: NEXTAUTH_SECRET
+            - name: GIT_SHA
+              value: __IMAGE_TAG__
+          ports:
+            - name: http
+              containerPort: 3000
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 20
+            timeoutSeconds: 5
+          resources:
+            requests:
+              cpu: 50m
+              memory: 192Mi
+            limits:
+              memory: 512Mi

@@ -153,6 +153,30 @@ jobs:
       - name: Docker image builds
         run: docker build -t nodetexeure-rust rust
 
+  infra:
+    name: Infra (Terraform, Kubernetes manifests)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.9.8
+      - name: terraform fmt / validate
+        working-directory: infra/terraform
+        run: |
+          terraform fmt -check -diff
+          terraform init -backend=false -input=false
+          terraform validate
+      - name: kustomize build + kubeconform
+        env:
+          KUBECONFORM_VERSION: v0.6.7
+        run: |
+          curl -sSL "https://github.com/yannh/kubeconform/releases/download/${KUBECONFORM_VERSION}/kubeconform-linux-amd64.tar.gz" | tar xz kubeconform
+          # Placeholders filled with sample values, as deploy.yml does.
+          kubectl kustomize infra/k8s/overlays/prod \
+            | sed -e 's/__IMAGE_TAG__/0123abc/g' -e 's/__DOMAIN__/203.0.113.7.nip.io/g' -e 's/__ACME_EMAIL__/ops@example.com/g' \
+            | ./kubeconform -strict -summary -ignore-missing-schemas -kubernetes-version 1.33.0
+
   audit:
     name: Dependency audit
     runs-on: ubuntu-latest
