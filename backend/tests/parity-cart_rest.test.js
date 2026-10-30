@@ -273,57 +273,56 @@ describeIfRust('POST /api/cart/reserve-stock', () => {
   });
 });
 
-describeIfRust('POST /api/cart/track-abandonment', () => {
-  const track = (sides, body, opts) => same(sides, 'post', '/api/cart/track-abandonment', body, opts);
-
-  test('guest email validation (before any cart is made)', async () => {
-    const anon = { node: { auth: {} }, rust: { auth: {} } };
-    const bad = ['nope', 'a@b', 'a b@c.d', 'a@b@c.d', '@b.co', 'a@.co', 'a@b.', 'a\u00a0b@c.d', 'a\u2028@c.d',
-      'a\ufeff@c.d', `${'x'.repeat(251)}@b.co`, 42, true, [], ['a@b.co'], { e: 'a@b.co' }];
-    for (const guestEmail of bad) {
-      const out = await track(anon, { guestEmail }, { cookies: true });
-      expect(out.node.status).toBe(400);
+// Signed-in customers only (`protect`): a guest could name any address, so the
+// shop would mail strangers or stop mailing them.
+const refused = async (call) => {
+  const anon = { node: { auth: {} }, rust: { auth: {} } };
+  const bearerNope = { node: { auth: { Authorization: 'Bearer nope' } }, rust: { auth: { Authorization: 'Bearer nope' } } };
+  const sides = await guests();
+  for (const who of [anon, bearerNope, sides]) {
+    for (const body of [undefined, {}, { guestEmail: 'someone@example.com' }, { guestEmail: 'nope' }, { guestEmail: 7 }]) {
+      const out = await call(who, body);
+      expect(out.node.status).toBe(401);
       expect(out.node.cookies).toHaveLength(0);
     }
-    // Falsy values count as no email; valid (by EMAIL_RE) ones pass, incl. U+0085 and 255 chars.
-    for (const guestEmail of [undefined, '', 0, false, null, 'a\u0085b@c.d', `${'x'.repeat(250)}@b.c`, 'a@.b.c']) {
-      const out = await track(anon, { guestEmail }, { cookies: true });
-      expect(out.node.status).toBe(200);
-      expect(out.node.body.message).toBe('No items in cart to track');
-    }
-  });
+  }
+  expect(await rows("SELECT id FROM email_queue WHERE to_email = 'someone@example.com'")).toHaveLength(0);
+};
 
-  test('guest: no email, then the 3-step sequence, then a re-track cancels and requeues', async () => {
-    const sides = await guests();
+describeIfRust('POST /api/cart/track-abandonment', () => {
+  const track = (sides, body, opts) => same(sides, 'post', '/api/cart/track-abandonment', body, { cookies: true, ...opts });
+
+  test('guests and bad tokens are refused, whatever guestEmail says', () => refused(track));
+
+  test('signed-in: empty cart, then the 3-step sequence, then a re-track cancels and requeues', async () => {
+    const users = await customers();
+    let out = await track(users, {});
+    expect(out.node.body.message).toBe('No items in cart to track');
     const [a, b] = await variants();
-    await track(sides, (s) => ({ guestEmail: s.email }));
-    await fill(sides, [[a, 3], [b, 1]]);
-    let out = await track(sides, {});
-    expect(out.node.body.message).toBe('No email available for cart abandonment tracking');
-    expect(await expectSameMails(sides)).toHaveLength(0);
+    await fill(users, [[a, 3], [b, 1]]);
 
-    out = await track(sides, (s) => ({ guestEmail: s.email }));
+    out = await track(users, {});
     expect(out.node.body.keyValueTable.queueIds).toHaveLength(3);
-    let mails = await expectSameMails(sides);
+    let mails = await expectSameMails(users);
     expect(mails.map((m) => [m.status, m.to_name, m.template_data.sequence_step])).toEqual(
-      [['pending', 'Guest', 1], ['pending', 'Guest', 2], ['pending', 'Guest', 3]]);
+      [['pending', 'Customer', 1], ['pending', 'Customer', 2], ['pending', 'Customer', 3]]);
     expect(mails[0].template_data.recovery_link).toBe(`${process.env.FRONTEND_URL || 'http://localhost:3000'}/checkout`);
 
     // The queue ids in the response are the rows written.
     for (const side of SIDES) {
       const ids = out[side].body.keyValueTable.queueIds;
-      const found = await rows(`SELECT id FROM email_queue WHERE id IN (?, ?, ?) AND to_email = ?`, [...ids, sides[side].email]);
+      const found = await rows(`SELECT id FROM email_queue WHERE id IN (?, ?, ?) AND to_email = ?`, [...ids, users[side].email]);
       expect(found).toHaveLength(3);
     }
 
-    await track(sides, (s) => ({ guestEmail: s.email }));
-    mails = await expectSameMails(sides);
+    await track(users, {});
+    mails = await expectSameMails(users);
     expect(mails.map((m) => m.status)).toEqual(['cancelled', 'cancelled', 'cancelled', 'pending', 'pending', 'pending']);
   });
 
   test('signed-in: the account email, guestEmail ignored, totals in JS arithmetic', async () => {
     const users = await customers();
-    await track(users, { guestEmail: 'nope' }, { cookies: true }); // empty cart, no 400
+    await track(users, { guestEmail: 'nope' }); // empty cart, no 400
     const [a, b] = await variants();
     await fill(users, [[a, 3], [b, 7]]);
     // Prices that don't sum exactly in binary.
@@ -339,7 +338,7 @@ describeIfRust('POST /api/cart/track-abandonment', () => {
     expect(await rows("SELECT id FROM email_queue WHERE to_email = 'someone.else@example.com'")).toHaveLength(0);
   });
 
-  test('admin_auth cookie and revoked tokens', async () => {
+  test('admin_auth cookie works; a revoked token is refused', async () => {
     const users = await customers();
     const viaCookie = {};
     for (const side of SIDES) viaCookie[side] = { ...users[side], auth: { Cookie: `admin_auth=${users[side].token}` } };
@@ -347,72 +346,54 @@ describeIfRust('POST /api/cart/track-abandonment', () => {
     await fill(viaCookie, [[a, 1]]);
     await track(viaCookie, {});
     expect(await expectSameMails(users)).toHaveLength(3);
-    // Revoked: now a guest, so a bad guestEmail is a 400 again.
     for (const side of SIDES) {
       await DatabaseUtil.executeQuery('UPDATE users SET token_version = token_version + 1 WHERE id = ?', [users[side].userId]);
     }
-    const out = await track(users, { guestEmail: 'nope' }, { cookies: true });
-    expect(out.node.status).toBe(400);
+    const out = await track(users, {});
+    expect(out.node.status).toBe(401);
   });
 
   test('unsubscribed address: nothing queued, ids are null, old reminders still cancelled', async () => {
-    const sides = await guests();
+    const users = await customers();
     const [a] = await variants();
-    await fill(sides, [[a, 1]]);
-    await track(sides, (s) => ({ guestEmail: s.email }));
+    await fill(users, [[a, 1]]);
+    await track(users, {});
     for (const side of SIDES) {
       await DatabaseUtil.executeQuery(
-        "INSERT INTO email_unsubscribes (id, email, token) VALUES (get_next_id('UNSB'), ?, 'test')", [sides[side].email]);
+        "INSERT INTO email_unsubscribes (id, email, token) VALUES (get_next_id('UNSB'), ?, 'test')", [users[side].email]);
     }
-    const out = await track(sides, (s) => ({ guestEmail: s.email }));
+    const out = await track(users, {});
     expect(out.node.body.keyValueTable.queueIds).toEqual([null, null, null]);
-    expect((await expectSameMails(sides)).map((m) => m.status)).toEqual(['cancelled', 'cancelled', 'cancelled']);
+    expect((await expectSameMails(users)).map((m) => m.status)).toEqual(['cancelled', 'cancelled', 'cancelled']);
   });
 });
 
 describeIfRust('POST /api/cart/cancel-abandonment', () => {
   const cancel = (sides, body) => same(sides, 'post', '/api/cart/cancel-abandonment', body, { cookies: true });
 
-  test('validation and no-email answers (no cart, no cookie)', async () => {
-    const anon = { node: { auth: {} }, rust: { auth: {} } };
-    await cancel(anon, undefined);
-    for (const guestEmail of [undefined, '', 0, false, null]) {
-      const out = await cancel(anon, { guestEmail });
-      expect(out.node.body.message).toBe('No email to cancel abandonment tracking');
-    }
-    for (const guestEmail of ['nope', 'a b@c.d', 7, true, [], ['x@y.z'], { a: 1 }, `${'x'.repeat(251)}@b.co`]) {
-      const out = await cancel(anon, { guestEmail });
-      expect(out.node.status).toBe(400);
-    }
-  });
+  test('guests and bad tokens are refused, whatever guestEmail says', () => refused(cancel));
 
-  test('guest and signed-in: counts the cancelled reminders', async () => {
-    const sides = await guests();
-    const [a] = await variants();
-    await fill(sides, [[a, 1]]);
-    await same(sides, 'post', '/api/cart/track-abandonment', (s) => ({ guestEmail: s.email }));
-    let out = await cancel(sides, (s) => ({ guestEmail: s.email.toUpperCase() })); // case-insensitive column
-    expect(out.node.body.keyValueTable.cancelledCount).toBe(3);
-    out = await cancel(sides, (s) => ({ guestEmail: s.email }));
-    expect(out.node.body.keyValueTable.cancelledCount).toBe(0);
-    expect((await expectSameMails(sides)).map((m) => m.status)).toEqual(['cancelled', 'cancelled', 'cancelled']);
-
+  test('signed-in: counts the cancelled reminders of the account email only', async () => {
     const users = await customers();
+    const [a] = await variants();
     await fill(users, [[a, 1]]);
     await same(users, 'post', '/api/cart/track-abandonment', {});
-    out = await cancel(users, { guestEmail: 'nope' });
+    let out = await cancel(users, { guestEmail: 'nope' });
     expect(out.node.body.keyValueTable).toEqual({ customerEmail: users.node.email, cancelledCount: 3 });
+    out = await cancel(users, {});
+    expect(out.node.body.keyValueTable.cancelledCount).toBe(0);
+    expect((await expectSameMails(users)).map((m) => m.status)).toEqual(['cancelled', 'cancelled', 'cancelled']);
   });
 
-  test('known issue, kept for parity: an anonymous caller can cancel any address', async () => {
+  test('an anonymous caller cannot cancel a customer\'s reminders', async () => {
     const users = await customers();
     const [a] = await variants();
     await fill(users, [[a, 1]]);
     await same(users, 'post', '/api/cart/track-abandonment', {});
     const anon = { node: { auth: {}, email: users.node.email }, rust: { auth: {}, email: users.rust.email } };
     const out = await cancel(anon, (s) => ({ guestEmail: s.email }));
-    expect(out.node.body.keyValueTable.cancelledCount).toBe(3);
-    expect((await expectSameMails(users)).map((m) => m.status)).toEqual(['cancelled', 'cancelled', 'cancelled']);
+    expect(out.node.status).toBe(401);
+    expect((await expectSameMails(users)).map((m) => m.status)).toEqual(['pending', 'pending', 'pending']);
   });
 });
 
@@ -444,10 +425,11 @@ describeIfRust('GET /api/abandoned-cart/recovery/:token', () => {
   });
 
   test('marks the cart recovered once, cancels its reminders, returns the lines', async () => {
-    const sides = await guests();
+    // Reminders are for signed-in customers only (track-abandonment is `protect`).
+    const sides = await customers();
     const [a, b] = await variants();
     await fill(sides, [[a, 2], [b, 1]]);
-    await same(sides, 'post', '/api/cart/track-abandonment', (s) => ({ guestEmail: s.email }));
+    await same(sides, 'post', '/api/cart/track-abandonment', {});
     for (const side of SIDES) Object.assign(sides[side], await recoveryRow(sides[side].cartId, sides[side].email));
 
     // Padded with white space: Node trims the token.
@@ -460,7 +442,7 @@ describeIfRust('GET /api/abandoned-cart/recovery/:token', () => {
     expect((await expectSameMails(sides)).map((m) => m.status)).toEqual(['cancelled', 'cancelled', 'cancelled']);
 
     // Already recovered: the row is left alone and new reminders stay pending.
-    await same(sides, 'post', '/api/cart/track-abandonment', (s) => ({ guestEmail: s.email }));
+    await same(sides, 'post', '/api/cart/track-abandonment', {});
     const at = {};
     for (const side of SIDES) at[side] = (await first('SELECT recovered_at FROM abandoned_cart_recovery WHERE id = ?', [sides[side].id])).recovered_at;
     await recover(sides, (s) => s.token);

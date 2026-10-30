@@ -20,7 +20,7 @@ use serde_json::{Value, json};
 use sqlx::MySqlPool;
 
 use crate::AppState;
-use crate::auth::OptionalUser;
+use crate::auth::{AuthError, AuthUser, OptionalUser};
 use crate::body;
 use crate::cookies;
 use crate::email_queue;
@@ -751,28 +751,6 @@ pub(crate) fn js_space(c: char) -> bool {
     )
 }
 
-/// `/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s)`: one `@`, no white space, and a dot
-/// in the domain with something on both sides of it.
-fn email_re(s: &str) -> bool {
-    if s.chars().any(js_space) {
-        return false;
-    }
-    let Some((local, domain)) = s.split_once('@') else {
-        return false;
-    };
-    let d = domain.as_bytes();
-    !local.is_empty() && !domain.contains('@') && d.len() >= 3 && d[1..d.len() - 1].contains(&b'.')
-}
-
-/// cartRoutes' `isGuestEmail`: a non-empty string of at most 255 UTF-16 units
-/// that matches `EMAIL_RE`.
-fn is_guest_email(value: Option<&Value>) -> bool {
-    match value {
-        Some(Value::String(s)) => !s.is_empty() && s.encode_utf16().count() <= 255 && email_re(s),
-        _ => false,
-    }
-}
-
 /// `${process.env.FRONTEND_URL || 'http://localhost:3000'}/checkout` (raw, not
 /// trimmed: that is what Node reads).
 fn checkout_url() -> String {
@@ -783,27 +761,24 @@ fn checkout_url() -> String {
     format!("{base}/checkout")
 }
 
-/// `POST /api/cart/track-abandonment` `{ guestEmail? }`: cancel the caller's
-/// pending abandoned-cart emails and queue the 1 h / 24 h / 72 h sequence for
-/// the current cart.
+/// `POST /api/cart/track-abandonment` (`protect`): cancel the signed-in
+/// customer's pending abandoned-cart emails and queue the 1 h / 24 h / 72 h
+/// sequence for their cart. Guests are refused: they could name any address.
 pub async fn track_abandonment(
     State(state): State<AppState>,
-    user: OptionalUser,
+    user: Result<AuthUser, AuthError>,
     headers: HeaderMap,
     body: Body,
 ) -> Response {
     const FAILED: &str = "Failed to track cart abandonment";
-    let body = match express::read_body(&headers, body).await {
-        Ok(body) => body,
-        Err(rejected) => return rejected,
-    };
-    let guest_email = body.get("guestEmail");
-    if user.0.is_none() && body::truthy(guest_email) && !is_guest_email(guest_email) {
-        return reply(
-            StatusCode::BAD_REQUEST,
-            failure("A valid email is required"),
-        );
+    // express.json() runs before `protect`: a bad body is the 500 even anonymously.
+    if let Err(rejected) = express::read_body(&headers, body).await {
+        return rejected;
     }
+    let user = match user {
+        Ok(user) => OptionalUser(Some(user)),
+        Err(rejected) => return rejected.into_response(),
+    };
     let cart = match get_or_create(&state.pool, &user, &headers).await {
         Ok(cart) => cart,
         Err(err) => return server_error(FAILED, &err),
@@ -833,16 +808,12 @@ pub async fn track_abandonment(
 
     // Signed in: the token's email; the token carries no first/last name, so
     // Node's `${firstName || ''} ${lastName || ''}`.trim() is always 'Customer'.
-    let (email, customer_name) = match &user.0 {
-        Some(u) => (u.email.clone().filter(|e| !e.is_empty()), "Customer"),
-        None => (
-            guest_email
-                .and_then(Value::as_str)
-                .filter(|e| !e.is_empty())
-                .map(str::to_owned),
-            "Guest",
-        ),
-    };
+    let email = user
+        .0
+        .as_ref()
+        .and_then(|u| u.email.clone())
+        .filter(|e| !e.is_empty());
+    let customer_name = "Customer";
     let Some(email) = email else {
         return cart.reply(
             StatusCode::OK,
@@ -908,37 +879,22 @@ pub async fn track_abandonment(
     )
 }
 
-/// `POST /api/cart/cancel-abandonment` `{ guestEmail? }`: cancel the pending
-/// abandoned-cart emails of the signed-in customer, or of `guestEmail`.
-///
-/// Known issue kept for parity: a guest can name any address and cancel its
-/// pending reminders (see the port notes).
+/// `POST /api/cart/cancel-abandonment` (`protect`): cancel the signed-in
+/// customer's pending abandoned-cart emails (see track-abandonment).
 pub async fn cancel_abandonment(
     State(state): State<AppState>,
-    user: OptionalUser,
+    user: Result<AuthUser, AuthError>,
     headers: HeaderMap,
     body: Body,
 ) -> Response {
-    let body = match express::read_body(&headers, body).await {
-        Ok(body) => body,
-        Err(rejected) => return rejected,
+    if let Err(rejected) = express::read_body(&headers, body).await {
+        return rejected;
+    }
+    let user = match user {
+        Ok(user) => user,
+        Err(rejected) => return rejected.into_response(),
     };
-    let email = match &user.0 {
-        Some(u) => u.email.clone().filter(|e| !e.is_empty()),
-        None => {
-            let guest_email = body.get("guestEmail");
-            if !body::truthy(guest_email) {
-                None
-            } else if is_guest_email(guest_email) {
-                guest_email.and_then(Value::as_str).map(str::to_owned)
-            } else {
-                return reply(
-                    StatusCode::BAD_REQUEST,
-                    failure("A valid email is required"),
-                );
-            }
-        }
-    };
+    let email = user.email.clone().filter(|e| !e.is_empty());
     let Some(email) = email else {
         return reply(
             StatusCode::OK,
@@ -1074,54 +1030,6 @@ mod tests {
         assert_eq!(optional_id(None), Ok(None));
         assert_eq!(optional_id(Some(&json!(5))), Err(()));
         assert_eq!(optional_id(Some(&json!(["P1"]))), Err(()));
-    }
-
-    #[test]
-    fn guest_email_is_email_re_on_a_short_string() {
-        for ok in [
-            "a@b.co",
-            "a.b@c.d.e",
-            "a@.b.c",
-            "a@b..c",
-            "a\u{85}b@c.d",
-            "é@ü.de",
-        ] {
-            assert!(is_guest_email(Some(&json!(ok))), "{ok:?}");
-        }
-        for bad in [
-            "",
-            "nope",
-            "a@b",
-            "a@.co",
-            "a@b.",
-            "@b.co",
-            "a@b@c.d",
-            "a b@c.d",
-            "a\u{a0}b@c.d",
-            "a\u{2028}@c.d",
-            "a\u{feff}@c.d",
-            "a@b.c\n",
-        ] {
-            assert!(!is_guest_email(Some(&json!(bad))), "{bad:?}");
-        }
-        // 255 UTF-16 units at most (an emoji counts two).
-        let at_limit = format!("{}@b.co", "x".repeat(250));
-        assert!(is_guest_email(Some(&json!(at_limit))));
-        assert!(!is_guest_email(Some(&json!(format!("x{at_limit}")))));
-        let emoji = format!("{}@b.co", "😀".repeat(125));
-        assert_eq!(emoji.encode_utf16().count(), 255);
-        assert!(is_guest_email(Some(&json!(emoji))));
-        assert!(!is_guest_email(Some(&json!(format!("x{emoji}")))));
-        for not_string in [
-            json!(42),
-            json!(true),
-            json!([]),
-            json!(["a@b.co"]),
-            json!({}),
-        ] {
-            assert!(!is_guest_email(Some(&not_string)), "{not_string}");
-        }
-        assert!(!is_guest_email(None));
     }
 
     #[test]

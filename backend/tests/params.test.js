@@ -237,11 +237,11 @@ describe('guest cart session cookie', () => {
 });
 
 describe('cart abandonment emails', () => {
-  test('a non-string guestEmail is a 400', async () => {
-    for (const guestEmail of [1, true, ['a@example.com'], { a: 1 }]) {
+  test('signed-in only: a guest is refused before any guestEmail is read', async () => {
+    for (const guestEmail of [1, true, ['a@example.com'], { a: 1 }, 'a@example.com']) {
       for (const url of ['/api/cart/track-abandonment', '/api/cart/cancel-abandonment']) {
         const res = await request(app).post(url).send({ guestEmail });
-        expect({ url, guestEmail, status: res.status }).toEqual({ url, guestEmail, status: 400 });
+        expect({ url, guestEmail, status: res.status }).toEqual({ url, guestEmail, status: 401 });
       }
     }
   });

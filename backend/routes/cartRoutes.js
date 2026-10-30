@@ -5,19 +5,14 @@ const InventoryService = require('../services/inventoryService');
 const ResponseFormatter = require('../utils/responseFormatter');
 const EmailQueueService = require('../services/emailQueueService');
 const AbandonedCartService = require('../services/abandonedCartService');
-const { isNonEmptyString } = require('../utils/params');
 const { GUEST_SESSION_COOKIE, guestSessionId, newGuestSessionId } = require('../utils/guestSession');
 const router = express.Router();
-
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 // Initialize services
 const emailQueueService = new EmailQueueService();
 // Reuse the one shared AbandonedCartService instance so the abandoned-cart recovery
 // route can share it without starting a second background detection interval.
 const abandonedCartService = AbandonedCartService.getShared();
-
-const isGuestEmail = (v) => isNonEmptyString(v) && v.length <= 255 && EMAIL_RE.test(v);
 
 // owner: 'user_id' or 'session_id' (a fixed column name, never user input).
 async function createCart(owner, value) {
@@ -316,13 +311,12 @@ router.post('/reserve-stock', protectOptional, async (req, res) => {
 
 /**
  * POST /api/cart/track-abandonment
- * Track cart abandonment and schedule recovery emails
+ * Track cart abandonment and schedule recovery emails.
+ * Signed-in customers only: the reminders go to the account's own address. Guests
+ * could name any address, so the shop would mail (or, below, stop mailing) strangers.
  */
-router.post('/track-abandonment', protectOptional, async (req, res) => {
+router.post('/track-abandonment', protect, async (req, res) => {
   try {
-    if (!req.user && req.body.guestEmail && !isGuestEmail(req.body.guestEmail)) {
-      return res.status(400).json(ResponseFormatter.failure('A valid email is required'));
-    }
     const cartId = await getOrCreateCart(req, res);
     
     // Get cart items to check if cart has items
@@ -339,15 +333,8 @@ router.post('/track-abandonment', protectOptional, async (req, res) => {
     }
 
     // Get customer email
-    let customerEmail = null;
-    let customerName = 'Guest';
-
-    if (req.user) {
-      customerEmail = req.user.email;
-      customerName = `${req.user.firstName || ''} ${req.user.lastName || ''}`.trim() || 'Customer';
-    } else if (req.body.guestEmail) {
-      customerEmail = req.body.guestEmail; // validated above
-    }
+    const customerEmail = req.user.email || null;
+    const customerName = `${req.user.firstName || ''} ${req.user.lastName || ''}`.trim() || 'Customer';
 
     if (!customerEmail) {
       return res.json(ResponseFormatter.success('No email available for cart abandonment tracking'));
@@ -400,21 +387,12 @@ router.post('/track-abandonment', protectOptional, async (req, res) => {
 
 /**
  * POST /api/cart/cancel-abandonment
- * Cancel abandoned cart emails (called when customer completes purchase)
+ * Cancel abandoned cart emails (called when customer completes purchase).
+ * Signed-in customers only, for their own address (see track-abandonment).
  */
-router.post('/cancel-abandonment', protectOptional, async (req, res) => {
+router.post('/cancel-abandonment', protect, async (req, res) => {
   try {
-    let customerEmail = null;
-
-    if (req.user) {
-      customerEmail = req.user.email;
-    } else if (req.body.guestEmail) {
-      // A number would compare numerically with email_queue.to_email.
-      if (!isGuestEmail(req.body.guestEmail)) {
-        return res.status(400).json(ResponseFormatter.failure('A valid email is required'));
-      }
-      customerEmail = req.body.guestEmail;
-    }
+    const customerEmail = req.user.email || null;
 
     if (!customerEmail) {
       return res.json(ResponseFormatter.success('No email to cancel abandonment tracking'));
