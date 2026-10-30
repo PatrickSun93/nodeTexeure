@@ -361,7 +361,9 @@ function ensureDirSync(dirPath) {
 
 // Configure multer storage dynamically based on product id
 function createMulterForProduct(productId) {
-  const dest = path.join(__dirname, '..', 'uploads', 'products', String(productId));
+  // backend/uploads — the directory server.js serves at /uploads (this file
+  // is in routes/admin/, so two levels up).
+  const dest = path.join(__dirname, '..', '..', 'uploads', 'products', String(productId));
   ensureDirSync(dest);
   const storage = multer.diskStorage({
     destination: function (req, file, cb) {
