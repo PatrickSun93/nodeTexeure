@@ -1,4 +1,8 @@
-@import "tailwindcss";
+/* Scan only src/ for class names. Without source(), Tailwind scans the whole
+   repo (backend, admin-dashboard, rust, .claude) and webpack then watches each of
+   those directories, so writes like cargo output in rust/target trigger constant
+   recompiles in `next dev`. */
+@import "tailwindcss" source("../");
 @import "../styles/aesop-design-system.css";
 @import "../styles/noirae-theme.css";
 @import "../styles/checkout-orders.css";

@@ -1,8 +1,10 @@
 # Frontend (Next.js storefront) — dev image with hot-reload.
+# Only the dependency manifests are baked in: docker-compose bind-mounts the
+# source at /app. Copying the whole context (`COPY . .`) would upload rust/target,
+# .claude worktrees etc. on every `--build` for files the bind mount hides anyway.
 FROM node:22-bookworm-slim
 WORKDIR /app
 COPY package*.json ./
 RUN npm install
-COPY . .
 EXPOSE 3000
 CMD ["npm", "run", "dev:frontend"]
