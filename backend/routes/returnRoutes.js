@@ -114,7 +114,7 @@ router.get('/my-returns', protect, async (req, res) => {
        FROM returns r
        JOIN orders o ON r.order_id = o.id
        WHERE r.user_id = ?
-       ORDER BY r.created_at DESC`,
+       ORDER BY r.created_at DESC, r.id DESC`,
       [req.user.id]
     );
     // executeQuery may return a rows array or a {success, data} wrapper — normalize.
