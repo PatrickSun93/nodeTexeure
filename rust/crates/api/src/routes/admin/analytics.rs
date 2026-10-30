@@ -50,8 +50,12 @@ async fn summary(req: AdminRequest) -> Response {
         q("SELECT SUM(total_amount) as total FROM orders WHERE status != 'cancelled'"),
         q("SELECT COUNT(*) as count FROM orders WHERE status != 'cancelled'"),
         q("SELECT COUNT(*) as count FROM users WHERE role = 'customer' AND status = 'active'"),
-        q("SELECT COUNT(DISTINCT COALESCE(session_id, user_id, id)) as count FROM shopping_carts"),
-        q("SELECT COUNT(DISTINCT order_id) as count FROM payments WHERE status = 'completed'"),
+        q(
+            "SELECT COUNT(*) as count FROM (SELECT COALESCE(user_id, session_id, id) AS visitor FROM shopping_carts UNION SELECT COALESCE(user_id, guest_email, id) FROM orders) v"
+        ),
+        q(
+            "SELECT COUNT(DISTINCT COALESCE(o.user_id, o.guest_email, o.id)) as count FROM payments p JOIN orders o ON o.id = p.order_id WHERE p.status = 'completed'"
+        ),
         q(
             "SELECT COUNT(*) as count FROM orders WHERE status IN ('pending', 'confirmed', 'processing', 'shipped')"
         ),

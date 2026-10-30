@@ -114,3 +114,18 @@ describe('POST /api/admin/orders/bulk-update', () => {
     expect(res.body.keyValueTable[0].result.updated).toBe(1);
   });
 });
+
+describe('GET /api/admin/analytics/summary', () => {
+  test('the conversion rate is a share of visitors (never over 100%), buyers count as visitors', async () => {
+    const res = await request(app).get('/api/admin/analytics/summary').set(bearer(accessToken));
+    expect(res.status).toBe(200);
+    const { conversionRate, visitors } = res.body.keyValueTable[0].metrics;
+    // The seed has paid orders but checkout empties carts: buyers must still be visitors.
+    const buyers = DatabaseUtil.first(await DatabaseUtil.executeQuery(
+      "SELECT COUNT(DISTINCT COALESCE(o.user_id, o.guest_email, o.id)) AS n FROM payments p JOIN orders o ON o.id = p.order_id WHERE p.status = 'completed'"));
+    expect(Number(buyers.n)).toBeGreaterThan(0);
+    expect(visitors).toBeGreaterThanOrEqual(Number(buyers.n));
+    expect(conversionRate).toBeGreaterThan(0);
+    expect(conversionRate).toBeLessThanOrEqual(100);
+  });
+});

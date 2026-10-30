@@ -16,8 +16,8 @@ function readCookie(name) {
  * - Returns the token from the csrf_token cookie if present.
  * - Otherwise, calls GET /api/users/csrf-token to obtain and set it.
  */
-async function ensureCsrfToken() {
-  let token = readCookie('csrf_token');
+async function ensureCsrfToken({ refresh = false } = {}) {
+  const token = refresh ? undefined : readCookie('csrf_token');
   if (token) return token;
 
   const res = await fetch(`${BACKEND_URL}/api/users/csrf-token`, {
@@ -50,22 +50,29 @@ async function apiFetch(pathOrUrl, options = {}) {
   const headers = new Headers(options.headers || {});
   const isStateChanging = !['GET', 'HEAD', 'OPTIONS'].includes(method);
 
+  const callerCsrf = headers.has('X-CSRF-Token');
   if (isStateChanging) {
-    const csrf = await ensureCsrfToken();
-    if (!headers.has('X-CSRF-Token')) {
-      headers.set('X-CSRF-Token', csrf);
+    if (!callerCsrf) {
+      headers.set('X-CSRF-Token', await ensureCsrfToken());
     }
     if (!headers.has('Content-Type') && options.body) {
       headers.set('Content-Type', 'application/json');
     }
   }
 
-  const res = await fetch(url, {
-    ...options,
-    method,
-    headers,
-    credentials: 'include',
-  });
+  const send = () => fetch(url, { ...options, method, headers, credentials: 'include' });
+  let res = await send();
+
+  // A csrf_token cookie left over from another session (another user, an
+  // expired token or a rotated secret) fails every write: fetch a fresh token
+  // (the endpoint also resets the cookie) and retry once.
+  if (res.status === 403 && isStateChanging && !callerCsrf) {
+    const failed = await res.clone().json().catch(() => ({}));
+    if (failed.message === 'CSRF token validation failed') {
+      headers.set('X-CSRF-Token', await ensureCsrfToken({ refresh: true }));
+      res = await send();
+    }
+  }
 
   const data = await res.json().catch(() => ({}));
 

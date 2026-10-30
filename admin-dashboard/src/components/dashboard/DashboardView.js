@@ -58,7 +58,7 @@ export default function DashboardView({ timePeriod, setTimePeriod, metrics, rece
       {/* Metrics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <MetricsCard title={t('totalRevenue')} value={new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(metrics.totalRevenue)} change={revenueBadge.change} trend={revenueBadge.trend} />
-        <MetricsCard title={t('totalOrders')} value={metrics.activeOrders} change={ordersBadge.change} trend={ordersBadge.trend} />
+        <MetricsCard title={t('activeOrders')} value={metrics.activeOrders} change={ordersBadge.change} trend={ordersBadge.trend} />
         <MetricsCard title={t('avgOrderValue')} value={new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(metrics.avgOrderValue)} change={aovBadge.change} trend={aovBadge.trend} />
         <MetricsCard title={t('conversionRate')} value={`${metrics.conversionRate}%`} change={conversionBadge.change} trend={conversionBadge.trend} />
       </div>

@@ -87,10 +87,11 @@ export default function Dashboard() {
   }, [activeTab]);
 
   useEffect(() => {
-    // Guard: verify auth and ensure CSRF token is present
+    // Guard: verify auth and get a CSRF token for this session (always a fresh
+    // one: a csrf_token cookie from an earlier session would fail every write).
     (async () => {
       try {
-        await ensureCsrfToken();
+        await ensureCsrfToken({ refresh: true });
       } catch (e) {
         // Not authenticated or not admin. Go straight to /login (not '/', which
         // would bounce a stale admin_auth cookie back here).
