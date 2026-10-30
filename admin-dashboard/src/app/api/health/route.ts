@@ -71,7 +71,10 @@ function getMemoryUsage(): Check {
 // Check API connection
 async function checkApiConnection(): Promise<Check> {
   try {
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:6666';
+    // BACKEND_URL is the runtime proxy target (http://backend:6666 in compose and
+    // k3s). NEXT_PUBLIC_API_URL alone is inlined at build time and unset there, so
+    // the check hit localhost:6666 in the container and always reported 503.
+    const apiUrl = process.env.BACKEND_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:6666';
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
 
