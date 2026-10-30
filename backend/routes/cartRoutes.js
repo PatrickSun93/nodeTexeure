@@ -14,18 +14,27 @@ const emailQueueService = new EmailQueueService();
 // route can share it without starting a second background detection interval.
 const abandonedCartService = AbandonedCartService.getShared();
 
+// owner: 'user_id' or 'session_id' (a fixed column name, never user input).
+async function createCart(owner, value) {
+  const id = DatabaseUtil.first(await DatabaseUtil.executeQuery("SELECT get_next_id('CART') AS id"))?.id;
+  if (!id) throw new Error('Could not allocate a cart id');
+  const insert = await DatabaseUtil.executeQuery(
+    `INSERT INTO shopping_carts (id, ${owner}) VALUES (?, ?)`, [id, value]);
+  if (!insert.success) throw new Error(insert.error);
+  return id;
+}
+
 // Helper to get or create cart
 async function getOrCreateCart(req, res) {
   let cartId;
   if (req.user) {
     // Logged-in user
-    const result = await DatabaseUtil.executeQuery('SELECT id FROM shopping_carts WHERE user_id = ?', [req.user.id]);
+    const result = await DatabaseUtil.executeQuery(
+      'SELECT id FROM shopping_carts WHERE user_id = ? ORDER BY created_at ASC, id ASC LIMIT 1', [req.user.id]);
     if (result.success && result.data.length > 0) {
       cartId = result.data[0].id;
     } else {
-      const idResult = await DatabaseUtil.executeQuery('SELECT get_next_id("CART") as id');
-      cartId = idResult.data[0].id;
-      await DatabaseUtil.executeQuery('INSERT INTO shopping_carts (id, user_id) VALUES (?, ?)', [cartId, req.user.id]);
+      cartId = await createCart('user_id', req.user.id);
     }
   } else {
     // Guest - use session_id from cookie or create new
@@ -34,13 +43,12 @@ async function getOrCreateCart(req, res) {
       sessionId = crypto.randomBytes(16).toString('hex');
       res.cookie('sessionId', sessionId, { httpOnly: true, maxAge: 30 * 24 * 60 * 60 * 1000 });
     }
-    const result = await DatabaseUtil.executeQuery('SELECT id FROM shopping_carts WHERE session_id = ?', [sessionId]);
+    const result = await DatabaseUtil.executeQuery(
+      'SELECT id FROM shopping_carts WHERE session_id = ? ORDER BY created_at ASC, id ASC LIMIT 1', [sessionId]);
     if (result.success && result.data.length > 0) {
       cartId = result.data[0].id;
     } else {
-      const idResult = await DatabaseUtil.executeQuery('SELECT get_next_id("CART") as id');
-      cartId = idResult.data[0].id;
-      await DatabaseUtil.executeQuery('INSERT INTO shopping_carts (id, session_id) VALUES (?, ?)', [cartId, sessionId]);
+      cartId = await createCart('session_id', sessionId);
     }
   }
   return cartId;
@@ -65,9 +73,11 @@ router.get('/', protectOptional, async (req, res) => {
       FROM cart_items ci 
       JOIN products p ON ci.product_id = p.id 
       LEFT JOIN product_variants pv ON ci.variant_id = pv.id
-      LEFT JOIN inventory i ON ci.product_id = i.product_id AND ci.variant_id = i.variant_id
+      LEFT JOIN inventory i ON ci.product_id = i.product_id AND ci.variant_id <=> i.variant_id
       WHERE ci.cart_id = ?
+      ORDER BY ci.created_at ASC, ci.id ASC
     `, [cartId]);
+    if (!itemsResult.success) throw new Error(itemsResult.error);
     
     // Add availability info to each item
     const itemsWithAvailability = itemsResult.data.map(item => ({
@@ -94,7 +104,15 @@ router.get('/', protectOptional, async (req, res) => {
 // POST /api/cart/add - Add item to cart
 router.post('/add', protectOptional, async (req, res) => {
   try {
-    const { product_id, variant_id } = req.body;
+    const product_id = req.body.product_id || null;
+    // No variant → NULL (undefined can't be bound, and `= NULL` never matches).
+    const variant_id = req.body.variant_id || null;
+    if (!product_id || typeof product_id !== 'string') {
+      return res.status(400).json(ResponseFormatter.failure('product_id is required'));
+    }
+    if (variant_id !== null && typeof variant_id !== 'string') {
+      return res.status(400).json(ResponseFormatter.failure('Product variant not found'));
+    }
 
     // Validate quantity: must be a positive integer (capped to prevent abuse)
     const quantity = Number.parseInt(req.body.quantity ?? 1, 10);
@@ -103,6 +121,21 @@ router.post('/add', protectOptional, async (req, res) => {
     }
     if (quantity > 999) {
       return res.status(400).json(ResponseFormatter.failure('Quantity cannot exceed 999'));
+    }
+
+    // Price snapshot = base price + variant adjustment; only approved products.
+    const priceResult = await DatabaseUtil.executeQuery(
+      variant_id
+        ? `SELECT p.base_price + COALESCE(pv.price_adjustment, 0) AS price FROM products p
+           JOIN product_variants pv ON p.id = pv.product_id
+           WHERE p.id = ? AND pv.id = ? AND p.status = 'approved'`
+        : "SELECT base_price AS price FROM products WHERE id = ? AND status = 'approved'",
+      variant_id ? [product_id, variant_id] : [product_id]
+    );
+    if (!priceResult.success) throw new Error(priceResult.error);
+    const priced = DatabaseUtil.first(priceResult);
+    if (!priced) {
+      return res.status(400).json(ResponseFormatter.failure(variant_id ? 'Product variant not found' : 'Product not found'));
     }
 
     const cartId = await getOrCreateCart(req, res);
@@ -121,9 +154,10 @@ router.post('/add', protectOptional, async (req, res) => {
     
     // Check if item exists
     const checkResult = await DatabaseUtil.executeQuery(
-      'SELECT id, quantity FROM cart_items WHERE cart_id = ? AND product_id = ? AND variant_id = ?',
+      'SELECT id, quantity FROM cart_items WHERE cart_id = ? AND product_id = ? AND variant_id <=> ? ORDER BY id LIMIT 1',
       [cartId, product_id, variant_id]
     );
+    if (!checkResult.success) throw new Error(checkResult.error);
     
     if (checkResult.data.length > 0) {
       // Update quantity - check total doesn't exceed available stock
@@ -136,38 +170,21 @@ router.post('/add', protectOptional, async (req, res) => {
         ));
       }
       
-      await DatabaseUtil.executeQuery(
+      const update = await DatabaseUtil.executeQuery(
         'UPDATE cart_items SET quantity = quantity + ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
         [quantity, checkResult.data[0].id]
       );
+      if (!update.success) throw new Error(update.error);
     } else {
       // Insert new
-      const itemIdResult = await DatabaseUtil.executeQuery('SELECT get_next_id("CARTITEM") as id');
-      const itemId = itemIdResult.data[0].id;
-      
-      // Get price (base price + variant adjustment)
-      let price;
-      if (variant_id) {
-        const priceResult = await DatabaseUtil.executeQuery(
-          'SELECT p.base_price, pv.price_adjustment FROM products p JOIN product_variants pv ON p.id = pv.product_id WHERE p.id = ? AND pv.id = ?',
-          [product_id, variant_id]
-        );
-        if (priceResult.data.length === 0) {
-          return res.status(400).json(ResponseFormatter.failure('Product variant not found'));
-        }
-        price = parseFloat(priceResult.data[0].base_price) + parseFloat(priceResult.data[0].price_adjustment);
-      } else {
-        const priceResult = await DatabaseUtil.executeQuery('SELECT base_price FROM products WHERE id = ?', [product_id]);
-        if (priceResult.data.length === 0) {
-          return res.status(400).json(ResponseFormatter.failure('Product not found'));
-        }
-        price = priceResult.data[0].base_price;
-      }
-      
-      await DatabaseUtil.executeQuery(
+      const itemId = DatabaseUtil.first(
+        await DatabaseUtil.executeQuery("SELECT get_next_id('CARTITEM') AS id"))?.id;
+      if (!itemId) throw new Error('Could not allocate a cart item id');
+      const insert = await DatabaseUtil.executeQuery(
         'INSERT INTO cart_items (id, cart_id, product_id, variant_id, quantity, price) VALUES (?, ?, ?, ?, ?, ?)',
-        [itemId, cartId, product_id, variant_id, quantity, price]
+        [itemId, cartId, product_id, variant_id, quantity, priced.price]
       );
+      if (!insert.success) throw new Error(insert.error);
     }
 
     // Track cart activity for abandonment detection
