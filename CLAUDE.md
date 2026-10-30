@@ -128,6 +128,7 @@ imagery is served from the `product_images` table (`public/images/bedding/*.jpg`
 ## Docs map
 
 [docs/DATABASE.md](docs/DATABASE.md) (schema, IDs, migrations) ·
+[docs/adr/](docs/adr/) (architecture decisions: the Rust port, parity, sqlx) ·
 [docs/API.md](docs/API.md) (generated — run `node scripts/gen-api-docs.js` after
 changing routes) · [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) ·
 [backend/README.md](backend/README.md).
