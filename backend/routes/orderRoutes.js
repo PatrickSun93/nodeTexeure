@@ -5,7 +5,7 @@ const { randomUUID: uuidv4 } = require('crypto');
 const DatabaseUtil = require('../utils/database');
 const ResponseFormatter = require('../utils/responseFormatter');
 const { protect, protectOptional } = require('../middleware/authMiddleware');
-const emailService = require('../services/emailService');
+const emailQueueProducer = require('../services/emailQueueProducer');
 const shippingService = require('../services/shippingService');
 const db = DatabaseUtil; // executeQuery et al. are static — reference the class, not an instance
 
@@ -69,18 +69,52 @@ async function generateOrderNumber() {
   return `NOR-${crypto.randomBytes(6).toString('hex').toUpperCase()}`;
 }
 
+// Money is kept in cents-exact numbers: round every derived amount so the stored
+// DECIMAL(10,2) parts always add up to the stored total.
+const cents = (n) => Math.round(Number(n) * 100) / 100;
+
 // Helper function to get cart details. executeQuery returns { success, data };
 // callers iterate the rows, so return the data array (price comes from cart_items).
+// sku: the variant's SKU when the line has one, else the product's.
 async function getCartDetails(cartId) {
   const cartItemsQuery = `
-    SELECT ci.*, p.name
+    SELECT ci.*, p.name, COALESCE(pv.sku, p.sku) AS sku
     FROM cart_items ci
     JOIN products p ON ci.product_id = p.id
+    LEFT JOIN product_variants pv ON ci.variant_id = pv.id
     WHERE ci.cart_id = ?
+    ORDER BY ci.created_at ASC, ci.id ASC
   `;
   const result = await db.executeQuery(cartItemsQuery, [cartId]);
+  if (!result.success) throw new Error(result.error);
   return DatabaseUtil.rows(result);
 }
+
+// Subtotal of a cart, in cents.
+const cartSubtotal = (items) => cents(items.reduce((sum, item) => sum + Number(item.price) * item.quantity, 0));
+
+// Discount for a validated coupon against a subtotal: { discount, freeShipping }.
+// free_shipping coupons carry no subtotal discount — they zero shipping at order
+// time. Never below zero or beyond the subtotal (an oversized fixed_amount coupon
+// must not produce a negative total).
+function couponDiscount(coupon, subtotal) {
+  let discount = 0;
+  let freeShipping = false;
+  if (coupon.type === 'percentage') {
+    discount = subtotal * (Number(coupon.value) / 100);
+    if (coupon.maximum_discount_amount != null && discount > Number(coupon.maximum_discount_amount)) {
+      discount = Number(coupon.maximum_discount_amount);
+    }
+  } else if (coupon.type === 'fixed_amount') {
+    discount = Number(coupon.value);
+  } else if (coupon.type === 'free_shipping') {
+    freeShipping = true;
+  }
+  return { discount: cents(Math.max(0, Math.min(discount, subtotal))), freeShipping };
+}
+
+const isAddress = (a) => a !== null && typeof a === 'object' && !Array.isArray(a);
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 // Ownership guard shared by apply-coupon and create. Cart IDs are sequential and
 // enumerable (CART0000000001…), so we must confirm the caller actually owns the
@@ -127,7 +161,7 @@ async function validateCoupon(code, subtotal) {
     return { valid: false, message: 'Invalid or expired coupon' };
   }
 
-  if (subtotal < coupon.minimum_order_amount) {
+  if (subtotal < Number(coupon.minimum_order_amount)) {
     return { valid: false, message: `Minimum order amount of ${coupon.minimum_order_amount} required` };
   }
 
@@ -149,10 +183,7 @@ router.post('/apply-coupon', protectOptional, async (req, res) => {
       return res.status(400).json(ResponseFormatter.failure('Cart is empty'));
     }
 
-    let subtotal = 0;
-    cartItems.forEach(item => {
-      subtotal += item.price * item.quantity;
-    });
+    const subtotal = cartSubtotal(cartItems);
 
     if (!couponCode) {
       return res.json(ResponseFormatter.success('No coupon applied', { discount: 0 }));
@@ -163,26 +194,9 @@ router.post('/apply-coupon', protectOptional, async (req, res) => {
       return res.status(400).json(ResponseFormatter.failure(validation.message));
     }
 
-    const coupon = validation.coupon;
-    let discountAmount = 0;
-    // free_shipping coupons carry no subtotal discount — they zero the shipping cost
-    // at order time (see /create). Surface the flag so the checkout UI can reflect it.
-    let freeShipping = false;
-    if (coupon.type === 'percentage') {
-      discountAmount = subtotal * (coupon.value / 100);
-      if (coupon.maximum_discount_amount && discountAmount > coupon.maximum_discount_amount) {
-        discountAmount = coupon.maximum_discount_amount;
-      }
-    } else if (coupon.type === 'fixed_amount') {
-      discountAmount = coupon.value;
-    } else if (coupon.type === 'free_shipping') {
-      freeShipping = true;
-    }
-    // Never discount below zero or beyond what's actually in the cart — an
-    // oversized fixed_amount coupon must not produce a negative total.
-    discountAmount = Math.max(0, Math.min(discountAmount, subtotal));
-
-    res.json(ResponseFormatter.success('Coupon applied', { discount: discountAmount, freeShipping }));
+    // freeShipping is surfaced so the checkout UI can reflect it.
+    const { discount, freeShipping } = couponDiscount(validation.coupon, subtotal);
+    res.json(ResponseFormatter.success('Coupon applied', { discount, freeShipping }));
   } catch (error) {
     console.error(error);
     res.status(500).json(ResponseFormatter.failure('Failed to apply coupon'));
@@ -196,6 +210,13 @@ router.post('/create', protectOptional, async (req, res) => {
   const guestEmail = req.body.guestEmail || null;
 
   try {
+    if (!isAddress(shippingAddress) || !isAddress(billingAddress)) {
+      return res.status(400).json(ResponseFormatter.failure('Shipping and billing addresses are required'));
+    }
+    if (!userId && (typeof guestEmail !== 'string' || !EMAIL_RE.test(guestEmail))) {
+      return res.status(400).json(ResponseFormatter.failure('A valid email is required for guest checkout'));
+    }
+
     // Enforce cart ownership before reading totals, converting the cart to an
     // order, decrementing inventory, or deleting it (IDOR guard).
     if (!(await ownsCart(cartId, req))) {
@@ -213,10 +234,11 @@ router.post('/create', protectOptional, async (req, res) => {
     for (const item of cartItems) {
       const stockResult = await DatabaseUtil.executeQuery(
         `SELECT COALESCE(SUM(quantity_available), 0) AS available
-         FROM inventory WHERE product_id = ? AND (variant_id = ? OR ? IS NULL)`,
-        [item.product_id, item.variant_id, item.variant_id]
+         FROM inventory WHERE product_id = ? AND variant_id <=> ?`,
+        [item.product_id, item.variant_id]
       );
-      if (stockResult.success && stockResult.data.length > 0) {
+      if (!stockResult.success) throw new Error(stockResult.error);
+      if (stockResult.data.length > 0) {
         const available = Number(stockResult.data[0].available);
         if (available < item.quantity) {
           return res.status(400).json(ResponseFormatter.failure(
@@ -226,11 +248,7 @@ router.post('/create', protectOptional, async (req, res) => {
       }
     }
 
-    // Calculate subtotal
-    let subtotal = 0;
-    cartItems.forEach(item => {
-      subtotal += item.price * item.quantity;
-    });
+    const subtotal = cartSubtotal(cartItems);
 
     let discountAmount = 0;
     let appliedCoupon = null; // coupon row (id, usage_limit) for usage accounting inside the order transaction
@@ -240,36 +258,24 @@ router.post('/create', protectOptional, async (req, res) => {
       if (!validation.valid) {
         return res.status(400).json(ResponseFormatter.failure(validation.message));
       }
-      const coupon = validation.coupon;
-      appliedCoupon = coupon;
-      if (coupon.type === 'percentage') {
-        discountAmount = subtotal * (coupon.value / 100);
-        if (coupon.maximum_discount_amount && discountAmount > coupon.maximum_discount_amount) {
-          discountAmount = coupon.maximum_discount_amount;
-        }
-      } else if (coupon.type === 'fixed_amount') {
-        discountAmount = coupon.value;
-      } else if (coupon.type === 'free_shipping') {
-        // No subtotal discount — the benefit is applied to shipping after it's computed.
-        freeShipping = true;
-      }
-      // Never discount below zero or beyond what's actually in the cart — an
-      // oversized fixed_amount coupon must not produce a negative total.
-      discountAmount = Math.max(0, Math.min(discountAmount, subtotal));
+      appliedCoupon = validation.coupon;
+      ({ discount: discountAmount, freeShipping } = couponDiscount(appliedCoupon, subtotal));
     }
 
     // Calculate tax from tax_rates table (falls back to default)
     const taxRate = await getTaxRate(shippingAddress?.state, shippingAddress?.country);
     const taxableAmount = subtotal - discountAmount;
-    const taxAmount = Math.round(taxableAmount * taxRate * 100) / 100;
+    const taxAmount = cents(taxableAmount * taxRate);
 
     // Calculate shipping (use selected method or default standard)
     let shippingAmount = 9.99;
+    let shippingMethodName = 'STANDARD';
     if (shippingMethod) {
       const rates = shippingService.DEFAULT_RATES;
       const selected = rates.find(r => r.serviceType === shippingMethod);
       if (selected) {
         shippingAmount = selected.rate;
+        shippingMethodName = selected.serviceType;
       }
     }
     // Free shipping over $100
@@ -283,7 +289,7 @@ router.post('/create', protectOptional, async (req, res) => {
 
     // Discount is already clamped to the subtotal above; the Math.max floor is a
     // hard guarantee that a stored order total can never go negative.
-    const totalAmount = Math.max(0, subtotal + taxAmount + shippingAmount - discountAmount);
+    const totalAmount = cents(Math.max(0, subtotal + taxAmount + shippingAmount - discountAmount));
 
     // Generate a non-sequential, unguessable order number (see generateOrderNumber).
     const orderNumber = await generateOrderNumber();
@@ -311,9 +317,9 @@ router.post('/create', protectOptional, async (req, res) => {
 
       // Create order
       await connection.execute(
-        `INSERT INTO orders (id, order_number, user_id, guest_email, status, subtotal, tax_amount, shipping_amount, discount_amount, total_amount, shipping_address_json, billing_address_json)
-         VALUES (?, ?, ?, ?, 'pending', ?, ?, ?, ?, ?, ?, ?)`,
-        [orderId, orderNumber, userId, guestEmail, subtotal, taxAmount, shippingAmount, discountAmount, totalAmount, JSON.stringify(shippingAddress), JSON.stringify(billingAddress)]
+        `INSERT INTO orders (id, order_number, user_id, guest_email, status, subtotal, tax_amount, shipping_amount, discount_amount, total_amount, shipping_address_json, billing_address_json, shipping_method)
+         VALUES (?, ?, ?, ?, 'pending', ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [orderId, orderNumber, userId, userId ? null : guestEmail, subtotal, taxAmount, shippingAmount, discountAmount, totalAmount, JSON.stringify(shippingAddress), JSON.stringify(billingAddress), shippingMethodName]
       );
 
       // Record the coupon redemption atomically with the order. The WHERE guard
@@ -366,7 +372,7 @@ router.post('/create', protectOptional, async (req, res) => {
         await connection.execute(
           `INSERT INTO order_items (id, order_id, product_id, variant_id, product_name, product_sku, quantity, unit_price, total_price)
            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-          [uuidv4(), orderId, item.product_id, item.variant_id ?? null, item.name, item.sku || '', item.quantity, item.price, item.price * item.quantity]
+          [uuidv4(), orderId, item.product_id, item.variant_id ?? null, item.name, item.sku || '', item.quantity, item.price, cents(Number(item.price) * item.quantity)]
         );
       }
 
@@ -437,20 +443,16 @@ router.post('/create', protectOptional, async (req, res) => {
       connection.release();
     }
 
-    // Send order confirmation email (non-blocking)
-    const customerEmail = guestEmail || (req.user ? req.user.email : null);
-    if (customerEmail) {
-      emailService.sendOrderConfirmation({
-        order_number: orderNumber,
-        customer_name: shippingAddress?.first_name || 'Valued Customer',
-        user_email: customerEmail,
-        guest_email: guestEmail,
-        created_at: new Date(),
-        subtotal, tax_amount: taxAmount, shipping_amount: shippingAmount,
-        discount_amount: discountAmount, total_amount: totalAmount,
-        items: cartItems.map(i => ({ product_name: i.name, quantity: i.quantity, unit_price: i.price })),
-      }).catch(err => console.error('Non-fatal: order confirmation email failed:', err.message));
-    }
+    // Queue the order confirmation (sent and retried by the email daemon). A
+    // queueing failure is logged, never fails the order.
+    const customerEmail = req.user ? req.user.email : guestEmail;
+    const customerName = shippingAddress.first_name || shippingAddress.firstName || 'Valued Customer';
+    const queued = await emailQueueProducer.enqueue(customerEmail, customerName, 'order_confirmation', {
+      order_number: orderNumber,
+      customer_name: customerName,
+      total_amount: totalAmount.toFixed(2),
+    });
+    if (!queued.queued) console.error('Non-fatal: order confirmation not queued:', queued.reason);
 
     res.json(ResponseFormatter.success('Order created successfully', { orderId, orderNumber }));
   } catch (error) {
