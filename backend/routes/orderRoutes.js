@@ -466,7 +466,7 @@ router.get('/my-orders', protect, async (req, res) => {
       `SELECT id, order_number, status, subtotal, tax_amount, shipping_amount,
               discount_amount, total_amount, shipping_method, tracking_number,
               created_at, shipped_at, delivered_at
-       FROM orders WHERE user_id = ? ORDER BY created_at DESC`,
+       FROM orders WHERE user_id = ? ORDER BY created_at DESC, id DESC`,
       [req.user.id]
     );
     if (!result.success) throw new Error(result.error);
@@ -503,10 +503,13 @@ router.get('/:id', protectOptional, async (req, res) => {
 
     // Fetch order items
     const itemsResult = await DatabaseUtil.executeQuery(
-      `SELECT oi.*, pi.thumbnail_small_url as image_url
+      `SELECT oi.*,
+              (SELECT pi.thumbnail_small_url FROM product_images pi
+                WHERE pi.product_id = oi.product_id AND pi.is_primary = 1
+                ORDER BY pi.sort_order ASC, pi.id ASC LIMIT 1) as image_url
        FROM order_items oi
-       LEFT JOIN product_images pi ON oi.product_id = pi.product_id AND pi.is_primary = 1
-       WHERE oi.order_id = ?`,
+       WHERE oi.order_id = ?
+       ORDER BY oi.created_at ASC, oi.id ASC`,
       [order.id]
     );
 
@@ -516,7 +519,7 @@ router.get('/:id', protectOptional, async (req, res) => {
               u.first_name as changed_by_name
        FROM order_status_history osh
        LEFT JOIN users u ON osh.changed_by = u.id
-       WHERE osh.order_id = ? ORDER BY osh.created_at ASC`,
+       WHERE osh.order_id = ? ORDER BY osh.created_at ASC, osh.id ASC`,
       [order.id]
     );
 
@@ -550,7 +553,7 @@ router.get('/track/:orderNumber', async (req, res) => {
     const historyResult = await DatabaseUtil.executeQuery(
       `SELECT status, created_at FROM order_status_history
        WHERE order_id = (SELECT id FROM orders WHERE order_number = ?)
-       ORDER BY created_at ASC`,
+       ORDER BY created_at ASC, id ASC`,
       [orderNumber]
     );
 

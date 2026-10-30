@@ -1,0 +1,144 @@
+{
+  "db_name": "MySQL",
+  "query": "SELECT oi.id, oi.order_id, oi.product_id, oi.variant_id, oi.bundle_id,\n             oi.product_name, oi.product_sku,\n             oi.variant_details AS \"variant_details: Value\", oi.quantity,\n             CAST(oi.unit_price AS CHAR) AS \"unit_price!: String\",\n             CAST(oi.total_price AS CHAR) AS \"total_price!: String\",\n             oi.created_at,\n             (SELECT pi.thumbnail_small_url FROM product_images pi\n               WHERE pi.product_id = oi.product_id AND pi.is_primary = 1\n               ORDER BY pi.sort_order ASC, pi.id ASC LIMIT 1) AS \"image_url: String\"\n           FROM order_items oi\n           WHERE oi.order_id = ?\n           ORDER BY oi.created_at ASC, oi.id ASC",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NOT_NULL | PRIMARY_KEY | NO_DEFAULT_VALUE",
+          "max_size": 200
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "order_id",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NOT_NULL | MULTIPLE_KEY | NO_DEFAULT_VALUE",
+          "max_size": 200
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "product_id",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NOT_NULL | MULTIPLE_KEY | NO_DEFAULT_VALUE",
+          "max_size": 200
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "variant_id",
+        "type_info": {
+          "type": "VarString",
+          "flags": "MULTIPLE_KEY",
+          "max_size": 200
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "bundle_id",
+        "type_info": {
+          "type": "VarString",
+          "flags": "MULTIPLE_KEY",
+          "max_size": 200
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "product_name",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NOT_NULL | NO_DEFAULT_VALUE",
+          "max_size": 1020
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "product_sku",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NOT_NULL | NO_DEFAULT_VALUE",
+          "max_size": 400
+        }
+      },
+      {
+        "ordinal": 7,
+        "name": "variant_details: Value",
+        "type_info": {
+          "type": "Json",
+          "flags": "BLOB | BINARY",
+          "max_size": 4294967295
+        }
+      },
+      {
+        "ordinal": 8,
+        "name": "quantity",
+        "type_info": {
+          "type": "Long",
+          "flags": "NOT_NULL | UNSIGNED | NO_DEFAULT_VALUE",
+          "max_size": 10
+        }
+      },
+      {
+        "ordinal": 9,
+        "name": "unit_price!: String",
+        "type_info": {
+          "type": "VarString",
+          "flags": "",
+          "max_size": 48
+        }
+      },
+      {
+        "ordinal": 10,
+        "name": "total_price!: String",
+        "type_info": {
+          "type": "VarString",
+          "flags": "",
+          "max_size": 48
+        }
+      },
+      {
+        "ordinal": 11,
+        "name": "created_at",
+        "type_info": {
+          "type": "Timestamp",
+          "flags": "BINARY | TIMESTAMP",
+          "max_size": 19
+        }
+      },
+      {
+        "ordinal": 12,
+        "name": "image_url: String",
+        "type_info": {
+          "type": "VarString",
+          "flags": "",
+          "max_size": 2000
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      true,
+      true,
+      false,
+      false,
+      true,
+      false,
+      true,
+      true,
+      true,
+      true
+    ]
+  },
+  "hash": "a2f269eec16a9d3d4deb88a0c148c005d8fbaef47002f14666649e341cc363c2"
+}

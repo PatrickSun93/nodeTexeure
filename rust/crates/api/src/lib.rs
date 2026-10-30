@@ -38,6 +38,12 @@ pub fn router(state: AppState) -> Router {
         .route("/api/journal", get(routes::journal::list))
         .route("/api/journal/{id_or_slug}", get(routes::journal::detail))
         .route("/api/settings/public", get(routes::settings::public))
+        .route("/api/orders/my-orders", get(routes::orders::my_orders))
+        .route(
+            "/api/orders/track/{order_number}",
+            get(routes::orders::track),
+        )
+        .route("/api/orders/{id}", get(routes::orders::detail))
         .route(
             "/api/wishlist",
             get(routes::wishlist::list).post(routes::wishlist::add),

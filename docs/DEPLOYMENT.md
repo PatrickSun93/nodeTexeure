@@ -25,7 +25,7 @@ integration's keys unset to disable it; each one degrades gracefully.
 
 The storefront's `/api` proxy target is baked in at build time
 (`PRODUCTION_BACKEND_URL`, set to `http://backend:6666` in the compose file).
-Route groups listed in `RUST_API_ROUTES` (default `products,search,journal,settings/public,wishlist`) go to the Rust API
+Route groups listed in `RUST_API_ROUTES` (default `products,search,journal,settings/public,wishlist,orders`) go to the Rust API
 (`api` service) instead. **Rollback:** build with `RUST_API_ROUTES=` (empty) to
 send everything to the Node backend. Rebuild the frontend after changing either.
 

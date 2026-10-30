@@ -20,7 +20,8 @@ Design direction: **"Champagne & Charcoal"** (see [docs/DESIGN.md](docs/DESIGN.m
 
 The backend is being ported to Rust piece by piece (`rust/`, see
 [rust/README.md](rust/README.md)): the email daemon, the public read-only APIs
-(`products`, `search`, `journal`, `settings/public`) and `wishlist` are done.
+(`products`, `search`, `journal`, `settings/public`), `wishlist` and the
+`orders` reads (my orders, detail, tracking) are done.
 Rust auth (`rust/crates/api/src/auth.rs`: `AuthUser`, `OptionalUser`,
 `StaffOrAdmin`, `Admin` extractors) mirrors `protect`/`admin` exactly. The storefront proxy sends the groups in `RUST_API_ROUTES` to the Rust API;
 a ported group must pass `backend/tests/parity.test.js` (identical JSON to Node).

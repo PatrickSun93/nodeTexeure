@@ -197,3 +197,74 @@ describeIfRust('wishlist: same sequence, same answers', () => {
     await s('get', '/api/wishlist');
   });
 });
+
+describeIfRust('orders (read routes): Node and Rust answer identically', () => {
+  const auth = (token) => ({ headers: { Authorization: `Bearer ${token}` } });
+  let customer; let admin; let staff; let stranger; let order;
+
+  beforeAll(async () => {
+    customer = (await login('customer')).accessToken;
+    admin = (await login('admin')).accessToken;
+    staff = (await login('staff')).accessToken;
+    stranger = (await registerCustomer()).accessToken;
+    const mine = await request(app).get('/api/orders/my-orders').set('Authorization', `Bearer ${customer}`);
+    [order] = mine.body.keyValueTable.orders;
+  });
+
+  test('my orders', async () => {
+    expect(order).toBeDefined();
+    await compareWith('get', '/api/orders/my-orders', auth(customer));
+    await compareWith('get', '/api/orders/my-orders', auth(stranger));
+    await compareWith('get', '/api/orders/my-orders');
+    await compareWith('get', '/api/orders/my-orders', auth('garbage'));
+  });
+
+  test('order detail: owner, admin, others, unknown', async () => {
+    for (const key of [order.id, order.order_number]) {
+      const url = `/api/orders/${encodeURIComponent(key)}`;
+      await compareWith('get', url, auth(customer));
+      await compareWith('get', url, auth(admin));
+      await compareWith('get', url, auth(staff));
+      await compareWith('get', url, auth(stranger));
+      await compareWith('get', url, auth('garbage'));
+      await compareWith('get', url);
+    }
+    await compareWith('get', '/api/orders/no-such-order', auth(customer));
+    await compareWith('get', "/api/orders/x'%20OR%20'1'%3D'1", auth(customer));
+  });
+
+  test('guest order is viewable by id/number without an account', async () => {
+    const id = `parity-guest-${Date.now()}`;
+    const number = `NOR-PARITY-${Date.now()}`;
+    const address = JSON.stringify({ first_name: 'Guest', city: 'New York', country: 'US' });
+    await DatabaseUtil.executeQuery(
+      `INSERT INTO orders (id, order_number, guest_email, status, subtotal, tax_amount, shipping_amount,
+         total_amount, shipping_address_json, billing_address_json, shipping_method)
+       VALUES (?, ?, 'guest@example.com', 'confirmed', 120.50, 10.69, 0, 131.19, ?, ?, 'standard')`,
+      [id, number, address, address]
+    );
+    try {
+      await DatabaseUtil.executeQuery(
+        `INSERT INTO order_items (id, order_id, product_id, product_name, product_sku, variant_details, quantity, unit_price, total_price)
+         VALUES (?, ?, 'PROD0000000001', 'Snapshot name', 'SKU-1', ?, 2, 60.25, 120.50)`,
+        [`${id}-item`, id, JSON.stringify({ size: 'Queen', note: 1.5 })]
+      );
+      await DatabaseUtil.executeQuery(
+        `INSERT INTO order_status_history (id, order_id, status, status_details) VALUES (?, ?, 'confirmed', ?)`,
+        [`${id}-h1`, id, JSON.stringify({ reason: 'paid' })]
+      );
+      await compareWith('get', `/api/orders/${id}`);
+      await compareWith('get', `/api/orders/${number}`, auth(stranger));
+      await compareWith('get', `/api/orders/track/${number}`);
+    } finally {
+      await DatabaseUtil.executeQuery('DELETE FROM order_status_history WHERE order_id = ?', [id]);
+      await DatabaseUtil.executeQuery('DELETE FROM order_items WHERE order_id = ?', [id]);
+      await DatabaseUtil.executeQuery('DELETE FROM orders WHERE id = ?', [id]);
+    }
+  });
+
+  test('public tracking', async () => {
+    await compareWith('get', `/api/orders/track/${encodeURIComponent(order.order_number)}`);
+    await compareWith('get', '/api/orders/track/NOR-NOPE-NOPE');
+  });
+});
