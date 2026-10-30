@@ -1,17 +1,24 @@
 import NextAuth from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import http from 'http';
+import https from 'https';
 import { URL } from 'url';
+import { apiBaseUrl } from '@/lib/server/apiTarget';
+// The Node backend as the rest of the server code sees it: PRODUCTION_BACKEND_URL
+// in production (the only one the production compose file sets), else BACKEND_URL.
+import { BACKEND_URL } from '@/lib/server/backend';
 
-const BACKEND_URL = (process.env.BACKEND_URL || 'http://localhost:6666').trim().replace(/\/$/, '');
-
+// These calls are made server-side, not through the storefront proxy, so they
+// pick the service themselves: the Rust API when RUST_API_ROUTES moves the path
+// (e.g. `users`), parsed exactly as next.config.mjs does; Node otherwise.
 const fetchBackend = async (url, options = {}) => {
   const path = `/${url.replace(/^\//, '')}`;
-  const requestUrl = `${BACKEND_URL}${path}`;
+  const requestUrl = `${apiBaseUrl(path, BACKEND_URL)}${path}`;
   
   return new Promise((resolve, reject) => {
     try {
       const parsedUrl = new URL(requestUrl);
+      const client = parsedUrl.protocol === 'https:' ? https : http;
       const postData = options.body ? options.body : null;
       
       const requestOptions = {
@@ -26,7 +33,7 @@ const fetchBackend = async (url, options = {}) => {
         }
       };
 
-      const req = http.request(requestOptions, (res) => {
+      const req = client.request(requestOptions, (res) => {
         let data = '';
         
         res.on('data', (chunk) => {
