@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { type ChangeEvent } from 'react';
+import type { BlockProps } from '../utils/blockTypes';
 
-export default function SpacerBlock({ data, onChange, onFocus, isSelected }) {
-    const handleHeightChange = (e) => {
+export default function SpacerBlock({ data, onChange, onFocus, isSelected }: BlockProps<'spacer'>) {
+    const handleHeightChange = (e: ChangeEvent<HTMLInputElement>) => {
         const height = parseInt(e.target.value) || 16;
         onChange({ ...data, height: Math.max(8, Math.min(200, height)) });
     };

@@ -1,15 +1,16 @@
-import React from 'react';
+import React, { type ChangeEvent } from 'react';
+import type { BlockProps } from '../utils/blockTypes';
 
-export default function DividerBlock({ data, onChange, onFocus, isSelected }) {
-    const handleStyleChange = (style) => {
+export default function DividerBlock({ data, onChange, onFocus, isSelected }: BlockProps<'divider'>) {
+    const handleStyleChange = (style: string) => {
         onChange({ ...data, style });
     };
 
-    const handleColorChange = (e) => {
+    const handleColorChange = (e: ChangeEvent<HTMLInputElement>) => {
         onChange({ ...data, color: e.target.value });
     };
 
-    const handleThicknessChange = (thickness) => {
+    const handleThicknessChange = (thickness: number) => {
         onChange({ ...data, thickness });
     };
 

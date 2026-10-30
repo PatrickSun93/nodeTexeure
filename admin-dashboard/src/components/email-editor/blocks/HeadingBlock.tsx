@@ -1,8 +1,9 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, type ChangeEvent } from 'react';
+import type { Alignment, BlockProps } from '../utils/blockTypes';
 
-export default function HeadingBlock({ data, onChange, onFocus, isSelected }) {
+export default function HeadingBlock({ data, onChange, onFocus, isSelected }: BlockProps<'heading'>) {
     const [isEditing, setIsEditing] = useState(false);
-    const inputRef = useRef(null);
+    const inputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
         if (isEditing && inputRef.current) {
@@ -11,19 +12,19 @@ export default function HeadingBlock({ data, onChange, onFocus, isSelected }) {
         }
     }, [isEditing]);
 
-    const handleLevelChange = (level) => {
+    const handleLevelChange = (level: string) => {
         onChange({ ...data, level });
     };
 
-    const handleAlignment = (alignment) => {
+    const handleAlignment = (alignment: Alignment) => {
         onChange({ ...data, alignment });
     };
 
-    const handleContentChange = (e) => {
+    const handleContentChange = (e: ChangeEvent<HTMLInputElement>) => {
         onChange({ ...data, content: e.target.value });
     };
 
-    const headingStyles = {
+    const headingStyles: Record<string, string> = {
         h1: 'text-3xl font-bold',
         h2: 'text-2xl font-bold',
         h3: 'text-xl font-semibold',

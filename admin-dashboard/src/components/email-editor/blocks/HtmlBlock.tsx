@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, type ChangeEvent } from 'react';
+import type { BlockProps } from '../utils/blockTypes';
 
-export default function HtmlBlock({ data, onChange, onFocus, isSelected }) {
+export default function HtmlBlock({ data, onChange, onFocus, isSelected }: BlockProps<'html'>) {
     const [showPreview, setShowPreview] = useState(false);
 
-    const handleCodeChange = (e) => {
+    const handleCodeChange = (e: ChangeEvent<HTMLTextAreaElement>) => {
         onChange({ ...data, code: e.target.value });
     };
 

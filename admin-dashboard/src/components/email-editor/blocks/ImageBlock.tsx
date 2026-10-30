@@ -1,11 +1,12 @@
-import React, { useRef } from 'react';
+import React, { useRef, type ChangeEvent } from 'react';
+import type { BlockProps } from '../utils/blockTypes';
 import { useNotifications } from '../../NotificationSystem';
 
-export default function ImageBlock({ data, onChange, onFocus, isSelected }) {
+export default function ImageBlock({ data, onChange, onFocus, isSelected }: BlockProps<'image'>) {
     const notify = useNotifications();
-    const fileInputRef = useRef(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
-    const handleFileChange = (e) => {
+    const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
 
@@ -26,26 +27,26 @@ export default function ImageBlock({ data, onChange, onFocus, isSelected }) {
         reader.onload = (event) => {
             onChange({
                 ...data,
-                src: event.target.result,
+                src: String(reader.result ?? ''),
                 alt: data.alt || file.name.replace(/\.[^/.]+$/, ''),
             });
         };
         reader.readAsDataURL(file);
     };
 
-    const handleUrlChange = (e) => {
+    const handleUrlChange = (e: ChangeEvent<HTMLInputElement>) => {
         onChange({ ...data, src: e.target.value });
     };
 
-    const handleAltChange = (e) => {
+    const handleAltChange = (e: ChangeEvent<HTMLInputElement>) => {
         onChange({ ...data, alt: e.target.value });
     };
 
-    const handleWidthChange = (e) => {
+    const handleWidthChange = (e: ChangeEvent<HTMLInputElement>) => {
         onChange({ ...data, width: e.target.value });
     };
 
-    const handleLinkChange = (e) => {
+    const handleLinkChange = (e: ChangeEvent<HTMLInputElement>) => {
         onChange({ ...data, link: e.target.value });
     };
 

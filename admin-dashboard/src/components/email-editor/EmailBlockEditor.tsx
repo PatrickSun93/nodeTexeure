@@ -1,6 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import {
     DndContext,
+    type DragEndEvent,
     closestCenter,
     KeyboardSensor,
     PointerSensor,
@@ -17,7 +18,7 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import { v4 as uuidv4 } from 'uuid';
 
-import { BLOCK_TYPES, BLOCK_META, getDefaultBlockData } from './utils/blockTypes';
+import { BLOCK_TYPES, BLOCK_META, getDefaultBlockData, type Block, type BlockData, type BlockType } from './utils/blockTypes';
 import BlockToolbar from './BlockToolbar';
 import AddBlockMenu, { AddBlockButton } from './AddBlockMenu';
 
@@ -33,40 +34,60 @@ import TableBlock from './blocks/TableBlock';
 import HtmlBlock from './blocks/HtmlBlock';
 
 // Block renderer based on type
-const BlockRenderer = ({ block, isSelected, onChange, onFocus }) => {
+interface BlockRendererProps {
+    block: Block;
+    isSelected: boolean;
+    onChange: (blockId: string, data: BlockData) => void;
+    onFocus: (blockId: string) => void;
+}
+
+const BlockRenderer = ({ block, isSelected, onChange, onFocus }: BlockRendererProps) => {
+    // Each case passes block.data narrowed to its type.
     const props = {
-        data: block.data,
-        onChange: (newData) => onChange(block.id, newData),
+        onChange: (newData: BlockData) => onChange(block.id, newData),
         onFocus: () => onFocus(block.id),
         isSelected,
     };
 
     switch (block.type) {
         case BLOCK_TYPES.TEXT:
-            return <TextBlock {...props} />;
+            return <TextBlock {...props} data={block.data} />;
         case BLOCK_TYPES.HEADING:
-            return <HeadingBlock {...props} />;
+            return <HeadingBlock {...props} data={block.data} />;
         case BLOCK_TYPES.IMAGE:
-            return <ImageBlock {...props} />;
+            return <ImageBlock {...props} data={block.data} />;
         case BLOCK_TYPES.BUTTON:
-            return <ButtonBlock {...props} />;
+            return <ButtonBlock {...props} data={block.data} />;
         case BLOCK_TYPES.DIVIDER:
-            return <DividerBlock {...props} />;
+            return <DividerBlock {...props} data={block.data} />;
         case BLOCK_TYPES.SPACER:
-            return <SpacerBlock {...props} />;
+            return <SpacerBlock {...props} data={block.data} />;
         case BLOCK_TYPES.SOCIAL:
-            return <SocialBlock {...props} />;
+            return <SocialBlock {...props} data={block.data} />;
         case BLOCK_TYPES.TABLE:
-            return <TableBlock {...props} />;
+            return <TableBlock {...props} data={block.data} />;
         case BLOCK_TYPES.HTML:
-            return <HtmlBlock {...props} />;
+            return <HtmlBlock {...props} data={block.data} />;
         default:
-            return <div className="p-4 bg-red-50 text-red-600">Unknown block type: {block.type}</div>;
+            return <div className="p-4 bg-red-50 text-red-600">Unknown block type: {(block as Block).type}</div>;
     }
 };
 
 // Sortable block wrapper
-function SortableBlock({ block, isSelected, onSelect, onChange, onDelete, onDuplicate, onMoveUp, onMoveDown, isFirst, isLast }) {
+interface SortableBlockProps {
+    block: Block;
+    isSelected: boolean;
+    onSelect: (blockId: string) => void;
+    onChange: (blockId: string, data: BlockData) => void;
+    onDelete: () => void;
+    onDuplicate: () => void;
+    onMoveUp: () => void;
+    onMoveDown: () => void;
+    isFirst: boolean;
+    isLast: boolean;
+}
+
+function SortableBlock({ block, isSelected, onSelect, onChange, onDelete, onDuplicate, onMoveUp, onMoveDown, isFirst, isLast }: SortableBlockProps) {
     const {
         attributes,
         listeners,
@@ -171,9 +192,15 @@ function SortableBlock({ block, isSelected, onSelect, onChange, onDelete, onDupl
 }
 
 // Main email block editor component
-export default function EmailBlockEditor({ blocks, onChange, onInsertVariable }) {
-    const [selectedBlockId, setSelectedBlockId] = useState(null);
-    const [addMenuPosition, setAddMenuPosition] = useState(null);
+interface EmailBlockEditorProps {
+    blocks: Block[];
+    onChange: (blocks: Block[]) => void;
+    onInsertVariable?: (variable: string) => void;
+}
+
+export default function EmailBlockEditor({ blocks, onChange, onInsertVariable }: EmailBlockEditorProps) {
+    const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
+    const [addMenuPosition, setAddMenuPosition] = useState<number | null>(null);
 
     const sensors = useSensors(
         useSensor(PointerSensor, {
@@ -187,7 +214,7 @@ export default function EmailBlockEditor({ blocks, onChange, onInsertVariable })
     );
 
     // Handle drag end
-    const handleDragEnd = useCallback((event) => {
+    const handleDragEnd = useCallback((event: DragEndEvent) => {
         const { active, over } = event;
 
         if (over && active.id !== over.id) {
@@ -198,12 +225,12 @@ export default function EmailBlockEditor({ blocks, onChange, onInsertVariable })
     }, [blocks, onChange]);
 
     // Add a new block
-    const addBlock = useCallback((type, position = null) => {
+    const addBlock = useCallback((type: BlockType, position: number | null = null) => {
         const newBlock = {
             id: uuidv4(),
             type,
             data: getDefaultBlockData(type),
-        };
+        } as Block;
 
         if (position !== null && position >= 0) {
             const newBlocks = [...blocks];
@@ -218,14 +245,14 @@ export default function EmailBlockEditor({ blocks, onChange, onInsertVariable })
     }, [blocks, onChange]);
 
     // Update block data
-    const updateBlock = useCallback((blockId, newData) => {
+    const updateBlock = useCallback((blockId: string, newData: BlockData) => {
         onChange(
-            blocks.map((b) => (b.id === blockId ? { ...b, data: newData } : b))
+            blocks.map((b) => (b.id === blockId ? { ...b, data: newData } as Block : b))
         );
     }, [blocks, onChange]);
 
     // Delete a block
-    const deleteBlock = useCallback((blockId) => {
+    const deleteBlock = useCallback((blockId: string) => {
         onChange(blocks.filter((b) => b.id !== blockId));
         if (selectedBlockId === blockId) {
             setSelectedBlockId(null);
@@ -233,7 +260,7 @@ export default function EmailBlockEditor({ blocks, onChange, onInsertVariable })
     }, [blocks, onChange, selectedBlockId]);
 
     // Duplicate a block
-    const duplicateBlock = useCallback((blockId) => {
+    const duplicateBlock = useCallback((blockId: string) => {
         const index = blocks.findIndex((b) => b.id === blockId);
         if (index === -1) return;
 
@@ -242,7 +269,7 @@ export default function EmailBlockEditor({ blocks, onChange, onInsertVariable })
             id: uuidv4(),
             type: block.type,
             data: JSON.parse(JSON.stringify(block.data)),
-        };
+        } as Block;
 
         const newBlocks = [...blocks];
         newBlocks.splice(index + 1, 0, newBlock);
@@ -251,14 +278,14 @@ export default function EmailBlockEditor({ blocks, onChange, onInsertVariable })
     }, [blocks, onChange]);
 
     // Move block up
-    const moveBlockUp = useCallback((blockId) => {
+    const moveBlockUp = useCallback((blockId: string) => {
         const index = blocks.findIndex((b) => b.id === blockId);
         if (index <= 0) return;
         onChange(arrayMove(blocks, index, index - 1));
     }, [blocks, onChange]);
 
     // Move block down
-    const moveBlockDown = useCallback((blockId) => {
+    const moveBlockDown = useCallback((blockId: string) => {
         const index = blocks.findIndex((b) => b.id === blockId);
         if (index === -1 || index >= blocks.length - 1) return;
         onChange(arrayMove(blocks, index, index + 1));

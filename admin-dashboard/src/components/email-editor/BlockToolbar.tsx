@@ -8,14 +8,22 @@ export default function BlockToolbar({
     isFirst,
     isLast,
     blockType
+}: {
+    onMoveUp: () => void;
+    onMoveDown: () => void;
+    onDuplicate: () => void;
+    onDelete: () => void;
+    isFirst: boolean;
+    isLast: boolean;
+    blockType?: string;
 }) {
     const [showMenu, setShowMenu] = useState(false);
-    const menuRef = useRef(null);
+    const menuRef = useRef<HTMLDivElement>(null);
 
     // Close menu when clicking outside
     useEffect(() => {
-        const handleClickOutside = (event) => {
-            if (menuRef.current && !menuRef.current.contains(event.target)) {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
                 setShowMenu(false);
             }
         };

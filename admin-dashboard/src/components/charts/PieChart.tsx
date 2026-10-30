@@ -1,6 +1,33 @@
 'use client';
 
+import type { EChartsOption } from 'echarts';
 import BaseChart from './BaseChart';
+
+/** A slice: order statuses use status/count, other breakdowns name/value. */
+export interface PieDatum {
+  status?: string;
+  name?: string;
+  label?: string;
+  count?: number;
+  value?: number;
+  totalValue?: number;
+}
+
+interface ItemTooltipParam {
+  name: string;
+  value: unknown;
+  percent: number;
+}
+
+interface PieChartProps {
+  data?: PieDatum[];
+  title?: string;
+  loading?: boolean;
+  height?: number;
+  showLegend?: boolean;
+  radius?: [string, string];
+  colors?: string[];
+}
 
 /**
  * Pie Chart Component for Order Status Distribution and Category Breakdowns
@@ -13,9 +40,9 @@ export default function PieChart({
   showLegend = true,
   radius = ['40%', '70%'],
   colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#84cc16', '#f97316']
-}) {
+}: PieChartProps) {
   // Prepare chart option
-  const option = {
+  const option: EChartsOption = {
     title: {
       text: title,
       left: 'left',
@@ -33,7 +60,8 @@ export default function PieChart({
       textStyle: {
         color: '#374151'
       },
-      formatter: function(params) {
+      formatter: function(raw) {
+        const params = raw as unknown as ItemTooltipParam;
         const value = typeof params.value === 'number' 
           ? params.value.toLocaleString() 
           : params.value;
@@ -49,7 +77,7 @@ export default function PieChart({
       textStyle: {
         color: '#6b7280'
       },
-      formatter: function(name) {
+      formatter: function(name: string) {
         const item = data.find(d => d.status === name || d.name === name);
         if (item) {
           const value = item.count || item.value || 0;
@@ -57,7 +85,7 @@ export default function PieChart({
         }
         return name;
       }
-    } : false,
+    } : { show: false },
     color: colors,
     series: [{
       name: title || 'Distribution',
@@ -110,13 +138,13 @@ export default function PieChart({
 /**
  * Format data for pie chart
  */
-function formatPieData(data) {
+function formatPieData(data: PieDatum[]) {
   if (!data || data.length === 0) {
     return [];
   }
 
   return data.map(item => ({
-    name: item.status || item.name || item.label,
+    name: item.status || item.name || item.label || '',
     value: item.count || item.value || 0,
     totalValue: item.totalValue || 0
   }));

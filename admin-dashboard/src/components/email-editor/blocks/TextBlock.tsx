@@ -1,7 +1,8 @@
 import React, { useRef, useEffect } from 'react';
+import type { Alignment, BlockProps } from '../utils/blockTypes';
 
-export default function TextBlock({ data, onChange, onFocus, isSelected }) {
-    const editorRef = useRef(null);
+export default function TextBlock({ data, onChange, onFocus, isSelected }: BlockProps<'text'>) {
+    const editorRef = useRef<HTMLDivElement>(null);
     const contentRef = useRef(data.content);
 
     // Update editor when data changes externally
@@ -27,17 +28,17 @@ export default function TextBlock({ data, onChange, onFocus, isSelected }) {
         }
     };
 
-    const formatText = (command, value = null) => {
+    const formatText = (command: string, value?: string) => {
         document.execCommand(command, false, value);
         editorRef.current?.focus();
         handleInput();
     };
 
-    const handleAlignment = (alignment) => {
+    const handleAlignment = (alignment: Alignment) => {
         onChange({ ...data, alignment });
     };
 
-    const insertVariable = (variable) => {
+    const insertVariable = (variable: string) => {
         document.execCommand('insertText', false, variable);
         handleInput();
     };

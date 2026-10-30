@@ -1,6 +1,6 @@
 // Parse HTML content back to blocks
 // This is a best-effort parser for loading existing templates
-import { BLOCK_TYPES, getDefaultBlockData } from './blockTypes';
+import { BLOCK_TYPES, getDefaultBlockData, type Alignment, type Block } from './blockTypes';
 import { v4 as uuidv4 } from 'uuid';
 
 /**
@@ -9,7 +9,7 @@ import { v4 as uuidv4 } from 'uuid';
  * 1. Templates created by our block editor (structured)
  * 2. Legacy/external HTML (best-effort conversion)
  */
-export const htmlToBlocks = (html) => {
+export const htmlToBlocks = (html: unknown): Block[] => {
     if (!html || typeof html !== 'string') {
         return [];
     }
@@ -19,7 +19,7 @@ export const htmlToBlocks = (html) => {
         try {
             const parsed = JSON.parse(html);
             if (Array.isArray(parsed)) {
-                return parsed;
+                return parsed as Block[];
             }
         } catch (e) {
             // Not valid JSON, continue with HTML parsing
@@ -52,7 +52,7 @@ export const htmlToBlocks = (html) => {
     }
 
     // Try to parse structured content
-    const blocks = [];
+    const blocks: Block[] = [];
 
     // Create a temporary DOM element to parse HTML
     if (typeof document !== 'undefined') {
@@ -60,7 +60,7 @@ export const htmlToBlocks = (html) => {
         tempDiv.innerHTML = content;
 
         // Process child nodes
-        for (const child of tempDiv.childNodes) {
+        for (const child of Array.from(tempDiv.childNodes)) {
             const block = parseElement(child);
             if (block) {
                 blocks.push(block);
@@ -81,9 +81,9 @@ export const htmlToBlocks = (html) => {
 };
 
 // Parse a single DOM element to a block
-const parseElement = (element) => {
-    if (element.nodeType === Node.TEXT_NODE) {
-        const text = element.textContent.trim();
+const parseElement = (node: ChildNode): Block | null => {
+    if (node.nodeType === Node.TEXT_NODE) {
+        const text = (node.textContent || '').trim();
         if (!text) return null;
         return {
             id: uuidv4(),
@@ -92,9 +92,11 @@ const parseElement = (element) => {
         };
     }
 
-    if (element.nodeType !== Node.ELEMENT_NODE) {
+    if (node.nodeType !== Node.ELEMENT_NODE) {
         return null;
     }
+    const element = node as HTMLElement;
+    const textContent = element.textContent || '';
 
     const tagName = element.tagName.toLowerCase();
 
@@ -105,7 +107,7 @@ const parseElement = (element) => {
             id: uuidv4(),
             type: BLOCK_TYPES.HEADING,
             data: {
-                content: element.textContent,
+                content: textContent,
                 level: tagName,
                 alignment
             }
@@ -123,12 +125,13 @@ const parseElement = (element) => {
 
     // Images
     if (tagName === 'img') {
+        const img = element as HTMLImageElement;
         return {
             id: uuidv4(),
             type: BLOCK_TYPES.IMAGE,
             data: {
-                src: element.src || '',
-                alt: element.alt || '',
+                src: img.src || '',
+                alt: img.alt || '',
                 width: element.getAttribute('width') || '100%',
                 link: ''
             }
@@ -136,8 +139,9 @@ const parseElement = (element) => {
     }
 
     // Links containing images
-    if (tagName === 'a' && element.querySelector('img')) {
-        const img = element.querySelector('img');
+    const linkedImg = element.querySelector('img');
+    if (tagName === 'a' && linkedImg) {
+        const img = linkedImg;
         return {
             id: uuidv4(),
             type: BLOCK_TYPES.IMAGE,
@@ -145,20 +149,20 @@ const parseElement = (element) => {
                 src: img.src || '',
                 alt: img.alt || '',
                 width: img.getAttribute('width') || '100%',
-                link: element.href || ''
+                link: (element as HTMLAnchorElement).href || ''
             }
         };
     }
 
     // Tables
     if (tagName === 'table') {
-        const rows = [];
+        const rows: string[][] = [];
         let hasHeader = false;
 
-        element.querySelectorAll('tr').forEach((tr, index) => {
-            const cells = [];
+        element.querySelectorAll('tr').forEach((tr) => {
+            const cells: string[] = [];
             tr.querySelectorAll('th, td').forEach(cell => {
-                cells.push(cell.textContent);
+                cells.push(cell.textContent || '');
                 if (cell.tagName.toLowerCase() === 'th') {
                     hasHeader = true;
                 }
@@ -183,7 +187,7 @@ const parseElement = (element) => {
     }
 
     // Divs with just height (spacers)
-    if (tagName === 'div' && element.children.length === 0 && !element.textContent.trim()) {
+    if (tagName === 'div' && element.children.length === 0 && !textContent.trim()) {
         const height = parseInt(element.style.height) || 32;
         if (height > 0) {
             return {
@@ -195,7 +199,7 @@ const parseElement = (element) => {
     }
 
     // Paragraphs and other text containers
-    if (['p', 'div', 'span'].includes(tagName) && element.textContent.trim()) {
+    if (['p', 'div', 'span'].includes(tagName) && textContent.trim()) {
         const alignment = extractAlignment(element.style.textAlign);
         return {
             id: uuidv4(),
@@ -220,9 +224,11 @@ const parseElement = (element) => {
 };
 
 // Extract text alignment from style
-const extractAlignment = (textAlign) => {
+const ALIGNMENTS: Alignment[] = ['left', 'center', 'right', 'justify'];
+
+const extractAlignment = (textAlign: string): Alignment => {
     if (!textAlign) return 'left';
-    return ['left', 'center', 'right', 'justify'].includes(textAlign) ? textAlign : 'left';
+    return ALIGNMENTS.includes(textAlign as Alignment) ? textAlign as Alignment : 'left';
 };
 
 export default htmlToBlocks;

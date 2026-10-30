@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
+import type { BlockProps } from '../utils/blockTypes';
 
-export default function TableBlock({ data, onChange, onFocus, isSelected }) {
-    const [editingCell, setEditingCell] = useState(null);
+export default function TableBlock({ data, onChange, onFocus, isSelected }: BlockProps<'table'>) {
+    const [editingCell, setEditingCell] = useState<{ row: number; col: number } | null>(null);
 
     const cells = data.cells || [
         ['Header 1', 'Header 2', 'Header 3'],
@@ -9,7 +10,7 @@ export default function TableBlock({ data, onChange, onFocus, isSelected }) {
         ['Cell 4', 'Cell 5', 'Cell 6'],
     ];
 
-    const updateCell = (rowIndex, colIndex, value) => {
+    const updateCell = (rowIndex: number, colIndex: number, value: string) => {
         const newCells = cells.map((row, ri) =>
             ri === rowIndex
                 ? row.map((cell, ci) => (ci === colIndex ? value : cell))

@@ -1,7 +1,8 @@
 import React from 'react';
+import type { Alignment, BlockProps, SocialPlatform } from '../utils/blockTypes';
 
 // Social platform data
-const PLATFORMS = {
+const PLATFORMS: Record<SocialPlatform, { name: string; color: string; icon: React.ReactNode }> = {
     facebook: {
         name: 'Facebook',
         color: '#1877F2',
@@ -49,10 +50,10 @@ const PLATFORMS = {
     },
 };
 
-export default function SocialBlock({ data, onChange, onFocus, isSelected }) {
+export default function SocialBlock({ data, onChange, onFocus, isSelected }: BlockProps<'social'>) {
     const platforms = data.platforms || {};
 
-    const togglePlatform = (platform) => {
+    const togglePlatform = (platform: SocialPlatform) => {
         const newPlatforms = {
             ...platforms,
             [platform]: {
@@ -63,7 +64,7 @@ export default function SocialBlock({ data, onChange, onFocus, isSelected }) {
         onChange({ ...data, platforms: newPlatforms });
     };
 
-    const updatePlatformUrl = (platform, url) => {
+    const updatePlatformUrl = (platform: SocialPlatform, url: string) => {
         const newPlatforms = {
             ...platforms,
             [platform]: {
@@ -74,11 +75,11 @@ export default function SocialBlock({ data, onChange, onFocus, isSelected }) {
         onChange({ ...data, platforms: newPlatforms });
     };
 
-    const handleAlignment = (alignment) => {
+    const handleAlignment = (alignment: Alignment) => {
         onChange({ ...data, alignment });
     };
 
-    const handleIconSizeChange = (iconSize) => {
+    const handleIconSizeChange = (iconSize: number) => {
         onChange({ ...data, iconSize });
     };
 
@@ -92,7 +93,7 @@ export default function SocialBlock({ data, onChange, onFocus, isSelected }) {
                 <div className="p-3 bg-gray-50 rounded-md border border-gray-100 mb-2 space-y-3">
                     {/* Platform toggles and URLs */}
                     <div className="space-y-2">
-                        {Object.entries(PLATFORMS).map(([key, platform]) => (
+                        {(Object.entries(PLATFORMS) as [SocialPlatform, typeof PLATFORMS[SocialPlatform]][]).map(([key, platform]) => (
                             <div key={key} className="flex items-center gap-2">
                                 <button
                                     onClick={() => togglePlatform(key)}
@@ -140,7 +141,7 @@ export default function SocialBlock({ data, onChange, onFocus, isSelected }) {
                     <div className="flex items-center gap-2">
                         <label className="text-xs text-gray-500">Align:</label>
                         <div className="flex items-center gap-1">
-                            {['left', 'center', 'right'].map((align) => (
+                            {(['left', 'center', 'right'] as const).map((align) => (
                                 <button
                                     key={align}
                                     onClick={() => handleAlignment(align)}
@@ -163,7 +164,7 @@ export default function SocialBlock({ data, onChange, onFocus, isSelected }) {
                 style={{ textAlign: data.alignment || 'center' }}
             >
                 <div className="inline-flex items-center gap-3">
-                    {Object.entries(PLATFORMS).map(([key, platform]) => {
+                    {(Object.entries(PLATFORMS) as [SocialPlatform, typeof PLATFORMS[SocialPlatform]][]).map(([key, platform]) => {
                         if (!platforms[key]?.enabled) return null;
                         return (
                             <a
