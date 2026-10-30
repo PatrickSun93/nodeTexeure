@@ -42,7 +42,7 @@
     "node-cache": "^5.1.2",
     "papaparse": "^5.4.1",
     "sharp": "^0.35.5",
-    "stripe": "^20.3.1"
+    "stripe": "^23.0.1"
   },
   "devDependencies": {
     "jest": "^30.5.2",
