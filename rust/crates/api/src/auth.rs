@@ -95,14 +95,15 @@ fn extract_token(headers: &HeaderMap) -> Option<String> {
             .filter(|t| !t.is_empty())
             .map(str::to_owned);
     }
-    headers
-        .get_all(header::COOKIE)
-        .iter()
-        .filter_map(|v| v.to_str().ok())
-        .flat_map(|v| v.split(';'))
-        .filter_map(|kv| kv.trim().split_once('='))
-        .find(|(k, v)| *k == "admin_auth" && !v.is_empty())
-        .map(|(_, v)| v.to_owned())
+    // `req.cookies.admin_auth` as cookie-parser decodes it (first occurrence,
+    // percent-decoded, `j:` JSON), used when truthy.
+    let cookies = crate::cookies::Cookies::from_headers(headers);
+    match cookies.get("admin_auth") {
+        Some(Value::String(s)) if !s.is_empty() => Some(s.clone()),
+        // A truthy `j:` value that isn't a string: jwt.verify rejects it.
+        value if crate::body::truthy(value) => Some(String::new()),
+        _ => None,
+    }
 }
 
 pub enum AuthError {
@@ -297,6 +298,24 @@ mod tests {
             Some("jwt")
         );
         assert_eq!(extract_token(&HeaderMap::new()), None);
+        // cookie-parser: first occurrence wins, values are decoded, `j:` is JSON.
+        assert_eq!(
+            extract_token(&headers(&[("cookie", "admin_auth=; admin_auth=jwt")])),
+            None
+        );
+        assert_eq!(
+            extract_token(&headers(&[("cookie", "admin_auth=j%3A%22jwt%22")])).as_deref(),
+            Some("jwt")
+        );
+        assert_eq!(
+            extract_token(&headers(&[("cookie", "admin_auth=j:{\"a\":1}")])).as_deref(),
+            Some(""),
+            "a non-string token never verifies"
+        );
+        assert_eq!(
+            extract_token(&headers(&[("cookie", "admin_auth=j:0")])).as_deref(),
+            Some("j:0")
+        );
     }
 
     #[test]

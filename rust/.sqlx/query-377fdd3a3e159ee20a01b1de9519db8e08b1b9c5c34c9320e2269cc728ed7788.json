@@ -1,0 +1,24 @@
+{
+  "db_name": "MySQL",
+  "query": "SELECT is_approved AS \"is_approved: i8\" FROM product_reviews WHERE id = ?",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "is_approved: i8",
+        "type_info": {
+          "type": "Tiny",
+          "flags": "MULTIPLE_KEY",
+          "max_size": 1
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      true
+    ]
+  },
+  "hash": "377fdd3a3e159ee20a01b1de9519db8e08b1b9c5c34c9320e2269cc728ed7788"
+}

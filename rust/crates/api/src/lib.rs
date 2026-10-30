@@ -9,6 +9,7 @@ pub mod cookies;
 pub mod csrf;
 pub mod email_queue;
 pub mod error;
+pub mod express;
 pub mod params;
 pub mod password;
 pub mod ratelimit;
@@ -116,6 +117,10 @@ pub fn router_with_limiter(state: AppState, global: ratelimit::RateLimiter) -> R
             "/api/wishlist/{product_id}",
             delete(routes::wishlist::remove),
         )
+        // reviews + returns: every path under their mount points, routed the
+        // way the Express router does it (crate::express).
+        .merge(routes::reviews::router())
+        .merge(routes::returns::router())
         .fallback(|| async {
             (
                 StatusCode::NOT_FOUND,

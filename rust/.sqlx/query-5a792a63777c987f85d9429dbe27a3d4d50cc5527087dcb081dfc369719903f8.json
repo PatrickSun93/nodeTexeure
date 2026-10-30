@@ -1,0 +1,24 @@
+{
+  "db_name": "MySQL",
+  "query": "SELECT oi.id AS order_item_id\n         FROM order_items oi\n         JOIN orders o ON oi.order_id = o.id\n         WHERE o.user_id = ? AND oi.product_id = ? AND o.status = 'delivered'\n         LIMIT 1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "order_item_id",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NOT_NULL | PRIMARY_KEY | NO_DEFAULT_VALUE",
+          "max_size": 200
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "5a792a63777c987f85d9429dbe27a3d4d50cc5527087dcb081dfc369719903f8"
+}

@@ -1,0 +1,84 @@
+{
+  "db_name": "MySQL",
+  "query": "SELECT CAST(COUNT(*) AS CHAR) AS \"total!: String\",\n             CAST(AVG(rating) AS CHAR) AS \"avg_rating: String\",\n             CAST(SUM(CASE WHEN rating = 5 THEN 1 ELSE 0 END) AS CHAR) AS \"five_star: String\",\n             CAST(SUM(CASE WHEN rating = 4 THEN 1 ELSE 0 END) AS CHAR) AS \"four_star: String\",\n             CAST(SUM(CASE WHEN rating = 3 THEN 1 ELSE 0 END) AS CHAR) AS \"three_star: String\",\n             CAST(SUM(CASE WHEN rating = 2 THEN 1 ELSE 0 END) AS CHAR) AS \"two_star: String\",\n             CAST(SUM(CASE WHEN rating = 1 THEN 1 ELSE 0 END) AS CHAR) AS \"one_star: String\"\n           FROM product_reviews\n           WHERE product_id = ? AND is_approved = 1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "total!: String",
+        "type_info": {
+          "type": "VarString",
+          "flags": "",
+          "max_size": 84
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "avg_rating: String",
+        "type_info": {
+          "type": "VarString",
+          "flags": "",
+          "max_size": 36
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "five_star: String",
+        "type_info": {
+          "type": "VarString",
+          "flags": "",
+          "max_size": 96
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "four_star: String",
+        "type_info": {
+          "type": "VarString",
+          "flags": "",
+          "max_size": 96
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "three_star: String",
+        "type_info": {
+          "type": "VarString",
+          "flags": "",
+          "max_size": 96
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "two_star: String",
+        "type_info": {
+          "type": "VarString",
+          "flags": "",
+          "max_size": 96
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "one_star: String",
+        "type_info": {
+          "type": "VarString",
+          "flags": "",
+          "max_size": 96
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true
+    ]
+  },
+  "hash": "63c848c1e31620ce54952f95e11b8401df1edc8362d480575a82c91b0e25496b"
+}

@@ -1,0 +1,12 @@
+{
+  "db_name": "MySQL",
+  "query": "INSERT INTO returns (id, order_id, user_id, return_number, reason, return_details)\n         VALUES (?, ?, ?, ?, ?, ?)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 6
+    },
+    "nullable": []
+  },
+  "hash": "961dadc6fbf5c30dc3acc56dd6482e4f08953c5cecdf09da637df8b7b77ed2b5"
+}
