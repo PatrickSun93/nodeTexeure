@@ -14,7 +14,7 @@ Design direction: **"Champagne & Charcoal"** (see [docs/DESIGN.md](docs/DESIGN.m
 |-----|------|-------|------|
 | Storefront (frontend) | `src/` | Next.js 15, React 19, Tailwind 4 | 3000 |
 | Backend API | `backend/` | Express.js, MySQL (`mysql2`), JWT | 6666 |
-| Admin dashboard | `admin-dashboard/` | Next.js 14, React 18 | 3005 |
+| Admin dashboard | `admin-dashboard/` | Next.js 15, React 19 | 3005 |
 
 Database: MySQL 8.0 (schema migrations in `backend/migrations/`, applied on
 backend start via `npm run migrate`), ~42 tables, custom prefixed IDs (`PROD0000000001`), triggers,
@@ -48,7 +48,7 @@ Verify: `npm run test` (lint + build) and `npm run smoke` (stack health).
   `next build`** — change `BACKEND_URL`/`PRODUCTION_BACKEND_URL` then rebuild.
 - **Auth.** JWT via `Authorization: Bearer` header or an `admin_auth` HttpOnly
   cookie. `protect` re-reads role/status/`token_version` from `users` on each
-  request, so bumping `token_version` revokes a user's tokens immediately. Middleware: `protect` (auth), `admin` (admin role), `protectOptional`.
+  request, so bumping `token_version` revokes a user's tokens immediately. Middleware: `protect` (auth), `protectOptional`, `staffOrAdmin`, `admin`.
   Admin write endpoints also require a CSRF token (`X-CSRF-Token`). Customer and
   admin auth flows are separate.
 - **Response format.** Every endpoint returns
@@ -117,7 +117,8 @@ proxy + design tokens → seed example data → smoke test).
   backend (MySQL service → `init.sql` → `migrate` → seed → tests) plus `npm audit`.
 - Security posture is enforced by those tests: privilege escalation, IDOR, JWT
   forgery (incl. `alg:none`), revoked sessions, and SQL injection are blocked.
-  Keep it that way — new admin routes go under `protect, admin` (+ CSRF for writes)
+  Keep it that way — new admin routes go in `backend/routes/admin/` with an `admin` or
+  `staffOrAdmin` guard (+ CSRF for writes)
   and get a test. Role denials are 403; missing/invalid auth is 401.
 
 ## Conventions
