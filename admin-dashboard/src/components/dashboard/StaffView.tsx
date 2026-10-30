@@ -3,20 +3,21 @@
 import { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import StaffDetailView from '../StaffDetailView';
+import type { StaffMember, Table } from '@/types/api';
 
 export default function StaffView() {
   const t = useTranslations('Dashboard');
-  const [selectedStaff, setSelectedStaff] = useState(null);
+  const [selectedStaff, setSelectedStaff] = useState<StaffMember | null>(null);
   const [isAddingStaff, setIsAddingStaff] = useState(false);
-  const [staff, setStaff] = useState([]);
+  const [staff, setStaff] = useState<StaffMember[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchStaff = async () => {
       try {
         const { apiFetch } = await import('../../utils/api');
-        const response = await apiFetch('/api/admin/staff');
+        const response = await apiFetch<Table<'staff', StaffMember[]>>('/api/admin/staff');
         if (response.status === 'SUCCESS') {
           const data = response.keyValueTable.find(item => item.staff)?.staff || [];
           setStaff(data);
@@ -72,11 +73,11 @@ export default function StaffView() {
           </thead>
           <tbody className="divide-y divide-gray-50">
             {isLoading ? (
-              <tr><td colSpan="6" className="px-6 py-10 text-center text-gray-500">{t('loadingStaff')}</td></tr>
+              <tr><td colSpan={6} className="px-6 py-10 text-center text-gray-500">{t('loadingStaff')}</td></tr>
             ) : error ? (
-              <tr><td colSpan="6" className="px-6 py-10 text-center text-red-500">{error}</td></tr>
+              <tr><td colSpan={6} className="px-6 py-10 text-center text-red-500">{error}</td></tr>
             ) : staff.length === 0 ? (
-              <tr><td colSpan="6" className="px-6 py-10 text-center text-gray-500">{t('noStaffFound')}</td></tr>
+              <tr><td colSpan={6} className="px-6 py-10 text-center text-gray-500">{t('noStaffFound')}</td></tr>
             ) : (
               staff.map((member) => (
                 <tr key={member.id} className="hover:bg-gray-50 transition-colors">

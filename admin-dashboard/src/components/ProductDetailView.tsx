@@ -1,13 +1,44 @@
-import React, { useState } from 'react';
+import React, { useState, type ChangeEvent } from 'react';
 import { useTranslations } from 'next-intl';
 import { useNotifications } from './NotificationSystem';
+import type { Category, ProductDetail, ProductListItem, Table } from '@/types/api';
 
-export default function ProductDetailView({ product, onBack }) {
+interface ProductForm {
+    name: string;
+    description: string;
+    price: string;
+    sku: string;
+    stock: string | number;
+    status: string;
+    category: string;
+    tags: string[];
+}
+
+/** A variant from the server, or a new one (id null) added in this form. */
+interface VariantRow {
+    id: string | null;
+    size: string | null;
+    color: string | null;
+    sku: string;
+    price_adjustment: string | number | null;
+    stock: string | number;
+    price?: string;
+}
+
+interface NewVariant {
+    size: string;
+    color: string;
+    sku: string;
+    price_adjustment: string | number;
+    stock: string | number;
+}
+
+export default function ProductDetailView({ product, onBack }: { product: ProductListItem | null; onBack: () => void }) {
     const t = useTranslations('ProductDetailView');
     const notify = useNotifications();
     const isEditing = !!product;
 
-    const [formData, setFormData] = useState({
+    const [formData, setFormData] = useState<ProductForm>({
         name: '',
         description: '',
         price: '',
@@ -17,10 +48,10 @@ export default function ProductDetailView({ product, onBack }) {
         category: '',
         tags: []
     });
-    const [variants, setVariants] = useState([]);
-    const [newVariant, setNewVariant] = useState({ size: '', color: '', sku: '', price_adjustment: 0, stock: 0 });
+    const [variants, setVariants] = useState<VariantRow[]>([]);
+    const [newVariant, setNewVariant] = useState<NewVariant>({ size: '', color: '', sku: '', price_adjustment: 0, stock: 0 });
     const [isSaving, setIsSaving] = useState(false);
-    const [categories, setCategories] = useState([]);
+    const [categories, setCategories] = useState<Category[]>([]);
 
     React.useEffect(() => {
         const fetchData = async () => {
@@ -28,20 +59,20 @@ export default function ProductDetailView({ product, onBack }) {
                 const { apiFetch } = await import('../utils/api');
 
                 // Fetch Categories
-                const catRes = await apiFetch('/api/admin/categories');
+                const catRes = await apiFetch<Table<'categories', Category[]>>('/api/admin/categories');
                 if (catRes.status === 'SUCCESS') {
                     setCategories(catRes.keyValueTable.find(item => item.categories)?.categories || []);
                 }
 
                 // Fetch Product Details if editing
-                if (isEditing) {
+                if (product) {
                     const pid = product.product_id || product.id;
-                    const prodRes = await apiFetch(`/api/admin/products/${pid}`);
+                    const prodRes = await apiFetch<Table<'product', ProductDetail>>(`/api/admin/products/${pid}`);
                     if (prodRes.status === 'SUCCESS') {
-                        const fullProd = prodRes.keyValueTable[0].product;
+                        const fullProd = prodRes.keyValueTable[0].product as ProductDetail;
                         setFormData({
                             name: fullProd.name,
-                            description: fullProd.description,
+                            description: fullProd.description ?? '',
                             price: fullProd.base_price,
                             sku: fullProd.sku,
                             stock: fullProd.stock,
@@ -59,12 +90,12 @@ export default function ProductDetailView({ product, onBack }) {
         fetchData();
     }, [product]);
 
-    const handleChange = (e) => {
+    const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
     };
 
-    const handleVariantChange = (e) => {
+    const handleVariantChange = (e: ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
         setNewVariant(prev => ({ ...prev, [name]: value }));
     };
@@ -75,7 +106,7 @@ export default function ProductDetailView({ product, onBack }) {
         setNewVariant({ size: '', color: '', sku: '', price_adjustment: 0, stock: 0 });
     };
 
-    const removeVariant = (index) => {
+    const removeVariant = (index: number) => {
         setVariants(prev => prev.filter((_, i) => i !== index));
     };
 
@@ -296,10 +327,10 @@ export default function ProductDetailView({ product, onBack }) {
                                                 <td className="px-4 py-3">{v.color || '-'}</td>
                                                 <td className="px-4 py-3 font-mono text-xs text-gray-600">{v.sku || '-'}</td>
                                                 <td className="px-4 py-3 text-gray-600">
-                                                    {v.price_adjustment > 0 ? `+${Number(v.price_adjustment).toFixed(2)}` : (v.price_adjustment < 0 ? Number(v.price_adjustment).toFixed(2) : '-')}
+                                                    {Number(v.price_adjustment) > 0 ? `+${Number(v.price_adjustment).toFixed(2)}` : (Number(v.price_adjustment) < 0 ? Number(v.price_adjustment).toFixed(2) : '-')}
                                                 </td>
                                                 <td className="px-4 py-3">
-                                                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${v.stock > 10 ? 'bg-green-100 text-green-700' : (v.stock > 0 ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-700')}`}>
+                                                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${Number(v.stock) > 10 ? 'bg-green-100 text-green-700' : (Number(v.stock) > 0 ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-700')}`}>
                                                         {v.stock}
                                                     </span>
                                                 </td>

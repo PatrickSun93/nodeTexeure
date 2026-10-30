@@ -4,26 +4,27 @@ import { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import OrderDetailView from '../OrderDetailView';
 import { useNotifications } from '../NotificationSystem';
+import type { OrderListItem, Table } from '@/types/api';
 
 // Bulk actions must send the real orders.id (`_id`); `id` is the display order
 // number, which the bulk endpoint can't match (it silently updated 0 orders).
-const orderKey = (order) => order._id || order.id;
+const orderKey = (order: OrderListItem) => order._id || order.id;
 
 export default function OrdersView() {
   const t = useTranslations('Dashboard');
   const notify = useNotifications();
-  const [orders, setOrders] = useState([]);
+  const [orders, setOrders] = useState<OrderListItem[]>([]);
   const [selectedStatus, setSelectedStatus] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
   const [dateInput, setDateInput] = useState(''); // draft value in the date picker
   const [appliedDate, setAppliedDate] = useState(''); // committed by the "Filters" button
-  const [selectedOrder, setSelectedOrder] = useState(null);
+  const [selectedOrder, setSelectedOrder] = useState<OrderListItem | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
   // Bulk-select + bulk status update state.
-  const [selectedOrderIds, setSelectedOrderIds] = useState(() => new Set());
+  const [selectedOrderIds, setSelectedOrderIds] = useState<Set<string>>(() => new Set());
   const [bulkStatus, setBulkStatus] = useState('');
   const [bulkBusy, setBulkBusy] = useState(false);
   const [reloadKey, setReloadKey] = useState(0);
@@ -32,7 +33,7 @@ export default function OrdersView() {
     const fetchOrders = async () => {
       try {
         const { apiFetch } = await import('../../utils/api');
-        const response = await apiFetch('/api/admin/orders');
+        const response = await apiFetch<Table<'orders', OrderListItem[]>>('/api/admin/orders');
 
         if (response.status === 'SUCCESS') {
           const data = response.keyValueTable.find(item => item.orders)?.orders || [];
@@ -52,7 +53,7 @@ export default function OrdersView() {
 
   const bulkStatuses = ['Pending', 'Processing', 'Shipped', 'Delivered', 'Cancelled'];
 
-  const toggleOrderSelected = (id) => {
+  const toggleOrderSelected = (id: string) => {
     setSelectedOrderIds((prev) => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id); else next.add(id);
@@ -60,7 +61,7 @@ export default function OrdersView() {
     });
   };
 
-  const toggleSelectAllOrders = (ids, checked) => {
+  const toggleSelectAllOrders = (ids: string[], checked: boolean) => {
     setSelectedOrderIds((prev) => {
       const next = new Set(prev);
       ids.forEach((id) => { if (checked) next.add(id); else next.delete(id); });
@@ -76,7 +77,7 @@ export default function OrdersView() {
     setBulkBusy(true);
     try {
       const { apiFetch } = await import('../../utils/api');
-      const response = await apiFetch('/api/admin/orders/bulk-update', {
+      const response = await apiFetch<Table<'result', { updated: number }>>('/api/admin/orders/bulk-update', {
         method: 'POST',
         body: JSON.stringify({ orderIds: Array.from(selectedOrderIds), status: bulkStatus }),
       });
@@ -98,7 +99,7 @@ export default function OrdersView() {
   };
 
   // Local YYYY-MM-DD for a timestamp, matching the value produced by the <input type="date">.
-  const toLocalYMD = (d) => {
+  const toLocalYMD = (d: string | null | undefined) => {
     if (!d) return '';
     try { return new Date(d).toLocaleDateString('en-CA'); } catch { return ''; }
   };
@@ -121,7 +122,7 @@ export default function OrdersView() {
 
   // Client-side CSV export of the currently displayed (filtered) orders.
   const handleExport = () => {
-    const escape = (val) => {
+    const escape = (val: unknown) => {
       const s = (val === null || val === undefined) ? '' : String(val);
       return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
     };
@@ -270,11 +271,11 @@ export default function OrdersView() {
             </thead>
             <tbody className="divide-y divide-gray-50">
               {isLoading ? (
-                <tr><td colSpan="8" className="px-6 py-10 text-center text-gray-500">{t('loadingOrders')}</td></tr>
+                <tr><td colSpan={8} className="px-6 py-10 text-center text-gray-500">{t('loadingOrders')}</td></tr>
               ) : error ? (
-                <tr><td colSpan="8" className="px-6 py-10 text-center text-red-500">{error}</td></tr>
+                <tr><td colSpan={8} className="px-6 py-10 text-center text-red-500">{error}</td></tr>
               ) : filteredOrders.length === 0 ? (
-                <tr><td colSpan="8" className="px-6 py-10 text-center text-gray-500">{t('noOrdersFound')}</td></tr>
+                <tr><td colSpan={8} className="px-6 py-10 text-center text-gray-500">{t('noOrdersFound')}</td></tr>
               ) : (
                 paginatedOrders.map((order) => (
                   <tr key={orderKey(order)} className={`hover:bg-gray-50 transition-colors ${selectedOrderIds.has(orderKey(order)) ? 'bg-brand-softer' : ''}`}>

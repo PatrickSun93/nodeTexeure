@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, type ChangeEvent } from 'react';
 import { useTranslations } from 'next-intl';
 import { useNotifications } from './NotificationSystem';
+import type { Coupon } from '@/types/api';
 
-export default function PromotionDetailView({ promotion, onBack }) {
+export default function PromotionDetailView({ promotion, onBack }: { promotion: Coupon | null; onBack: () => void }) {
     const t = useTranslations('PromotionDetailView');
     const notify = useNotifications();
     const isEditing = !!promotion;
@@ -10,7 +11,7 @@ export default function PromotionDetailView({ promotion, onBack }) {
     // Parse initial details
     const initialDetails = promotion?.discount_details || {};
     // Ensure properly parsed if string (though likely object)
-    const details = typeof initialDetails === 'string' ? JSON.parse(initialDetails) : initialDetails;
+    const details: Record<string, string | undefined> = typeof initialDetails === 'string' ? JSON.parse(initialDetails) : initialDetails;
 
     const getTodayDate = () => {
         const now = new Date();
@@ -21,7 +22,7 @@ export default function PromotionDetailView({ promotion, onBack }) {
     };
 
     // Parse dates from DB (format: YYYY-MM-DD HH:MM:SS or ISO string)
-    const parseDbDate = (dateStr) => {
+    const parseDbDate = (dateStr: string | null | undefined) => {
         if (!dateStr) return '';
         // Extract just the date part
         return dateStr.split('T')[0].split(' ')[0];
@@ -46,7 +47,7 @@ export default function PromotionDetailView({ promotion, onBack }) {
         usage_count: promotion?.usage_count || 0 // Read-only
     });
 
-    const handleQuickDuration = (days) => {
+    const handleQuickDuration = (days: number | 'EOM') => {
         const start = formData.startDate ? new Date(formData.startDate) : new Date();
         const end = new Date(start);
 
@@ -71,7 +72,7 @@ export default function PromotionDetailView({ promotion, onBack }) {
 
     const [isSaving, setIsSaving] = useState(false);
 
-    const handleChange = (e) => {
+    const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
     };

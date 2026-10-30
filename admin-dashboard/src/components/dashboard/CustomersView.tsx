@@ -4,16 +4,17 @@ import { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import CustomerDetailView from '../CustomerDetailView';
 import AddCustomerModal from '../AddCustomerModal';
+import type { CustomerListItem, Table } from '@/types/api';
 
 export default function CustomersView() {
   const t = useTranslations('Dashboard');
-  const [customers, setCustomers] = useState([]);
+  const [customers, setCustomers] = useState<CustomerListItem[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCustomer, setSelectedCustomer] = useState(null);
+  const [selectedCustomer, setSelectedCustomer] = useState<CustomerListItem | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<string | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [reloadKey, setReloadKey] = useState(0); // bumped after creating a customer to refetch
 
@@ -21,7 +22,7 @@ export default function CustomersView() {
     const fetchCustomers = async () => {
       try {
         const { apiFetch } = await import('../../utils/api');
-        const response = await apiFetch('/api/admin/users');
+        const response = await apiFetch<Table<'users', CustomerListItem[]>>('/api/admin/users');
 
         if (response.status === 'SUCCESS') {
           const data = response.keyValueTable.find(item => item.users)?.users || [];
@@ -129,11 +130,11 @@ export default function CustomersView() {
             </thead>
             <tbody className="divide-y divide-gray-50">
               {isLoading ? (
-                <tr><td colSpan="7" className="px-6 py-10 text-center text-gray-500">{t('loadingCustomers')}</td></tr>
+                <tr><td colSpan={7} className="px-6 py-10 text-center text-gray-500">{t('loadingCustomers')}</td></tr>
               ) : error ? (
-                <tr><td colSpan="7" className="px-6 py-10 text-center text-red-500">{error}</td></tr>
+                <tr><td colSpan={7} className="px-6 py-10 text-center text-red-500">{error}</td></tr>
               ) : filteredCustomers.length === 0 ? (
-                <tr><td colSpan="7" className="px-6 py-10 text-center text-gray-500">{t('noCustomersFound')}</td></tr>
+                <tr><td colSpan={7} className="px-6 py-10 text-center text-gray-500">{t('noCustomersFound')}</td></tr>
               ) : (
                 paginatedCustomers.map((customer) => (
                   <tr key={customer.id} className="hover:bg-gray-50 transition-colors">

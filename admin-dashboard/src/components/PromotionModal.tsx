@@ -1,15 +1,38 @@
-import React, { useState } from 'react';
+import React, { useState, type ChangeEvent } from 'react';
 import { useTranslations } from 'next-intl';
 import { useNotifications } from './NotificationSystem';
 
+/** The create form's fields (strings, as the inputs hold them). */
+interface PromotionForm {
+    name: string;
+    description: string;
+    code: string;
+    status: string;
+    type: string;
+    value: string;
+    minRequirements: string;
+    appliesTo: string;
+    startDate: string;
+    endDate: string;
+    minimum_order_amount: string;
+    maximum_discount_amount: string;
+    usage_limit: string;
+    usage_limit_per_customer: string;
+}
+
+interface PromotionModalFormProps {
+    onClose: () => void;
+    promotion: PromotionForm | null;
+}
+
 // The form lives in its own component so its hooks always run in the same
 // order, and it remounts (fresh form state) every time the modal opens.
-export default function PromotionModal({ isOpen, ...props }) {
+export default function PromotionModal({ isOpen, ...props }: PromotionModalFormProps & { isOpen: boolean }) {
     if (!isOpen) return null;
     return <PromotionModalForm {...props} />;
 }
 
-function PromotionModalForm({ onClose, promotion }) {
+function PromotionModalForm({ onClose, promotion }: PromotionModalFormProps) {
     const t = useTranslations('PromotionModal');
     const notify = useNotifications();
 
@@ -21,7 +44,7 @@ function PromotionModalForm({ onClose, promotion }) {
         return `${year}-${month}-${day}`;
     };
 
-    const [formData, setFormData] = useState(promotion || {
+    const [formData, setFormData] = useState<PromotionForm>(promotion || {
         name: '',
         description: '',
         code: '',
@@ -40,7 +63,7 @@ function PromotionModalForm({ onClose, promotion }) {
     });
     const [isSaving, setIsSaving] = useState(false);
 
-    const handleChange = (e) => {
+    const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
     };

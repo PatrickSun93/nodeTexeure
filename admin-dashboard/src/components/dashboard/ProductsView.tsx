@@ -3,24 +3,28 @@
 import { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import ProductDetailView from '../ProductDetailView';
+import type { ProductListItem, Table } from '@/types/api';
+
+/** Older list responses carried the thumbnail as thumbnail_small_url. */
+type ProductRow = ProductListItem & { thumbnail_small_url?: string | null };
 import { useNotifications } from '../NotificationSystem';
 
 export default function ProductsView() {
   const t = useTranslations('Dashboard');
   const notify = useNotifications();
-  const [viewMode, setViewMode] = useState('list'); // 'list', 'add', 'edit'
-  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [viewMode, setViewMode] = useState<'list' | 'add' | 'edit'>('list');
+  const [selectedProduct, setSelectedProduct] = useState<ProductRow | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('All');
   const [statusFilter, setStatusFilter] = useState('All');
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
-  const [products, setProducts] = useState([]);
+  const [products, setProducts] = useState<ProductRow[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<string | null>(null);
   // Bulk-select + bulk-delete state (selection keyed by row id; payload dedupes to product_id).
-  const [selectedProductRows, setSelectedProductRows] = useState(() => new Set());
+  const [selectedProductRows, setSelectedProductRows] = useState<Set<string>>(() => new Set());
   const [bulkBusy, setBulkBusy] = useState(false);
   const [reloadKey, setReloadKey] = useState(0);
 
@@ -28,7 +32,7 @@ export default function ProductsView() {
     const fetchProducts = async () => {
       try {
         const { apiFetch } = await import('../../utils/api');
-        const response = await apiFetch('/api/admin/products');
+        const response = await apiFetch<Table<'products', ProductRow[]>>('/api/admin/products');
 
         if (response.status === 'SUCCESS') {
           // Parse array of objects [{products: [...] }]
@@ -97,7 +101,7 @@ export default function ProductsView() {
     displayProducts.filter((p) => selectedProductRows.has(p.id)).map((p) => p.product_id || p.id)
   ));
 
-  const toggleProductRow = (id) => {
+  const toggleProductRow = (id: string) => {
     setSelectedProductRows((prev) => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id); else next.add(id);
@@ -105,7 +109,7 @@ export default function ProductsView() {
     });
   };
 
-  const toggleSelectAllProducts = (ids, checked) => {
+  const toggleSelectAllProducts = (ids: string[], checked: boolean) => {
     setSelectedProductRows((prev) => {
       const next = new Set(prev);
       ids.forEach((id) => { if (checked) next.add(id); else next.delete(id); });
@@ -121,7 +125,7 @@ export default function ProductsView() {
     setBulkBusy(true);
     try {
       const { apiFetch } = await import('../../utils/api');
-      const response = await apiFetch('/api/admin/products/bulk-delete', {
+      const response = await apiFetch<Table<'result', { deleted: number }>>('/api/admin/products/bulk-delete', {
         method: 'POST',
         body: JSON.stringify({ productIds: selectedProductIds }),
       });
@@ -147,7 +151,7 @@ export default function ProductsView() {
     setViewMode('add');
   };
 
-  const handleEditProduct = (product) => {
+  const handleEditProduct = (product: ProductRow) => {
     setSelectedProduct(product);
     setViewMode('edit');
   };
@@ -159,7 +163,7 @@ export default function ProductsView() {
 
   // Wire the row trash button to DELETE /api/admin/products/:id (real endpoint).
   // The list flattens variants into rows, so delete the parent product id (product_id).
-  const handleDeleteProduct = async (product) => {
+  const handleDeleteProduct = async (product: ProductRow) => {
     const pid = product.product_id || product.id;
     if (!pid) return;
     if (!confirm(t('confirmDeleteProduct'))) return;
@@ -281,11 +285,11 @@ export default function ProductsView() {
             </thead>
             <tbody className="divide-y divide-gray-50">
               {isLoading ? (
-                <tr><td colSpan="8" className="px-6 py-10 text-center text-gray-500">{t('loadingProducts')}</td></tr>
+                <tr><td colSpan={8} className="px-6 py-10 text-center text-gray-500">{t('loadingProducts')}</td></tr>
               ) : error ? (
-                <tr><td colSpan="8" className="px-6 py-10 text-center text-red-500">{error}</td></tr>
+                <tr><td colSpan={8} className="px-6 py-10 text-center text-red-500">{error}</td></tr>
               ) : filteredProducts.length === 0 ? (
-                <tr><td colSpan="8" className="px-6 py-10 text-center text-gray-500">{t('noProductsFound')}</td></tr>
+                <tr><td colSpan={8} className="px-6 py-10 text-center text-gray-500">{t('noProductsFound')}</td></tr>
               ) : (
                 paginatedProducts.map((product) => (
                   <tr key={product.id} className={`hover:bg-gray-50 transition-colors ${selectedProductRows.has(product.id) ? 'bg-brand-softer' : ''}`}>
