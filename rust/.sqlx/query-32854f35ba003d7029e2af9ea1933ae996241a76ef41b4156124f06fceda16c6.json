@@ -1,0 +1,12 @@
+{
+  "db_name": "MySQL",
+  "query": "DELETE FROM wishlists WHERE user_id = ? AND product_id = ?",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": []
+  },
+  "hash": "32854f35ba003d7029e2af9ea1933ae996241a76ef41b4156124f06fceda16c6"
+}

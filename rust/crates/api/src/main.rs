@@ -1,5 +1,6 @@
 use std::net::SocketAddr;
 
+use api::auth::JwtKey;
 use api::{AppState, router};
 use sqlx::mysql::MySqlPoolOptions;
 use tracing_subscriber::EnvFilter;
@@ -38,10 +39,37 @@ async fn main() -> anyhow::Result<()> {
         .max_connections(common::env::number("API_DB_POOL_SIZE", 10))
         .connect_lazy_with(common::database_options()?);
 
+    // Same rule as the Node backend: outside development/test, refuse to start
+    // with a missing, short or placeholder secret (it signs every session).
+    let secret = common::env::var("JWT_SECRET");
+    let env = common::env::var("NODE_ENV").unwrap_or_default();
+    let is_dev = env == "development" || env == "test";
+    let weak = secret.as_deref().is_none_or(|s| {
+        let lower = s.to_lowercase();
+        s.len() < 32
+            || [
+                "your-super-secret",
+                "change_me",
+                "change-me",
+                "changeme",
+                "placeholder",
+                "example",
+                "min-32-chars",
+            ]
+            .iter()
+            .any(|p| lower.contains(p))
+    });
+    if !is_dev && weak {
+        anyhow::bail!(
+            "JWT_SECRET is missing, too short, or a placeholder; set a strong 32+ character secret"
+        );
+    }
+    let jwt = JwtKey::from_secret(secret.as_deref());
+
     let addr = SocketAddr::from(([0, 0, 0, 0], common::env::number("API_PORT", 7000)));
     let listener = tokio::net::TcpListener::bind(addr).await?;
     tracing::info!(%addr, "Rust API listening");
-    axum::serve(listener, router(AppState { pool }))
+    axum::serve(listener, router(AppState { pool, jwt }))
         .with_graceful_shutdown(shutdown_signal())
         .await?;
     Ok(())

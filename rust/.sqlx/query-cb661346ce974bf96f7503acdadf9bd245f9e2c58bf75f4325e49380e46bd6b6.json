@@ -1,0 +1,12 @@
+{
+  "db_name": "MySQL",
+  "query": "INSERT INTO wishlists (id, user_id, product_id, variant_id) VALUES (?, ?, ?, ?)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 4
+    },
+    "nullable": []
+  },
+  "hash": "cb661346ce974bf96f7503acdadf9bd245f9e2c58bf75f4325e49380e46bd6b6"
+}

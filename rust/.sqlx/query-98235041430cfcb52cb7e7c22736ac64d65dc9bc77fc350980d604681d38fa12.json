@@ -1,0 +1,44 @@
+{
+  "db_name": "MySQL",
+  "query": "SELECT role AS \"role!: String\", status AS \"status: String\", token_version FROM users WHERE id = ?",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "role!: String",
+        "type_info": {
+          "type": "String",
+          "flags": "NOT_NULL | MULTIPLE_KEY | ENUM",
+          "max_size": 32
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "status: String",
+        "type_info": {
+          "type": "String",
+          "flags": "NOT_NULL | MULTIPLE_KEY | ENUM",
+          "max_size": 36
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "token_version",
+        "type_info": {
+          "type": "Long",
+          "flags": "NOT_NULL",
+          "max_size": 11
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "98235041430cfcb52cb7e7c22736ac64d65dc9bc77fc350980d604681d38fa12"
+}
