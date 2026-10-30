@@ -148,4 +148,23 @@ export const blocksToPreviewHtml = (blocks: Block[] | null | undefined) => {
     return blocks.map(block => blockToHtmlString(block)).join('\n');
 };
 
+// Plain-text part of the email (text_content) from the generated HTML: block
+// ends become line breaks, tags go, and the common entities are decoded.
+export const htmlToText = (html: string) =>
+    html
+        .replace(/<head[\s\S]*?<\/head>/gi, '')
+        .replace(/<br\s*\/?>/gi, '\n')
+        .replace(/<\/(p|div|h[1-6]|tr|li)>/gi, '\n')
+        .replace(/<[^>]+>/g, '')
+        .replace(/&nbsp;/g, ' ')
+        .replace(/&amp;/g, '&')
+        .replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>')
+        .replace(/&quot;/g, '"')
+        .replace(/&#39;/g, "'")
+        .split('\n')
+        .map((line) => line.replace(/\s+/g, ' ').trim())
+        .filter(Boolean)
+        .join('\n');
+
 export default blocksToHtml;

@@ -2,15 +2,26 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import EmailBlockEditor from './email-editor/EmailBlockEditor';
 import PreviewPanel from './email-editor/PreviewPanel';
 import VariablesPalette from './email-editor/VariablesPalette';
-import { blocksToHtml } from './email-editor/utils/blockToHtml';
+import { blocksToHtml, htmlToText } from './email-editor/utils/blockToHtml';
 import { htmlToBlocks } from './email-editor/utils/htmlToBlocks';
 import { useNotifications } from './NotificationSystem';
 import type { Block } from './email-editor/utils/blockTypes';
 import type { EmailTemplateSummary } from '@/types/api';
 
-/** template_content: JSON { blocks, html }, older { html }, or raw HTML */
+/**
+ * template_content is JSON. The editor writes { blocks, html }; the system
+ * templates (migration 012) hold { html_content, text_content, variables },
+ * and html_content/text_content are what the queue producers (Node and Rust)
+ * send. Older rows may hold { html } or raw HTML.
+ */
 type TemplateDetail = EmailTemplateSummary & { template_content: unknown };
-type StoredContent = { blocks?: Block[]; html?: string };
+type StoredContent = {
+    blocks?: Block[];
+    html?: string;
+    html_content?: string;
+    text_content?: string;
+    [key: string]: unknown;
+};
 
 interface EmailTemplateEditorViewProps {
     onBack: () => void;
@@ -41,6 +52,8 @@ export default function EmailTemplateEditorView({ onBack, initialData = null }: 
     // Refs for auto-save
     const autoSaveTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
     const blocksRef = useRef(blocks);
+    // The loaded template_content, so a save keeps keys the editor doesn't own (variables).
+    const storedContentRef = useRef<StoredContent>({});
 
     // Keep blocksRef updated
     useEffect(() => {
@@ -89,33 +102,34 @@ export default function EmailTemplateEditorView({ onBack, initialData = null }: 
                         setStatus(data.status === 'Active');
                         setType(data.type || 'Marketing');
 
-                        // Parse content
+                        // Parse content (mysql2 returns the JSON column parsed;
+                        // a string is either JSON text or raw HTML)
+                        let stored: StoredContent | null = null;
                         const loadedContent = data.template_content;
-
-                        // Handle JSON stringified content
                         if (typeof loadedContent === 'string') {
                             try {
                                 const parsed = JSON.parse(loadedContent);
-                                if (parsed.blocks && Array.isArray(parsed.blocks)) {
-                                    // New format with blocks
-                                    setBlocks(parsed.blocks);
-                                } else if (parsed.html) {
-                                    // Old format with just HTML
-                                    setBlocks(htmlToBlocks(parsed.html));
-                                } else {
-                                    // Unknown format, try to parse as HTML
-                                    setBlocks(htmlToBlocks(loadedContent));
-                                }
+                                if (parsed && typeof parsed === 'object') stored = parsed;
                             } catch (e) {
                                 // Not JSON, treat as raw HTML
-                                setBlocks(htmlToBlocks(loadedContent));
                             }
-                        } else if (typeof loadedContent === 'object') {
-                            const stored = loadedContent as StoredContent | null;
-                            if (stored?.blocks) {
+                            if (!stored) setBlocks(htmlToBlocks(loadedContent));
+                        } else if (loadedContent && typeof loadedContent === 'object') {
+                            stored = loadedContent as StoredContent;
+                        }
+
+                        if (stored) {
+                            storedContentRef.current = stored;
+                            const html = stored.html || stored.html_content;
+                            if (stored.blocks && Array.isArray(stored.blocks)) {
+                                // New format with blocks
                                 setBlocks(stored.blocks);
-                            } else if (stored?.html) {
-                                setBlocks(htmlToBlocks(stored.html));
+                            } else if (html) {
+                                // HTML only: editor { html } or a system template's html_content
+                                setBlocks(htmlToBlocks(html));
+                            } else if (typeof loadedContent === 'string') {
+                                // Unknown format, try to parse as HTML
+                                setBlocks(htmlToBlocks(loadedContent));
                             }
                         }
                     }
@@ -145,9 +159,14 @@ export default function EmailTemplateEditorView({ onBack, initialData = null }: 
                 preheader,
                 status: status ? 'Active' : 'Draft',
                 type,
+                // html_content/text_content are what gets sent; writing only
+                // { blocks, html } left system templates sending empty emails.
                 content: {
+                    ...storedContentRef.current,
                     blocks: blocks,
                     html: html,
+                    html_content: html,
+                    text_content: htmlToText(html),
                 },
             };
 
