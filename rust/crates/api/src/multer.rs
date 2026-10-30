@@ -249,7 +249,7 @@ fn media_name(s: &str, extra: &[u8]) -> bool {
 
 /// type-is's `tryNormalizeType` (media-typer 0.3 `parse` then `format`
 /// without parameters): `type/subtype[+suffix]`, or `None` if it throws.
-fn normalize_media_type(value: &str) -> Option<String> {
+pub(crate) fn normalize_media_type(value: &str) -> Option<String> {
     if value.is_empty() {
         return None;
     }

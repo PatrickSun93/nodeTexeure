@@ -106,21 +106,10 @@ pub fn strict_violation_message(text: &str) -> String {
     }
 }
 
-/// The best-effort V8 `JSON.parse` message: exact for an empty/truncated
-/// text and for a text that cannot start a JSON value; serde's wording
-/// otherwise.
+/// V8's `JSON.parse` message for `text` ([`crate::v8_json`]); empty when it
+/// parses.
 pub fn json_syntax_message(text: &str) -> String {
-    let Some((first, pos)) = first_token(text) else {
-        return "Unexpected end of JSON input".into();
-    };
-    match serde_json::from_str::<serde::de::IgnoredAny>(text) {
-        Err(err) if err.is_eof() => "Unexpected end of JSON input".into(),
-        Err(_) if !matches!(first, '{' | '[' | '"' | '-' | '0'..='9' | 't' | 'f' | 'n') => {
-            unexpected_token(text, pos)
-        }
-        Err(err) => err.to_string(),
-        Ok(_) => String::new(),
-    }
+    crate::v8_json::parse(text).err().unwrap_or_default()
 }
 
 /// `req.body` after `express.json()` and `express.urlencoded({ extended: true })`:
