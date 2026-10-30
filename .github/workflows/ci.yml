@@ -1,0 +1,100 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  storefront:
+    name: Storefront (lint + build)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run build
+      - name: docs/API.md is up to date
+        run: node scripts/gen-api-docs.js && git diff --exit-code docs/API.md
+
+  admin:
+    name: Admin (lint + build)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: admin-dashboard
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: admin-dashboard/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run build
+
+  backend:
+    name: Backend (API tests on MySQL)
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: ci_root
+          MYSQL_DATABASE: bed_texture_ecommerce
+        ports: ['3306:3306']
+        options: >-
+          --health-cmd="mysqladmin ping -h localhost -uroot -pci_root"
+          --health-interval=5s --health-timeout=5s --health-retries=20
+    env:
+      DB_HOST: 127.0.0.1
+      DB_PORT: '3306'
+      DB_USER: root
+      DB_PASSWORD: ci_root
+      DB_NAME: bed_texture_ecommerce
+      NODE_ENV: test
+      JWT_SECRET: ci_only_jwt_secret_value_long_enough_0123456789
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+      - run: npm ci
+      - name: Syntax check
+        run: git ls-files '*.js' | xargs -n1 node --check
+      - name: Load schema
+        run: mysql -h 127.0.0.1 -uroot -pci_root bed_texture_ecommerce < ../docker/mysql/init.sql
+      - run: npm run migrate
+      - run: npm run seed:rnd && npm run seed:example
+      - run: npm test
+
+  audit:
+    name: Dependency audit
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        app: [., admin-dashboard, backend]
+    defaults:
+      run:
+        working-directory: ${{ matrix.app }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm audit --omit=dev --audit-level=high

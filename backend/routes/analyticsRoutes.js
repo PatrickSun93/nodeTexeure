@@ -5,15 +5,6 @@ const ResponseFormatter = require('../utils/responseFormatter');
 const { protect, admin } = require('../middleware/authMiddleware');
 
 /**
- * Normalize a DatabaseUtil.executeQuery result to a plain rows array.
- * executeQuery returns `{ success, data }` on success, but some callers pass a
- * bare rows array — handle both (the wrapper-vs-array gotcha in this repo).
- */
-function norm(result) {
-    return Array.isArray(result) ? result : (result && result.data) || [];
-}
-
-/**
  * Clamp a value to a safe positive integer (used to inline LIMIT values, which
  * mysql2 prepared statements cannot bind as `LIMIT ?`).
  */
@@ -252,7 +243,7 @@ router.get('/top-products', protect, admin, async (req, res) => {
                 start: startDate,
                 end: endDate
             },
-            products: norm(result).map(row => ({
+            products: DatabaseUtil.rows(result).map(row => ({
                 id: row.id,
                 name: row.name,
                 slug: row.slug,
@@ -472,7 +463,7 @@ router.get('/revenue-by-category', protect, admin, async (req, res) => {
 
         const result = await DatabaseUtil.executeQuery(query, [startDate, endDate]);
 
-        const total_revenue = norm(result).reduce((sum, row) => sum + parseFloat(row.total_revenue || 0), 0);
+        const total_revenue = DatabaseUtil.rows(result).reduce((sum, row) => sum + parseFloat(row.total_revenue || 0), 0);
 
         res.json(ResponseFormatter.success('Revenue by category fetched successfully', {
             period: {
@@ -480,7 +471,7 @@ router.get('/revenue-by-category', protect, admin, async (req, res) => {
                 end: endDate
             },
             total_revenue: total_revenue.toFixed(2),
-            categories: norm(result).map(row => ({
+            categories: DatabaseUtil.rows(result).map(row => ({
                 category: row.category_name,
                 product_count: row.product_count,
                 items_sold: row.items_sold,
@@ -526,7 +517,7 @@ router.get('/revenue-vs-target', protect, admin, async (req, res) => {
         `;
 
         const result = await DatabaseUtil.executeQuery(query, [startDate, now]);
-        const byMonth = new Map(norm(result).map(r => [r.ym, r]));
+        const byMonth = new Map(DatabaseUtil.rows(result).map(r => [r.ym, r]));
 
         const MONTH_LABELS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
         // Build a continuous month series so gaps render as zero (real, not mock).
@@ -622,7 +613,7 @@ router.get('/revenue-by-weekday', protect, admin, async (req, res) => {
         `;
 
         const result = await DatabaseUtil.executeQuery(query, [startDate, endDate]);
-        const byDow = new Map(norm(result).map(r => [Number(r.dow), r]));
+        const byDow = new Map(DatabaseUtil.rows(result).map(r => [Number(r.dow), r]));
 
         const DAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
         const days = [];
@@ -704,7 +695,7 @@ router.get('/bottom-products', protect, admin, async (req, res) => {
 
         res.json(ResponseFormatter.success('Bottom products fetched successfully', {
             period: { start: startDate, end: endDate },
-            products: norm(result).map(row => ({
+            products: DatabaseUtil.rows(result).map(row => ({
                 id: row.id,
                 name: row.name,
                 slug: row.slug,
@@ -754,7 +745,7 @@ router.get('/conversion-funnel', protect, admin, async (req, res) => {
             DatabaseUtil.executeQuery(deliveredQ, [startDate, endDate])
         ]);
 
-        const val = r => Number((norm(r)[0] || {}).n || 0);
+        const val = r => Number((DatabaseUtil.rows(r)[0] || {}).n || 0);
         const raw = [
             { key: 'carts', label: 'Shopping carts', count: val(cartsR) },
             { key: 'orders', label: 'Orders placed', count: val(placedR) },
@@ -856,9 +847,9 @@ router.get('/new-vs-returning', protect, admin, async (req, res) => {
             DatabaseUtil.executeQuery(repeatQuery)
         ]);
 
-        const split = norm(splitR)[0] || {};
-        const metrics = norm(metricsR)[0] || {};
-        const repeatCustomers = Number((norm(repeatR)[0] || {}).n || 0);
+        const split = DatabaseUtil.rows(splitR)[0] || {};
+        const metrics = DatabaseUtil.rows(metricsR)[0] || {};
+        const repeatCustomers = Number((DatabaseUtil.rows(repeatR)[0] || {}).n || 0);
 
         const newRev = parseFloat(split.new_revenue || 0);
         const retRev = parseFloat(split.returning_revenue || 0);
@@ -947,8 +938,8 @@ router.get('/revenue-shortfall', protect, admin, async (req, res) => {
             };
         };
 
-        const cur = shape(norm(curR)[0] || {});
-        const prev = shape(norm(prevR)[0] || {});
+        const cur = shape(DatabaseUtil.rows(curR)[0] || {});
+        const prev = shape(DatabaseUtil.rows(prevR)[0] || {});
 
         const deltaRevenue = cur.revenue - prev.revenue;
         const volumeEffect = (cur.orders - prev.orders) * prev.aov;

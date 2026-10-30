@@ -14,14 +14,15 @@ Design direction: **"Champagne & Charcoal"** (see [docs/DESIGN.md](docs/DESIGN.m
 |-----|------|-------|------|
 | Storefront (frontend) | `src/` | Next.js 15, React 19, Tailwind 4 | 3000 |
 | Backend API | `backend/` | Express.js, MySQL (`mysql2`), JWT | 6666 |
-| Admin dashboard | `admin-dashboard/` | Next.js 14, React 18 | 3005 |
+| Admin dashboard | `admin-dashboard/` | Next.js 15, React 19 | 3005 |
 
-Database: MySQL 8.0, ~42 tables, custom prefixed IDs (`PROD0000000001`), triggers,
+Database: MySQL 8.0 (schema migrations in `backend/migrations/`, applied on
+backend start via `npm run migrate`), ~42 tables, custom prefixed IDs (`PROD0000000001`), triggers,
 and a `get_next_id('PREFIX')` SQL function.
 
 ## Running it
 
-**Docker is the primary dev flow (PM2 is deprecated).**
+**Docker is the primary dev flow.**
 
 ```bash
 docker compose up            # mysql + backend + frontend + admin, hot-reload
@@ -46,7 +47,8 @@ Verify: `npm run test` (lint + build) and `npm run smoke` (stack health).
   `/api/<route>/*` to the backend. **The rewrite target is baked in at
   `next build`** — change `BACKEND_URL`/`PRODUCTION_BACKEND_URL` then rebuild.
 - **Auth.** JWT via `Authorization: Bearer` header or an `admin_auth` HttpOnly
-  cookie. Middleware: `protect` (auth), `admin` (admin role), `protectOptional`.
+  cookie. `protect` re-reads role/status/`token_version` from `users` on each
+  request, so bumping `token_version` revokes a user's tokens immediately. Middleware: `protect` (auth), `protectOptional`, `staffOrAdmin`, `admin`.
   Admin write endpoints also require a CSRF token (`X-CSRF-Token`). Customer and
   admin auth flows are separate.
 - **Response format.** Every endpoint returns
@@ -78,16 +80,25 @@ imagery is served from the `product_images` table (`public/images/bedding/*.jpg`
 
 - **Port 6666 is a browser-blocked "bad port."** Browsers and Node `fetch`
   refuse it. Client code must call `/api/*` (relative, via the proxy), never
-  `http://localhost:6666` directly. Server-side, use `http.request` (not fetch).
-- **`executeQuery` return shape is inconsistent across routes** (some expect a
-  rows array, some a `{success, data}` wrapper) — normalize when you touch a
-  route (`Array.isArray(r) ? r : r?.data || []`).
+  `http://localhost:6666` directly. Server-side, use `getBackendJson()` from
+  `src/lib/server/backend.js` (it uses `http.request`; Node's fetch refuses the port).
+- **`executeQuery` never throws and always returns `{ success, data, affectedRows,
+  insertId }`** (`{ success: false, error }` on failure). Read rows with
+  `DatabaseUtil.rows(result)` / `DatabaseUtil.first(result)` — never index the
+  wrapper — and check `result.success` on writes, or failures are silent.
 - **`payments.status` is a strict ENUM** — valid values include `completed`,
   `refunded`, `pending` (not `succeeded`).
 - **The macOS local MySQL CLI can be flaky here** — query via a small `mysql2`
   node script instead (see `seed-example-data.js`).
 - **Admin writes need a CSRF token**; a bare `curl` POST returns
   "CSRF token required" — that's correct, not a bug.
+
+## Docs map
+
+[docs/DATABASE.md](docs/DATABASE.md) (schema, IDs, migrations) ·
+[docs/API.md](docs/API.md) (generated — run `node scripts/gen-api-docs.js` after
+changing routes) · [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) ·
+[backend/README.md](backend/README.md).
 
 ## Adding a feature
 
@@ -97,11 +108,18 @@ proxy + design tokens → seed example data → smoke test).
 
 ## Testing
 
-- `npm run test` — ESLint + production `next build` (the CI gate).
+- `npm run test` — storefront ESLint + production `next build`.
+- `cd backend && npm test` — Jest + supertest API tests against a real, seeded
+  MySQL (`tests/*.test.js`: auth, revocation, CSRF, IDOR, checkout, SQLi). Point
+  `DB_HOST`/`DB_PORT` at the Docker MySQL (`DB_PORT=3307`).
 - `npm run smoke` — checks the running stack (frontend pages + backend via proxy).
-- Security posture verified: privilege escalation, IDOR, JWT forgery (incl.
-  `alg:none`), and SQL injection are all blocked; unauth hits redirect to login.
-  Keep it that way — new admin routes go under `protect, admin` (+ CSRF for writes).
+- CI (`.github/workflows/ci.yml`) runs all of the above for both Next apps and the
+  backend (MySQL service → `init.sql` → `migrate` → seed → tests) plus `npm audit`.
+- Security posture is enforced by those tests: privilege escalation, IDOR, JWT
+  forgery (incl. `alg:none`), revoked sessions, and SQL injection are blocked.
+  Keep it that way — new admin routes go in `backend/routes/admin/` with an `admin` or
+  `staffOrAdmin` guard (+ CSRF for writes)
+  and get a test. Role denials are 403; missing/invalid auth is 401.
 
 ## Conventions
 

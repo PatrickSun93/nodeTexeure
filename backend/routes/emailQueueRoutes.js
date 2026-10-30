@@ -77,14 +77,6 @@ function dbStatusToBucket(raw) {
   }
 }
 
-// executeQuery always resolves to { success, data, affectedRows } but normalize
-// defensively per repo convention in case a caller returns a bare rows array.
-function rowsOf(res) {
-  if (Array.isArray(res)) return res;
-  if (res && Array.isArray(res.data)) return res.data;
-  return [];
-}
-
 // processing_details is a JSON column (mysql2 returns it parsed) but tolerate a
 // raw string too.
 function extractError(processingDetails) {
@@ -118,7 +110,7 @@ async function getStatusCounts() {
   );
   const counts = { queued: 0, sending: 0, sent: 0, failed: 0, cancelled: 0 };
   let total = 0;
-  for (const row of rowsOf(res)) {
+  for (const row of DatabaseUtil.rows(res)) {
     const n = toNum(row.count);
     total += n;
     const bucket = dbStatusToBucket(row.status);
@@ -144,7 +136,7 @@ async function getWorkerStatus() {
         SUM(status = 'sent' AND sent_at >= DATE_SUB(NOW(), INTERVAL 1 HOUR)) AS sent_last_hour
      FROM email_queue`
   );
-  const row = rowsOf(res)[0] || {};
+  const row = DatabaseUtil.rows(res)[0] || {};
   const pendingTotal = toNum(row.pending_total);
   const sendingTotal = toNum(row.sending_total);
   const oldestAge =
@@ -211,7 +203,7 @@ router.get('/', protect, admin, adminReadLimiter, async (req, res) => {
       throw new Error(listRes.error || 'Failed to load email queue');
     }
 
-    const emails = rowsOf(listRes).map((row) => ({
+    const emails = DatabaseUtil.rows(listRes).map((row) => ({
       id: row.id,
       to: row.to_email,
       toName: row.to_name || null,

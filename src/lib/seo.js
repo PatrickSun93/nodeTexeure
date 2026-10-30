@@ -9,7 +9,7 @@ export const defaultSEO = {
   keywords: 'bed textures, luxury linens, Egyptian cotton sheets, silk pillowcases, premium bedding, home textiles, bedroom decor',
   siteName: 'Noiraé',
   siteUrl: process.env.NEXT_PUBLIC_SITE_URL || 'https://noirae.com',
-  image: '/images/og-default.jpg',
+  image: '/images/bedding/bed-1.jpg',
   locale: 'en_US',
   type: 'website'
 };
@@ -93,14 +93,7 @@ export function generateStructuredData(type, data) {
         '@type': 'Organization',
         name: defaultSEO.siteName,
         url: defaultSEO.siteUrl,
-        logo: `${defaultSEO.siteUrl}/images/logo.png`,
-        description: defaultSEO.description,
-        contactPoint: {
-          '@type': 'ContactPoint',
-          telephone: '+1-555-0123',
-          contactType: 'customer service',
-          availableLanguage: ['English', 'Chinese']
-        }
+        description: defaultSEO.description
       };
 
     case 'product':
@@ -119,7 +112,9 @@ export function generateStructuredData(type, data) {
           '@type': 'Offer',
           price: data.base_price || data.price,
           priceCurrency: 'USD',
-          availability: data.stock_quantity > 0 ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
+          ...(data.stock_quantity !== undefined && {
+            availability: data.stock_quantity > 0 ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
+          }),
           url: `${defaultSEO.siteUrl}/products/${data.id}`,
           seller: {
             '@type': 'Organization',
@@ -238,12 +233,13 @@ export function generateCanonicalUrl(path) {
   return `${defaultSEO.siteUrl}${cleanPath}`;
 }
 
+// No hreflang: locale is a cookie (NEXT_LOCALE), not a URL segment, so every
+// language is served from the same URL — there are no alternate URLs to list.
+
 /**
- * Generate hreflang tags for multi-language support
+ * Serialize JSON-LD for a <script> tag. Escapes '<' so data such as a product
+ * name containing </script> can't break out of the tag.
  */
-export function generateHreflangTags(path, languages = ['en', 'zh-CN']) {
-  return languages.map(lang => ({
-    hreflang: lang,
-    href: `${defaultSEO.siteUrl}/${lang}${path}`
-  }));
+export function jsonLd(data) {
+  return { __html: JSON.stringify(data).replace(/</g, '\\u003c') };
 }

@@ -30,6 +30,10 @@ function applyTranslation(p) {
 }
 
 // GET /api/products - Product listing with pagination and filters (with caching)
+// Listing image: the primary product image (else the first by sort order).
+const PRIMARY_IMAGE_SQL = `(SELECT COALESCE(pi.thumbnail_medium_url, pi.original_url) FROM product_images pi
+  WHERE pi.product_id = p.id ORDER BY pi.is_primary DESC, pi.sort_order ASC LIMIT 1) AS image`;
+
 router.get('/', PerformanceMiddleware.responseCache({
   ttl: 300, // 5 minutes cache
   cacheType: 'products',
@@ -42,6 +46,7 @@ router.get('/', PerformanceMiddleware.responseCache({
     const offset = (page - 1) * limit;
     // p.* plus the translated overrides (t_*); COALESCE falls back to the English base.
     let query = `SELECT p.*,
+        ${PRIMARY_IMAGE_SQL},
         COALESCE(pt.name, p.name) AS t_name,
         COALESCE(pt.short_description, p.short_description) AS t_short_description,
         COALESCE(pt.description, p.description) AS t_description
@@ -131,7 +136,7 @@ router.get('/', PerformanceMiddleware.responseCache({
       const p = applyTranslation(row);
       return {
         ...p,
-        image: p.image || p.thumbnail_small_url || p.thumbnail_medium_url || p.thumbnail_large_url || null,
+        image: p.image || null,
       };
     });
 
@@ -156,11 +161,11 @@ router.get('/by-ids', async (req, res) => {
       idList = raw.split(',').map(v => v.trim()).filter(Boolean);
     }
 
-    // Validate and normalize to integers
-    const ids = idList.filter(v => /^\d+$/.test(v)).map(v => parseInt(v, 10));
+    // Product ids are custom prefixed ids (PROD0000000001)
+    const ids = idList.filter(v => /^PROD\d{10}$/.test(v));
 
     if (!ids || ids.length === 0) {
-      return res.status(400).json(ResponseFormatter.failure('Parameter "ids" is required and must contain at least one numeric id'));
+      return res.status(400).json(ResponseFormatter.failure('Parameter "ids" is required and must contain at least one product id'));
     }
 
     // Limit to prevent abuse
@@ -172,7 +177,8 @@ router.get('/by-ids', async (req, res) => {
     const placeholders = ids.map(() => '?').join(', ');
     const orderPlaceholders = ids.map(() => '?').join(', ');
 
-    const query = `SELECT * FROM products WHERE id IN (${placeholders}) AND status = ? ORDER BY FIELD(id, ${orderPlaceholders})`;
+    const query = `SELECT p.*, ${PRIMARY_IMAGE_SQL} FROM products p
+      WHERE p.id IN (${placeholders}) AND p.status = ? ORDER BY FIELD(p.id, ${orderPlaceholders})`;
 
     const result = await DatabaseUtil.executeQuery(query, [...ids, 'approved', ...ids]);
     if (!result.success) throw new Error(result.error || 'Failed to fetch products by ids');
@@ -180,10 +186,7 @@ router.get('/by-ids', async (req, res) => {
     const rows = result.data || [];
 
     // Map image alias for frontend compatibility
-    const products = rows.map(p => ({
-      ...p,
-      image: p.image || p.thumbnail_small_url || p.thumbnail_medium_url || p.thumbnail_large_url || null,
-    }));
+    const products = rows.map(p => ({ ...p, image: p.image || null }));
 
     const keyValueTable = { products, total: products.length };
     res.json(ResponseFormatter.success('Products fetched by IDs successfully', keyValueTable));

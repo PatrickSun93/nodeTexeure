@@ -10,13 +10,26 @@ const DatabaseUtil = require('../utils/database');
 const shippingService = require('../services/shippingService');
 const { protect, admin, protectOptional } = require('../middleware/authMiddleware');
 const db = DatabaseUtil; // executeQuery et al. are static — reference the class, not an instance
+const rateLimit = require('express-rate-limit');
+
+// Public quote/tracking endpoints call the carrier API when FedEx is configured;
+// cap them per IP so they can't be used to burn the carrier quota.
+const isDev = process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test';
+const carrierLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: Number.parseInt(process.env.SHIPPING_RATE_LIMIT_MAX, 10) || 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { status: 'FAIL', message: 'Too many shipping requests, please try again shortly' },
+  skip: () => isDev || process.env.DISABLE_RATE_LIMIT === 'true',
+});
 
 /**
  * POST /api/shipping/rates
  * Get shipping rate quotes for given address
  * Body: { destination: { postalCode, stateOrProvinceCode, countryCode, city }, items: [{ weight }] }
  */
-router.post('/rates', async (req, res) => {
+router.post('/rates', carrierLimiter, async (req, res) => {
   try {
     const { destination, items } = req.body;
 
@@ -125,7 +138,7 @@ router.post('/create-label', protect, admin, async (req, res) => {
  * GET /api/shipping/track/:trackingNumber
  * Get tracking information for a shipment
  */
-router.get('/track/:trackingNumber', async (req, res) => {
+router.get('/track/:trackingNumber', carrierLimiter, async (req, res) => {
   try {
     const { trackingNumber } = req.params;
 

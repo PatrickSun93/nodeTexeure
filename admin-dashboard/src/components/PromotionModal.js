@@ -1,9 +1,15 @@
 import React, { useState } from 'react';
 import { useTranslations } from 'next-intl';
 
-export default function PromotionModal({ isOpen, onClose, promotion }) {
-    const t = useTranslations('PromotionModal');
+// The form lives in its own component so its hooks always run in the same
+// order, and it remounts (fresh form state) every time the modal opens.
+export default function PromotionModal({ isOpen, ...props }) {
     if (!isOpen) return null;
+    return <PromotionModalForm {...props} />;
+}
+
+function PromotionModalForm({ onClose, promotion }) {
+    const t = useTranslations('PromotionModal');
 
     const getTodayDate = () => {
         const now = new Date();
@@ -112,7 +118,7 @@ export default function PromotionModal({ isOpen, onClose, promotion }) {
                                     value={formData.name}
                                     onChange={handleChange}
                                     placeholder={t('promotionNamePlaceholder')}
-                                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#C5A572]"
+                                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand"
                                 />
                             </div>
                             <div>
@@ -123,7 +129,7 @@ export default function PromotionModal({ isOpen, onClose, promotion }) {
                                     value={formData.description}
                                     onChange={handleChange}
                                     placeholder={t('descriptionPlaceholder')}
-                                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#C5A572]"
+                                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand"
                                 />
                             </div>
                         </div>
@@ -139,7 +145,7 @@ export default function PromotionModal({ isOpen, onClose, promotion }) {
                                     <span className={`text-xs ${formData.status === 'Draft' ? 'font-bold text-gray-900' : 'text-gray-500'}`}>{t('draft')}</span>
                                     <button
                                         onClick={() => setFormData(prev => ({ ...prev, status: prev.status === 'Active' ? 'Draft' : 'Active' }))}
-                                        className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-[#C5A572] focus:ring-offset-2 ${formData.status === 'Active' ? 'bg-[#C5A572]' : 'bg-gray-200'}`}
+                                        className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-brand focus:ring-offset-2 ${formData.status === 'Active' ? 'bg-brand' : 'bg-gray-200'}`}
                                     >
                                         <span className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${formData.status === 'Active' ? 'translate-x-5' : 'translate-x-1'}`} />
                                     </button>
@@ -154,7 +160,7 @@ export default function PromotionModal({ isOpen, onClose, promotion }) {
                                 value={formData.code}
                                 onChange={handleChange}
                                 placeholder={t('discountCodePlaceholder')}
-                                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#C5A572]"
+                                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand"
                             />
                             <button
                                 onClick={handleGenerateCode}
@@ -175,7 +181,7 @@ export default function PromotionModal({ isOpen, onClose, promotion }) {
                                     name="type"
                                     value={formData.type}
                                     onChange={handleChange}
-                                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#C5A572] bg-white"
+                                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand bg-white"
                                 >
                                     <option value="Percentage">{t('percentage')}</option>
                                     <option value="Fixed Amount">{t('fixedAmount')}</option>
@@ -194,7 +200,7 @@ export default function PromotionModal({ isOpen, onClose, promotion }) {
                                         value={formData.value}
                                         onChange={handleChange}
                                         placeholder="20"
-                                        className="w-full pl-8 pr-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#C5A572]"
+                                        className="w-full pl-8 pr-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand"
                                         disabled={formData.type === 'Free Shipping'}
                                     />
                                 </div>
@@ -212,7 +218,7 @@ export default function PromotionModal({ isOpen, onClose, promotion }) {
                                     name="minRequirements"
                                     value={formData.minRequirements}
                                     onChange={handleChange}
-                                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#C5A572] bg-white"
+                                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand bg-white"
                                 >
                                     <option value="None">{t('none')}</option>
                                     <option value="Minimum Purchase Amount">{t('minimumPurchaseAmount')}</option>
@@ -225,7 +231,7 @@ export default function PromotionModal({ isOpen, onClose, promotion }) {
                                     name="appliesTo"
                                     value={formData.appliesTo}
                                     onChange={handleChange}
-                                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#C5A572] bg-white"
+                                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand bg-white"
                                 >
                                     <option value="All products">{t('allProducts')}</option>
                                     <option value="Specific collections">{t('specificCollections')}</option>
@@ -249,7 +255,7 @@ export default function PromotionModal({ isOpen, onClose, promotion }) {
                                         value={formData.minimum_order_amount}
                                         onChange={handleChange}
                                         placeholder="0.00"
-                                        className="w-full pl-8 pr-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#C5A572]"
+                                        className="w-full pl-8 pr-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand"
                                     />
                                 </div>
                             </div>
@@ -263,7 +269,7 @@ export default function PromotionModal({ isOpen, onClose, promotion }) {
                                         value={formData.maximum_discount_amount}
                                         onChange={handleChange}
                                         placeholder="0.00"
-                                        className="w-full pl-8 pr-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#C5A572]"
+                                        className="w-full pl-8 pr-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand"
                                     />
                                 </div>
                             </div>
@@ -275,7 +281,7 @@ export default function PromotionModal({ isOpen, onClose, promotion }) {
                                     value={formData.usage_limit}
                                     onChange={handleChange}
                                     placeholder={t('unlimited')}
-                                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#C5A572]"
+                                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand"
                                 />
                             </div>
                             <div>
@@ -286,7 +292,7 @@ export default function PromotionModal({ isOpen, onClose, promotion }) {
                                     value={formData.usage_limit_per_customer}
                                     onChange={handleChange}
                                     placeholder={t('unlimited')}
-                                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#C5A572]"
+                                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand"
                                 />
                             </div>
                         </div>
@@ -303,7 +309,7 @@ export default function PromotionModal({ isOpen, onClose, promotion }) {
                                     name="startDate"
                                     value={formData.startDate}
                                     onChange={handleChange}
-                                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#C5A572]"
+                                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand"
                                 />
                             </div>
                             <div>
@@ -313,7 +319,7 @@ export default function PromotionModal({ isOpen, onClose, promotion }) {
                                     name="endDate"
                                     value={formData.endDate}
                                     onChange={handleChange}
-                                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#C5A572]"
+                                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand"
                                 />
                             </div>
                         </div>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useAdmin } from '@/contexts/AdminContext';
 
 // Service Worker Registration Component
@@ -15,6 +15,13 @@ export default function ServiceWorkerRegistration({
   const [updateAvailable, setUpdateAvailable] = useState(false);
   const [isOnline, setIsOnline] = useState(true);
   const { showNotification, showSuccess, showWarning } = useAdmin();
+
+  // The context's notify functions (and the optional callbacks) get new
+  // identities on every render. Keep the latest in a ref so the effects below
+  // run once — otherwise each re-render re-registered the worker, stacked another
+  // controllerchange listener, and showed another "ready for offline use" toast.
+  const latest = useRef({});
+  latest.current = { showNotification, showSuccess, showWarning, onUpdate, onOffline, onOnline };
 
   // Register service worker
   useEffect(() => {
@@ -56,11 +63,9 @@ export default function ServiceWorkerRegistration({
             newWorker.addEventListener('statechange', () => {
               if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
                 setUpdateAvailable(true);
-                showNotification('A new version is available!', 'info');
+                latest.current.showNotification('A new version is available!', 'info');
                 
-                if (onUpdate) {
-                  onUpdate(newWorker);
-                }
+                latest.current.onUpdate?.(newWorker);
               }
             });
           }
@@ -72,28 +77,28 @@ export default function ServiceWorkerRegistration({
         });
 
         console.log('Service Worker registered successfully');
-        showSuccess('App is ready for offline use');
+        latest.current.showSuccess('App is ready for offline use');
       } catch (error) {
         console.error('Service Worker registration failed:', error);
-        showWarning('Offline functionality not available');
+        latest.current.showWarning('Offline functionality not available');
       }
     };
 
     registerSW();
-  }, [enabled, swPath, onUpdate, showNotification, showSuccess, showWarning]);
+  }, [enabled, swPath]);
 
   // Monitor online/offline status
   useEffect(() => {
     const handleOnline = () => {
       setIsOnline(true);
-      showSuccess('Connection restored');
-      if (onOnline) onOnline();
+      latest.current.showSuccess('Connection restored');
+      latest.current.onOnline?.();
     };
 
     const handleOffline = () => {
       setIsOnline(false);
-      showWarning('You are offline. Some features may not be available.');
-      if (onOffline) onOffline();
+      latest.current.showWarning('You are offline. Some features may not be available.');
+      latest.current.onOffline?.();
     };
 
     window.addEventListener('online', handleOnline);
@@ -106,7 +111,7 @@ export default function ServiceWorkerRegistration({
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
     };
-  }, [onOnline, onOffline, showSuccess, showWarning]);
+  }, []);
 
   // Update service worker
   const updateServiceWorker = () => {

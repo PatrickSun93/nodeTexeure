@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken');
 const ResponseFormatter = require('../utils/responseFormatter');
+const DatabaseUtil = require('../utils/database');
 
 /**
  * Extract JWT from request using the following priority:
@@ -23,8 +24,35 @@ const extractAuthToken = (req) => {
   return null;
 };
 
+/**
+ * Verify the token and re-check the user against the database, so a role change,
+ * deactivation, or password reset takes effect immediately rather than when the
+ * token expires. Role flags on req.user come from the current DB role, not the
+ * token. Returns null for any invalid, revoked, or inactive session.
+ * @param {string} token
+ * @returns {Promise<object|null>}
+ */
+const resolveUser = async (token) => {
+  let decoded;
+  try {
+    decoded = jwt.verify(token, process.env.JWT_SECRET, { algorithms: ['HS256'] });
+  } catch (error) {
+    return null;
+  }
+  const row = DatabaseUtil.first(await DatabaseUtil.executeQuery(
+    'SELECT role, status, token_version FROM users WHERE id = ?',
+    [decoded.id]
+  ));
+  // Tokens issued before migration 009 have no `tv`; they match version 0.
+  if (!row || row.status !== 'active' || Number(row.token_version) !== Number(decoded.tv || 0)) {
+    return null;
+  }
+  const role = String(row.role).toLowerCase();
+  return { ...decoded, role, isAdmin: role === 'admin', isStaff: role === 'staff' };
+};
+
 // Middleware to protect routes
-exports.protect = (req, res, next) => {
+exports.protect = async (req, res, next) => {
   const token = extractAuthToken(req);
 
   if (!token) {
@@ -35,19 +63,22 @@ exports.protect = (req, res, next) => {
   }
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET, { algorithms: ['HS256'] });
-    req.user = decoded;
+    const user = await resolveUser(token);
+    if (!user) {
+      const keyValueTable = { error: 'Token is invalid' };
+      return res.status(401).json(
+        ResponseFormatter.failure('Not authorized, token failed', keyValueTable)
+      );
+    }
+    req.user = user;
     next();
   } catch (error) {
     console.error('Auth Middleware Error:', error.message);
-    const keyValueTable = { error: 'Token is invalid' };
-    return res.status(401).json(
-      ResponseFormatter.failure('Not authorized, token failed', keyValueTable)
-    );
+    return res.status(500).json(ResponseFormatter.failure('Authentication check failed'));
   }
 };
 
-// Middleware for admin only
+// Middleware for admin only. 403: the caller is authenticated but lacks the role.
 exports.admin = (req, res, next) => {
   if (req.user && req.user.isAdmin) {
     return next();
@@ -55,7 +86,7 @@ exports.admin = (req, res, next) => {
   console.error('Admin Middleware Denied:', req.user ? `User ${req.user.id} is not admin` : 'No user');
   const keyValueTable = { error: 'Admin access required' };
   return res
-    .status(401)
+    .status(req.user ? 403 : 401)
     .json(ResponseFormatter.failure('Not authorized as an admin', keyValueTable));
 };
 
@@ -72,17 +103,17 @@ exports.staffOrAdmin = (req, res, next) => {
   );
   const keyValueTable = { error: 'Staff or admin access required' };
   return res
-    .status(401)
+    .status(req.user ? 403 : 401)
     .json(ResponseFormatter.failure('Not authorized as staff or admin', keyValueTable));
 };
 
-// Optional protect middleware
-exports.protectOptional = (req, res, next) => {
+// Optional protect middleware: an invalid or revoked token proceeds as a guest.
+exports.protectOptional = async (req, res, next) => {
   const token = extractAuthToken(req);
   if (token) {
     try {
-      const decoded = jwt.verify(token, process.env.JWT_SECRET, { algorithms: ['HS256'] });
-      req.user = decoded;
+      const user = await resolveUser(token);
+      if (user) req.user = user;
     } catch (error) {
       // Ignore error, proceed without user context
     }

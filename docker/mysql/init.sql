@@ -1121,7 +1121,7 @@ INSERT IGNORE INTO transno (prefix, count, details) VALUES ('INVMOV', 0, 'Invent
 INSERT IGNORE INTO transno (prefix, count, details) VALUES ('VAR', 0, 'Product variant ID counter');
 INSERT IGNORE INTO transno (prefix, count, details) VALUES ('INV', 0, 'Inventory ID counter');
 
--- Localized product content (see database/migrations/003_product_translations.sql).
+-- Localized product content (see backend/migrations/003_product_translations.sql).
 CREATE TABLE IF NOT EXISTS product_translations (
   product_id VARCHAR(50) NOT NULL,
   locale VARCHAR(10) NOT NULL,
@@ -1134,7 +1134,7 @@ CREATE TABLE IF NOT EXISTS product_translations (
   FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
 );
 
--- Journal (editorial blog) articles (see database/migrations/004_journal_articles.sql).
+-- Journal (editorial blog) articles (see backend/migrations/004_journal_articles.sql).
 -- Seed rows are inserted by backend/scripts/seed-example-data.js (seedJournal).
 CREATE TABLE IF NOT EXISTS journal_articles (
   id            VARCHAR(50)  PRIMARY KEY,
@@ -1157,7 +1157,7 @@ CREATE TABLE IF NOT EXISTS journal_articles (
 INSERT IGNORE INTO transno (prefix, count, details) VALUES ('JRNL', 0, 'Journal article ID counter');
 
 -- Migration 005: email_unsubscribes (marketing suppression list — see
--- database/migrations/005_email_unsubscribes.sql). Backs the storefront Unsubscribe
+-- backend/migrations/005_email_unsubscribes.sql). Backs the storefront Unsubscribe
 -- feature; only MARKETING email consults it (transactional email always sends).
 -- Seed rows are inserted by backend/scripts/seed-example-data.js (seedUnsubscribes).
 CREATE TABLE IF NOT EXISTS email_unsubscribes (
@@ -1176,7 +1176,7 @@ INSERT IGNORE INTO transno (prefix, count, details) VALUES ('UNSB', 0, 'Email un
 -- Migration 007: review_helpful_votes (one vote per user+review) — backs
 -- POST /api/reviews/:id/helpful. The aggregate tally lives in
 -- product_reviews.review_details ($.helpful_count); this table is the dedup
--- identity. See database/migrations/007_review_helpful_votes.sql.
+-- identity. See backend/migrations/007_review_helpful_votes.sql.
 CREATE TABLE IF NOT EXISTS review_helpful_votes (
   user_id    VARCHAR(50) NOT NULL,
   review_id  VARCHAR(50) NOT NULL,
@@ -1189,7 +1189,7 @@ CREATE TABLE IF NOT EXISTS review_helpful_votes (
 
 -- Migration 008: newsletter_subscribers — backs the storefront newsletter signup
 -- (POST /api/newsletter/subscribe). Idempotent via UNIQUE(email). See
--- database/migrations/008_newsletter_subscribers.sql.
+-- backend/migrations/008_newsletter_subscribers.sql.
 CREATE TABLE IF NOT EXISTS newsletter_subscribers (
   id          BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   email       VARCHAR(255) NOT NULL,

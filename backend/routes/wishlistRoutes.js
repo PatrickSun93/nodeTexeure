@@ -25,7 +25,7 @@ router.get('/', protect, async (req, res) => {
       [req.user.id]
     );
 
-    const items = (Array.isArray(result?.data) ? result.data : []).map(item => ({
+    const items = DatabaseUtil.rows(result).map(item => ({
       ...item,
       price: item.variant_price_adjustment
         ? parseFloat(item.base_price) + parseFloat(item.variant_price_adjustment)

@@ -6,6 +6,7 @@
 
 const express = require('express');
 const ResponseFormatter = require('../utils/responseFormatter');
+const DatabaseUtil = require('../utils/database');
 
 const router = express.Router();
 
@@ -13,22 +14,21 @@ const router = express.Router();
  * GET /api/status/health
  * Health check endpoint
  */
-router.get('/health', (req, res) => {
-  try {
-    const keyValueTable = {
-      'port': process.env.PORT || 6666,
-      'environment': process.env.NODE_ENV || 'development',
-      'uptime': process.uptime() + ' seconds'
-    }
-    
-    res.json(ResponseFormatter.success('Backend server is running', keyValueTable));
-  } catch (error) {
-    console.error('Health check error:', error);
-    const keyValueTable = {
-      'error': error.message
-    }
-    res.status(500).json(ResponseFormatter.failure('Health check failed', keyValueTable));
+router.get('/health', async (req, res) => {
+  // Liveness + readiness: 503 when the database is unreachable so container
+  // healthchecks and uptime monitors catch a dead DB, not just a dead process.
+  const db = await DatabaseUtil.executeQuery('SELECT 1 AS ok');
+  const keyValueTable = {
+    'port': process.env.PORT || 6666,
+    'environment': process.env.NODE_ENV || 'development',
+    'uptime': process.uptime() + ' seconds',
+    'database': db.success ? 'up' : 'down',
+  };
+  if (!db.success) {
+    console.error('Health check: database unreachable:', db.error);
+    return res.status(503).json(ResponseFormatter.failure('Database unreachable', keyValueTable));
   }
+  res.json(ResponseFormatter.success('Backend server is running', keyValueTable));
 });
 
 /**

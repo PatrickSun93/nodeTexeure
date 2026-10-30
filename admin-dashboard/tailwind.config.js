@@ -6,6 +6,20 @@ const config = {
   ],
   theme: {
     extend: {
+      // Champagne brand palette. Values live in CSS custom properties
+      // (src/app/globals.css) so a theme can redefine them in one place.
+      colors: {
+        brand: {
+          DEFAULT: 'var(--admin-brand)',
+          hover: 'var(--admin-brand-hover)',
+          deep: 'var(--admin-brand-deep)',
+          muted: 'var(--admin-brand-muted)',
+          soft: 'var(--admin-brand-soft)',
+          'soft-hover': 'var(--admin-brand-soft-hover)',
+          softer: 'var(--admin-brand-softer)',
+          border: 'var(--admin-brand-border)',
+        },
+      },
       backgroundImage: {
         "gradient-radial": "radial-gradient(var(--tw-gradient-stops))",
         "gradient-conic":

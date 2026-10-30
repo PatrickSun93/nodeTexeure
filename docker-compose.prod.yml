@@ -2,8 +2,10 @@
 #   Provide secrets via a .env file next to this one (gitignored) or the shell:
 #     DB_PASSWORD=... JWT_SECRET=... NEXTAUTH_SECRET=... NEXTAUTH_URL=https://...
 #   Build + run:  docker compose -f docker-compose.prod.yml up -d --build
-# First deploy initializes the schema from docker/mysql/init.sql. It does NOT
-# auto-seed. For an nginx-fronted variant see the deployment/ folder.
+# First deploy initializes the schema from docker/mysql/init.sql; the backend then
+# applies backend/migrations on every start. It does NOT auto-seed.
+# Integration credentials (Stripe webhook secret, SES, S3, FedEx, SENTRY_DSN,
+# CORS_ORIGINS, ...) go in backend/.env — see backend/.env.example and docs/DEPLOYMENT.md.
 services:
   mysql:
     image: mysql:8.0
@@ -24,6 +26,9 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile.prod
+    env_file:
+      - path: ./backend/.env
+        required: false
     environment:
       DB_HOST: mysql
       DB_PORT: "3306"
@@ -43,6 +48,13 @@ services:
     depends_on:
       mysql:
         condition: service_healthy
+    healthcheck:
+      # 503 when MySQL is unreachable (see routes/statusRoutes.js).
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:6666/api/status/health', r => process.exit(r.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1))"]
+      interval: 15s
+      timeout: 5s
+      start_period: 30s
+      retries: 3
 
   frontend:
     build:
@@ -59,7 +71,8 @@ services:
       - "3000:3000"
     restart: unless-stopped
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
 
   admin-dashboard:
     build:
@@ -72,7 +85,8 @@ services:
       - "3005:3005"
     restart: unless-stopped
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
 
 volumes:
   mysql_prod_data:

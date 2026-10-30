@@ -1,14 +1,12 @@
 {
-  "name": "nodetexture",
+  "name": "nodetexeure",
   "version": "0.1.0",
   "private": true,
   "scripts": {
     "dev": "echo 'Storefront only. For the full stack (mysql + backend + admin), run: docker compose up' && npm run dev:frontend",
-    "dev:full": "./start-dev.sh",
     "dev:frontend": "next dev",
     "dev:backend": "cd backend && npm run dev",
     "build": "next build",
-    "build:analyze": "ANALYZE=true next build",
     "build:backend": "cd backend && npm install",
     "start": "next start",
     "start:backend": "cd backend && npm start",
@@ -16,17 +14,9 @@
     "test": "next lint && next build",
     "smoke": "node scripts/smoke-test.js",
     "clean": "rm -rf .next node_modules/.cache .swc && echo 'All caches cleared successfully'",
-    "clean:full": "npm run pm2:stop && npm run clean && npm run dev:full",
     "db:init": "node database/init-database.js",
     "db:reset": "node database/init-database.js --reset",
     "db:test": "node database/test-db-connection.js",
-    "pm2:dev": "./pm2echofile/pm2-dev.sh start",
-    "pm2:stop": "./pm2echofile/pm2-dev.sh stop",
-    "pm2:restart": "./pm2echofile/pm2-dev.sh restart",
-    "pm2:status": "./pm2echofile/pm2-dev.sh status",
-    "pm2:logs": "./pm2echofile/pm2-dev.sh logs",
-    "pm2:delete": "./pm2echofile/pm2-dev.sh delete",
-    "pm2:monitor": "./pm2echofile/pm2-dev.sh monitor",
     "docker:dev": "docker compose up",
     "docker:dev:build": "docker compose up --build",
     "docker:dev:down": "docker compose down",
@@ -36,31 +26,22 @@
     "docker:logs": "docker compose logs -f"
   },
   "dependencies": {
-    "@stripe/react-stripe-js": "^4.0.2",
-    "@stripe/stripe-js": "^7.9.0",
-    "bcryptjs": "^3.0.2",
-    "chart.js": "^4.4.1",
     "dotenv": "^16.3.1",
-    "express-rate-limit": "^8.0.1",
-    "jsonwebtoken": "^9.0.2",
-    "lucide-react": "^0.544.0",
     "mysql2": "^3.6.5",
-    "next": "15.3.5",
-    "next-auth": "^4.24.11",
+    "next": "^15.5.28",
+    "next-auth": "^4.24.15",
     "next-intl": "^4.13.1",
-    "nodemailer": "^6.9.14",
-    "react": "^19.0.0",
-    "react-chartjs-2": "^5.2.0",
-    "react-dom": "^19.0.0"
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
-    "@next/bundle-analyzer": "^15.5.3",
     "@tailwindcss/postcss": "^4",
-    "critters": "^0.0.23",
     "eslint": "^9",
-    "eslint-config-next": "15.3.5",
-    "tailwindcss": "^4",
-    "webpack-bundle-analyzer": "^4.10.2"
+    "eslint-config-next": "^15.5.28",
+    "tailwindcss": "^4"
+  },
+  "overrides": {
+    "postcss": "^8.5.32"
   }
 }

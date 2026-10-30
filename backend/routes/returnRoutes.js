@@ -25,7 +25,7 @@ router.post('/request', protect, async (req, res) => {
       [orderId, req.user.id]
     );
     // executeQuery may return a rows array or a {success, data} wrapper — normalize.
-    const orderRows = Array.isArray(orderResult) ? orderResult : (orderResult && orderResult.data) || [];
+    const orderRows = DatabaseUtil.rows(orderResult);
     if (orderRows.length === 0) {
       return res.status(404).json(ResponseFormatter.failure('Order not found'));
     }
@@ -38,7 +38,7 @@ router.post('/request', protect, async (req, res) => {
       "SELECT id FROM returns WHERE order_id = ? AND status NOT IN ('rejected','closed')",
       [orderId]
     );
-    const existingReturnRows = Array.isArray(existingReturn) ? existingReturn : (existingReturn && existingReturn.data) || [];
+    const existingReturnRows = DatabaseUtil.rows(existingReturn);
     if (existingReturnRows.length > 0) {
       return res.status(409).json(ResponseFormatter.failure('A return request already exists for this order'));
     }
@@ -49,7 +49,7 @@ router.post('/request', protect, async (req, res) => {
       'SELECT id FROM order_items WHERE order_id = ?',
       [orderId]
     );
-    const orderItemRows = Array.isArray(orderItemsResult) ? orderItemsResult : (orderItemsResult && orderItemsResult.data) || [];
+    const orderItemRows = DatabaseUtil.rows(orderItemsResult);
     const validOrderItemIds = new Set(orderItemRows.map((row) => row.id));
     for (const item of items) {
       if (!item.orderItemId || !validOrderItemIds.has(item.orderItemId)) {
@@ -103,7 +103,7 @@ router.get('/my-returns', protect, async (req, res) => {
       [req.user.id]
     );
     // executeQuery may return a rows array or a {success, data} wrapper — normalize.
-    const rows = Array.isArray(returns) ? returns : (returns && returns.data) || [];
+    const rows = DatabaseUtil.rows(returns);
     res.json(ResponseFormatter.success('Returns fetched', { returns: rows }));
   } catch (error) {
     console.error('Get returns error:', error);

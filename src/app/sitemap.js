@@ -1,14 +1,10 @@
 // Next.js dynamic sitemap generator
 // https://nextjs.org/docs/app/api-reference/file-conventions/metadata/sitemap
 
-import http from 'http';
-import https from 'https';
-import { URL } from 'url';
+import { getBackendJson } from '@/lib/server/backend';
+import { defaultSEO } from '@/lib/seo';
 
-const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://nodetexeure.com';
-const BACKEND_URL = (process.env.BACKEND_URL || 'http://localhost:6666')
-  .trim()
-  .replace(/\/$/, '');
+const BASE_URL = defaultSEO.siteUrl;
 
 // The products endpoint caps its page size at 100.
 const PRODUCTS_PAGE_SIZE = 100;
@@ -16,67 +12,19 @@ const PRODUCTS_PAGE_SIZE = 100;
 // Regenerate the sitemap at most once per hour (mirrors the old fetch revalidate).
 export const revalidate = 3600;
 
-/**
- * GET JSON from the backend using Node's http client.
- *
- * We can't use fetch() here: the backend listens on port 6666, which is on the
- * WHATWG "bad ports" blocklist, so Node's fetch refuses the request outright and
- * the failure gets swallowed. http.request has no such restriction. This mirrors
- * the server-side pattern used in src/app/api/auth/[...nextauth]/route.js.
- */
-function fetchJson(requestUrl) {
-  return new Promise((resolve, reject) => {
-    let parsedUrl;
-    try {
-      parsedUrl = new URL(requestUrl);
-    } catch (err) {
-      reject(err);
-      return;
-    }
-
-    const client = parsedUrl.protocol === 'https:' ? https : http;
-    const req = client.request(
-      {
-        hostname: parsedUrl.hostname,
-        port: parsedUrl.port,
-        path: `${parsedUrl.pathname}${parsedUrl.search}`,
-        method: 'GET',
-        headers: { Accept: 'application/json' },
-      },
-      (res) => {
-        let data = '';
-        res.setEncoding('utf8');
-        res.on('data', (chunk) => {
-          data += chunk;
-        });
-        res.on('end', () => {
-          try {
-            resolve(JSON.parse(data));
-          } catch {
-            reject(new Error('Invalid JSON response from backend'));
-          }
-        });
-      }
-    );
-
-    req.on('error', reject);
-    req.end();
-  });
-}
-
 // Walk every page of /api/products so the sitemap lists all products, not just
 // the first page (the endpoint defaults to 10 products per request).
 async function fetchAllProducts() {
-  const firstPage = await fetchJson(
-    `${BACKEND_URL}/api/products?page=1&limit=${PRODUCTS_PAGE_SIZE}`
+  const firstPage = await getBackendJson(
+    `/api/products?page=1&limit=${PRODUCTS_PAGE_SIZE}`
   );
   const products = [...(firstPage?.keyValueTable?.products || [])];
   const total = Number(firstPage?.keyValueTable?.total) || products.length;
   const totalPages = Math.ceil(total / PRODUCTS_PAGE_SIZE);
 
   for (let page = 2; page <= totalPages; page++) {
-    const nextPage = await fetchJson(
-      `${BACKEND_URL}/api/products?page=${page}&limit=${PRODUCTS_PAGE_SIZE}`
+    const nextPage = await getBackendJson(
+      `/api/products?page=${page}&limit=${PRODUCTS_PAGE_SIZE}`
     );
     const batch = nextPage?.keyValueTable?.products || [];
     if (batch.length === 0) break; // defensive: stop if a page returns nothing

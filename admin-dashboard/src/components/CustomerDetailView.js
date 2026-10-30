@@ -137,7 +137,7 @@ export default function CustomerDetailView({ customer, onBack }) {
                     <button
                         onClick={handleSaveProfile}
                         disabled={isSaving}
-                        className="px-4 py-2 bg-[#C5A572] text-white rounded-lg hover:bg-[#b09060] font-medium transition-colors shadow-sm disabled:opacity-50"
+                        className="px-4 py-2 bg-brand text-white rounded-lg hover:bg-brand-hover font-medium transition-colors shadow-sm disabled:opacity-50"
                     >
                         {isSaving ? t('saving') : t('saveChanges')}
                     </button>
@@ -196,9 +196,9 @@ export default function CustomerDetailView({ customer, onBack }) {
                             <textarea
                                 placeholder={t('addNotePlaceholder')}
                                 rows={4}
-                                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C5A572] focus:border-transparent text-sm"
+                                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent text-sm"
                             ></textarea>
-                            <button className="mt-2 w-full px-4 py-2 bg-[#F3EAD8] text-[#8C6B3D] rounded-lg hover:bg-[#eaddc5] font-medium text-sm transition-colors">
+                            <button className="mt-2 w-full px-4 py-2 bg-brand-soft text-brand-deep rounded-lg hover:bg-brand-soft-hover font-medium text-sm transition-colors">
                                 {t('saveNote')}
                             </button>
                         </div>
@@ -211,7 +211,7 @@ export default function CustomerDetailView({ customer, onBack }) {
                     <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
                         <div className="flex justify-between items-center mb-6">
                             <h3 className="text-lg font-semibold text-gray-900">{t('personalInformation')}</h3>
-                            <button className="text-[#C5A572] text-sm font-medium hover:text-[#a08050] flex items-center gap-1">
+                            <button className="text-brand text-sm font-medium hover:text-brand-muted flex items-center gap-1">
                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
                                 {t('editProfile')}
                             </button>
@@ -220,21 +220,21 @@ export default function CustomerDetailView({ customer, onBack }) {
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
                                     <label className="block text-xs text-gray-500 uppercase tracking-wider mb-1">{t('firstName')}</label>
-                                    <input type="text" value={profile.first_name} onChange={(e) => setProfile((p) => ({ ...p, first_name: e.target.value }))} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#C5A572]" />
+                                    <input type="text" value={profile.first_name} onChange={(e) => setProfile((p) => ({ ...p, first_name: e.target.value }))} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand" />
                                 </div>
                                 <div>
                                     <label className="block text-xs text-gray-500 uppercase tracking-wider mb-1">{t('lastName')}</label>
-                                    <input type="text" value={profile.last_name} onChange={(e) => setProfile((p) => ({ ...p, last_name: e.target.value }))} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#C5A572]" />
+                                    <input type="text" value={profile.last_name} onChange={(e) => setProfile((p) => ({ ...p, last_name: e.target.value }))} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand" />
                                 </div>
                             </div>
                             <div>
                                 <label className="block text-xs text-gray-500 uppercase tracking-wider mb-1">{t('emailAddress')}</label>
-                                <input type="email" value={profile.email} onChange={(e) => setProfile((p) => ({ ...p, email: e.target.value }))} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#C5A572]" />
+                                <input type="email" value={profile.email} onChange={(e) => setProfile((p) => ({ ...p, email: e.target.value }))} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand" />
                             </div>
                             <div>
                                 <label className="block text-xs text-gray-500 uppercase tracking-wider mb-1">{t('phoneNumber')}</label>
                                 {/* FLAG: admin users list has no phone to prefill; an admin can set one here and it persists via PUT /api/admin/users/:id. */}
-                                <input type="text" value={profile.phone} onChange={(e) => setProfile((p) => ({ ...p, phone: e.target.value }))} placeholder="—" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#C5A572]" />
+                                <input type="text" value={profile.phone} onChange={(e) => setProfile((p) => ({ ...p, phone: e.target.value }))} placeholder="—" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand" />
                             </div>
                         </div>
                     </div>
@@ -255,7 +255,7 @@ export default function CustomerDetailView({ customer, onBack }) {
                                                 {addr.type ? t('addressTypeLabel', { type: capitalize(addr.type) }) : t('addressLabelFallback')}
                                             </span>
                                             {addr.is_default ? (
-                                                <span className="px-2 py-0.5 text-[10px] font-semibold bg-[#F3EAD8] text-[#8C6B3D] rounded-full">{t('defaultBadge')}</span>
+                                                <span className="px-2 py-0.5 text-[10px] font-semibold bg-brand-soft text-brand-deep rounded-full">{t('defaultBadge')}</span>
                                             ) : null}
                                         </div>
                                         {renderAddress(addr)}
@@ -280,7 +280,7 @@ export default function CustomerDetailView({ customer, onBack }) {
                             <input
                                 type="text"
                                 placeholder={t('searchOrdersPlaceholder')}
-                                className="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#C5A572] focus:border-transparent"
+                                className="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
                             />
                         </div>
 

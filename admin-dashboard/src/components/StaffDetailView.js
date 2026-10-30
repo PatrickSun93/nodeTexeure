@@ -117,7 +117,7 @@ export default function StaffDetailView({ staff, onBack }) {
                                 value={formData.fullName}
                                 onChange={handleChange}
                                 placeholder={t('fullNamePlaceholder')}
-                                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C5A572] focus:border-transparent bg-gray-50"
+                                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent bg-gray-50"
                             />
                         </div>
                         <div>
@@ -128,7 +128,7 @@ export default function StaffDetailView({ staff, onBack }) {
                                 value={formData.phone}
                                 onChange={handleChange}
                                 placeholder={t('phonePlaceholder')}
-                                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C5A572] focus:border-transparent bg-gray-50"
+                                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent bg-gray-50"
                             />
                         </div>
                     </div>
@@ -146,7 +146,7 @@ export default function StaffDetailView({ staff, onBack }) {
                                 value={formData.email}
                                 onChange={handleChange}
                                 placeholder={t('emailPlaceholder')}
-                                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C5A572] focus:border-transparent bg-gray-50"
+                                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent bg-gray-50"
                             />
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -158,7 +158,7 @@ export default function StaffDetailView({ staff, onBack }) {
                                     value={formData.password}
                                     onChange={handleChange}
                                     placeholder={isEditing ? t('passwordPlaceholderEdit') : t('passwordPlaceholderNew')}
-                                    className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C5A572] focus:border-transparent bg-gray-50"
+                                    className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent bg-gray-50"
                                 />
                             </div>
                             <div>
@@ -169,7 +169,7 @@ export default function StaffDetailView({ staff, onBack }) {
                                     value={formData.confirmPassword}
                                     onChange={handleChange}
                                     placeholder={t('confirmPasswordPlaceholder')}
-                                    className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C5A572] focus:border-transparent bg-gray-50"
+                                    className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent bg-gray-50"
                                 />
                             </div>
                         </div>
@@ -187,7 +187,7 @@ export default function StaffDetailView({ staff, onBack }) {
                                 name="role"
                                 value={formData.role}
                                 onChange={handleChange}
-                                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C5A572] bg-gray-50"
+                                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand bg-gray-50"
                             >
                                 <option value="Admin">{t('roleAdmin')}</option>
                                 <option value="Manager">{t('roleManager')}</option>
@@ -200,7 +200,7 @@ export default function StaffDetailView({ staff, onBack }) {
                             <div className="flex items-center gap-3 mt-2">
                                 <button
                                     onClick={() => setFormData(prev => ({ ...prev, status: prev.status === 'Active' ? 'Inactive' : 'Active' }))}
-                                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-[#C5A572] focus:ring-offset-2 ${formData.status === 'Active' ? 'bg-[#C5A572]' : 'bg-gray-200'}`}
+                                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-brand focus:ring-offset-2 ${formData.status === 'Active' ? 'bg-brand' : 'bg-gray-200'}`}
                                 >
                                     <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${formData.status === 'Active' ? 'translate-x-6' : 'translate-x-1'}`} />
                                 </button>

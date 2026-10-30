@@ -8,7 +8,7 @@ storage), following this repo's conventions. Example: a "gift messages" feature.
 Add a table via a migration (don't hand-edit a live DB):
 
 ```sql
--- database/migrations/003_gift_messages.sql
+-- backend/migrations/010_gift_messages.sql  (next free number)
 CREATE TABLE IF NOT EXISTS gift_messages (
   id VARCHAR(50) PRIMARY KEY,
   order_id VARCHAR(50) NOT NULL,
@@ -20,8 +20,9 @@ CREATE TABLE IF NOT EXISTS gift_messages (
 INSERT IGNORE INTO transno (prefix, count, details) VALUES ('GIFT', 0, 'Gift message id');
 ```
 
-Include the migration in `docker/mysql/init.sql` (append it) so `docker compose up`
-creates it on a fresh DB, and run it against your current DB.
+The backend applies pending migrations on startup (`npm run migrate`, tracked in
+the `schema_migrations` table), so every environment picks it up — fresh Docker
+volumes included. Never edit a migration that has shipped; add a new one.
 
 ## 2. Backend route
 
@@ -37,14 +38,17 @@ const { protect } = require('../middleware/authMiddleware');
 
 router.post('/', protect, async (req, res) => {
   try {
-    const [{ id }] = (await DatabaseUtil.executeQuery("SELECT get_next_id('GIFT') AS id")).data ?? await DatabaseUtil.executeQuery("SELECT get_next_id('GIFT') AS id");
-    await DatabaseUtil.executeQuery(
+    const { id } = DatabaseUtil.first(await DatabaseUtil.executeQuery("SELECT get_next_id('GIFT') AS id"));
+    const saved = await DatabaseUtil.executeQuery(
       'INSERT INTO gift_messages (id, order_id, message) VALUES (?, ?, ?)',
       [id, req.body.order_id, req.body.message]
     );
+    // executeQuery never throws — check the result, or failures are silent.
+    if (!saved.success) throw new Error(saved.error);
     res.status(201).json(ResponseFormatter.success('Gift message saved', { id }));
   } catch (e) {
-    res.status(500).json(ResponseFormatter.failure('Failed to save', { error: e.message }));
+    console.error('Save gift message failed:', e);
+    res.status(500).json(ResponseFormatter.failure('Failed to save'));
   }
 });
 
@@ -59,7 +63,9 @@ app.use('/api/gift-messages', require('./routes/giftMessageRoutes')); // server.
 // next.config.mjs: add 'gift-messages' to the `routes` array
 ```
 
-Admin-only? Mount with `protect, admin` and require a CSRF token for writes.
+Admin-only? Put it in `backend/routes/admin/` (mounted by `routes/admin/index.js`,
+which applies auth, rate limiting and CSRF) and give each route an `admin` or
+`staffOrAdmin` guard.
 
 ## 3. Frontend
 
@@ -81,11 +87,16 @@ If the page uses `useSearchParams`, wrap it in `<Suspense>` (Next 15 requirement
 Add rows to `backend/scripts/seed-example-data.js` so the feature shows real data
 (no mocks). Keep the script idempotent.
 
-## 5. Verify
+## 5. Test
+
+Add API tests in `backend/tests/` (Jest + supertest against the seeded DB): the
+happy path, plus 401 without auth, 403 for the wrong role, and no IDOR.
 
 ```bash
-npm run test    # ESLint + next build
-npm run smoke   # stack health
+npm run test                                                     # ESLint + next build
+cd backend && DB_HOST=127.0.0.1 DB_PORT=3307 DB_PASSWORD=noirae_dev npm test
+npm run smoke                                                    # stack health
+node scripts/gen-api-docs.js                                     # refresh docs/API.md
 ```
 
 Then exercise it in the browser (Docker: `docker compose up`), and for anything
@@ -93,9 +104,10 @@ auth-related re-check the security posture (unauth blocked, no IDOR).
 
 ## Checklist
 
-- [ ] Migration added + in `docker/mysql/init.sql`
+- [ ] Migration added under `backend/migrations/` (next number)
 - [ ] Route mounted in `server.js` + name added to `next.config.mjs` proxy list
 - [ ] Prepared statements; `get_next_id` prefix registered
 - [ ] Frontend calls `/api/*` (proxy) and styles via `--noirae-*` tokens
 - [ ] Example rows in the seed; no mock/hardcoded data
-- [ ] `npm run test` + `npm run smoke` green
+- [ ] API tests added; `npm run test`, backend `npm test`, `npm run smoke` green
+- [ ] `docs/API.md` regenerated

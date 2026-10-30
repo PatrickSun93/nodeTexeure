@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
+import Image from "next/image";
 import Header from "../../components/Header";
 import Footer from "../../components/Footer";
 import { apiRequest } from "../../lib/api";
@@ -15,119 +16,61 @@ import { ProductCard } from "../shop/page";
  * - Alternating product-image layout with responsive design
  * - Reuses existing ProductCard styles for consistency
  */
+// Editorial column beside each product card: name, description, link through.
+function ProductStory({ product }) {
+  const t = useTranslations('NewArrive');
+  return (
+    <div style={{ padding: '1rem 0' }}>
+      <h3 style={{ fontFamily: 'var(--noirae-font-serif)', fontSize: '1.75rem', marginBottom: '0.75rem' }}>
+        {product.name}
+      </h3>
+      {product.description && (
+        <p style={{ color: 'var(--noirae-text-secondary)', lineHeight: 1.7, marginBottom: '1.25rem' }}>{product.description}</p>
+      )}
+      <Link href={`/products/${product.id}`} className="aesop-button-secondary">{t('explore')}</Link>
+    </div>
+  );
+}
+
 export default function NewArrivePage() {
   const t = useTranslations('NewArrive');
   const [products, setProducts] = useState([]);
-  const [settings, setSettings] = useState({});
   const [loading, setLoading] = useState(true);
 
-  // Fetch products from backend and map to UI-friendly structure
-  const fetchProducts = async () => {
-    try {
-      setLoading(true);
-      const res = await fetch(`/api/products?page=1&limit=24`);
-      const data = await res.json();
-
-      if (data?.status === "SUCCESS") {
-        const rows = data.keyValueTable?.products || [];
-        // Map DB rows to UI model
-        const mapped = rows.map((row) => ({
-          id: row.id,
-          name: row.name,
-          description: row.short_description || row.description || "",
-          price: Number(row.base_price || 0),
-          // No listing image in API yet – use placeholder (could be enhanced with an images join)
-          image: "/api/placeholder/300/300",
-          created_at: row.created_at,
-        }));
-        setProducts(mapped);
-      } else {
-        setProducts([]);
-      }
-    } catch (e) {
-      console.error("Failed to fetch products for New Arrive:", e);
-      setProducts([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
+  // One loader: the admin-curated list (public setting `newarrival`, an array of
+  // product ids) when set, otherwise the newest products. (Two independent
+  // fetches used to race, and the settings one blanked the list when unset.)
   useEffect(() => {
-    fetchProducts();
-  }, []);
-
-  // Determine new arrivals: within last 60 days or explicitly flagged in sample
-  const newArrivals = useMemo(() => {
-    const days = 60;
-    const now = Date.now();
-    const base = products;
-    const selected = base.filter((p) => {
-      if (p.isNew) return true;
-      if (!p.created_at) return false;
-      const created = new Date(p.created_at).getTime();
-      return Number.isFinite(created) && now - created <= days * 24 * 60 * 60 * 1000;
+    let cancelled = false;
+    const toCard = (row) => ({
+      id: row.id,
+      name: row.name,
+      description: row.short_description || row.description || '',
+      price: Number(row.base_price || 0),
+      image: row.image,
+      created_at: row.created_at,
     });
-    // Ensure ProductCard shows the New badge even for backend items by setting isNew: true
-    return selected.map((p) => ({ ...p, isNew: true }));
-  }, [products]);
-
-  // Remove old newArrivals and notableFormulations if not used
-  // Notable formulations: the rest/top picks
-  const notableFormulations = useMemo(() => {
-    const base = products;
-    return base.filter((p) => !newArrivals.some((n) => n.id === p.id)).slice(0, 8);
-  }, [products, newArrivals]);
-
-  // Settings + products fetch: use 'newarrival' array of ids if available
-  const fetchSettingsAndProducts = async () => {
-    setLoading(true);
-    try {
-      // 1) Get public settings
-      const settingsRes = await fetch('/api/settings/public');
-      const settingsJson = await settingsRes.json();
-      const publicSettings = settingsJson?.keyValueTable || {};
-      setSettings(publicSettings);
-
-      const ids = Array.isArray(publicSettings?.newarrival) ? publicSettings.newarrival : [];
-
-      if (ids.length > 0) {
-        // 2) Fetch products by ids preserving order
-        const query = new URLSearchParams();
-        query.set('ids', ids.join(','));
-        const prodRes = await fetch(`/api/products/by-ids?${query.toString()}`);
-        const prodJson = await prodRes.json();
-        if (prodJson?.status === 'SUCCESS') {
-          const rows = prodJson.keyValueTable?.products || [];
-          const mapped = rows.map(row => ({
-            id: row.id,
-            name: row.name,
-            description: row.short_description || row.description || '',
-            price: Number(row.base_price || 0),
-            image: '/api/placeholder/300/300',
-            created_at: row.created_at,
-          }));
-          setProducts(mapped);
-        } else {
-          setProducts([]);
-        }
-      } else {
-        // No ids in settings -> empty, let UI fallback handle
-        setProducts([]);
+    (async () => {
+      try {
+        const settingsJson = await (await fetch('/api/settings/public')).json();
+        const ids = Array.isArray(settingsJson?.keyValueTable?.newarrival) ? settingsJson.keyValueTable.newarrival : [];
+        const url = ids.length
+          ? `/api/products/by-ids?${new URLSearchParams({ ids: ids.join(',') })}`
+          : '/api/products?page=1&limit=12';
+        const json = await (await fetch(url)).json();
+        const rows = json?.status === 'SUCCESS' ? json.keyValueTable?.products || [] : [];
+        const ordered = ids.length ? rows : [...rows].sort((x, y) => new Date(y.created_at) - new Date(x.created_at));
+        if (!cancelled) setProducts(ordered.map(toCard));
+      } catch (err) {
+        console.error('Failed to load new arrivals:', err);
+        if (!cancelled) setProducts([]);
+      } finally {
+        if (!cancelled) setLoading(false);
       }
-    } catch (err) {
-      console.error('Failed fetching settings/products:', err);
-      setProducts([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchSettingsAndProducts();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    })();
+    return () => { cancelled = true; };
   }, []);
 
-  // Alternating layout source: use products from settings; no sample fallback here per requirement
   const items = products;
 
   const handleAddToCart = async (product) => {
@@ -171,7 +114,8 @@ export default function NewArrivePage() {
       {/* Full-width banner between Discover and New Additions */}
       <section id="banner" className="aesop-section" style={{padding: 0}}>
         <div className="aesop-fullwidth-image" style={{width: '100%', overflow: 'hidden'}}>
-          <img src="/file.svg" alt={t('bannerAlt')} style={{display: 'block', width: '100%', height: 'auto'}} />
+          <Image src="/images/bedding/bed-10.jpg" alt={t('bannerAlt')} width={900} height={600} sizes="100vw" priority
+            style={{display: 'block', width: '100%', height: 'auto', maxHeight: '480px', objectFit: 'cover'}} />
         </div>
       </section>
 
@@ -203,14 +147,14 @@ export default function NewArrivePage() {
                       </div>
                     ) : (
                       <div>
-                        <img src="/globe.svg" alt={t('showcaseAlt', { name: product.name })} style={{width:'100%', height:'auto', display:'block'}} />
+                        <ProductStory product={product} />
                       </div>
                     )}
 
                     {/* Right column */}
                     {!isEven ? (
                       <div>
-                        <img src="/window.svg" alt={t('detailAlt', { name: product.name })} style={{width:'100%', height:'auto', display:'block'}} />
+                        <ProductStory product={product} />
                       </div>
                     ) : (
                       <div>

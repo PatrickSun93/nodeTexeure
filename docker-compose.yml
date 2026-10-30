@@ -1,4 +1,4 @@
-# NodeTexeure — Docker dev stack (replaces PM2).
+# NodeTexeure — Docker dev stack.
 #   docker compose up          -> mysql + backend + frontend + admin, hot-reload
 #   docker compose up mysql backend frontend   -> storefront only
 # First run: MySQL initializes the schema from docker/mysql/init.sql and the

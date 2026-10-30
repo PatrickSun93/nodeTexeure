@@ -1,3 +1,4 @@
+const { Sentry } = require('./instrument'); // must load before express
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
@@ -85,7 +86,7 @@ app.use('/uploads', express.static(uploadsRoot, { index: false, maxAge: '1d' }))
 
 
 // Import middleware and routes
-const { protect, admin } = require('./middleware/authMiddleware');
+const { protect, admin, staffOrAdmin } = require('./middleware/authMiddleware');
 const statusRoutes = require('./routes/statusRoutes');
 const databaseRoutes = require('./routes/databaseRoutes');
 const userRoutes = require('./routes/userRoutes');
@@ -146,9 +147,9 @@ app.use('/api/admin/bulk', protect, admin, require('./routes/bulkOperationsRoute
 // Email Template routes (protected admin)
 app.use('/api/admin/email-templates', protect, admin, require('./routes/emailTemplateRoutes'));
 
-// Admin routes (protected)
-const adminRoutes = require('./routes/adminRoutes');
-app.use('/api/admin', protect, admin, adminRoutes);
+// Admin routes (protected). Staff reach only the routes that opt in with
+// staffOrAdmin; everything else declares `admin` (see routes/admin/index.js).
+app.use('/api/admin', protect, staffOrAdmin, require('./routes/admin'));
 
 // Payment routes (Stripe)
 app.use('/api/payments', require('./routes/paymentRoutes'));
@@ -189,6 +190,9 @@ app.use('*', (req, res) => {
   res.status(404).json(ResponseFormatter.failure('Endpoint not found', keyValueTable));
 });
 
+// Report unhandled errors to Sentry when configured (see instrument.js)
+if (Sentry) Sentry.setupExpressErrorHandler(app);
+
 // Logging error middleware (logs errors before handling them)
 app.use(LoggingMiddleware.errorMiddleware());
 
@@ -203,11 +207,26 @@ app.use((err, req, res, next) => {
   res.status(500).json(ResponseFormatter.failure('Internal server error', keyValueTable));
 });
 
-// Start server
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`🚀 Backend server running on http://localhost:${PORT}`);
-  console.log(`📡 API endpoints available at http://localhost:${PORT}/api`);
-  console.log(`✅ Server ready to accept connections`);
-});
+// Start server (skipped when required by the test suite, which drives `app` directly)
+if (require.main === module) {
+  app.listen(PORT, '0.0.0.0', () => {
+    console.log(`🚀 Backend server running on http://localhost:${PORT}`);
+    console.log(`📡 API endpoints available at http://localhost:${PORT}/api`);
+    console.log(`✅ Server ready to accept connections`);
+  });
+
+  // Return stock held by abandoned checkouts. Idempotent, so running it in every
+  // backend instance is safe. Low-stock alerts stay in
+  // scripts/cleanup-expired-reservations.js (run it from cron if wanted).
+  const InventoryService = require('./services/inventoryService');
+  const releaseExpired = () => InventoryService.releaseExpiredReservations()
+    .then((r) => {
+      if (!r.success) console.error('Reservation cleanup failed:', r.error);
+      else if (r.data.released_count) console.log(`♻️  Released ${r.data.released_count} expired stock reservation(s)`);
+    })
+    .catch((err) => console.error('Reservation cleanup failed:', err.message));
+  setInterval(releaseExpired, 15 * 60 * 1000).unref();
+  releaseExpired();
+}
 
 module.exports = app;

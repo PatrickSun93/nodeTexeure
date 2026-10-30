@@ -342,7 +342,7 @@ router.post('/track-abandonment', protectOptional, async (req, res) => {
     const cartData = {
       items: items,
       totalAmount: `$${totalAmount.toFixed(2)}`,
-      checkoutUrl: `${process.env.BASE_URL || 'http://localhost:3000'}/checkout`,
+      checkoutUrl: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/checkout`,
       customerName: customerName
     };
 

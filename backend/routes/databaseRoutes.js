@@ -173,24 +173,12 @@ router.post('/query', protect, admin, async (req, res) => {
     }
     
     const result = await DatabaseUtil.executeQuery(query, params);
-    let keyValueTable = [];
-    
-    if (Array.isArray(result)) {
-      keyValueTable = {
-        query: query,
-        record_count: result.length,
-        results: result
-      };
-    } else {
-      keyValueTable = {
-        query: query,
-        success: result.success || true,
-        data: result.data || result
-      };
+    if (!result.success) {
+      throw new Error(result.error);
     }
-    
-    // keyValueTable already contains the data
-    
+    const rows = DatabaseUtil.rows(result);
+    const keyValueTable = { query, record_count: rows.length, results: rows };
+
     res.json(ResponseFormatter.success(
       'Query executed successfully',
       keyValueTable

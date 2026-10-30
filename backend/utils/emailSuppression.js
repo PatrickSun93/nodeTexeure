@@ -94,10 +94,8 @@ function verifyUnsubscribeToken(email, token) {
  * @returns {string}
  */
 function buildUnsubscribeUrl(email, opts = {}) {
-  // Must resolve to the STOREFRONT origin (port 3000), never the backend. NOTE:
-  // BASE_URL is deliberately NOT used here — in this repo it is set to the backend
-  // (http://localhost:6666), which browsers block. Mirror the verify-email /
-  // reset-password links, which use NEXTAUTH_URL for the storefront origin.
+  // Must resolve to the STOREFRONT origin (port 3000), never the backend, which
+  // browsers block (port 6666).
   const base = (
     opts.baseUrl ||
     process.env.FRONTEND_URL ||
