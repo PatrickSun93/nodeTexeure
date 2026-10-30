@@ -4,6 +4,13 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm ci
 COPY . .
+# The /api rewrite targets are baked in at `next build` (see rustRoutes.mjs):
+# BACKEND_URL for Node, RUST_API_URL + RUST_API_ROUTES for the groups on Rust
+# (empty = everything on Node).
+ARG BACKEND_URL=http://backend:6666
+ARG RUST_API_URL=
+ARG RUST_API_ROUTES=
+ENV BACKEND_URL=$BACKEND_URL RUST_API_URL=$RUST_API_URL RUST_API_ROUTES=$RUST_API_ROUTES
 ENV NODE_ENV=production
 RUN npm run build
 
@@ -12,6 +19,7 @@ WORKDIR /app
 ENV NODE_ENV=production
 COPY --from=build /app/package.json ./package.json
 COPY --from=build /app/next.config.mjs ./next.config.mjs
+COPY --from=build /app/rustRoutes.mjs ./rustRoutes.mjs
 COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/.next ./.next
 COPY --from=build /app/public ./public

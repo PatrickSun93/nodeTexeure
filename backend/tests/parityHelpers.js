@@ -35,6 +35,9 @@
 //                                   RUST_API_BIN or ../rust/target/debug/api
 //   rustBin()                       that binary path, or null when it isn't built
 //   bearer(token)                   { Authorization: 'Bearer …' }
+//   backOffice() / describeBackOffice
+//                                   /api/admin parity with sessions, CSRF and a Rust API
+//                                   of the file's own (fresh admin limiters) — see below
 const fs = require('fs');
 const path = require('path');
 const { spawn } = require('child_process');
@@ -308,10 +311,159 @@ async function startRust({ port, env = {}, bin = rustBin() }) {
   return { url, ...server };
 }
 
+// ---------------------------------------------------------------------------
+// Back office (/api/admin): sessions, CSRF, and a Rust API of the file's own
+// ---------------------------------------------------------------------------
+//
+// The admin limiters (adminLimiter: 100/min on everything that reaches the
+// /api/admin router; adminRead/WriteLimiter and email-queue's own pair per
+// route) have no `skip`, not even under NODE_ENV=test. Node's `app` is new in
+// every test file, so its counts start at 0; backOffice() starts a Rust API for
+// the file too (the binary at RUST_API_BIN or ../rust/target/debug/api — run
+// `cargo build -p api` first), so both sides get the same request sequence and
+// their RateLimit-* headers and 429s compare exactly, and the shared
+// RUST_API_URL server never runs out of admin budget.
+//
+//   const BO = P.backOffice();
+//   P.describeBackOffice('admin coupons', () => {
+//     beforeAll(() => BO.start(), 60000);
+//     afterAll(() => BO.stop());
+//     test('list', () => BO.same('get', '/api/admin/coupons', { as: 'admin' }));
+//     test('create', () => BO.same('post', '/api/admin/coupons', { as: 'admin', csrf: true, body: {...} }));
+//   });
+//
+//   BO.same(method, url, opts)    same request on both sides: same status, same
+//                                 JSON (timestamps normalized; `dropError`
+//                                 ignores keyValueTable.error), same rate-limit
+//                                 headers; a non-JSON answer (CSV, 429 text)
+//                                 must match byte for byte with its Content-Type
+//                                 (`text: true`; charset ignored). → { node, rust }
+//   BO.call(side, method, url, opts)  one side → { status, headers, text, body, cookies }
+//   opts: { as: 'admin'|'staff'|'customer'|session, csrf: true, headers, body,
+//           raw: { type, text } (a body sent as is), normalize: fn }
+//   BO.sessions.{admin,staff,customer}   { token, csrf, user } (one login each)
+//   BO.throwaway(role)            a fresh user with that role, logged in, with a
+//                                 CSRF token — for sequences that revoke it
+//   BO.headers(session, { csrf }) Authorization (+ X-CSRF-Token and csrf_token cookie)
+//   BO.rustUrl                    the file's own Rust API
+const describeBackOffice = RUST && rustBin() ? describe : describe.skip;
+
+function freePort() {
+  return new Promise((resolve, reject) => {
+    const srv = require('net').createServer();
+    srv.unref();
+    srv.on('error', reject);
+    srv.listen(0, '127.0.0.1', () => {
+      const { port } = srv.address();
+      srv.close(() => resolve(port));
+    });
+  });
+}
+
+const TIMESTAMPS = normalizer([TIME]);
+
+function backOffice() {
+  const helpers = require('./helpers');
+  const { generateCSRFToken } = require('../middleware/csrfMiddleware');
+  const bo = { sessions: {}, rustUrl: null, server: null };
+
+  async function csrfFor(token, user) {
+    if (user.role === 'customer') return generateCSRFToken(user); // the endpoint is staff/admin only
+    const res = await request(app).get('/api/users/csrf-token').set(bearer(token));
+    if (res.status !== 200) throw new Error(`csrf-token failed: ${res.status} ${JSON.stringify(res.body)}`);
+    return res.body.keyValueTable.csrfToken;
+  }
+
+  async function session(who) {
+    const kvt = await helpers.login(who);
+    const user = { id: kvt.userId, email: kvt.email, role: kvt.role };
+    return { token: kvt.accessToken, user, csrf: await csrfFor(kvt.accessToken, user) };
+  }
+
+  bo.start = async () => {
+    const port = await freePort();
+    const env = { NODE_ENV: 'test', JWT_SECRET: process.env.JWT_SECRET };
+    if (process.env.CSRF_SECRET) env.CSRF_SECRET = process.env.CSRF_SECRET;
+    bo.server = await startRust({ port, env });
+    bo.rustUrl = bo.server.url;
+    for (const who of ['admin', 'staff', 'customer']) bo.sessions[who] = await session(who);
+    return bo;
+  };
+
+  bo.stop = async () => {
+    if (bo.server) await bo.server.stop();
+  };
+
+  bo.throwaway = async (role = 'staff') => {
+    const c = await helpers.registerCustomer();
+    await helpers.DatabaseUtil.executeQuery('UPDATE users SET role = ? WHERE email = ?', [role, c.email]);
+    const s = await session({ email: c.email, password: c.password });
+    return { ...s, email: c.email };
+  };
+
+  bo.headers = (s, { csrf = false } = {}) => ({
+    ...(s && bearer(s.token)),
+    ...(csrf && s && { 'X-CSRF-Token': s.csrf, Cookie: `csrf_token=${encodeURIComponent(s.csrf)}` }),
+  });
+
+  bo.call = async (side, method, url, { as, csrf = false, headers = {}, body, raw } = {}) => {
+    const s = typeof as === 'string' ? bo.sessions[as] : as;
+    const all = { ...bo.headers(s, { csrf }), ...headers };
+    if (side === 'node') {
+      let req = request(app)[method](url).set(all);
+      if (raw) req = req.set('Content-Type', raw.type).send(raw.text);
+      else if (body !== undefined) req = req.send(body);
+      const res = await req;
+      return { status: res.status, headers: res.headers, text: res.text ?? '', body: parseJson(res.text), cookies: setCookies(res), res };
+    }
+    const res = await fetch(bo.rustUrl + url, {
+      method: method.toUpperCase(),
+      headers: {
+        ...all,
+        ...(raw && { 'Content-Type': raw.type }),
+        ...(!raw && body !== undefined && { 'Content-Type': 'application/json' }),
+      },
+      body: raw ? raw.text : body !== undefined ? JSON.stringify(body) : undefined,
+    });
+    const text = await res.text();
+    return { status: res.status, headers: res.headers, text, body: parseJson(text), cookies: setCookies(res), res };
+  };
+
+  bo.same = async (method, url, opts = {}) => {
+    const node = await bo.call('node', method, url, opts);
+    const rust = await bo.call('rust', method, url, opts);
+    const fix = opts.normalize || ((v) => v);
+    const type = (r) => {
+      const t = typeof r.headers.get === 'function' ? r.headers.get('content-type') : r.headers['content-type'];
+      return t ? t.split(';')[0] : null;
+    };
+    const view = (r, other) => {
+      const h = rateLimitHeaders(r.headers);
+      const theirs = rateLimitHeaders(other.headers);
+      for (const k of RATE_LIMIT_CLOCK) {
+        if (h[k] !== undefined && theirs[k] !== undefined && Math.abs(Number(h[k]) - Number(theirs[k])) <= 1) h[k] = 'CLOCK';
+      }
+      let content;
+      if (r.body !== undefined && !opts.text) {
+        content = fix(TIMESTAMPS(r.body));
+        if (opts.dropError && content?.keyValueTable) delete content.keyValueTable.error;
+      } else {
+        content = { type: r.text === '' ? null : type(r), text: r.text };
+      }
+      return { label: `${method.toUpperCase()} ${url}`, status: r.status, content, rateLimit: h };
+    };
+    expect(view(rust, node)).toEqual(view(node, rust));
+    return { node, rust };
+  };
+
+  return bo;
+}
+
 module.exports = {
   RUST, describeIfRust, bearer, fresh, normalizer, normalize, norm,
   compare, compareWith, step, call, both,
   setCookies, parseSetCookie, expectSameSetCookies,
   rateLimitHeaders, expectSameRateLimit,
   rustBin, startNode, startRust,
+  backOffice, describeBackOffice, freePort,
 };

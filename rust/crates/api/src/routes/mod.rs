@@ -20,3 +20,9 @@ pub mod newsletter;
 pub mod shipping;
 pub mod status;
 pub mod unsubscribe;
+// Wave B: the /api/admin areas (crate::admin dispatches to them) and the
+// groups ported next (empty routers until then).
+pub mod admin;
+pub mod database;
+pub mod images;
+pub mod payments;

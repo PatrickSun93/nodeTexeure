@@ -22,6 +22,14 @@ pub mod express;
 pub mod fedex;
 pub mod qs;
 
+// Wave B foundation: the /api/admin dispatcher, multer, mysql2-style rows,
+// CSV (papaparse) and Express's res.send.
+pub mod admin;
+pub mod csv;
+pub mod express_send;
+pub mod multer;
+pub mod mysql_json;
+
 use std::time::Duration;
 
 use axum::Router;
@@ -41,16 +49,20 @@ pub struct AppState {
     pub csrf: csrf::CsrfKey,
     /// `TRUST_PROXY` hops, for `req.ip` (rate limits).
     pub trust_proxy: client_ip::TrustProxy,
+    /// The `/api/admin` routes and their limiter stores (see [`admin`]).
+    pub back_office: std::sync::Arc<admin::BackOffice>,
 }
 
 impl AppState {
     /// State from the environment (`JWT_SECRET`, `CSRF_SECRET`, `TRUST_PROXY`).
     pub fn new(pool: MySqlPool, jwt_secret: Option<&str>) -> Self {
+        let trust_proxy = client_ip::TrustProxy::from_env();
         Self {
             pool,
             jwt: auth::JwtKey::from_secret(jwt_secret),
             csrf: csrf::CsrfKey::from_env(),
-            trust_proxy: client_ip::TrustProxy::from_env(),
+            trust_proxy,
+            back_office: std::sync::Arc::new(admin::BackOffice::new(trust_proxy)),
         }
     }
 }
@@ -190,12 +202,25 @@ pub fn router_with_limiter(state: AppState, global: ratelimit::RateLimiter) -> R
         .merge(routes::contact::router())
         .merge(routes::status::router())
         .merge(routes::shipping::router(state.trust_proxy))
-        .fallback(|| async {
-            (
-                StatusCode::NOT_FOUND,
-                axum::Json(common::response::failure("Endpoint not found")),
-            )
-        })
+        // Wave B: the whole /api/admin subtree (crate::admin), and the groups
+        // being ported next (empty until their port lands).
+        .merge(admin::router())
+        .merge(routes::database::router(&state))
+        .merge(routes::payments::router(&state))
+        .merge(routes::images::router(&state))
+        .fallback(
+            |State(state): State<AppState>, req: axum::extract::Request| async move {
+                // Express mounts match case-insensitively: `/API/Admin/…` is
+                // still the admin subtree.
+                if admin::is_admin_path(req.uri().path()) {
+                    return admin::dispatch(State(state), req).await;
+                }
+                axum::response::IntoResponse::into_response((
+                    StatusCode::NOT_FOUND,
+                    axum::Json(common::response::failure("Endpoint not found")),
+                ))
+            },
+        )
         .with_state(state)
         // express-rate-limit on `/api`, before anything else answers.
         .layer(global.layer())
