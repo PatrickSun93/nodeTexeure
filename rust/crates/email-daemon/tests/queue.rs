@@ -230,6 +230,65 @@ async fn failure_backs_off_then_gives_up() {
 
 #[tokio::test]
 #[ignore = "needs DATABASE_URL"]
+async fn order_confirmation_lists_the_order_with_user_input_escaped() {
+    let pool = pool().await;
+    let cfg = config(std::path::Path::new("unused"));
+    let template_id: String =
+        sqlx::query_scalar("SELECT id FROM email_templates WHERE name = 'order_confirmation'")
+            .fetch_one(&pool)
+            .await
+            .unwrap();
+    // The variables both checkout producers pass (migration 014).
+    let data = json!({
+        "order_number": "NOR-AAAAA-BBBBB",
+        "customer_name": "Zoë <script>x</script>",
+        "items": [
+            { "name": "Silk & Cashmere Throw", "sku": "T-1", "quantity": 2, "unit_price": "39.99", "line_total": "79.98" }
+        ],
+        "subtotal": "79.98", "has_discount": true, "discount_amount": "8.00",
+        "shipping_amount": "9.99", "tax_amount": "5.94", "total_amount": "87.91",
+        "shipping_address_lines": ["Zoë <script>x</script>", "1 Silk Way", "Austin, TX 73301", "US"]
+    });
+    let item = enqueue(
+        &pool,
+        "Order Confirmation - NOR-AAAAA-BBBBB",
+        json!({}),
+        Some(&template_id),
+        data,
+        3,
+    )
+    .await;
+    let mailer = RecordingMailer(Mutex::new(Vec::new()));
+    assert_eq!(
+        process_email(&pool, &mailer, &cfg, &item).await.unwrap(),
+        Outcome::Sent
+    );
+    let sent = mailer.0.lock().unwrap().pop().unwrap();
+    for part in [
+        "Silk &amp; Cashmere Throw",
+        "$79.98",
+        "&minus;$8.00",
+        "$87.91",
+        "Austin, TX 73301<br>",
+    ] {
+        assert!(sent.html.contains(part), "html has {part}: {}", sent.html);
+    }
+    assert!(!sent.html.contains("<script>") && sent.html.contains("Zoë &lt;script&gt;"));
+    assert!(
+        !sent.html.contains("{{"),
+        "no placeholder left: {}",
+        sent.html
+    );
+    assert!(
+        sent.text
+            .contains("- Silk & Cashmere Throw x 2 @ $39.99 = $79.98")
+    );
+    assert!(sent.text.contains("Discount: -$8.00") && sent.text.contains("Zoë <script>x</script>"));
+    cleanup(&pool, &item.id).await;
+}
+
+#[tokio::test]
+#[ignore = "needs DATABASE_URL"]
 async fn a_row_is_only_claimed_once() {
     let pool = pool().await;
     let item = enqueue(&pool, "S", json!({}), None, json!({}), 3).await;
@@ -264,9 +323,63 @@ async fn abandoned_claims_are_recovered() {
         queue::recover_stale(&pool, Duration::from_secs(600))
             .await
             .unwrap()
+            .requeued
             >= 1
     );
-    assert_eq!(row(&pool, &item.id).await.0, "pending");
+    let (status, attempts, details, _) = row(&pool, &item.id).await;
+    assert_eq!((status.as_str(), attempts), ("pending", 1));
+    assert_eq!(details["recovered_by"], "email-daemon");
+    assert_eq!(details["attempt_number"], 1);
+    cleanup(&pool, &item.id).await;
+}
+
+/// Mark a row as claimed by a worker that died `ago` seconds after claiming it.
+async fn abandon(pool: &MySqlPool, id: &str, ago_secs: u32) {
+    sqlx::query("UPDATE email_queue SET status = 'processing', claimed_at = NOW() - INTERVAL ? SECOND WHERE id = ?")
+        .bind(ago_secs)
+        .bind(id)
+        .execute(pool)
+        .await
+        .unwrap();
+}
+
+#[tokio::test]
+#[ignore = "needs DATABASE_URL"]
+async fn an_email_that_keeps_crashing_the_worker_gives_up() {
+    let pool = pool().await;
+    let stale = Duration::from_secs(600);
+    let item = enqueue(&pool, "Poison", json!({}), None, json!({}), 2).await;
+
+    // First crash: the abandoned run is counted and the row is retried.
+    abandon(&pool, &item.id, 3600).await;
+    queue::recover_stale(&pool, stale).await.unwrap();
+    let (status, attempts, details, _) = row(&pool, &item.id).await;
+    assert_eq!((status.as_str(), attempts), ("pending", 1));
+    assert!(
+        details["error_message"]
+            .as_str()
+            .unwrap()
+            .contains("abandoned")
+    );
+
+    // A claim younger than the stale timeout belongs to a live worker: untouched.
+    abandon(&pool, &item.id, 5).await;
+    queue::recover_stale(&pool, stale).await.unwrap();
+    assert_eq!(
+        row(&pool, &item.id).await.0,
+        "processing",
+        "a live claim is left alone"
+    );
+
+    // Second crash uses the last attempt: failed for good, never fetched again.
+    abandon(&pool, &item.id, 3600).await;
+    let recovered = queue::recover_stale(&pool, stale).await.unwrap();
+    assert!(recovered.failed >= 1);
+    let (status, attempts, details, _) = row(&pool, &item.id).await;
+    assert_eq!((status.as_str(), attempts), ("failed", 2));
+    assert_eq!(details["attempt_number"], 2);
+    let due = queue::fetch_due(&pool, 10_000).await.unwrap();
+    assert!(due.iter().all(|e| e.id != item.id));
     cleanup(&pool, &item.id).await;
 }
 

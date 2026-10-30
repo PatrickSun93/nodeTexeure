@@ -1,0 +1,12 @@
+{
+  "db_name": "MySQL",
+  "query": "UPDATE email_queue\n         SET status = 'pending', claimed_at = NULL,\n             processing_details = JSON_OBJECT('error_message', ?, 'failed_at', ?,\n               'attempt_number', COALESCE(attempts, 0) + 1, 'recovered_by', 'email-daemon'),\n             attempts = COALESCE(attempts, 0) + 1\n         WHERE status = 'processing' AND claimed_at < NOW() - INTERVAL ? SECOND",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 3
+    },
+    "nullable": []
+  },
+  "hash": "d1a1071a27d4934aab701eec23cbccc46d1d0530701de886e41e41d601c360bf"
+}

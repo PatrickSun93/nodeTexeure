@@ -126,4 +126,61 @@ async function enqueueRaw(toEmail, toName, subject, htmlContent, textContent = '
   }
 }
 
-module.exports = { enqueue, enqueueRaw };
+// --- order_confirmation variables -------------------------------------------
+// rust/crates/api/src/routes/checkout.rs builds the same variables (checkout runs
+// on either service; backend/tests/parity.test.js compares the queued rows). The
+// template (migration 014) renders the items and address lines itself. Values are
+// passed raw — never pre-escaped: the email daemon HTML-escapes every variable it
+// puts into the HTML body (rust/crates/email-daemon/src/render.rs).
+
+const money = (n) => Number(n).toFixed(2);
+
+// One part of an address line: strings and numbers as typed, anything else dropped.
+const addressPart = (v) => (typeof v === 'string' || typeof v === 'number' ? String(v) : '');
+const joinParts = (parts, sep) => parts.filter(Boolean).join(sep);
+
+/** "Ada Lovelace" / "1 Silk Way" / "Apt 4" / "Austin, TX 73301" / "US", blanks skipped. */
+function addressLines(address) {
+  const a = address || {};
+  const part = (key) => addressPart(a[key]);
+  return [
+    joinParts([part('first_name'), part('last_name')], ' '),
+    part('address_line_1'),
+    part('address_line_2'),
+    joinParts([part('city'), joinParts([part('state'), part('postal_code')], ' ')], ', '),
+    part('country'),
+  ].filter(Boolean);
+}
+
+/**
+ * Variables for the order_confirmation template.
+ * @param {Object} o
+ * @param {string} o.orderNumber
+ * @param {*} o.customerName - as the order flow resolved it
+ * @param {Array<{name, sku, quantity, price}>} o.items - the ordered cart lines
+ * @param {number} o.subtotal @param {number} o.discount @param {number} o.shipping
+ * @param {number} o.tax @param {number} o.total - cents-rounded order amounts
+ * @param {Object} o.shippingAddress
+ */
+function orderConfirmationVariables({ orderNumber, customerName, items, subtotal, discount, shipping, tax, total, shippingAddress }) {
+  return {
+    order_number: orderNumber,
+    customer_name: customerName,
+    items: items.map((item) => ({
+      name: item.name,
+      sku: item.sku || '',
+      quantity: item.quantity,
+      unit_price: money(item.price),
+      line_total: money(Math.round(Number(item.price) * item.quantity * 100) / 100),
+    })),
+    subtotal: money(subtotal),
+    has_discount: discount > 0,
+    discount_amount: money(discount),
+    shipping_amount: money(shipping),
+    tax_amount: money(tax),
+    total_amount: money(total),
+    shipping_address_lines: addressLines(shippingAddress),
+  };
+}
+
+module.exports = { enqueue, enqueueRaw, orderConfirmationVariables };

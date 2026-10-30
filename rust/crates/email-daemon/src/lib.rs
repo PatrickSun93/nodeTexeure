@@ -3,7 +3,9 @@
 //! The Node API enqueues mail (backend/services/emailQueueProducer.js); this
 //! process claims due rows, renders them, sends them, and records the outcome.
 //! Delivery is at-least-once: a row is claimed before sending, and a claim left
-//! behind by a crash is returned to the queue after `stale_claim`.
+//! behind by a crash is returned to the queue after `stale_claim`. That abandoned
+//! run counts as an attempt, so an email that keeps crashing the daemon ends up
+//! `failed` after `max_attempts` instead of being retried forever.
 
 pub mod config;
 pub mod mailer;
@@ -97,8 +99,17 @@ pub async fn process_batch<M: Mailer>(
     shutdown: &watch::Receiver<bool>,
 ) -> anyhow::Result<Vec<Outcome>> {
     let recovered = queue::recover_stale(pool, config.stale_claim).await?;
-    if recovered > 0 {
-        tracing::warn!(recovered, "returned abandoned claims to the queue");
+    if recovered.requeued > 0 {
+        tracing::warn!(
+            requeued = recovered.requeued,
+            "returned abandoned claims to the queue"
+        );
+    }
+    if recovered.failed > 0 {
+        tracing::error!(
+            failed = recovered.failed,
+            "abandoned claims out of attempts; marked failed"
+        );
     }
     let due = queue::fetch_due(pool, config.batch_size).await?;
     let mut outcomes = Vec::with_capacity(due.len());

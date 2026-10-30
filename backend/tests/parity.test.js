@@ -499,6 +499,15 @@ describeIfRust('checkout: tax, coupons and order creation', () => {
       mails.push(norm(rows[0]));
     }
     expect(mails[1]).toEqual(mails[0]);
+    // The confirmation carries the order itself (migration 014), as raw values:
+    // the email daemon HTML-escapes them when it renders the HTML body.
+    const vars = mails[0].template_data;
+    expect(vars.items).toEqual([expect.objectContaining({ quantity: body.quantity })]);
+    expect(vars.has_discount).toBe(body.hasDiscount);
+    expect(vars.shipping_address_lines).toEqual(body.addressLines);
+    for (const k of ['subtotal', 'discount_amount', 'shipping_amount', 'tax_amount', 'total_amount']) {
+      expect(vars[k]).toMatch(/^\d+\.\d\d$/);
+    }
     // Coupon redemptions were recorded the same way.
     const usage = [];
     for (const s of Object.values(sides)) {
@@ -513,7 +522,8 @@ describeIfRust('checkout: tax, coupons and order creation', () => {
     const v = await inStockVariant(10);
     await fill(sides, v, 3);
     await placeAndCompare(sides, {
-      variant: v, quantity: 3,
+      variant: v, quantity: 3, hasDiscount: true,
+      addressLines: ['Ada L', '1 Silk Way', 'Austin, TX 73301', 'US'],
       order: { shippingAddress: address, billingAddress: { ...address, first_name: 'Bill' }, couponCode: 'WELCOME10', shippingMethod: 'EXPRESS' },
     });
   });
@@ -527,9 +537,14 @@ describeIfRust('checkout: tax, coupons and order creation', () => {
     // Another browser cannot use this cart.
     await both({ node: { auth: {} }, rust: { auth: {} } }, 'post', '/api/orders/create',
       { cartId: sides.node.cartId, shippingAddress: address, billingAddress: address, guestEmail: 'g@example.com' });
+    // Markup in a name or address reaches the queue raw on both sides; blank and
+    // non-string parts are dropped from the address lines the same way.
+    const shippingAddress = { ...address, first_name: 'Zoë <b>&', last_name: '', address_line_2: 'Apt "4"',
+      postal_code: 73301, phone: { n: 1 } };
     await placeAndCompare(sides, {
-      variant: v, quantity: 1,
-      order: { shippingAddress: address, billingAddress: address, guestEmail: 'guest.parity@example.com', shippingMethod: 'NOPE' },
+      variant: v, quantity: 1, hasDiscount: false,
+      addressLines: ['Zoë <b>&', '1 Silk Way', 'Apt "4"', 'Austin, TX 73301', 'US'],
+      order: { shippingAddress, billingAddress: address, guestEmail: 'guest.parity@example.com', shippingMethod: 'NOPE' },
     });
   });
 
