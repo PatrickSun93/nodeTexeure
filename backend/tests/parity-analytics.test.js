@@ -26,11 +26,12 @@ const ALL_ROUTES = [...RANGE_ROUTES, 'inventory-status', 'revenue-vs-target'];
 const FALLTHROUGH = ['summary', 'revenue', 'sales-by-region'];
 
 // keyValueTable.period carries `new Date()` values taken a few ms apart on the
-// two sides; everything else must be identical (BO.same already compares with
-// timestamps normalized).
+// two sides, and so does the 404's keyValueTable.timestamp; everything else
+// must be identical (BO.same already compares with timestamps normalized).
 function withoutNow(body) {
   if (!body || !body.keyValueTable || Array.isArray(body.keyValueTable)) return body;
   const { period, ...rest } = body.keyValueTable;
+  if (body.message === 'Endpoint not found') delete rest.timestamp;
   return { ...body, keyValueTable: rest };
 }
 

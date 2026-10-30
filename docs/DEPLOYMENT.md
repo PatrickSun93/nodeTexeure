@@ -58,9 +58,17 @@ rejected and treated as `0`).
 
 The storefront's `/api` proxy target is baked in at build time
 (`PRODUCTION_BACKEND_URL`, set to `http://backend:6666` in the compose file).
-Route groups listed in `RUST_API_ROUTES` (default `products,search,journal,settings/public,wishlist,orders,cart,users,reviews,returns,abandoned-cart,unsubscribe,newsletter,contact,status,shipping`) go to the Rust API
-(`api` service) instead. **Rollback:** build with `RUST_API_ROUTES=` (empty) to
-send everything to the Node backend. Rebuild the frontend after changing either.
+Route groups listed in `RUST_API_ROUTES` (default `products,search,journal,settings,wishlist,orders,cart,users,reviews,returns,abandoned-cart,unsubscribe,newsletter,contact,status,shipping,admin,database,payments,images`) go to the Rust API
+(`api` service) instead. The admin dashboard does the same with its own list,
+`ADMIN_RUST_API_ROUTES` (default `admin,database,settings,payments,images,users`;
+`BACKEND_URL` for the rest). **Rollback:** build with `RUST_API_ROUTES=` /
+`ADMIN_RUST_API_ROUTES=` (empty) to send everything to the Node backend. Rebuild
+the frontend / admin after changing either.
+
+Both `backend` and `api` mount the `uploads_prod_data` volume at `/app/uploads`
+(`UPLOADS_DIR` on the api): local image uploads written by Rust are served by
+Node's `/uploads` route. The api also gets the backend's `STRIPE_SECRET_KEY` and
+`AWS_*` values, since `/api/payments` and `/api/images` now run there.
 
 ## 2. Ship
 

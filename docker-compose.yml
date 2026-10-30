@@ -50,7 +50,7 @@ services:
     environment:
       BACKEND_URL: http://backend:6666
       RUST_API_URL: http://api:7000
-      RUST_API_ROUTES: products,search,journal,settings/public,wishlist,orders,cart,users,reviews,returns,abandoned-cart,unsubscribe,newsletter,contact,status,shipping
+      RUST_API_ROUTES: products,search,journal,settings,wishlist,orders,cart,users,reviews,returns,abandoned-cart,unsubscribe,newsletter,contact,status,shipping,admin,database,payments,images
       NEXTAUTH_URL: http://localhost:3000
       NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:-dev_only_nextauth_secret}
       NODE_ENV: development
@@ -71,10 +71,11 @@ services:
       dockerfile: Dockerfile.dev
     environment:
       BACKEND_URL: http://backend:6666
-      # Same mechanism as the frontend (admin-dashboard/rustRoutes.mjs); empty
-      # RUST_API_ROUTES = every admin /api call stays on Node.
+      # Same mechanism as the frontend (admin-dashboard/rustRoutes.mjs): these
+      # groups go to the Rust API, the rest of /api to Node. Empty
+      # RUST_API_ROUTES = every admin /api call stays on Node (rollback).
       RUST_API_URL: http://api:7000
-      RUST_API_ROUTES: ""
+      RUST_API_ROUTES: admin,database,settings,payments,images,users
       NODE_ENV: development
       WATCHPACK_POLLING: "true"
     ports:
@@ -88,7 +89,8 @@ services:
       - api
 
   # Rust API (rust/crates/api): answers the route groups listed in the
-  # frontend's RUST_API_ROUTES; everything else stays on the Node backend.
+  # frontend's and the admin's RUST_API_ROUTES; everything else stays on the
+  # Node backend.
   api:
     build:
       context: ./rust
@@ -108,6 +110,12 @@ services:
       # Must match the backend: the API verifies the tokens Node signs.
       NODE_ENV: development
       JWT_SECRET: ${JWT_SECRET:-dev_only_jwt_secret_change_me_min_32_characters}
+      # /api/images and admin product images write here; the backend serves the
+      # same directory at /uploads (it is ./backend/uploads in both containers).
+      UPLOADS_DIR: /uploads
+    user: root # write to the bind-mounted uploads regardless of host ownership
+    volumes:
+      - ./backend/uploads:/uploads
     ports:
       - "7000:7000"
     depends_on:

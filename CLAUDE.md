@@ -19,18 +19,27 @@ Design direction: **"Champagne & Charcoal"** (see [docs/DESIGN.md](docs/DESIGN.m
 | Email daemon | `rust/crates/email-daemon` | Rust, sqlx, AWS SES v2 | — |
 
 The backend is being ported to Rust piece by piece (`rust/`, see
-[rust/README.md](rust/README.md)): the email daemon, the public read-only APIs
-(`products`, `search`, `journal`, `settings/public`), `wishlist`, all of `orders`
-(incl. checkout/order creation), all of `cart` and `abandoned-cart`, all of `users`
-(auth + account + admin user management), `reviews`, `returns`, `unsubscribe`,
-`newsletter`, `contact`, `status` and `shipping` are done. Shared Rust building
-blocks: `ratelimit.rs` + `client_ip.rs` (express-rate-limit / `TRUST_PROXY`),
-`password.rs` (bcryptjs), `tokens.rs` (JWT/refresh), `csrf.rs` (`Csrf<Admin>`),
-`cookies.rs`, `email_queue.rs`, `express.rs` / `express_router.rs` / `qs.rs`
-(Express body parsing, 404/error handler, routing, qs). The admin dashboard
-still proxies all of `/api` to Node.
+[rust/README.md](rust/README.md)): the email daemon and every `/api` group
+`server.js` mounts are done — the public read-only APIs (`products`, `search`,
+`journal`), all of `settings`, `wishlist`, all of `orders` (incl. checkout/order
+creation), all of `cart` and `abandoned-cart`, all of `users` (auth + account +
+admin user management), `reviews`, `returns`, `unsubscribe`, `newsletter`,
+`contact`, `status`, `shipping`, `payments` (Stripe), `images`, `database`, and
+the whole `/api/admin` subtree (dispatcher `admin.rs`, one
+`routes/admin/<area>.rs` per Node router). Still on Node: the background jobs
+(expired stock-reservation release, abandoned-cart detection), migrations and
+seeds, and the `/uploads` static route; the Node routes stay as the rollback
+target. Shared Rust building blocks: `ratelimit.rs` + `client_ip.rs`
+(express-rate-limit / `TRUST_PROXY`), `password.rs` (bcryptjs), `tokens.rs`
+(JWT/refresh), `csrf.rs` (`Csrf<Admin>`), `cookies.rs`, `email_queue.rs`,
+`express.rs` / `express_router.rs` / `qs.rs` (Express body parsing, 404/error
+handler, routing, qs), and for the back office `multer.rs`, `mysql_json.rs`
+(mysql2 rows for dynamic SQL), `csv.rs`, `express_send.rs`, `js_date.rs`,
+`stripe.rs`, `s3.rs`, `imaging.rs`, `v8_json.rs`.
 Rust auth (`rust/crates/api/src/auth.rs`: `AuthUser`, `OptionalUser`,
-`StaffOrAdmin`, `Admin` extractors) mirrors `protect`/`admin` exactly. The storefront proxy sends the groups in `RUST_API_ROUTES` to the Rust API;
+`StaffOrAdmin`, `Admin` extractors) mirrors `protect`/`admin` exactly. The storefront proxy sends the groups in `RUST_API_ROUTES` to the Rust API,
+and the admin dashboard does the same with its own list
+(`admin-dashboard/rustRoutes.mjs`; `ADMIN_RUST_API_ROUTES` in prod compose);
 a ported group must pass `backend/tests/parity.test.js` / its `parity-<group>.test.js` (identical JSON to Node).
 Write new public endpoints in `rust/crates/api`. New Rust queries use
 sqlx `query!` macros — refresh `rust/.sqlx` with `cargo sqlx prepare --workspace

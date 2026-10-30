@@ -11,7 +11,8 @@
 //
 // A group listed in PARTIAL_GROUPS moves only those paths (Next path patterns,
 // e.g. `admin: ['admin/logout', 'admin/coupons/:path*']`); the rest of the
-// group stays on Node. None today: nothing of the admin's own API is moved yet.
+// group stays on Node. None today: the groups the admin moves (admin, database,
+// settings, payments, images, users) are fully ported.
 //
 // The rewrite targets are baked in at `next build` (Dockerfile.prod passes
 // RUST_API_URL / RUST_API_ROUTES / BACKEND_URL as build args).

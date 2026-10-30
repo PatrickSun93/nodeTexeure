@@ -27,10 +27,13 @@ jest.mock('stripe', () => {
 });
 
 // The default app (helpers.app) must load without any Stripe configuration.
-delete process.env.STRIPE_SECRET_KEY;
-delete process.env.STRIPE_WEBHOOK_SECRET;
+// Empty, not deleted: utils/database.js loads backend/.env with dotenv, which
+// fills in unset variables (a local checkout's Stripe key would make Node build
+// its client) but never overrides set ones.
+process.env.STRIPE_SECRET_KEY = '';
+process.env.STRIPE_WEBHOOK_SECRET = '';
 delete process.env.PARITY_STRIPE_PORT;
-for (const k of ['AWS_ACCESS_KEY_ID', 'AWS_SECRET_ACCESS_KEY']) delete process.env[k];
+for (const k of ['AWS_ACCESS_KEY_ID', 'AWS_SECRET_ACCESS_KEY']) process.env[k] = '';
 
 const fs = require('fs');
 const path = require('path');

@@ -45,6 +45,9 @@ services:
       STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
       AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-}
       AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-}
+    volumes:
+      # Shared with the api service (local upload storage when S3 is unset).
+      - uploads_prod_data:/app/uploads
     expose:
       - "6666"
     restart: unless-stopped
@@ -66,7 +69,7 @@ services:
       args:
         PRODUCTION_BACKEND_URL: http://backend:6666
         RUST_API_URL: http://api:7000
-        RUST_API_ROUTES: ${RUST_API_ROUTES-products,search,journal,settings/public,wishlist,orders,cart,users,reviews,returns,abandoned-cart,unsubscribe,newsletter,contact,status,shipping}
+        RUST_API_ROUTES: ${RUST_API_ROUTES-products,search,journal,settings,wishlist,orders,cart,users,reviews,returns,abandoned-cart,unsubscribe,newsletter,contact,status,shipping,admin,database,payments,images}
     environment:
       PRODUCTION_BACKEND_URL: http://backend:6666
       NEXTAUTH_URL: ${NEXTAUTH_URL:-http://localhost:3000}
@@ -90,7 +93,7 @@ services:
       args:
         BACKEND_URL: http://backend:6666
         RUST_API_URL: http://api:7000
-        RUST_API_ROUTES: ${ADMIN_RUST_API_ROUTES-}
+        RUST_API_ROUTES: ${ADMIN_RUST_API_ROUTES-admin,database,settings,payments,images,users}
     environment:
       BACKEND_URL: http://backend:6666
       NODE_ENV: production
@@ -103,8 +106,9 @@ services:
       api:
         condition: service_healthy
 
-  # Rust API: serves the route groups in RUST_API_ROUTES (baked into the
-  # frontend build below); unset them to send everything back to Node.
+  # Rust API: serves the route groups in RUST_API_ROUTES / ADMIN_RUST_API_ROUTES
+  # (baked into the frontend and admin builds above); set them empty to send
+  # everything back to Node.
   api:
     build:
       context: ./rust
@@ -128,6 +132,16 @@ services:
       # TRUST_PROXY (rate-limit client IP) comes from backend/.env: opt in with 1
       # only when 3000/3005 are reachable solely through a TLS proxy that sets
       # X-Forwarded-For (docs/DEPLOYMENT.md).
+      # Same Stripe/S3 credentials as the backend (/api/payments, /api/images).
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-}
+      # Local uploads (no S3): the backend's /app/uploads volume, which Node
+      # serves at /uploads. root like the backend, so it can write the volume.
+      UPLOADS_DIR: /app/uploads
+    user: root
+    volumes:
+      - uploads_prod_data:/app/uploads
     expose:
       - "7000"
     restart: unless-stopped
@@ -163,3 +177,4 @@ services:
 
 volumes:
   mysql_prod_data:
+  uploads_prod_data:
