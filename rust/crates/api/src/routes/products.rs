@@ -107,8 +107,14 @@ pub async fn list(
     let category = params::first(&pairs, "category");
     let min_price = params::first(&pairs, "min_price");
     let max_price = params::first(&pairs, "max_price");
+    // Material terms as a JSON array of LIKE "contains" patterns, read in SQL with
+    // JSON_TABLE: a variable-length term list in a static query, and the same SQL
+    // as the Node route (a material matches when it contains any term, ignoring case).
     let materials = params::materials(&pairs);
-    let materials = (!materials.is_empty()).then(|| materials.join(","));
+    let materials = (!materials.is_empty()).then(|| {
+        let patterns: Vec<String> = materials.iter().map(|t| params::like_contains(t)).collect();
+        Value::from(patterns).to_string()
+    });
     let search = params::first(&pairs, "search").map(|s| format!("%{s}%"));
 
     let products = sqlx::query_as!(
@@ -128,7 +134,9 @@ pub async fn list(
              AND (? IS NULL OR p.category_id = ?)
              AND (? IS NULL OR p.base_price >= ?)
              AND (? IS NULL OR p.base_price <= ?)
-             AND (? IS NULL OR FIND_IN_SET(JSON_UNQUOTE(JSON_EXTRACT(p.product_details, '$.material')), ?) > 0)
+             AND (? IS NULL OR EXISTS (
+                  SELECT 1 FROM JSON_TABLE(?, '$[*]' COLUMNS (pattern LONGTEXT COLLATE utf8mb4_bin PATH '$')) AS mt
+                  WHERE LOWER(JSON_UNQUOTE(JSON_EXTRACT(p.product_details, '$.material'))) LIKE LOWER(mt.pattern)))
              AND (? IS NULL OR p.name LIKE ? OR p.description LIKE ? OR p.short_description LIKE ?
                   OR EXISTS (SELECT 1 FROM product_translations pts
                              WHERE pts.product_id = p.id AND pts.locale = ?
@@ -152,7 +160,9 @@ pub async fn list(
              AND (? IS NULL OR p.category_id = ?)
              AND (? IS NULL OR p.base_price >= ?)
              AND (? IS NULL OR p.base_price <= ?)
-             AND (? IS NULL OR FIND_IN_SET(JSON_UNQUOTE(JSON_EXTRACT(p.product_details, '$.material')), ?) > 0)
+             AND (? IS NULL OR EXISTS (
+                  SELECT 1 FROM JSON_TABLE(?, '$[*]' COLUMNS (pattern LONGTEXT COLLATE utf8mb4_bin PATH '$')) AS mt
+                  WHERE LOWER(JSON_UNQUOTE(JSON_EXTRACT(p.product_details, '$.material'))) LIKE LOWER(mt.pattern)))
              AND (? IS NULL OR p.name LIKE ? OR p.description LIKE ? OR p.short_description LIKE ?
                   OR EXISTS (SELECT 1 FROM product_translations pts
                              WHERE pts.product_id = p.id AND pts.locale = ?

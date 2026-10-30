@@ -60,7 +60,9 @@
     "sortPriceHigh": "Precio: Mayor a Menor",
     "sortName": "Nombre: A a Z",
     "loading": "Cargando productos...",
-    "noProducts": "No se encontraron productos que coincidan con sus criterios."
+    "noProducts": "No se encontraron productos que coincidan con sus criterios.",
+    "searchChip": "Búsqueda: «{term}»",
+    "removeFilter": "Quitar filtro: {label}"
   },
   "Home": {
     "heroTitle": "El Arte del Confort",

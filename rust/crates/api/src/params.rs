@@ -98,6 +98,22 @@ pub fn materials(pairs: &Pairs) -> Vec<String> {
     Vec::new()
 }
 
+/// A LIKE pattern matching any value that contains `term` literally: LIKE's
+/// wildcards (`%`, `_`) and its escape character (`\`) are escaped. Same as
+/// `escapeLike` in backend/routes/productRoutes.js.
+pub fn like_contains(term: &str) -> String {
+    let mut pattern = String::with_capacity(term.len() + 2);
+    pattern.push('%');
+    for c in term.chars() {
+        if matches!(c, '\\' | '%' | '_') {
+            pattern.push('\\');
+        }
+        pattern.push(c);
+    }
+    pattern.push('%');
+    pattern
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -165,5 +181,12 @@ mod tests {
         );
         assert_eq!(materials(&pairs(&[("material", "Silk")])), ["Silk"]);
         assert!(materials(&pairs(&[])).is_empty());
+    }
+
+    #[test]
+    fn like_contains_escapes_wildcards() {
+        assert_eq!(like_contains("Silk"), "%Silk%");
+        assert_eq!(like_contains("100% c_t\\n"), "%100\\% c\\_t\\\\n%");
+        assert_eq!(like_contains(""), "%%");
     }
 }

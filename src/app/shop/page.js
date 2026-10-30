@@ -10,6 +10,18 @@ import Footer from '../../components/Footer';
 import Pagination from '../../components/common/Pagination';
 import { apiRequest } from '../../lib/api';
 
+// Material options. GET /api/products matches a material containing the term,
+// ignoring case, so each value is the word the real materials share:
+// "Silk" → "Mulberry Silk", "Blend" → "Polyester Blend".
+const MATERIAL_OPTIONS = [
+  { value: 'Silk', key: 'silk' },
+  { value: 'Cashmere', key: 'cashmere' },
+  { value: 'Blend', key: 'blends' },
+];
+
+const findMaterialOption = (value) =>
+  MATERIAL_OPTIONS.find((option) => option.value.toLowerCase() === String(value || '').toLowerCase());
+
 // Product Card Component
 export function ProductCard({ product, onAddToCart }) {
   const [isLoading, setIsLoading] = useState(false);
@@ -52,9 +64,11 @@ function Shop() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const searchQuery = searchParams.get('search') || '';
-  
-  const [filters, setFilters] = useState({ 
-    material: '',
+  const materialParam = searchParams.get('material') || '';
+
+  const [filters, setFilters] = useState({
+    // Start from the URL so the first fetch is already filtered.
+    material: findMaterialOption(materialParam)?.value ?? materialParam,
     colors: [],
     priceRange: 750,
     sizes: [],
@@ -100,18 +114,17 @@ function Shop() {
     fetchProducts();
   }, [filters.material, filters.search]);
 
-  // Update search filter when URL search param changes
+  // Keep the search term in step with the URL (header search, or the chip's
+  // remove button); a material in the URL (footer links) selects that material.
   useEffect(() => {
-    const searchQuery = searchParams.get('search');
+    const searchQuery = searchParams.get('search') || '';
     const materialQuery = searchParams.get('material');
-    
-    if (searchQuery || materialQuery) {
-      setFilters(prev => ({
-        ...prev,
-        search: searchQuery || '',
-        material: materialQuery || ''
-      }));
-    }
+
+    setFilters(prev => ({
+      ...prev,
+      search: searchQuery,
+      material: materialQuery ? (findMaterialOption(materialQuery)?.value ?? materialQuery) : prev.material,
+    }));
   }, [searchParams]);
 
   const handleFilterChange = (key, value) => {
@@ -127,7 +140,21 @@ function Shop() {
       }));
     } else if (key === 'material') {
       setFilters(prev => ({ ...prev, material: '' }));
+      if (searchParams.has('material')) dropUrlParams(['material']);
+    } else if (key === 'search') {
+      // The term lives in the URL (?search=), so drop it there; the effect above
+      // then clears the filter. A ?material= goes too: the current material is
+      // already in state and would otherwise override a newer radio choice.
+      dropUrlParams(['search', 'material']);
     }
+    setCurrentPage(1);
+  };
+
+  const dropUrlParams = (keys) => {
+    const params = new URLSearchParams(searchParams.toString());
+    keys.forEach((k) => params.delete(k));
+    const query = params.toString();
+    router.replace(query ? `/shop?${query}` : '/shop', { scroll: false });
   };
 
   const handleAddToCart = async (product) => {
@@ -148,11 +175,9 @@ function Shop() {
     }
   };
 
-  // Filter products
+  // Filter products. Material and search are applied by the API (see the fetch
+  // above); repeating them here on fields the listing lacks hid every result.
   const filteredProducts = products.filter(product => {
-    if (filters.material && !product.material?.toLowerCase().includes(filters.material.toLowerCase())) {
-      return false;
-    }
     if (filters.colors.length > 0 && !filters.colors.some(c => product.color?.toLowerCase().includes(c.toLowerCase()))) {
       return false;
     }
@@ -166,9 +191,6 @@ function Shop() {
       return false;
     }
     if (filters.threadCount && product.threadCount && product.threadCount < filters.threadCount) {
-      return false;
-    }
-    if (filters.search && !product.name.toLowerCase().includes(filters.search.toLowerCase())) {
       return false;
     }
     return true;
@@ -198,7 +220,12 @@ function Shop() {
 
   // Get active filters for display
   const activeFilters = [];
-  if (filters.material) activeFilters.push({ key: 'material', value: filters.material, label: filters.material });
+  const searchTerm = filters.search.trim();
+  if (searchTerm) activeFilters.push({ key: 'search', value: searchTerm, label: t('searchChip', { term: searchTerm }) });
+  if (filters.material) {
+    const option = findMaterialOption(filters.material);
+    activeFilters.push({ key: 'material', value: filters.material, label: option ? t(option.key) : filters.material });
+  }
   filters.sizes.forEach(size => activeFilters.push({ key: 'sizes', value: size, label: size }));
   filters.colors.forEach(color => activeFilters.push({ key: 'colors', value: color, label: color }));
   filters.brands.forEach(brand => activeFilters.push({ key: 'brands', value: brand, label: brand }));
@@ -218,7 +245,7 @@ function Shop() {
               <div className="noirae-filter-group">
                 <h4 className="noirae-filter-group-title">{t('material')}</h4>
                 <div className="noirae-filter-options">
-                  {[{ value: 'Silk', key: 'silk' }, { value: 'Cashmere', key: 'cashmere' }, { value: 'Blends', key: 'blends' }].map(({ value, key }) => (
+                  {MATERIAL_OPTIONS.map(({ value, key }) => (
                     <label key={value} className="noirae-filter-option">
                       <input
                         type="radio"
@@ -368,11 +395,13 @@ function Shop() {
                 {activeFilters.length > 0 && activeFilters.map((filter, index) => (
                   <button
                     key={`${filter.key}-${filter.value}-${index}`}
+                    type="button"
                     className="noirae-filter-tag"
                     onClick={() => handleRemoveFilter(filter.key, filter.value)}
+                    aria-label={t('removeFilter', { label: filter.label })}
                   >
                     {filter.label}
-                    <span className="noirae-filter-tag-remove">×</span>
+                    <span className="noirae-filter-tag-remove" aria-hidden="true">×</span>
                   </button>
                 ))}
               </div>

@@ -35,6 +35,11 @@ function withoutInternalColumns(p) {
   return publicFields;
 }
 
+// Escape LIKE's wildcards and its escape character so a term matches literally.
+function escapeLike(term) {
+  return term.replace(/[\\%_]/g, '\\$&');
+}
+
 // GET /api/products - Product listing with pagination and filters (with caching)
 // Listing image: the primary product image (else the first by sort order).
 const PRIMARY_IMAGE_SQL = `(SELECT COALESCE(pi.thumbnail_medium_url, pi.original_url) FROM product_images pi
@@ -90,10 +95,17 @@ router.get('/', PerformanceMiddleware.responseCache({
       }
     }
     if (materials.length > 0) {
-      const placeholders = materials.map(() => '?').join(', ');
-      // JSON_EXTRACT returns JSON string => unquote to compare to plain strings
-      whereClauses.push(`JSON_UNQUOTE(JSON_EXTRACT(p.product_details, '$.material')) IN (${placeholders})`);
-      filterParams.push(...materials);
+      // A term matches when the material contains it, case-insensitively, and any
+      // term may match: "silk" finds "Mulberry Silk", "blend" finds "Polyester Blend".
+      // The terms go in as one JSON array of LIKE patterns read with JSON_TABLE: the
+      // same SQL the Rust API runs (rust/crates/api/src/routes/products.rs), so the
+      // two stay identical (tests/parity.test.js). utf8mb4_bin on both sides of
+      // LOWER() keeps it plain case folding (not accent-insensitive).
+      whereClauses.push(`EXISTS (
+        SELECT 1 FROM JSON_TABLE(?, '$[*]' COLUMNS (pattern LONGTEXT COLLATE utf8mb4_bin PATH '$')) AS mt
+        WHERE LOWER(JSON_UNQUOTE(JSON_EXTRACT(p.product_details, '$.material'))) LIKE LOWER(mt.pattern)
+      )`);
+      filterParams.push(JSON.stringify(materials.map((term) => `%${escapeLike(String(term))}%`)));
     }
 
     // Search: match the English base columns OR the resolved-locale translation,

@@ -60,7 +60,9 @@
     "sortPriceHigh": "价格：高到低",
     "sortName": "名称：A 至 Z",
     "loading": "加载产品中...",
-    "noProducts": "未找到符合条件的产品。"
+    "noProducts": "未找到符合条件的产品。",
+    "searchChip": "搜索：“{term}”",
+    "removeFilter": "移除筛选：{label}"
   },
   "Home": {
     "heroTitle": "舒适的艺术",

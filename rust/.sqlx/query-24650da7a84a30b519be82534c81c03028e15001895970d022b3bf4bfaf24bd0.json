@@ -1,0 +1,24 @@
+{
+  "db_name": "MySQL",
+  "query": "SELECT COUNT(*) AS \"total!: i64\" FROM products p\n           WHERE p.status = 'approved'\n             AND (? IS NULL OR p.category_id = ?)\n             AND (? IS NULL OR p.base_price >= ?)\n             AND (? IS NULL OR p.base_price <= ?)\n             AND (? IS NULL OR EXISTS (\n                  SELECT 1 FROM JSON_TABLE(?, '$[*]' COLUMNS (pattern LONGTEXT COLLATE utf8mb4_bin PATH '$')) AS mt\n                  WHERE LOWER(JSON_UNQUOTE(JSON_EXTRACT(p.product_details, '$.material'))) LIKE LOWER(mt.pattern)))\n             AND (? IS NULL OR p.name LIKE ? OR p.description LIKE ? OR p.short_description LIKE ?\n                  OR EXISTS (SELECT 1 FROM product_translations pts\n                             WHERE pts.product_id = p.id AND pts.locale = ?\n                               AND (pts.name LIKE ? OR pts.description LIKE ?)))",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "total!: i64",
+        "type_info": {
+          "type": "LongLong",
+          "flags": "NOT_NULL | BINARY",
+          "max_size": 21
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 15
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "24650da7a84a30b519be82534c81c03028e15001895970d022b3bf4bfaf24bd0"
+}

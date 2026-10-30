@@ -167,7 +167,9 @@
     "sortPriceHigh": "Price: High to Low",
     "sortName": "Name: A to Z",
     "loading": "Loading products...",
-    "noProducts": "No products found matching your criteria."
+    "noProducts": "No products found matching your criteria.",
+    "searchChip": "Search: “{term}”",
+    "removeFilter": "Remove filter: {label}"
   },
   "SignIn": {
     "title": "Welcome Back",
