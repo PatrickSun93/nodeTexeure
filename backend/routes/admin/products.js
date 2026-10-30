@@ -87,6 +87,13 @@ router.put('/products/:id', admin, adminWriteLimiter, csrfProtection, async (req
     const { id } = req.params;
     const { variants, ...updates } = req.body; // Extract variants to prevent column error
 
+    // Validate every variant before any write, so a bad entry can't leave a half-applied update.
+    if (variants !== undefined && variants !== null) {
+      if (!Array.isArray(variants) || !variants.every((v) => v && typeof v === 'object' && (!v.id || isNonEmptyString(v.id)))) {
+        return res.status(400).json(ResponseFormatter.failure('variants must be objects with string ids'));
+      }
+    }
+
     // 1. Update Product Fields (whitelist columns to prevent SQL injection)
     const ALLOWED_PRODUCT_COLUMNS = [
       'name', 'slug', 'sku', 'description', 'short_description', 'base_price',
@@ -115,9 +122,6 @@ router.put('/products/:id', admin, adminWriteLimiter, csrfProtection, async (req
     // 2. Handle Variants (Upsert)
     if (variants && Array.isArray(variants)) {
       for (const v of variants) {
-        if (v && v.id && !isNonEmptyString(v.id)) {
-          return res.status(400).json(ResponseFormatter.failure('Variant ids must be strings'));
-        }
         if (v.id) {
           // Update Existing Variant
           // We typically update price_adj, sku, stock (via inventory)

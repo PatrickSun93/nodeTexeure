@@ -71,6 +71,18 @@ SET @order_confirmation = JSON_OBJECT(
     'shipping_address_lines', 'array')
 );
 
+-- An admin may have edited the stock template in the template editor. Keep that
+-- version as an inactive 'order_confirmation_pre_014' row (restorable from the
+-- admin) instead of losing it; the stock default is not worth keeping.
+INSERT INTO email_templates (id, name, subject, template_content, category, type, status, is_active)
+SELECT get_next_id('EMAIL'), 'order_confirmation_pre_014', subject, template_content,
+  category, type, 'Draft', 0
+FROM email_templates
+WHERE name = 'order_confirmation'
+  AND JSON_UNQUOTE(JSON_EXTRACT(template_content, '$.html_content'))
+      <> '<h1>Thank you for your order!</h1><p>Your order {{order_number}} has been confirmed.</p>'
+  AND NOT EXISTS (SELECT 1 FROM (SELECT name FROM email_templates) t WHERE t.name = 'order_confirmation_pre_014');
+
 UPDATE email_templates SET template_content = @order_confirmation WHERE name = 'order_confirmation';
 
 INSERT INTO email_templates (id, name, subject, template_content, category, type, status, is_active)

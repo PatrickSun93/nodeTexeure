@@ -43,6 +43,12 @@ docker compose -f docker-compose.prod.yml up -d --build
   starts the API. The `email-daemon` container (Rust, `rust/`) waits for those
   migrations, then delivers queued email via SES using the `AWS_*` settings in
   `backend/.env`.
+- **Upgrading across migration 014** (HTML escaping moved into the email daemon):
+  stop the old `email-daemon` first, then deploy the backend (it runs the
+  migration), then start the new daemon. An old daemon left running after the
+  migration would send names and addresses into email HTML unescaped. Migration
+  014 also replaces the `order_confirmation` template; an admin-edited version is
+  kept as the inactive `order_confirmation_pre_014` template.
 - The backend container is healthy only when `GET /api/status/health` returns
   200, which requires a working DB connection (503 otherwise). Storefront and
   admin wait for it.

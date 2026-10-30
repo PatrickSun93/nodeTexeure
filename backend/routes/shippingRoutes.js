@@ -9,6 +9,7 @@ const ResponseFormatter = require('../utils/responseFormatter');
 const DatabaseUtil = require('../utils/database');
 const shippingService = require('../services/shippingService');
 const { protect, admin, protectOptional } = require('../middleware/authMiddleware');
+const { csrfProtection } = require('../middleware/csrfMiddleware');
 const db = DatabaseUtil; // executeQuery et al. are static — reference the class, not an instance
 const rateLimit = require('express-rate-limit');
 const { isNonEmptyString } = require('../utils/params');
@@ -78,7 +79,7 @@ router.post('/rates', carrierLimiter, async (req, res) => {
  * Create a shipping label for an order (admin only)
  * Body: { orderId, serviceType }
  */
-router.post('/create-label', protect, admin, async (req, res) => {
+router.post('/create-label', protect, admin, csrfProtection, async (req, res) => {
   try {
     const { orderId, serviceType } = req.body;
 

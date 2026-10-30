@@ -1,6 +1,7 @@
 const DatabaseUtil = require('../utils/database');
 const ErrorUtils = require('../utils/errorUtils');
 const logger = require('../utils/logger');
+const { escapeHtml } = require('../utils/escapeHtml');
 
 class InventoryService {
   /**
@@ -884,12 +885,12 @@ class InventoryService {
           <h2>Low Stock Alert</h2>
           <p>The following product is running low on stock:</p>
           <ul>
-            <li><strong>Product:</strong> ${inventoryItem.product_name}</li>
-            <li><strong>SKU:</strong> ${inventoryItem.product_sku}</li>
-            <li><strong>Variant:</strong> ${variant}</li>
-            <li><strong>Current Stock:</strong> ${inventoryItem.quantity_available}</li>
-            <li><strong>Reorder Point:</strong> ${inventoryItem.reorder_point}</li>
-            <li><strong>Suggested Reorder Quantity:</strong> ${inventoryItem.reorder_quantity}</li>
+            <li><strong>Product:</strong> ${escapeHtml(inventoryItem.product_name)}</li>
+            <li><strong>SKU:</strong> ${escapeHtml(inventoryItem.product_sku)}</li>
+            <li><strong>Variant:</strong> ${escapeHtml(variant)}</li>
+            <li><strong>Current Stock:</strong> ${escapeHtml(inventoryItem.quantity_available)}</li>
+            <li><strong>Reorder Point:</strong> ${escapeHtml(inventoryItem.reorder_point)}</li>
+            <li><strong>Suggested Reorder Quantity:</strong> ${escapeHtml(inventoryItem.reorder_quantity)}</li>
           </ul>
           <p>Please consider restocking this item soon.</p>
         `,
