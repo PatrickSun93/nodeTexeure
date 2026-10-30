@@ -1,7 +1,12 @@
-//! `/api/cart` — view and edit the shopping cart (port of the first four routes
-//! of backend/routes/cartRoutes.js). Signed-in customers get one cart per
-//! account; guests get one per `sessionId` cookie, which is issued on first use.
-//! Stock reservation and abandonment tracking are still served by Node.
+//! `/api/cart` — the shopping cart (port of backend/routes/cartRoutes.js).
+//! Signed-in customers get one cart per account; guests get one per
+//! `sessionId` cookie, which is issued on first use.
+//!
+//! * view / add / update / remove the lines;
+//! * `reserve-stock` holds the cart's quantities for an hour
+//!   (InventoryService.reserveStock, see [`reserve_stock`]);
+//! * `track-abandonment` / `cancel-abandonment` (re)queue or cancel the 3-step
+//!   abandoned-cart email sequence (emailQueueService).
 
 use axum::Json;
 use axum::body::Bytes;
@@ -18,6 +23,7 @@ use crate::AppState;
 use crate::auth::OptionalUser;
 use crate::body;
 use crate::cookies;
+use crate::email_queue;
 use crate::error::ApiError;
 
 const SESSION_COOKIE: &str = "sessionId";
@@ -483,6 +489,491 @@ pub async fn remove(
     })
 }
 
+// --- stock reservation -------------------------------------------------------
+
+/// How long a reservation holds stock (`expires_at`, `expires_in_minutes`).
+const RESERVATION_MINUTES: i64 = 60;
+
+/// One reserved cart line, as `InventoryService._reserveSingleItem` returns it.
+#[derive(Debug, Serialize)]
+pub struct Reservation {
+    pub reservation_id: String,
+    pub product_id: String,
+    pub variant_id: Option<String>,
+    pub quantity: u32,
+    #[serde(serialize_with = "common::timestamp::required")]
+    pub expires_at: DateTime<Utc>,
+}
+
+struct ReserveLine {
+    product_id: String,
+    variant_id: Option<String>,
+    quantity: u32,
+}
+
+/// Why a line could not be reserved: not enough stock (collected as a
+/// conflict) or anything else (stops the whole reservation).
+enum LineError {
+    Insufficient,
+    Failed(anyhow::Error),
+}
+
+impl From<sqlx::Error> for LineError {
+    fn from(err: sqlx::Error) -> Self {
+        Self::Failed(err.into())
+    }
+}
+
+/// Node builds `variant_id = ?` for a truthy variant and `variant_id IS NULL`
+/// otherwise, so an empty string looks up the variant-less stock row.
+fn stock_variant(variant_id: Option<&str>) -> Option<&str> {
+    variant_id.filter(|v| !v.is_empty())
+}
+
+/// `_reserveSingleItem`: check the stock row, insert a `stock_reservations`
+/// row (STOCK id, one hour) and add the quantity to `quantity_reserved`. No
+/// transaction, like Node (its `FOR UPDATE` runs on an autocommit connection).
+async fn reserve_line(
+    pool: &MySqlPool,
+    line: &ReserveLine,
+    cart_id: &str,
+    user_id: Option<&str>,
+) -> Result<Reservation, LineError> {
+    if line.product_id.is_empty() || line.quantity == 0 {
+        return Err(LineError::Failed(anyhow::anyhow!(
+            "Invalid item data: product_id={}, quantity={}",
+            line.product_id,
+            line.quantity
+        )));
+    }
+    let variant = stock_variant(line.variant_id.as_deref());
+    let available = sqlx::query_scalar!(
+        "SELECT quantity_available FROM inventory
+         WHERE product_id = ? AND variant_id <=> ? FOR UPDATE",
+        line.product_id,
+        variant
+    )
+    .fetch_optional(pool)
+    .await?;
+    let Some(available) = available else {
+        return Err(LineError::Failed(anyhow::anyhow!(
+            "Inventory not found for product {}",
+            line.product_id
+        )));
+    };
+    if available < line.quantity {
+        return Err(LineError::Insufficient);
+    }
+
+    let id = sqlx::query_scalar!(r#"SELECT get_next_id('STOCK') AS "id: String""#)
+        .fetch_one(pool)
+        .await?
+        .ok_or_else(|| {
+            LineError::Failed(anyhow::anyhow!("transno prefix STOCK is not registered"))
+        })?;
+    // `new Date(Date.now() + 60 * 60 * 1000)`: millisecond precision.
+    let expires_at = DateTime::from_timestamp_millis(
+        Utc::now().timestamp_millis() + RESERVATION_MINUTES * 60 * 1000,
+    )
+    .expect("a current timestamp is in range");
+    sqlx::query!(
+        "INSERT INTO stock_reservations
+           (id, product_id, variant_id, cart_id, user_id, quantity, expires_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?)",
+        id,
+        line.product_id,
+        line.variant_id,
+        cart_id,
+        user_id,
+        line.quantity,
+        expires_at
+    )
+    .execute(pool)
+    .await?;
+
+    let reserved = sqlx::query!(
+        "UPDATE inventory SET quantity_reserved = quantity_reserved + ?
+         WHERE product_id = ? AND variant_id <=> ?",
+        line.quantity,
+        line.product_id,
+        variant
+    )
+    .execute(pool)
+    .await;
+    if let Err(err) = reserved {
+        let _ = sqlx::query!("DELETE FROM stock_reservations WHERE id = ?", id)
+            .execute(pool)
+            .await;
+        return Err(err.into());
+    }
+
+    Ok(Reservation {
+        reservation_id: id,
+        product_id: line.product_id.clone(),
+        variant_id: line.variant_id.clone(),
+        quantity: line.quantity,
+        expires_at,
+    })
+}
+
+/// `_rollbackReservations`: delete each reservation and give its quantity
+/// back. Failures are logged and skipped, as in Node.
+async fn release(pool: &MySqlPool, reservations: &[Reservation]) {
+    for r in reservations {
+        let deleted = sqlx::query!(
+            "DELETE FROM stock_reservations WHERE id = ?",
+            r.reservation_id
+        )
+        .execute(pool)
+        .await;
+        let returned = sqlx::query!(
+            "UPDATE inventory SET quantity_reserved = quantity_reserved - ?
+             WHERE product_id = ? AND variant_id <=> ?",
+            r.quantity,
+            r.product_id,
+            stock_variant(r.variant_id.as_deref())
+        )
+        .execute(pool)
+        .await;
+        if let Err(error) = deleted.and(returned) {
+            tracing::error!(%error, reservation_id = r.reservation_id, "failed to roll back reservation");
+        }
+    }
+}
+
+/// `InventoryService.reserveStock(items, cartId, userId)`. Lines without
+/// enough stock are collected and then every reservation made is rolled back.
+/// Any other failure stops at that line and, as in Node, keeps the
+/// reservations already made (they expire after the hour).
+async fn reserve_lines(
+    pool: &MySqlPool,
+    lines: &[ReserveLine],
+    cart_id: &str,
+    user_id: Option<&str>,
+) -> anyhow::Result<Vec<Reservation>> {
+    let mut reservations = Vec::with_capacity(lines.len());
+    let mut conflicts = 0;
+    for line in lines {
+        match reserve_line(pool, line, cart_id, user_id).await {
+            Ok(reservation) => reservations.push(reservation),
+            Err(LineError::Insufficient) => conflicts += 1,
+            Err(LineError::Failed(err)) => return Err(err),
+        }
+    }
+    if conflicts > 0 {
+        release(pool, &reservations).await;
+        anyhow::bail!("Stock conflicts detected ({conflicts} lines)");
+    }
+    Ok(reservations)
+}
+
+/// `POST /api/cart/reserve-stock`
+pub async fn reserve_stock(
+    State(state): State<AppState>,
+    user: OptionalUser,
+    headers: HeaderMap,
+) -> Response {
+    let cart = match get_or_create(&state.pool, &user, &headers).await {
+        Ok(cart) => cart,
+        Err(err) => return server_error("Failed to reserve stock", &err),
+    };
+    let lines = sqlx::query_as!(
+        ReserveLine,
+        "SELECT product_id, variant_id, quantity FROM cart_items WHERE cart_id = ?",
+        cart.id
+    )
+    .fetch_all(&state.pool)
+    .await;
+    // A failed read is "empty" too (`!itemsResult.success || !length`).
+    let lines = match lines {
+        Ok(lines) if !lines.is_empty() => lines,
+        Ok(_) => return cart.reply(StatusCode::BAD_REQUEST, failure("Cart is empty")),
+        Err(error) => {
+            tracing::error!(%error, "reserve-stock: reading the cart failed");
+            return cart.reply(StatusCode::BAD_REQUEST, failure("Cart is empty"));
+        }
+    };
+    let user_id = user.0.as_ref().map(|u| u.id.as_str());
+    match reserve_lines(&state.pool, &lines, &cart.id, user_id).await {
+        Ok(reservations) => cart.reply(
+            StatusCode::OK,
+            success(
+                "Stock reserved for checkout",
+                json!({ "reservations": reservations, "expires_in_minutes": RESERVATION_MINUTES }),
+            ),
+        ),
+        Err(err) => {
+            tracing::warn!(error = %format!("{err:#}"), cart_id = cart.id, "stock reservation failed");
+            cart.reply(
+                StatusCode::BAD_REQUEST,
+                failure("Unable to reserve stock for checkout"),
+            )
+        }
+    }
+}
+
+// --- abandoned-cart emails -----------------------------------------------------
+
+/// A 500 with the route's own message (Node's `catch` blocks).
+fn server_error(message: &str, err: &anyhow::Error) -> Response {
+    tracing::error!(error = %format!("{err:#}"), message);
+    reply(StatusCode::INTERNAL_SERVER_ERROR, failure(message))
+}
+
+/// JavaScript's `\s` (and what `String.prototype.trim` removes): white space
+/// plus line terminators and the BOM. Unlike `char::is_whitespace`, U+0085 is
+/// not included.
+pub(crate) fn js_space(c: char) -> bool {
+    matches!(
+        c,
+        '\t' | '\n' | '\u{b}' | '\u{c}' | '\r' | ' ' | '\u{a0}' | '\u{1680}' | '\u{2000}'
+            ..='\u{200a}'
+                | '\u{2028}'
+                | '\u{2029}'
+                | '\u{202f}'
+                | '\u{205f}'
+                | '\u{3000}'
+                | '\u{feff}'
+    )
+}
+
+/// `/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s)`: one `@`, no white space, and a dot
+/// in the domain with something on both sides of it.
+fn email_re(s: &str) -> bool {
+    if s.chars().any(js_space) {
+        return false;
+    }
+    let Some((local, domain)) = s.split_once('@') else {
+        return false;
+    };
+    let d = domain.as_bytes();
+    !local.is_empty() && !domain.contains('@') && d.len() >= 3 && d[1..d.len() - 1].contains(&b'.')
+}
+
+/// cartRoutes' `isGuestEmail`: a non-empty string of at most 255 UTF-16 units
+/// that matches `EMAIL_RE`.
+fn is_guest_email(value: Option<&Value>) -> bool {
+    match value {
+        Some(Value::String(s)) => !s.is_empty() && s.encode_utf16().count() <= 255 && email_re(s),
+        _ => false,
+    }
+}
+
+/// `${process.env.FRONTEND_URL || 'http://localhost:3000'}/checkout` (raw, not
+/// trimmed: that is what Node reads).
+fn checkout_url() -> String {
+    let base = std::env::var("FRONTEND_URL")
+        .ok()
+        .filter(|v| !v.is_empty())
+        .unwrap_or_else(|| "http://localhost:3000".into());
+    format!("{base}/checkout")
+}
+
+/// `POST /api/cart/track-abandonment` `{ guestEmail? }`: cancel the caller's
+/// pending abandoned-cart emails and queue the 1 h / 24 h / 72 h sequence for
+/// the current cart.
+pub async fn track_abandonment(
+    State(state): State<AppState>,
+    user: OptionalUser,
+    headers: HeaderMap,
+    body: Bytes,
+) -> Response {
+    const FAILED: &str = "Failed to track cart abandonment";
+    let body = body::json(&headers, &body);
+    let guest_email = body.get("guestEmail");
+    if user.0.is_none() && body::truthy(guest_email) && !is_guest_email(guest_email) {
+        return reply(
+            StatusCode::BAD_REQUEST,
+            failure("A valid email is required"),
+        );
+    }
+    let cart = match get_or_create(&state.pool, &user, &headers).await {
+        Ok(cart) => cart,
+        Err(err) => return server_error(FAILED, &err),
+    };
+
+    let lines = sqlx::query!(
+        r#"SELECT ci.quantity, CAST(ci.price AS CHAR) AS "price!: String", p.name
+           FROM cart_items ci
+           JOIN products p ON ci.product_id = p.id
+           WHERE ci.cart_id = ?"#,
+        cart.id
+    )
+    .fetch_all(&state.pool)
+    .await;
+    let lines = match lines {
+        Ok(lines) if !lines.is_empty() => lines,
+        other => {
+            if let Err(error) = other {
+                tracing::error!(%error, "track-abandonment: reading the cart failed");
+            }
+            return cart.reply(
+                StatusCode::OK,
+                success("No items in cart to track", json!([])),
+            );
+        }
+    };
+
+    // Signed in: the token's email; the token carries no first/last name, so
+    // Node's `${firstName || ''} ${lastName || ''}`.trim() is always 'Customer'.
+    let (email, customer_name) = match &user.0 {
+        Some(u) => (u.email.clone().filter(|e| !e.is_empty()), "Customer"),
+        None => (
+            guest_email
+                .and_then(Value::as_str)
+                .filter(|e| !e.is_empty())
+                .map(str::to_owned),
+            "Guest",
+        ),
+    };
+    let Some(email) = email else {
+        return cart.reply(
+            StatusCode::OK,
+            success(
+                "No email available for cart abandonment tracking",
+                json!([]),
+            ),
+        );
+    };
+
+    // `totalAmount += item.price * item.quantity`, in row order.
+    let mut total = 0.0;
+    let items: Vec<email_queue::CartLine> = lines
+        .iter()
+        .map(|l| {
+            total += l.price.parse::<f64>().unwrap_or(f64::NAN) * f64::from(l.quantity);
+            email_queue::CartLine {
+                name: l.name.clone(),
+                quantity: i64::from(l.quantity),
+            }
+        })
+        .collect();
+    let item_count = items.len();
+    let cart_data = email_queue::AbandonedCart {
+        items,
+        total_amount: format!("${}", common::json::js_to_fixed(total, 2)),
+        checkout_url: Some(checkout_url()),
+        customer_name: Some(customer_name.into()),
+    };
+
+    email_queue::cancel_abandoned_cart_emails(&state.pool, &email).await;
+    let mut queue_ids = Vec::with_capacity(3);
+    for step in 1..=3 {
+        match email_queue::queue_abandoned_cart_email(
+            &state.pool,
+            &state.jwt,
+            &email,
+            &cart_data,
+            step,
+        )
+        .await
+        {
+            Ok(id) => queue_ids.push(id),
+            Err(err) => {
+                tracing::error!(error = %format!("{err:#}"), FAILED);
+                return cart.reply(StatusCode::INTERNAL_SERVER_ERROR, failure(FAILED));
+            }
+        }
+    }
+    tracing::info!(email, ?queue_ids, "abandoned cart email sequence queued");
+
+    cart.reply(
+        StatusCode::OK,
+        success(
+            "Cart abandonment tracking started",
+            json!({
+                "customerEmail": email,
+                "queueIds": queue_ids,
+                "totalAmount": cart_data.total_amount,
+                "itemCount": item_count,
+            }),
+        ),
+    )
+}
+
+/// `POST /api/cart/cancel-abandonment` `{ guestEmail? }`: cancel the pending
+/// abandoned-cart emails of the signed-in customer, or of `guestEmail`.
+///
+/// Known issue kept for parity: a guest can name any address and cancel its
+/// pending reminders (see the port notes).
+pub async fn cancel_abandonment(
+    State(state): State<AppState>,
+    user: OptionalUser,
+    headers: HeaderMap,
+    body: Bytes,
+) -> Response {
+    let body = body::json(&headers, &body);
+    let email = match &user.0 {
+        Some(u) => u.email.clone().filter(|e| !e.is_empty()),
+        None => {
+            let guest_email = body.get("guestEmail");
+            if !body::truthy(guest_email) {
+                None
+            } else if is_guest_email(guest_email) {
+                guest_email.and_then(Value::as_str).map(str::to_owned)
+            } else {
+                return reply(
+                    StatusCode::BAD_REQUEST,
+                    failure("A valid email is required"),
+                );
+            }
+        }
+    };
+    let Some(email) = email else {
+        return reply(
+            StatusCode::OK,
+            success("No email to cancel abandonment tracking", json!([])),
+        );
+    };
+    let cancelled = email_queue::cancel_abandoned_cart_emails(&state.pool, &email).await;
+    reply(
+        StatusCode::OK,
+        success(
+            "Abandoned cart emails cancelled",
+            json!({ "customerEmail": email, "cancelledCount": cancelled }),
+        ),
+    )
+}
+
+// --- Express's answers for paths the group doesn't route -------------------------
+
+/// `routes` with Express's answer for the methods it doesn't route: the 404
+/// below, where axum would send 405 (and an `Allow` header).
+pub fn express(
+    routes: axum::routing::MethodRouter<AppState>,
+) -> axum::routing::MethodRouter<AppState> {
+    axum::routing::any(
+        move |State(state): State<AppState>, req: axum::extract::Request| async move {
+            use tower::ServiceExt;
+            let uri = req.uri().clone();
+            let response = match routes.with_state(state).oneshot(req).await {
+                Ok(response) => response,
+                Err(never) => match never {},
+            };
+            if response.status() == StatusCode::METHOD_NOT_ALLOWED {
+                express_not_found(uri).await
+            } else {
+                response
+            }
+        },
+    )
+}
+
+/// backend/server.js's 404 handler: `{ path: req.originalUrl, timestamp }`.
+/// Express never answers 405, so a known path with another method lands here too.
+pub async fn express_not_found(uri: axum::http::Uri) -> Response {
+    let path = uri
+        .path_and_query()
+        .map_or_else(|| uri.path().to_owned(), |pq| pq.as_str().to_owned());
+    reply(
+        StatusCode::NOT_FOUND,
+        common::response::failure_with(
+            "Endpoint not found",
+            json!({ "path": path, "timestamp": common::timestamp::format(&Utc::now()) }),
+        ),
+    )
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -563,5 +1054,109 @@ mod tests {
         assert_eq!(optional_id(None), Ok(None));
         assert_eq!(optional_id(Some(&json!(5))), Err(()));
         assert_eq!(optional_id(Some(&json!(["P1"]))), Err(()));
+    }
+
+    #[test]
+    fn guest_email_is_email_re_on_a_short_string() {
+        for ok in [
+            "a@b.co",
+            "a.b@c.d.e",
+            "a@.b.c",
+            "a@b..c",
+            "a\u{85}b@c.d",
+            "é@ü.de",
+        ] {
+            assert!(is_guest_email(Some(&json!(ok))), "{ok:?}");
+        }
+        for bad in [
+            "",
+            "nope",
+            "a@b",
+            "a@.co",
+            "a@b.",
+            "@b.co",
+            "a@b@c.d",
+            "a b@c.d",
+            "a\u{a0}b@c.d",
+            "a\u{2028}@c.d",
+            "a\u{feff}@c.d",
+            "a@b.c\n",
+        ] {
+            assert!(!is_guest_email(Some(&json!(bad))), "{bad:?}");
+        }
+        // 255 UTF-16 units at most (an emoji counts two).
+        let at_limit = format!("{}@b.co", "x".repeat(250));
+        assert!(is_guest_email(Some(&json!(at_limit))));
+        assert!(!is_guest_email(Some(&json!(format!("x{at_limit}")))));
+        let emoji = format!("{}@b.co", "😀".repeat(125));
+        assert_eq!(emoji.encode_utf16().count(), 255);
+        assert!(is_guest_email(Some(&json!(emoji))));
+        assert!(!is_guest_email(Some(&json!(format!("x{emoji}")))));
+        for not_string in [
+            json!(42),
+            json!(true),
+            json!([]),
+            json!(["a@b.co"]),
+            json!({}),
+        ] {
+            assert!(!is_guest_email(Some(&not_string)), "{not_string}");
+        }
+        assert!(!is_guest_email(None));
+    }
+
+    #[test]
+    fn empty_variant_reads_the_variant_less_stock_row() {
+        assert_eq!(stock_variant(Some("V1")), Some("V1"));
+        assert_eq!(stock_variant(Some("")), None);
+        assert_eq!(stock_variant(None), None);
+    }
+
+    #[test]
+    fn reservations_serialize_like_node() {
+        let r = Reservation {
+            reservation_id: "STOCK0000000001".into(),
+            product_id: "P1".into(),
+            variant_id: None,
+            quantity: 2,
+            expires_at: Utc.with_ymd_and_hms(2026, 10, 30, 7, 0, 0).unwrap()
+                + Duration::milliseconds(5),
+        };
+        assert_eq!(
+            serde_json::to_value(&r).unwrap(),
+            json!({ "reservation_id": "STOCK0000000001", "product_id": "P1", "variant_id": null,
+                    "quantity": 2, "expires_at": "2026-10-30T07:00:00.005Z" })
+        );
+    }
+
+    #[tokio::test]
+    async fn other_methods_and_paths_get_the_express_404() {
+        use tower::ServiceExt;
+        let pool = sqlx::MySqlPool::connect_lazy("mysql://nobody@127.0.0.1:1/none").unwrap();
+        let app = crate::router(AppState::new(pool, Some("x")));
+        for (method, uri) in [
+            ("GET", "/api/cart/add"),
+            ("POST", "/api/cart"),
+            ("GET", "/api/cart/reserve-stock?a=1"),
+            ("PATCH", "/api/cart/update/1"),
+            ("GET", "/api/cart/nope/deeper"),
+            ("POST", "/api/abandoned-cart/recovery/0123456789abcdef"),
+            ("GET", "/api/abandoned-cart"),
+            ("GET", "/api/abandoned-cart/other"),
+        ] {
+            let req = axum::http::Request::builder()
+                .method(method)
+                .uri(uri)
+                .body(axum::body::Body::empty())
+                .unwrap();
+            let res = app.clone().oneshot(req).await.unwrap();
+            assert_eq!(res.status(), StatusCode::NOT_FOUND, "{method} {uri}");
+            assert!(res.headers().get(header::ALLOW).is_none(), "{method} {uri}");
+            let body = axum::body::to_bytes(res.into_body(), 1 << 16)
+                .await
+                .unwrap();
+            let body: Value = serde_json::from_slice(&body).unwrap();
+            assert_eq!(body["message"], "Endpoint not found");
+            assert_eq!(body["keyValueTable"]["path"], uri);
+        }
     }
 }

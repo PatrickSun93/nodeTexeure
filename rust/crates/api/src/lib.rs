@@ -82,10 +82,49 @@ pub fn router_with_limiter(state: AppState, global: ratelimit::RateLimiter) -> R
         .route("/api/journal", get(routes::journal::list))
         .route("/api/journal/{id_or_slug}", get(routes::journal::detail))
         .route("/api/settings/public", get(routes::settings::public))
-        .route("/api/cart", get(routes::cart::get))
-        .route("/api/cart/add", post(routes::cart::add))
-        .route("/api/cart/update/{item_id}", put(routes::cart::update))
-        .route("/api/cart/remove/{item_id}", delete(routes::cart::remove))
+        // The whole /api/cart and /api/abandoned-cart groups. Another method on
+        // a known path, or an unknown sub-path, gets Express's 404 (never 405).
+        .route("/api/cart", routes::cart::express(get(routes::cart::get)))
+        .route(
+            "/api/cart/add",
+            routes::cart::express(post(routes::cart::add)),
+        )
+        .route(
+            "/api/cart/update/{item_id}",
+            routes::cart::express(put(routes::cart::update)),
+        )
+        .route(
+            "/api/cart/remove/{item_id}",
+            routes::cart::express(delete(routes::cart::remove)),
+        )
+        .route(
+            "/api/cart/reserve-stock",
+            routes::cart::express(post(routes::cart::reserve_stock)),
+        )
+        .route(
+            "/api/cart/track-abandonment",
+            routes::cart::express(post(routes::cart::track_abandonment)),
+        )
+        .route(
+            "/api/cart/cancel-abandonment",
+            routes::cart::express(post(routes::cart::cancel_abandonment)),
+        )
+        .route(
+            "/api/cart/{*rest}",
+            axum::routing::any(routes::cart::express_not_found),
+        )
+        .route(
+            "/api/abandoned-cart/recovery/{token}",
+            routes::cart::express(get(routes::abandoned_cart::recovery)),
+        )
+        .route(
+            "/api/abandoned-cart",
+            axum::routing::any(routes::cart::express_not_found),
+        )
+        .route(
+            "/api/abandoned-cart/{*rest}",
+            axum::routing::any(routes::cart::express_not_found),
+        )
         .route(
             "/api/orders/create",
             post(routes::checkout::create).merge(get_order_named("create")),

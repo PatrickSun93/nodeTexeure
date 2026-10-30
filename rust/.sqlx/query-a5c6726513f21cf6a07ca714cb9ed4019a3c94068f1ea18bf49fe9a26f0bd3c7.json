@@ -1,0 +1,12 @@
+{
+  "db_name": "MySQL",
+  "query": "UPDATE abandoned_cart_recovery\n         SET recovered_at = NOW(), recovery_order_id = ?\n         WHERE cart_id = ? AND recovered_at IS NULL",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": []
+  },
+  "hash": "a5c6726513f21cf6a07ca714cb9ed4019a3c94068f1ea18bf49fe9a26f0bd3c7"
+}

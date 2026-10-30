@@ -1,0 +1,44 @@
+{
+  "db_name": "MySQL",
+  "query": "SELECT ci.quantity, CAST(ci.price AS CHAR) AS \"price!: String\", p.name\n           FROM cart_items ci\n           JOIN products p ON ci.product_id = p.id\n           WHERE ci.cart_id = ?",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "quantity",
+        "type_info": {
+          "type": "Long",
+          "flags": "NOT_NULL | UNSIGNED",
+          "max_size": 10
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "price!: String",
+        "type_info": {
+          "type": "VarString",
+          "flags": "",
+          "max_size": 48
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "name",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NOT_NULL | MULTIPLE_KEY | NO_DEFAULT_VALUE",
+          "max_size": 1020
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false,
+      true,
+      false
+    ]
+  },
+  "hash": "624a339a07d9cd41c92c75dc3b4b266305267c248a25eb253cf4f00d4fb05c19"
+}
