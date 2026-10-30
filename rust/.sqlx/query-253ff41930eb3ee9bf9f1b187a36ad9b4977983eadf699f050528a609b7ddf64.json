@@ -1,0 +1,12 @@
+{
+  "db_name": "MySQL",
+  "query": "DELETE FROM email_templates WHERE id = ?",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": []
+  },
+  "hash": "253ff41930eb3ee9bf9f1b187a36ad9b4977983eadf699f050528a609b7ddf64"
+}

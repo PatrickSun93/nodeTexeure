@@ -1,0 +1,12 @@
+{
+  "db_name": "MySQL",
+  "query": "UPDATE email_queue\n          SET status = 'pending', attempts = 0, scheduled_at = NOW(), processing_details = NULL\n        WHERE status = 'failed'",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 0
+    },
+    "nullable": []
+  },
+  "hash": "67c57042dbc468e64ecb7c3d55aeddeb7a6fb569ce76fb5027fc0992483e3956"
+}
