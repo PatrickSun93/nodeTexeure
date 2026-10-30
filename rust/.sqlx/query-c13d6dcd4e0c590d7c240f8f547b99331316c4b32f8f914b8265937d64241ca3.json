@@ -1,0 +1,24 @@
+{
+  "db_name": "MySQL",
+  "query": "SELECT email FROM abandoned_cart_recovery\n         WHERE cart_id = ? AND recovered_at IS NOT NULL\n         LIMIT 1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "email",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NOT_NULL | MULTIPLE_KEY | NO_DEFAULT_VALUE",
+          "max_size": 1020
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "c13d6dcd4e0c590d7c240f8f547b99331316c4b32f8f914b8265937d64241ca3"
+}
