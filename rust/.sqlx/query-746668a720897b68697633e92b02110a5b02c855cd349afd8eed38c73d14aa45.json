@@ -1,0 +1,12 @@
+{
+  "db_name": "MySQL",
+  "query": "UPDATE users SET first_name = COALESCE(?, first_name), last_name = COALESCE(?, last_name),\n           phone = COALESCE(?, phone), password_hash = COALESCE(?, password_hash)\n         WHERE id = ?",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 5
+    },
+    "nullable": []
+  },
+  "hash": "746668a720897b68697633e92b02110a5b02c855cd349afd8eed38c73d14aa45"
+}

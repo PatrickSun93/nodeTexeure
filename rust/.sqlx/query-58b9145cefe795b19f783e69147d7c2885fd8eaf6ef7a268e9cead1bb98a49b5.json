@@ -1,0 +1,74 @@
+{
+  "db_name": "MySQL",
+  "query": "SELECT\n             u.id,\n             u.first_name,\n             u.last_name,\n             u.phone,\n             u.email,\n             CAST((\n               SELECT COALESCE(\n                 JSON_ARRAYAGG(\n                   JSON_OBJECT(\n                     'id', ua.id,\n                     'type', ua.type,\n                     'is_default', ua.is_default,\n                     'first_name', ua.first_name,\n                     'last_name', ua.last_name,\n                     'phone', ua.phone,\n                     'address', ua.address_json\n                   )\n                 ),\n                 JSON_ARRAY()\n               )\n               FROM user_addresses ua\n               WHERE ua.user_id = u.id\n             ) AS CHAR) AS \"addresses: String\"\n           FROM users u\n           WHERE u.id = ?",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": {
+          "type": "VarString",
+          "flags": "PRIMARY_KEY | NO_DEFAULT_VALUE",
+          "max_size": 200
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "first_name",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NO_DEFAULT_VALUE",
+          "max_size": 400
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "last_name",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NO_DEFAULT_VALUE",
+          "max_size": 400
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "phone",
+        "type_info": {
+          "type": "VarString",
+          "flags": "",
+          "max_size": 80
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "email",
+        "type_info": {
+          "type": "VarString",
+          "flags": "UNIQUE_KEY | MULTIPLE_KEY | NO_DEFAULT_VALUE",
+          "max_size": 1020
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "addresses: String",
+        "type_info": {
+          "type": "LongBlob",
+          "flags": "",
+          "max_size": 4294967295
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      true,
+      true,
+      true,
+      true,
+      true,
+      true
+    ]
+  },
+  "hash": "58b9145cefe795b19f783e69147d7c2885fd8eaf6ef7a268e9cead1bb98a49b5"
+}

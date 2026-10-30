@@ -6,4 +6,5 @@ pub mod orders;
 pub mod products;
 pub mod search;
 pub mod settings;
+pub mod users_account;
 pub mod wishlist;

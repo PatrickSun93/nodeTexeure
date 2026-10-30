@@ -95,14 +95,15 @@ fn extract_token(headers: &HeaderMap) -> Option<String> {
             .filter(|t| !t.is_empty())
             .map(str::to_owned);
     }
-    headers
-        .get_all(header::COOKIE)
-        .iter()
-        .filter_map(|v| v.to_str().ok())
-        .flat_map(|v| v.split(';'))
-        .filter_map(|kv| kv.trim().split_once('='))
-        .find(|(k, v)| *k == "admin_auth" && !v.is_empty())
-        .map(|(_, v)| v.to_owned())
+    // `req.cookies.admin_auth`, as cookie-parser gives it: first occurrence wins
+    // (even if empty), decoded, quotes dropped, a truthy `j:` value parsed. A
+    // truthy non-string (`j:{…}`, `j:1`) reaches jwt.verify, which rejects it:
+    // an empty token here, which never verifies.
+    match crate::cookies::Cookies::from_headers(headers).get("admin_auth") {
+        Some(Value::String(s)) if !s.is_empty() => Some(s.clone()),
+        Some(v) if crate::body::truthy(Some(v)) => Some(String::new()),
+        _ => None,
+    }
 }
 
 pub enum AuthError {
@@ -297,6 +298,15 @@ mod tests {
             Some("jwt")
         );
         assert_eq!(extract_token(&HeaderMap::new()), None);
+        // cookie-parser semantics: the first occurrence wins even when empty,
+        // values are decoded and unquoted, `j:` JSON is parsed when truthy.
+        let cookie = |c: &str| extract_token(&headers(&[("cookie", c)]));
+        assert_eq!(cookie("admin_auth=; admin_auth=jwt"), None);
+        assert_eq!(cookie("admin_auth=\"jwt\"").as_deref(), Some("jwt"));
+        assert_eq!(cookie("admin_auth=a%2Eb").as_deref(), Some("a.b"));
+        assert_eq!(cookie("admin_auth=j:\"jwt\"").as_deref(), Some("jwt"));
+        assert_eq!(cookie("admin_auth=j:{\"a\":1}").as_deref(), Some(""));
+        assert_eq!(cookie("admin_auth=j:0").as_deref(), Some("j:0"));
     }
 
     #[test]

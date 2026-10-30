@@ -1,0 +1,12 @@
+{
+  "db_name": "MySQL",
+  "query": "INSERT INTO user_addresses (id, user_id, type, is_default, first_name, last_name, phone, address_json) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 8
+    },
+    "nullable": []
+  },
+  "hash": "fe4dd0568fd3ade4e23ed0ca32fa241529534e65bd0850bc1016c031827e2ffd"
+}
