@@ -15,6 +15,11 @@ pub mod ratelimit;
 pub mod routes;
 pub mod tokens;
 
+// unsubscribe, newsletter, contact, status, shipping (wf/misc)
+pub mod express;
+pub mod fedex;
+pub mod qs;
+
 use std::time::Duration;
 
 use axum::Router;
@@ -116,6 +121,12 @@ pub fn router_with_limiter(state: AppState, global: ratelimit::RateLimiter) -> R
             "/api/wishlist/{product_id}",
             delete(routes::wishlist::remove),
         )
+        // unsubscribe, newsletter, contact, status, shipping (wf/misc)
+        .merge(routes::unsubscribe::router())
+        .merge(routes::newsletter::router())
+        .merge(routes::contact::router())
+        .merge(routes::status::router())
+        .merge(routes::shipping::router(state.trust_proxy))
         .fallback(|| async {
             (
                 StatusCode::NOT_FOUND,

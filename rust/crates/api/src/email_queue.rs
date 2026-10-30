@@ -48,9 +48,8 @@ pub fn is_marketing_category(name: &str) -> bool {
 
 /// `normalizeEmail(email)`: trimmed, lowercased.
 pub fn normalize_email(email: &str) -> String {
-    email
-        .trim_matches(|c: char| c.is_whitespace() || c == '\u{feff}')
-        .to_lowercase()
+    // JS `trim()`: U+0085 is not whitespace there.
+    crate::express::js_trim(email).to_lowercase()
 }
 
 /// `isEmailSuppressed(email)`: has this address unsubscribed? `false` on any
@@ -327,7 +326,7 @@ pub fn verify_unsubscribe_token(key: &JwtKey, email: &str, token: &str) -> anyho
 }
 
 /// `URLSearchParams` serialization of one value.
-fn form_encode(s: &str) -> String {
+pub(crate) fn form_encode(s: &str) -> String {
     let mut out = String::with_capacity(s.len());
     for b in s.bytes() {
         match b {

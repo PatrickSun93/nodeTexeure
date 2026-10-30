@@ -1,0 +1,24 @@
+{
+  "db_name": "MySQL",
+  "query": "SELECT scope FROM email_unsubscribes WHERE email = ? LIMIT 1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "scope",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NOT_NULL",
+          "max_size": 128
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "de832a6ff518cd2118e16ee51c89af3cad0bc2fce1daa711d6323f2d4b6d25ab"
+}
