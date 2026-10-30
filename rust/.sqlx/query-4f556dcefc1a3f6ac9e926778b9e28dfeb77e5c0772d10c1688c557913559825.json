@@ -1,0 +1,24 @@
+{
+  "db_name": "MySQL",
+  "query": "SELECT id FROM wishlists WHERE user_id = ? AND product_id = ?\n           AND (variant_id = ? OR (variant_id IS NULL AND ? IS NULL))",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NOT_NULL | PRIMARY_KEY | NO_DEFAULT_VALUE",
+          "max_size": 200
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 4
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "4f556dcefc1a3f6ac9e926778b9e28dfeb77e5c0772d10c1688c557913559825"
+}

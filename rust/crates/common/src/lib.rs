@@ -2,6 +2,7 @@
 //! so the two can serve the same clients side by side.
 
 pub mod env;
+pub mod json;
 pub mod response;
 pub mod timestamp;
 

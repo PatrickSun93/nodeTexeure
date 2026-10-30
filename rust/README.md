@@ -7,7 +7,7 @@ can move without the rest noticing.
 | Crate | Replaces | Status |
 |---|---|---|
 | `crates/email-daemon` | `backend/services/emailDaemon.js` | Live: the only consumer of `email_queue` |
-| `crates/api` | Express route groups, one at a time | `/api/products/*`, `/api/search/*`, `/api/journal/*`, `/api/settings/public` |
+| `crates/api` | Express route groups, one at a time | `/api/products/*`, `/api/search/*`, `/api/journal/*`, `/api/settings/public`, `/api/wishlist/*` (signed in) |
 | `crates/common` | — | Shared env config, MySQL connection, response envelope, timestamps |
 
 ## Why Rust here
@@ -87,7 +87,7 @@ DB). It answers only the route groups the storefront proxy sends it:
 ```bash
 # next.config.mjs reads these (baked in at `next build` for production)
 RUST_API_URL=http://api:7000
-RUST_API_ROUTES=products,search,journal,settings/public
+RUST_API_ROUTES=products,search,journal,settings/public,wishlist
 # comma-separated groups; an entry with a slash moves one path; unset = all Node
 ```
 
@@ -118,6 +118,11 @@ Notes on the port:
 3. `cargo sqlx prepare --workspace -- --all-targets`, commit `.sqlx`.
 4. Add the group to `RUST_API_ROUTES` (compose + production build).
 
-Done so far: the public read-only groups. Next: authenticated routes, once
-`common` has JWT + `token_version` checks (then CSRF for admin writes) — users'
-own data (`wishlist`, `orders/my-orders`), then cart/checkout, then admin.
+Done so far: the public read-only groups and `wishlist` (first signed-in group).
+**Auth** lives in `src/auth.rs`: handlers take `AuthUser` / `OptionalUser` /
+`StaffOrAdmin` / `Admin` extractors, which mirror Node's `protect` /
+`protectOptional` / `staffOrAdmin` / `admin` — Bearer header then `admin_auth`
+cookie, HS256 only, `exp`/`nbf` with no leeway, user row re-read per request
+(status + `token_version` revocation), identical 401/403 bodies. The parity test
+covers forged/expired/`alg:none`/revoked/deactivated tokens. Next: CSRF (for
+admin writes), then `orders/my-orders`, cart/checkout, admin.

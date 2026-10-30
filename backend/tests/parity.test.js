@@ -97,3 +97,103 @@ describeIfRust('journal + public settings: Node and Rust answer identically', ()
     await compare('/api/journal/no-such-article');
   });
 });
+
+// ---------------------------------------------------------------------------
+// Authenticated routes. Read-only checks reuse one user on both sides (same DB
+// rows → same JSON); write sequences run on two fresh users, one per service,
+// and compare each step after normalizing generated ids and timestamps.
+// ---------------------------------------------------------------------------
+const jwt = require('jsonwebtoken');
+const { login, registerCustomer, DatabaseUtil } = require('./helpers');
+
+async function compareWith(method, url, { headers = {}, body } = {}) {
+  let nodeReq = request(app)[method](url).set(headers);
+  if (body !== undefined) nodeReq = nodeReq.send(body);
+  const node = await nodeReq;
+  const rust = await fetch(RUST + url, {
+    method: method.toUpperCase(),
+    headers: { ...headers, ...(body !== undefined && { 'Content-Type': 'application/json' }) },
+    body: body !== undefined ? JSON.stringify(body) : undefined,
+  });
+  expect({ url, status: rust.status, body: await rust.json() }).toEqual({ url, status: node.status, body: node.body });
+}
+
+const normalize = (v) => JSON.parse(JSON.stringify(v)
+  .replace(/WISH\d{10}/g, 'WISH*')
+  .replace(/\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{3}Z/g, 'TIME'));
+
+async function step(method, url, nodeToken, rustToken, body) {
+  let nodeReq = request(app)[method](url).set('Authorization', `Bearer ${nodeToken}`);
+  if (body !== undefined) nodeReq = nodeReq.send(body);
+  const node = await nodeReq;
+  const rust = await fetch(RUST + url, {
+    method: method.toUpperCase(),
+    headers: { Authorization: `Bearer ${rustToken}`, ...(body !== undefined && { 'Content-Type': 'application/json' }) },
+    body: body !== undefined ? JSON.stringify(body) : undefined,
+  });
+  const label = `${method.toUpperCase()} ${url} ${JSON.stringify(body ?? '')}`;
+  expect({ label, status: rust.status, body: normalize(await rust.json()) })
+    .toEqual({ label, status: node.status, body: normalize(node.body) });
+}
+
+describeIfRust('auth: Node and Rust reject the same tokens the same way', () => {
+  const secret = process.env.JWT_SECRET;
+  const sign = (payload, opts = {}) => jwt.sign(payload, secret, { algorithm: 'HS256', expiresIn: '1h', ...opts });
+  const b64 = (o) => Buffer.from(JSON.stringify(o)).toString('base64url');
+
+  test('missing, malformed and forged tokens', async () => {
+    const bearer = (t) => ({ headers: { Authorization: `Bearer ${t}` } });
+    await compareWith('get', '/api/wishlist');
+    await compareWith('get', '/api/wishlist', bearer('garbage'));
+    await compareWith('get', '/api/wishlist', { headers: { Authorization: 'Bearer ' } });
+    await compareWith('get', '/api/wishlist', { headers: { Authorization: 'Token abc' } });
+    await compareWith('get', '/api/wishlist', bearer(`${b64({ alg: 'none', typ: 'JWT' })}.${b64({ id: 'USER0000000003' })}.`));
+    await compareWith('get', '/api/wishlist', bearer(jwt.sign({ id: 'USER0000000003' }, 'another-secret-another-secret-123')));
+    await compareWith('get', '/api/wishlist', bearer(sign({ id: 'USER0000000003' }, { expiresIn: -5 })));
+    await compareWith('get', '/api/wishlist', bearer(sign({ id: 'USER9999999999' })));
+    await compareWith('get', '/api/wishlist', bearer(sign({ email: 'no-id@example.com' })));
+  });
+
+  test('valid token via header and via admin_auth cookie', async () => {
+    const { accessToken } = await login('customer');
+    await compareWith('get', '/api/wishlist', { headers: { Authorization: `Bearer ${accessToken}` } });
+    await compareWith('get', '/api/wishlist', { headers: { Cookie: `x=1; admin_auth=${accessToken}` } });
+    // An empty Bearer header takes precedence over a valid cookie (Node behaviour).
+    await compareWith('get', '/api/wishlist', { headers: { Authorization: 'Bearer ', Cookie: `admin_auth=${accessToken}` } });
+  });
+
+  test('revoked and deactivated sessions', async () => {
+    const user = await registerCustomer();
+    const auth = { headers: { Authorization: `Bearer ${user.accessToken}` } };
+    await compareWith('get', '/api/wishlist', auth);
+    await DatabaseUtil.executeQuery('UPDATE users SET token_version = token_version + 1 WHERE id = ?', [user.userId]);
+    await compareWith('get', '/api/wishlist', auth);
+    const other = await registerCustomer();
+    await DatabaseUtil.executeQuery("UPDATE users SET status = 'suspended' WHERE id = ?", [other.userId]);
+    await compareWith('get', '/api/wishlist', { headers: { Authorization: `Bearer ${other.accessToken}` } });
+  });
+});
+
+describeIfRust('wishlist: same sequence, same answers', () => {
+  test('add / duplicate / validate / list / check / remove', async () => {
+    const a = (await registerCustomer()).accessToken; // Node
+    const b = (await registerCustomer()).accessToken; // Rust
+    const s = (method, url, body) => step(method, url, a, b, body);
+
+    await s('get', '/api/wishlist');
+    await s('post', '/api/wishlist', {});
+    await s('post', '/api/wishlist', { product_id: '' });
+    await s('post', '/api/wishlist', { product_id: 'PROD9999999999' });
+    await s('post', '/api/wishlist', { product_id: 'PROD0000000001' });
+    await s('post', '/api/wishlist', { product_id: 'PROD0000000001' });
+    await s('post', '/api/wishlist', { product_id: 'PROD0000000002', variant_id: 'PROD0000000001-VAR-1' });
+    await s('post', '/api/wishlist', { product_id: 'PROD0000000002', variant_id: 'PROD0000000002-VAR-2' });
+    await s('post', '/api/wishlist', { product_id: 'PROD0000000002', variant_id: 'PROD0000000002-VAR-2' });
+    await s('get', '/api/wishlist');
+    await s('get', '/api/wishlist/check/PROD0000000001');
+    await s('get', '/api/wishlist/check/PROD0000000003');
+    await s('delete', '/api/wishlist/PROD0000000001');
+    await s('delete', '/api/wishlist/PROD0000000001');
+    await s('get', '/api/wishlist');
+  });
+});

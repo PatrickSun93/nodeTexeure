@@ -1,0 +1,24 @@
+{
+  "db_name": "MySQL",
+  "query": "SELECT get_next_id('WISH') AS \"id: String\"",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id: String",
+        "type_info": {
+          "type": "VarString",
+          "flags": "",
+          "max_size": 200
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 0
+    },
+    "nullable": [
+      true
+    ]
+  },
+  "hash": "49b5e7b677af236cf7d8f7255d5bb1b34b69b262da42906559b22326f1006b51"
+}

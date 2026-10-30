@@ -2,6 +2,7 @@
 //! one at a time; the storefront proxy (next.config.mjs, `RUST_API_ROUTES`)
 //! decides which groups this service answers.
 
+pub mod auth;
 pub mod error;
 pub mod params;
 pub mod routes;
@@ -10,7 +11,7 @@ use std::time::Duration;
 
 use axum::Router;
 use axum::http::{HeaderName, HeaderValue, StatusCode, header};
-use axum::routing::get;
+use axum::routing::{delete, get};
 use sqlx::MySqlPool;
 use tower_http::set_header::SetResponseHeaderLayer;
 use tower_http::timeout::TimeoutLayer;
@@ -19,6 +20,7 @@ use tower_http::trace::TraceLayer;
 #[derive(Clone)]
 pub struct AppState {
     pub pool: MySqlPool,
+    pub jwt: auth::JwtKey,
 }
 
 pub fn router(state: AppState) -> Router {
@@ -36,6 +38,18 @@ pub fn router(state: AppState) -> Router {
         .route("/api/journal", get(routes::journal::list))
         .route("/api/journal/{id_or_slug}", get(routes::journal::detail))
         .route("/api/settings/public", get(routes::settings::public))
+        .route(
+            "/api/wishlist",
+            get(routes::wishlist::list).post(routes::wishlist::add),
+        )
+        .route(
+            "/api/wishlist/check/{product_id}",
+            get(routes::wishlist::check),
+        )
+        .route(
+            "/api/wishlist/{product_id}",
+            delete(routes::wishlist::remove),
+        )
         .fallback(|| async {
             (
                 StatusCode::NOT_FOUND,

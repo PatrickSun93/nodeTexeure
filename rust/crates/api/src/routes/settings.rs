@@ -4,8 +4,9 @@
 
 use axum::Json;
 use axum::extract::State;
+use common::json::js_number;
 use common::response::success;
-use serde_json::{Map, Number, Value};
+use serde_json::{Map, Value};
 
 use crate::AppState;
 use crate::error::ApiError;
@@ -47,15 +48,6 @@ fn js_parse_float(s: &str) -> Option<f64> {
         }
     }
     s[..end].parse::<f64>().ok().filter(|f| f.is_finite())
-}
-
-/// A number serialized like JSON.stringify: whole values without a `.0`.
-fn js_number(f: f64) -> Value {
-    if f.fract() == 0.0 && f.abs() < 9_007_199_254_740_992.0 {
-        Value::Number((f as i64).into())
-    } else {
-        Number::from_f64(f).map_or(Value::Null, Value::Number)
-    }
 }
 
 pub async fn public(State(state): State<AppState>) -> Result<Json<Value>, ApiError> {

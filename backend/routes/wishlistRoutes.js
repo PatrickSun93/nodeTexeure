@@ -21,7 +21,7 @@ router.get('/', protect, async (req, res) => {
        JOIN products p ON w.product_id = p.id
        LEFT JOIN product_variants pv ON w.variant_id = pv.id
        WHERE w.user_id = ?
-       ORDER BY w.created_at DESC`,
+       ORDER BY w.created_at DESC, w.id DESC`,
       [req.user.id]
     );
 
@@ -51,23 +51,49 @@ router.post('/', protect, async (req, res) => {
       return res.status(400).json(ResponseFormatter.failure('product_id is required'));
     }
 
+    // The product must exist (and be on sale); a variant must belong to it.
+    // Without this, the insert failed on the foreign key and the route still
+    // answered 201 "Added to wishlist".
+    const product = DatabaseUtil.first(await DatabaseUtil.executeQuery(
+      "SELECT id FROM products WHERE id = ? AND status = 'approved'",
+      [product_id]
+    ));
+    if (!product) {
+      return res.status(404).json(ResponseFormatter.failure('Product not found'));
+    }
+    if (variant_id) {
+      const variant = DatabaseUtil.first(await DatabaseUtil.executeQuery(
+        'SELECT id FROM product_variants WHERE id = ? AND product_id = ?',
+        [variant_id, product_id]
+      ));
+      if (!variant) {
+        return res.status(400).json(ResponseFormatter.failure('Variant does not belong to this product'));
+      }
+    }
+
     // Check if already in wishlist
     const existing = await DatabaseUtil.executeQuery(
       'SELECT id FROM wishlists WHERE user_id = ? AND product_id = ? AND (variant_id = ? OR (variant_id IS NULL AND ? IS NULL))',
       [req.user.id, product_id, variant_id || null, variant_id || null]
     );
 
-    if ((existing.data || existing).length > 0) {
+    if (DatabaseUtil.rows(existing).length > 0) {
       return res.status(409).json(ResponseFormatter.failure('Item already in wishlist'));
     }
 
-    const idResult = await DatabaseUtil.executeQuery('SELECT get_next_id("WISH") as id');
-    const wishId = idResult.data[0].id;
+    const wishId = DatabaseUtil.first(await DatabaseUtil.executeQuery("SELECT get_next_id('WISH') AS id")).id;
 
-    await DatabaseUtil.executeQuery(
+    const inserted = await DatabaseUtil.executeQuery(
       'INSERT INTO wishlists (id, user_id, product_id, variant_id) VALUES (?, ?, ?, ?)',
       [wishId, req.user.id, product_id, variant_id || null]
     );
+    if (!inserted.success) {
+      // A concurrent add of the same item hits the unique key.
+      if (inserted.code === 'ER_DUP_ENTRY') {
+        return res.status(409).json(ResponseFormatter.failure('Item already in wishlist'));
+      }
+      throw new Error(inserted.error);
+    }
 
     res.status(201).json(ResponseFormatter.success('Added to wishlist', { wishlistId: wishId }));
   } catch (error) {
@@ -88,7 +114,8 @@ router.delete('/:productId', protect, async (req, res) => {
       [req.user.id, productId]
     );
 
-    if ((result.data || result).affectedRows === 0) {
+    if (!result.success) throw new Error(result.error);
+    if (result.affectedRows === 0) {
       return res.status(404).json(ResponseFormatter.failure('Item not found in wishlist'));
     }
 
@@ -111,7 +138,7 @@ router.get('/check/:productId', protect, async (req, res) => {
       [req.user.id, productId]
     );
 
-    const isWishlisted = (result.data || result).length > 0;
+    const isWishlisted = DatabaseUtil.rows(result).length > 0;
     res.json(ResponseFormatter.success('Wishlist check', { isWishlisted }));
   } catch (error) {
     console.error('Wishlist check error:', error);

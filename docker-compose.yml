@@ -50,7 +50,7 @@ services:
     environment:
       BACKEND_URL: http://backend:6666
       RUST_API_URL: http://api:7000
-      RUST_API_ROUTES: products,search,journal,settings/public
+      RUST_API_ROUTES: products,search,journal,settings/public,wishlist
       NEXTAUTH_URL: http://localhost:3000
       NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:-dev_only_nextauth_secret}
       NODE_ENV: development
