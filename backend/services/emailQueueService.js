@@ -1,107 +1,40 @@
 const logger = require('../utils/logger');
 const db = require('../utils/database');
-const { isMarketingCategory, isEmailSuppressed } = require('../utils/emailSuppression');
+const emailQueueProducer = require('./emailQueueProducer');
+const { buildUnsubscribeUrl } = require('../utils/emailSuppression');
+
+// email_templates.name used for the abandoned-cart sequence (migration 013).
+const ABANDONED_CART_TEMPLATE = 'abandoned_cart';
+
+const escapeHtml = (value) => String(value ?? '')
+  .replace(/&/g, '&amp;')
+  .replace(/</g, '&lt;')
+  .replace(/>/g, '&gt;')
+  .replace(/"/g, '&quot;')
+  .replace(/'/g, '&#39;');
+
+// "$123.40" or "123.4" -> "123.40"
+const formatAmount = (value) => {
+  const n = Number.parseFloat(String(value ?? '').replace(/[^0-9.-]/g, ''));
+  return Number.isFinite(n) ? n.toFixed(2) : '0.00';
+};
 
 class EmailQueueService {
   constructor() {
-    // Producer + queue-maintenance API only. Delivery is done by the separate
-    // email daemon (rust/crates/email-daemon), the queue's single consumer.
+    // Abandoned-cart producer + queue-maintenance API. Rows are written by
+    // emailQueueProducer (the same path as welcome/verification emails) and
+    // delivered by the email daemon (rust/crates/email-daemon), the queue's
+    // single consumer.
   }
 
   /**
-   * Add email to queue for reliable delivery
-   * @param {string} type - Email type (order_confirmation, status_update, etc.)
-   * @param {string} recipient - Recipient email address
-   * @param {Object} data - Email data (order info, cart info, etc.)
-   * @param {number} priority - Priority level (1-5, 1 being highest)
-   * @param {Date} scheduledAt - When to send the email (optional, defaults to now)
-   * @returns {Promise<string>} - Queue item ID
-   */
-  async queueEmail(type, recipient, data, priority = 3, scheduledAt = null) {
-    try {
-      // Suppression gate — only for MARKETING queue types (e.g. 'abandoned_cart').
-      // Transactional types (order_confirmation, shipping_notification, welcome_email,
-      // low_stock_alert, email_failure_alert) are never gated. Fail-open: a suppression
-      // check error returns false and the email still queues.
-      if (isMarketingCategory(type) && (await isEmailSuppressed(recipient))) {
-        logger.info('Marketing email suppressed (recipient unsubscribed)', { type, recipient });
-        return null;
-      }
-
-      const queueId = `email_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      const now = new Date();
-      const sendAt = scheduledAt || now;
-
-      const query = `
-        INSERT INTO email_queue (
-          id, type, recipient, data, priority, status, 
-          attempts, scheduled_at, created_at, to_email, subject, email_content
-        ) VALUES (?, ?, ?, ?, ?, 'pending', 0, ?, ?, ?, ?, ?)
-      `;
-
-      // Generate a temporary subject and content for the queue entry
-      const tempSubject = `${type.replace('_', ' ').toUpperCase()} - Queued`;
-      const tempContent = { type, data, queued_at: now };
-
-      const result = await db.executeQuery(query, [
-        queueId,
-        type,
-        recipient,
-        JSON.stringify(data),
-        priority,
-        sendAt,
-        now,
-        recipient, // to_email
-        tempSubject, // subject
-        JSON.stringify(tempContent) // email_content
-      ]);
-
-      if (!result.success) {
-        throw new Error(result.error);
-      }
-
-      logger.info(`Email queued successfully`, {
-        queueId,
-        type,
-        recipient,
-        priority,
-        scheduledAt: sendAt
-      });
-
-      return queueId;
-    } catch (error) {
-      logger.error('Failed to queue email', {
-        error: error.message,
-        type,
-        recipient
-      });
-      throw error;
-    }
-  }
-
-  /**
-   * Queue order confirmation email
-   */
-  async queueOrderConfirmation(customerEmail, orderData) {
-    return await this.queueEmail('order_confirmation', customerEmail, orderData, 1);
-  }
-
-  /**
-   * Queue order status update email
-   */
-  async queueOrderStatusUpdate(customerEmail, orderData) {
-    return await this.queueEmail('order_status_update', customerEmail, orderData, 2);
-  }
-
-  /**
-   * Queue shipping notification email
-   */
-  async queueShippingNotification(customerEmail, orderData) {
-    return await this.queueEmail('shipping_notification', customerEmail, orderData, 1);
-  }
-
-  /**
-   * Queue abandoned cart email with delay
+   * Queue one abandoned cart email of the 3-step sequence.
+   * The producer applies the marketing suppression gate (isMarketingCategory /
+   * isEmailSuppressed), so unsubscribed recipients get nothing.
+   * @param {string} customerEmail
+   * @param {Object} cartData - { items: [{ name, quantity }], totalAmount, checkoutUrl, customerName }
+   * @param {number} sequenceStep - 1 (1 hour), 2 (24 hours) or 3 (72 hours)
+   * @returns {Promise<string|null>} - email_queue id, or null when not queued
    */
   async queueAbandonedCartEmail(customerEmail, cartData, sequenceStep = 1) {
     const delays = {
@@ -113,78 +46,32 @@ class EmailQueueService {
     const delay = delays[sequenceStep] || delays[1];
     const scheduledAt = new Date(Date.now() + delay);
 
-    const emailData = {
-      ...cartData,
-      sequenceStep
+    const items = cartData.items || [];
+    // The daemon substitutes variables verbatim into the HTML body, so values a
+    // customer controls (their name) or that come from the catalog are escaped.
+    const variables = {
+      customer_name: escapeHtml(cartData.customerName || 'Customer'),
+      item_count: items.length,
+      item_summary: escapeHtml(items.map((i) => `${i.name} × ${i.quantity}`).join(', ')),
+      cart_total: formatAmount(cartData.totalAmount),
+      recovery_link: cartData.checkoutUrl,
+      unsubscribe_link: buildUnsubscribeUrl(customerEmail),
+      sequence_step: sequenceStep
     };
 
-    return await this.queueEmail('abandoned_cart', customerEmail, emailData, 3, scheduledAt);
-  }
+    const result = await emailQueueProducer.enqueue(
+      customerEmail,
+      cartData.customerName || '',
+      ABANDONED_CART_TEMPLATE,
+      variables,
+      scheduledAt
+    );
 
-  /**
-   * Queue welcome email for new users
-   */
-  async queueWelcomeEmail(customerEmail, userData) {
-    return await this.queueEmail('welcome_email', customerEmail, userData, 2);
-  }
-
-  /**
-   * Queue low stock alert for authorized staff
-   */
-  async queueLowStockAlert(staffEmails, lowStockProducts) {
-    const results = [];
-    for (const staffEmail of staffEmails) {
-      const queueId = await this.queueEmail('low_stock_alert', staffEmail, { products: lowStockProducts }, 4);
-      results.push(queueId);
+    if (!result.queued) {
+      logger.info('Abandoned cart email not queued', { customerEmail, sequenceStep, reason: result.reason });
+      return null;
     }
-    return results;
-  }
-
-  /**
-   * Get queue statistics
-   */
-  async getQueueStats() {
-    const query = `
-      SELECT 
-        status,
-        COUNT(*) as count
-      FROM email_queue 
-      WHERE created_at > DATE_SUB(NOW(), INTERVAL 24 HOUR)
-      GROUP BY status
-    `;
-    
-    const result = await db.executeQuery(query);
-    
-    const stats = {
-      pending: 0,
-      completed: 0,
-      failed: 0,
-      total: 0
-    };
-
-    if (result.success) {
-      result.data.forEach(row => {
-        stats[row.status] = row.count;
-        stats.total += row.count;
-      });
-    }
-
-    return stats;
-  }
-
-  /**
-   * Cancel pending email by queue ID
-   */
-  async cancelEmail(queueId) {
-    const query = `
-      UPDATE email_queue 
-      SET status = 'cancelled', 
-          completed_at = NOW() 
-      WHERE id = ? AND status = 'pending'
-    `;
-    
-    const result = await db.executeQuery(query, [queueId]);
-    return result.success && result.affectedRows > 0;
+    return result.id;
   }
 
   /**
@@ -193,16 +80,15 @@ class EmailQueueService {
    */
   async cancelAbandonedCartEmails(customerEmail) {
     const query = `
-      UPDATE email_queue 
-      SET status = 'cancelled', 
-          completed_at = NOW() 
-      WHERE recipient = ? 
-      AND type = 'abandoned_cart' 
+      UPDATE email_queue
+      SET status = 'cancelled'
+      WHERE to_email = ?
+      AND template_id IN (SELECT id FROM email_templates WHERE name = ?)
       AND status = 'pending'
     `;
-    
-    const result = await db.executeQuery(query, [customerEmail]);
-    
+
+    const result = await db.executeQuery(query, [customerEmail, ABANDONED_CART_TEMPLATE]);
+
     if (result.success) {
       logger.info(`Cancelled ${result.affectedRows} abandoned cart emails for ${customerEmail}`);
       return result.affectedRows;
@@ -212,5 +98,7 @@ class EmailQueueService {
     }
   }
 }
+
+EmailQueueService.ABANDONED_CART_TEMPLATE = ABANDONED_CART_TEMPLATE;
 
 module.exports = EmailQueueService;

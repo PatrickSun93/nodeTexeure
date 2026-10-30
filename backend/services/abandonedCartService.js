@@ -9,7 +9,12 @@ const logger = {
 };
 
 class AbandonedCartService {
-  constructor() {
+  /**
+   * @param {Object} [opts]
+   * @param {boolean} [opts.autoStart] - run detection now and every 15 minutes.
+   *   Off under NODE_ENV=test so tests drive detectAbandonedCarts() themselves.
+   */
+  constructor({ autoStart = process.env.NODE_ENV !== 'test' } = {}) {
     this.emailQueueService = new EmailQueueService();
     this.abandonmentThreshold = 30 * 60 * 1000; // 30 minutes in milliseconds
     this.emailSequenceDelays = {
@@ -19,7 +24,7 @@ class AbandonedCartService {
     };
     
     // Start the abandoned cart detection process
-    this.startAbandonedCartDetection();
+    if (autoStart) this.startAbandonedCartDetection();
   }
 
   /**
@@ -190,14 +195,15 @@ class AbandonedCartService {
         queueIds.push(queueId);
       }
 
-      // Update recovery record with email queue IDs
+      // Record how many emails were queued (0 when the recipient unsubscribed)
+      const queuedCount = queueIds.filter(Boolean).length;
       const updateRecoveryQuery = `
         UPDATE abandoned_cart_recovery 
-        SET email_sent_count = 3, last_email_sent_at = NOW()
+        SET email_sent_count = ?, last_email_sent_at = NOW()
         WHERE id = ?
       `;
       
-      await db.executeQuery(updateRecoveryQuery, [recoveryId]);
+      await db.executeQuery(updateRecoveryQuery, [queuedCount, recoveryId]);
 
       logger.info('Cart recovery initiated successfully', {
         cart_id,
@@ -405,7 +411,7 @@ class AbandonedCartService {
     // Set up interval to run every 15 minutes
     setInterval(() => {
       this.detectAbandonedCarts();
-    }, 15 * 60 * 1000); // 15 minutes
+    }, 15 * 60 * 1000).unref(); // 15 minutes
 
     logger.info('Abandoned cart detection started - running every 15 minutes');
   }

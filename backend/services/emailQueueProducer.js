@@ -65,7 +65,7 @@ async function enqueue(toEmail, toName, templateName, variables = {}, scheduledA
     };
 
     const id = uuidv4();
-    await DatabaseUtil.executeQuery(
+    const insert = await DatabaseUtil.executeQuery(
       `INSERT INTO email_queue 
         (id, to_email, to_name, subject, email_content, template_id, template_data, status, attempts, max_attempts, scheduled_at)
        VALUES (?, ?, ?, ?, ?, ?, ?, 'pending', 0, 3, COALESCE(?, NOW()))`,
@@ -80,6 +80,8 @@ async function enqueue(toEmail, toName, templateName, variables = {}, scheduledA
         scheduledAt,
       ]
     );
+    // executeQuery never throws — a failed INSERT must not be reported as queued.
+    if (!insert.success) throw new Error(insert.error);
 
     console.log(`📧 Enqueued email: "${subject}" → ${toEmail} (template: ${templateName})`);
     return { id, queued: true };
