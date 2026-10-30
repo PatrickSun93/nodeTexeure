@@ -3,19 +3,20 @@
  *
  * Read + operational endpoints for the `email_queue` table that backs the
  * transactional email pipeline (producer: services/emailQueueProducer.js,
- * consumer: services/emailDaemon.js).
+ * consumer: the Rust email daemon, rust/crates/email-daemon).
  *
  * Authoritative schema (docker/mysql/init.sql):
  *   email_queue(
  *     id, to_email, to_name, subject, email_content(JSON), template_id,
  *     template_data(JSON),
- *     status ENUM('pending','sent','failed','cancelled') DEFAULT 'pending',
+ *     status ENUM('pending','processing','sent','failed','cancelled') DEFAULT 'pending',
+ *     claimed_at,
  *     attempts, max_attempts, processing_details(JSON), scheduled_at,
  *     sent_at, created_at
  *   )
  *
- * The daemon additionally sets status='processing' while a mail is in flight and
- * writes { error_message, failed_at, attempt_number } into processing_details on
+ * The daemon claims a row with status='processing' (+ claimed_at) while a mail is
+ * in flight and writes { error_message, failed_at, attempt_number } into processing_details on
  * failure, so the error text is read out of that JSON column.
  *
  * UI status vocabulary -> DB status:
@@ -64,7 +65,6 @@ function dbStatusToBucket(raw) {
     case 'pending':
       return 'queued';
     case 'processing':
-    case '': // strict-mode truncation of an out-of-enum 'processing'
       return 'sending';
     case 'sent':
       return 'sent';
@@ -121,7 +121,7 @@ async function getStatusCounts() {
 
 /**
  * Best-effort worker/daemon health derived purely from the table, since the
- * consumer (services/emailDaemon.js) is a separate process we cannot introspect
+ * consumer (rust/crates/email-daemon) is a separate process we cannot introspect
  * directly.
  */
 async function getWorkerStatus() {
