@@ -1,5 +1,6 @@
 'use client';
 
+import type { ReactNode } from 'react';
 import { useAdmin } from '@/contexts/AdminContext';
 import LoadingSpinner from './LoadingSpinner';
 
@@ -25,7 +26,7 @@ export function GlobalLoadingOverlay() {
 }
 
 // Section-specific loading indicator
-export function SectionLoadingIndicator({ section, children, fallback = null }) {
+export function SectionLoadingIndicator({ section, children, fallback = null }: { section: string; children: ReactNode; fallback?: ReactNode }) {
   const { isLoading } = useAdmin();
   
   if (isLoading[section]) {
@@ -40,7 +41,7 @@ export function SectionLoadingIndicator({ section, children, fallback = null }) 
 }
 
 // Inline loading state for buttons and small components
-export function InlineLoadingState({ loading, children, loadingText = 'Loading...' }) {
+export function InlineLoadingState({ loading, children, loadingText = 'Loading...' }: { loading: boolean; children: ReactNode; loadingText?: string }) {
   if (loading) {
     return (
       <div className="flex items-center space-x-2">
@@ -61,6 +62,13 @@ export function AsyncLoadingWrapper({
   loadingComponent = null,
   errorComponent = null,
   onRetry = null 
+}: {
+  loading: boolean;
+  error?: string | null;
+  children: ReactNode;
+  loadingComponent?: ReactNode;
+  errorComponent?: ReactNode;
+  onRetry?: (() => void) | null;
 }) {
   if (loading) {
     return loadingComponent || (
@@ -94,7 +102,7 @@ export function AsyncLoadingWrapper({
 }
 
 // Page-level loading state
-export function PageLoadingState({ title = 'Loading', subtitle = 'Please wait...' }) {
+export function PageLoadingState({ title = 'Loading', subtitle = 'Please wait...' }: { title?: string; subtitle?: string }) {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
       <div className="text-center">
@@ -106,10 +114,12 @@ export function PageLoadingState({ title = 'Loading', subtitle = 'Please wait...
   );
 }
 
-export default {
+const LoadingStateManager = {
   GlobalLoadingOverlay,
   SectionLoadingIndicator,
   InlineLoadingState,
   AsyncLoadingWrapper,
   PageLoadingState
 };
+
+export default LoadingStateManager;

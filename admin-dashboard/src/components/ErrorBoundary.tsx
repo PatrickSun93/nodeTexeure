@@ -1,20 +1,31 @@
 'use client';
 
-import React from 'react';
+import React, { type ErrorInfo, type ReactNode } from 'react';
 import Link from 'next/link';
 
-class ErrorBoundary extends React.Component {
-  constructor(props) {
+interface ErrorBoundaryProps {
+  children?: ReactNode;
+  fallback?: ReactNode;
+}
+
+interface ErrorBoundaryState {
+  hasError: boolean;
+  error: Error | null;
+  errorInfo: ErrorInfo | null;
+}
+
+class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
+  constructor(props: ErrorBoundaryProps) {
     super(props);
     this.state = { hasError: false, error: null, errorInfo: null };
   }
 
-  static getDerivedStateFromError(error) {
+  static getDerivedStateFromError(error: Error): Partial<ErrorBoundaryState> {
     // Update state so the next render will show the fallback UI
     return { hasError: true };
   }
 
-  componentDidCatch(error, errorInfo) {
+  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     // Log the error to console and potentially to an error reporting service
     console.error('ErrorBoundary caught an error:', error, errorInfo);
     
@@ -59,7 +70,7 @@ class ErrorBoundary extends React.Component {
                 <h3 className="text-sm font-medium text-gray-900 mb-2">Error Details:</h3>
                 <pre className="text-xs text-gray-700 overflow-auto max-h-32">
                   {this.state.error.toString()}
-                  {this.state.errorInfo.componentStack}
+                  {this.state.errorInfo?.componentStack}
                 </pre>
               </div>
             )}
@@ -97,7 +108,7 @@ class ErrorBoundary extends React.Component {
 }
 
 // Functional component wrapper for use with hooks
-export function ErrorBoundaryWrapper({ children, fallback }) {
+export function ErrorBoundaryWrapper({ children, fallback }: ErrorBoundaryProps) {
   return (
     <ErrorBoundary fallback={fallback}>
       {children}

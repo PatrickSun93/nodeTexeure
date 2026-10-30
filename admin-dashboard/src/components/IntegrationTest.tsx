@@ -6,9 +6,16 @@ import { useAdmin } from '@/contexts/AdminContext';
 import useNavigation from '@/hooks/useNavigation';
 import { useErrorHandler } from '@/hooks/useErrorHandler';
 
+interface TestResult {
+  passed: boolean;
+  message: string;
+}
+
+type TestResults = Record<string, TestResult>;
+
 // Integration test component to verify all systems work together
-export default function IntegrationTest({ onComplete }) {
-  const [testResults, setTestResults] = useState({});
+export default function IntegrationTest({ onComplete }: { onComplete?: (results: TestResults) => void }) {
+  const [testResults, setTestResults] = useState<TestResults>({});
   const [isRunning, setIsRunning] = useState(false);
   
   const { isAuthenticated, user } = useAuth();
@@ -26,7 +33,7 @@ export default function IntegrationTest({ onComplete }) {
 
   const runIntegrationTests = async () => {
     setIsRunning(true);
-    const results = {};
+    const results: TestResults = {};
 
     try {
       // Test 1: Authentication Context

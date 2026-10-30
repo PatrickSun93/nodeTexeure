@@ -4,7 +4,7 @@ import { useLocale } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useTransition } from 'react';
 
-// Locale lives in the NEXT_LOCALE cookie (read server-side in src/i18n/request.js).
+// Locale lives in the NEXT_LOCALE cookie (read server-side in src/i18n/request.ts).
 // Setting it + router.refresh() re-renders the server tree in the new language.
 const LOCALES = [
   { code: 'en', short: 'EN', title: 'English' },
@@ -18,7 +18,7 @@ export default function LanguageSwitcher() {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
-  const choose = (code) => {
+  const choose = (code: string) => {
     if (code === locale) return;
     document.cookie = `NEXT_LOCALE=${code}; path=/; max-age=31536000; samesite=lax`;
     startTransition(() => router.refresh());

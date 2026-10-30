@@ -2195,11 +2195,6 @@
     "low": "低",
     "loading": "加载中…"
   },
-  "ExportButton": {
-    "exportCsv": "导出 CSV",
-    "exporting": "导出中…",
-    "exportFailed": "导出失败，请重试。"
-  },
   "SessionManager": {
     "validationFailed": "会话验证失败，请重新登录。",
     "expiryWarning": "由于长时间未操作，您的会话将在 5 分钟后过期。点击任意位置以延长会话。",

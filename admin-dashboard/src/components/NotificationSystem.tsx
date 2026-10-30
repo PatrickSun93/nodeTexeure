@@ -1,20 +1,20 @@
 'use client';
 
 import { useEffect } from 'react';
-import { useAdmin } from '@/contexts/AdminContext';
+import { useAdmin, type Notification, type NotificationType } from '@/contexts/AdminContext';
 
 // Individual Notification Component
-function NotificationItem({ notification, onRemove }) {
+function NotificationItem({ notification, onRemove }: { notification: Notification; onRemove: (id: string) => void }) {
   const { id, message, type, duration } = notification;
 
-  const typeStyles = {
+  const typeStyles: Record<NotificationType, string> = {
     success: 'bg-green-50 border-green-200 text-green-800',
     error: 'bg-red-50 border-red-200 text-red-800',
     warning: 'bg-yellow-50 border-yellow-200 text-yellow-800',
     info: 'bg-blue-50 border-blue-200 text-blue-800'
   };
 
-  const iconMap = {
+  const iconMap: Record<NotificationType, string> = {
     success: '✅',
     error: '❌',
     warning: '⚠️',
@@ -22,7 +22,7 @@ function NotificationItem({ notification, onRemove }) {
   };
 
   useEffect(() => {
-    if (duration > 0) {
+    if (duration && duration > 0) {
       const timer = setTimeout(() => {
         onRemove(id);
       }, duration);
@@ -35,11 +35,11 @@ function NotificationItem({ notification, onRemove }) {
     <div className={`
       flex items-center justify-between p-4 rounded-lg border shadow-sm
       transform transition-all duration-300 ease-in-out
-      ${typeStyles[type] || typeStyles.info}
+      ${(type && typeStyles[type]) || typeStyles.info}
     `}>
       <div className="flex items-center space-x-3">
         <span className="text-lg">
-          {iconMap[type] || iconMap.info}
+          {(type && iconMap[type]) || iconMap.info}
         </span>
         <p className="text-sm font-medium">
           {message}
