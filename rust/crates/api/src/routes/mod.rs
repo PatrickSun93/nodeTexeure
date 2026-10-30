@@ -4,6 +4,8 @@ pub mod health;
 pub mod journal;
 pub mod orders;
 pub mod products;
+pub mod returns;
+pub mod reviews;
 pub mod search;
 pub mod settings;
 // /api/users, auth half (register, login, refresh, session, csrf-token, password reset, verify-email)

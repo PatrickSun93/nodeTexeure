@@ -1,0 +1,24 @@
+{
+  "db_name": "MySQL",
+  "query": "SELECT CAST(COUNT(*) AS CHAR) AS \"total!: String\" FROM returns r\n           WHERE (? IS NULL OR r.status = ?)",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "total!: String",
+        "type_info": {
+          "type": "VarString",
+          "flags": "",
+          "max_size": 84
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": [
+      true
+    ]
+  },
+  "hash": "71986a6cc1c2c704e7346d901e382669dd74981fb1d2ad9318417dee8aa591ae"
+}

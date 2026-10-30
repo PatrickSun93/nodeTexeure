@@ -1,0 +1,12 @@
+{
+  "db_name": "MySQL",
+  "query": "UPDATE product_reviews SET review_details = JSON_SET(review_details, '$.helpful_count', ?) WHERE id = ?",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": []
+  },
+  "hash": "be9ca1d9862b67b26f0ed88e43fe8c90f07a6568afdf032d0b93f91cabdb426d"
+}

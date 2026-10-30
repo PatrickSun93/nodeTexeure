@@ -8,8 +8,12 @@ const { isNonEmptyString, isOptionalString } = require('../utils/params');
 // returns.reason / returns.status ENUMs (docker/mysql/init.sql).
 const RETURN_REASONS = ['defective', 'wrong_item', 'not_as_described', 'changed_mind', 'damaged_shipping', 'other'];
 const RETURN_STATUSES = ['requested', 'approved', 'rejected', 'shipped_back', 'received', 'processed', 'closed'];
+// quantity: omitted (or falsy) means 1, otherwise a whole number of units. A string,
+// fraction or out-of-range value used to fail (or round in) the return_items INSERT
+// after the return row was written, so the 201 came back for a return without items.
+const isReturnQuantity = (q) => !q || (Number.isInteger(q) && q > 0 && q <= 4294967295);
 const isReturnItem = (item) => item !== null && typeof item === 'object' && isNonEmptyString(item.orderItemId)
-  && isOptionalString(item.reason);
+  && isOptionalString(item.reason) && isReturnQuantity(item.quantity);
 
 const router = express.Router();
 const db = new DatabaseUtil();
@@ -205,7 +209,10 @@ router.put('/:id/status', protect, admin, csrfProtection, async (req, res) => {
     }
 
     params.push(id);
-    await DatabaseUtil.executeQuery(`UPDATE returns SET ${updates.join(', ')} WHERE id = ?`, params);
+    // A value MySQL refuses (refund_amount 'abc', a tracking number over 100
+    // characters) fails the whole UPDATE: report it instead of "updated".
+    const result = await DatabaseUtil.executeQuery(`UPDATE returns SET ${updates.join(', ')} WHERE id = ?`, params);
+    if (!result.success) throw new Error(result.error);
     res.json(ResponseFormatter.success('Return status updated'));
   } catch (error) {
     console.error('Update return status error:', error);

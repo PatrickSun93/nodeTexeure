@@ -1,0 +1,12 @@
+{
+  "db_name": "MySQL",
+  "query": "INSERT INTO product_reviews\n            (id, product_id, user_id, order_item_id, rating, review_details, is_verified_purchase, is_approved)\n         VALUES (?, ?, ?, ?, ?, ?, ?, 0)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 7
+    },
+    "nullable": []
+  },
+  "hash": "56f3046dd5758f61738d70555c463d7bfe3ed496beb294fb6377f000bde0c619"
+}

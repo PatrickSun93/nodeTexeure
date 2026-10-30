@@ -1,0 +1,12 @@
+{
+  "db_name": "MySQL",
+  "query": "INSERT IGNORE INTO review_helpful_votes (user_id, review_id) VALUES (?, ?)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": []
+  },
+  "hash": "65e036f22bbd218bbcb79e00c97bb53e65b83f5e3ae0aad1e65e747ecb56a25f"
+}

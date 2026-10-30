@@ -23,7 +23,8 @@ pub fn js_string(value: &Value) -> String {
         Value::Null => "null".into(),
         Value::String(s) => s.clone(),
         Value::Bool(b) => b.to_string(),
-        Value::Number(n) => common::json::js_number(n.as_f64().unwrap_or(f64::NAN)).to_string(),
+        // Number::toString: `1e+21`, not serde's `1e21`.
+        Value::Number(n) => common::json::js_number_string(n.as_f64().unwrap_or(f64::NAN)),
         // Array.prototype.toString: elements joined by commas, null → "".
         Value::Array(items) => items
             .iter()
