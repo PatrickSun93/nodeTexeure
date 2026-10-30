@@ -1,0 +1,64 @@
+{
+  "db_name": "MySQL",
+  "query": "SELECT id, email, role AS \"role!: String\", status AS \"status!: String\", token_version\n           FROM users WHERE id = ?",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NOT_NULL | PRIMARY_KEY | NO_DEFAULT_VALUE",
+          "max_size": 200
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "email",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NOT_NULL | UNIQUE_KEY | MULTIPLE_KEY | NO_DEFAULT_VALUE",
+          "max_size": 1020
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "role!: String",
+        "type_info": {
+          "type": "String",
+          "flags": "NOT_NULL | MULTIPLE_KEY | ENUM",
+          "max_size": 32
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "status!: String",
+        "type_info": {
+          "type": "String",
+          "flags": "NOT_NULL | MULTIPLE_KEY | ENUM",
+          "max_size": 36
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "token_version",
+        "type_info": {
+          "type": "Long",
+          "flags": "NOT_NULL",
+          "max_size": 11
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "7009fe10ef3e75a42b06fc76c5b401a5f32e4a4c594eb40b0b38a50f3d6d689a"
+}

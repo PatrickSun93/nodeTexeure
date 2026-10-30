@@ -1,0 +1,12 @@
+{
+  "db_name": "MySQL",
+  "query": "UPDATE cart_items SET quantity = quantity + ? WHERE id = ?",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": []
+  },
+  "hash": "09d991e14e8d54798eecc735f5e8c25f51e16e701d8ec3f82dd7a84dcc6e79b6"
+}

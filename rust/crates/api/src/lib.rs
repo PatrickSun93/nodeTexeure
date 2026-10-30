@@ -116,6 +116,9 @@ pub fn router_with_limiter(state: AppState, global: ratelimit::RateLimiter) -> R
             "/api/wishlist/{product_id}",
             delete(routes::wishlist::remove),
         )
+        // /api/users auth half (routes/users_auth.rs), each route behind its
+        // Node rate limiter.
+        .merge(routes::users_auth::router(state.trust_proxy))
         .fallback(|| async {
             (
                 StatusCode::NOT_FOUND,

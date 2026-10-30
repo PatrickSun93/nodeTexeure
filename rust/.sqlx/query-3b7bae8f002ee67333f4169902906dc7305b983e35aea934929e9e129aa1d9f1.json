@@ -1,0 +1,12 @@
+{
+  "db_name": "MySQL",
+  "query": "UPDATE users SET email_verified = TRUE, email_verification_token = NULL WHERE id = ?",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": []
+  },
+  "hash": "3b7bae8f002ee67333f4169902906dc7305b983e35aea934929e9e129aa1d9f1"
+}

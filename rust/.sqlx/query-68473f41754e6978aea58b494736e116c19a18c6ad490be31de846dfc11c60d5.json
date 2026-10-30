@@ -1,0 +1,12 @@
+{
+  "db_name": "MySQL",
+  "query": "UPDATE users SET password_hash = ?, password_reset_token = NULL, password_reset_expires = NULL,\n           token_version = token_version + 1\n         WHERE id = ?",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": []
+  },
+  "hash": "68473f41754e6978aea58b494736e116c19a18c6ad490be31de846dfc11c60d5"
+}
