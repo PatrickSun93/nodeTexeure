@@ -1,0 +1,24 @@
+{
+  "db_name": "MySQL",
+  "query": "SELECT GET_LOCK(?, 0)",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "GET_LOCK(?, 0)",
+        "type_info": {
+          "type": "LongLong",
+          "flags": "BINARY",
+          "max_size": 1
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      true
+    ]
+  },
+  "hash": "dee1ff0310f544454c22ad4d06bf39c0184fbe23e49a7b11193367dd3f3da504"
+}

@@ -40,6 +40,8 @@ jobs:
           cache-dependency-path: admin-dashboard/package-lock.json
       - run: npm ci
       - run: npm run lint
+      - name: /api routing rules (rustRoutes.mjs)
+        run: node --test rustRoutes.test.mjs
       - run: npm run build
 
   backend:
@@ -136,7 +138,9 @@ jobs:
           (cd rust && cargo build --locked -p api)   # in rust/ so rust-toolchain.toml applies
           API_PORT=7000 rust/target/debug/api > api.log 2>&1 &
           for i in $(seq 1 30); do curl -sf http://127.0.0.1:7000/health && break; sleep 1; done
-          cd backend && RUST_API_URL=http://127.0.0.1:7000 npx jest tests/parity.test.js
+          # parity.test.js plus every per-group parity-*.test.js (the admin ones
+          # start their own Rust APIs from rust/target/debug/api)
+          cd backend && RUST_API_URL=http://127.0.0.1:7000 npx jest --runInBand tests/parity
       - name: API log (on failure)
         if: failure()
         run: cat api.log || true

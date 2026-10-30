@@ -3,9 +3,15 @@
 import { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import OrderDetailView from '../OrderDetailView';
+import { useNotifications } from '../NotificationSystem';
+
+// Bulk actions must send the real orders.id (`_id`); `id` is the display order
+// number, which the bulk endpoint can't match (it silently updated 0 orders).
+const orderKey = (order) => order._id || order.id;
 
 export default function OrdersView() {
   const t = useTranslations('Dashboard');
+  const notify = useNotifications();
   const [orders, setOrders] = useState([]);
   const [selectedStatus, setSelectedStatus] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
@@ -66,7 +72,7 @@ export default function OrdersView() {
 
   const handleBulkOrderUpdate = async () => {
     if (selectedOrderIds.size === 0) return;
-    if (!bulkStatus) { alert(t('bulkSelectStatusFirst')); return; }
+    if (!bulkStatus) { notify.warning(t('bulkSelectStatusFirst')); return; }
     setBulkBusy(true);
     try {
       const { apiFetch } = await import('../../utils/api');
@@ -77,15 +83,15 @@ export default function OrdersView() {
       if (response.status === 'SUCCESS') {
         const updated = response.keyValueTable?.find?.((i) => i.result)?.result?.updated
           ?? response.keyValueTable?.[0]?.result?.updated ?? selectedOrderIds.size;
-        alert(t('bulkOrdersUpdated', { count: updated }));
+        notify.success(t('bulkOrdersUpdated', { count: updated }));
         clearOrderSelection();
         setReloadKey((k) => k + 1);
       } else {
-        alert(t('bulkOrdersUpdateFailed'));
+        notify.error(t('bulkOrdersUpdateFailed'));
       }
     } catch (e) {
       console.error('Bulk order update failed', e);
-      alert(t('bulkOrdersUpdateFailed'));
+      notify.error(t('bulkOrdersUpdateFailed'));
     } finally {
       setBulkBusy(false);
     }
@@ -141,7 +147,7 @@ export default function OrdersView() {
 
   const statuses = ['All', 'Pending', 'Processing', 'Shipped', 'Delivered', 'Cancelled'];
 
-  const pageOrderIds = paginatedOrders.map((o) => o.id);
+  const pageOrderIds = paginatedOrders.map(orderKey);
   const allPageOrdersSelected = pageOrderIds.length > 0 && pageOrderIds.every((id) => selectedOrderIds.has(id));
 
   if (selectedOrder) {
@@ -271,13 +277,13 @@ export default function OrdersView() {
                 <tr><td colSpan="8" className="px-6 py-10 text-center text-gray-500">{t('noOrdersFound')}</td></tr>
               ) : (
                 paginatedOrders.map((order) => (
-                  <tr key={order.id} className={`hover:bg-gray-50 transition-colors ${selectedOrderIds.has(order.id) ? 'bg-brand-softer' : ''}`}>
+                  <tr key={orderKey(order)} className={`hover:bg-gray-50 transition-colors ${selectedOrderIds.has(orderKey(order)) ? 'bg-brand-softer' : ''}`}>
                     <td className="px-6 py-4">
                       <input
                         type="checkbox"
                         aria-label={t('selectRow')}
-                        checked={selectedOrderIds.has(order.id)}
-                        onChange={() => toggleOrderSelected(order.id)}
+                        checked={selectedOrderIds.has(orderKey(order))}
+                        onChange={() => toggleOrderSelected(orderKey(order))}
                         className="rounded border-gray-300 text-brand focus:ring-brand cursor-pointer"
                       />
                     </td>

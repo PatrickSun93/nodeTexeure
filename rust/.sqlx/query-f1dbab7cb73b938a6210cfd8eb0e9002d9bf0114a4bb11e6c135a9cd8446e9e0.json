@@ -1,0 +1,12 @@
+{
+  "db_name": "MySQL",
+  "query": "UPDATE email_queue SET status = 'cancelled'\n         WHERE to_email = ?\n           AND template_id IN (SELECT id FROM email_templates WHERE name = ?)\n           AND status = 'pending'",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": []
+  },
+  "hash": "f1dbab7cb73b938a6210cfd8eb0e9002d9bf0114a4bb11e6c135a9cd8446e9e0"
+}

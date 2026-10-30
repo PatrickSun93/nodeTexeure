@@ -1,0 +1,12 @@
+{
+  "db_name": "MySQL",
+  "query": "DELETE FROM email_unsubscribes WHERE email = ?",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": []
+  },
+  "hash": "587d3beefdf5bb4ffed7a14ece55f987de64e661144058605ba2889d1938fef5"
+}

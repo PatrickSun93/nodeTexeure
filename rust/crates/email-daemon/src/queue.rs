@@ -7,9 +7,11 @@ use std::time::Duration;
 use serde_json::Value;
 use sqlx::MySqlPool;
 
-/// Migration that adds the `processing` status and `claimed_at` (012). The daemon
-/// waits for it so a new daemon never runs against an old schema.
-pub const REQUIRED_MIGRATION: i64 = 12;
+/// The daemon waits for this migration so a new daemon never runs against an
+/// old schema: 012 adds the `processing` status and `claimed_at`; 014 unescapes
+/// queued abandoned-cart rows that were pre-escaped before the daemon started
+/// escaping HTML-body variables itself (so they aren't escaped twice).
+pub const REQUIRED_MIGRATION: i64 = 14;
 
 /// A queued email that is due to be sent.
 #[derive(Debug, Clone)]
@@ -41,16 +43,61 @@ pub async fn schema_version(pool: &MySqlPool) -> anyhow::Result<i64> {
     Ok(row.version)
 }
 
-/// Return rows a crashed worker left in `processing` to the queue.
-pub async fn recover_stale(pool: &MySqlPool, older_than: Duration) -> anyhow::Result<u64> {
-    let done = sqlx::query!(
-        "UPDATE email_queue SET status = 'pending', claimed_at = NULL
-         WHERE status = 'processing' AND claimed_at < NOW() - INTERVAL ? SECOND",
-        older_than.as_secs()
+/// What [`recover_stale`] did with the abandoned claims it found.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct Recovered {
+    /// Returned to `pending` for another attempt.
+    pub requeued: u64,
+    /// Out of attempts: marked `failed` for good.
+    pub failed: u64,
+}
+
+/// Note stored in `processing_details` for an attempt whose worker died.
+const ABANDONED: &str = "worker stopped before the send was recorded (claim abandoned)";
+
+/// Deal with rows a crashed worker left in `processing`.
+///
+/// The abandoned run counts as an attempt, exactly like a send that failed:
+/// an email that crashes the daemon (a "poison" email) would otherwise be put
+/// back as `pending` with the same attempt count after every crash and retried
+/// forever. Rows that have now used up `max_attempts` are marked `failed`; the
+/// rest go back to `pending` (the stale-claim timeout is their back-off).
+pub async fn recover_stale(pool: &MySqlPool, older_than: Duration) -> anyhow::Result<Recovered> {
+    let now = chrono::Utc::now().to_rfc3339();
+    let stale = older_than.as_secs();
+    // Same NULL defaults as `fetch_due` (attempts 0, max_attempts 3). Give-ups
+    // first, so the requeue below only sees rows that still have attempts left.
+    let failed = sqlx::query!(
+        "UPDATE email_queue
+         SET status = 'failed', claimed_at = NULL,
+             processing_details = JSON_OBJECT('error_message', ?, 'failed_at', ?,
+               'attempt_number', COALESCE(attempts, 0) + 1, 'recovered_by', 'email-daemon'),
+             attempts = COALESCE(attempts, 0) + 1
+         WHERE status = 'processing' AND claimed_at < NOW() - INTERVAL ? SECOND
+           AND COALESCE(attempts, 0) + 1 >= COALESCE(max_attempts, 3)",
+        ABANDONED,
+        now,
+        stale
     )
     .execute(pool)
     .await?;
-    Ok(done.rows_affected())
+    let requeued = sqlx::query!(
+        "UPDATE email_queue
+         SET status = 'pending', claimed_at = NULL,
+             processing_details = JSON_OBJECT('error_message', ?, 'failed_at', ?,
+               'attempt_number', COALESCE(attempts, 0) + 1, 'recovered_by', 'email-daemon'),
+             attempts = COALESCE(attempts, 0) + 1
+         WHERE status = 'processing' AND claimed_at < NOW() - INTERVAL ? SECOND",
+        ABANDONED,
+        now,
+        stale
+    )
+    .execute(pool)
+    .await?;
+    Ok(Recovered {
+        requeued: requeued.rows_affected(),
+        failed: failed.rows_affected(),
+    })
 }
 
 /// Pending emails whose time has come, oldest first.

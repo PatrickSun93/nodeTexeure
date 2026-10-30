@@ -100,7 +100,10 @@ async function saveLocally(buffer, key) {
  * @returns {Object} { original, thumbnails: { small, medium, large } }
  */
 async function uploadProductImage(fileBuffer, originalName, productId) {
-  const ext = path.extname(originalName).toLowerCase() || '.jpg';
+  // Allowlisted extension only: a client-declared image/png named x.svg or
+  // x.html must not be stored (and served) with that extension.
+  const rawExt = path.extname(originalName).toLowerCase().replace(/[^a-z0-9.]/g, '');
+  const ext = ['.jpg', '.jpeg', '.png', '.gif', '.webp'].includes(rawExt) ? rawExt : '.jpg';
   const baseName = uuidv4();
   const keyPrefix = `products/${productId}`;
 
@@ -135,7 +138,13 @@ async function uploadProductImage(fileBuffer, originalName, productId) {
 async function deleteFile(key) {
   if (!isConfigured) {
     // Delete locally
-    const filePath = path.join(__dirname, '..', 'uploads', key);
+    const uploadsDir = path.join(__dirname, '..', 'uploads');
+    const filePath = path.join(uploadsDir, key);
+    // Same path-traversal guard as saveLocally: a stored URL like
+    // '/uploads/../server.js' must not delete files outside the uploads dir.
+    if (!path.resolve(filePath).startsWith(path.resolve(uploadsDir) + path.sep)) {
+      throw new Error('Invalid upload path');
+    }
     if (fs.existsSync(filePath)) {
       fs.unlinkSync(filePath);
     }

@@ -3,9 +3,11 @@
 import { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import ProductDetailView from '../ProductDetailView';
+import { useNotifications } from '../NotificationSystem';
 
 export default function ProductsView() {
   const t = useTranslations('Dashboard');
+  const notify = useNotifications();
   const [viewMode, setViewMode] = useState('list'); // 'list', 'add', 'edit'
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -126,15 +128,15 @@ export default function ProductsView() {
       if (response.status === 'SUCCESS') {
         const deleted = response.keyValueTable?.find?.((i) => i.result)?.result?.deleted
           ?? response.keyValueTable?.[0]?.result?.deleted ?? selectedProductIds.length;
-        alert(t('bulkProductsDeleted', { count: deleted }));
+        notify.success(t('bulkProductsDeleted', { count: deleted }));
         clearProductSelection();
         setReloadKey((k) => k + 1);
       } else {
-        alert(t('bulkProductsDeleteFailed'));
+        notify.error(t('bulkProductsDeleteFailed'));
       }
     } catch (e) {
       console.error('Bulk delete products failed', e);
-      alert(t('bulkProductsDeleteFailed'));
+      notify.error(t('bulkProductsDeleteFailed'));
     } finally {
       setBulkBusy(false);
     }
@@ -167,11 +169,11 @@ export default function ProductsView() {
       if (response.status === 'SUCCESS') {
         setProducts((prev) => prev.filter((p) => (p.product_id || p.id) !== pid));
       } else {
-        alert(t('deleteProductError'));
+        notify.error(t('deleteProductError'));
       }
     } catch (e) {
       console.error('Delete product failed', e);
-      alert(t('deleteProductError'));
+      notify.error(t('deleteProductError'));
     }
   };
 

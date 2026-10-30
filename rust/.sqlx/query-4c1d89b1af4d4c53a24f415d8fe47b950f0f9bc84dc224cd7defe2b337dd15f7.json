@@ -1,0 +1,12 @@
+{
+  "db_name": "MySQL",
+  "query": "DELETE FROM stock_reservations WHERE id = ?",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": []
+  },
+  "hash": "4c1d89b1af4d4c53a24f415d8fe47b950f0f9bc84dc224cd7defe2b337dd15f7"
+}

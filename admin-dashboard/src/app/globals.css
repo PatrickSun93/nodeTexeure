@@ -28,6 +28,8 @@
   --admin-brand-soft-hover: #eaddc5;
   --admin-brand-softer: #faf5ea;
   --admin-brand-border: #e5d3ad;
+
+  color-scheme: light;
 }
 
 * {
@@ -103,6 +105,8 @@ body {
   border: 1px solid var(--border);
   border-radius: 0.375rem;
   background-color: var(--input);
+  /* Explicit, so the value never depends on what the input inherits. */
+  color: var(--foreground);
   font-size: 0.875rem;
   transition: border-color 0.2s ease;
 }
@@ -197,19 +201,12 @@ body {
   }
 }
 
-/* Dark mode support (future enhancement) */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #111827;
-    --foreground: #f9fafb;
-    --primary: #374151;
-    --primary-foreground: #ffffff;
-    --secondary: #1f2937;
-    --secondary-foreground: #d1d5db;
-    --border: #374151;
-    --input: #1f2937;
-  }
-}
+/* The admin is light-only for now: cards, tables and the body are hard-coded
+   light (bg-white / bg-gray-50 / text-gray-900). A partial prefers-color-scheme
+   override of these variables used to darken only the inputs (#1f2937 behind
+   inherited gray-900 text) and lighten only the labels (near-white on white
+   cards), which made the login form unreadable in dark OS mode. A real dark theme
+   has to flip every surface at once; until then pin native controls to light. */
 
 /* Accessibility improvements */
 .admin-button:focus,

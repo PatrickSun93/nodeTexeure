@@ -1,0 +1,12 @@
+{
+  "db_name": "MySQL",
+  "query": "UPDATE returns SET status = ?,\n               approved_by = IF(?, ?, approved_by), approved_at = IF(?, NOW(), approved_at),\n               received_at = IF(?, NOW(), received_at), processed_at = IF(?, NOW(), processed_at),\n               return_tracking_number = IF(?, ?, return_tracking_number),\n               return_details = IF(?, JSON_SET(COALESCE(return_details, '{}'), '$.admin_notes', ?), return_details)\n             WHERE id = ?",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 11
+    },
+    "nullable": []
+  },
+  "hash": "586399e9bd41a6f3f8b9856bdc727a33a13c62736fcc43451b9bed3c32a8f3b5"
+}

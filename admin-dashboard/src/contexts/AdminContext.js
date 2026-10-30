@@ -3,6 +3,11 @@
 import { createContext, useContext, useReducer, useEffect } from 'react';
 import { useAuth } from './AuthContext';
 
+// Notification ids must be unique even when two toasts fire in the same
+// millisecond (Date.now() alone gave duplicate React keys and removed both).
+let notificationSeq = 0;
+const nextNotificationId = () => `${Date.now()}-${++notificationSeq}`;
+
 // Initial admin state
 const initialState = {
   // UI State
@@ -111,7 +116,7 @@ function adminReducer(state, action) {
       return {
         ...state,
         notifications: [...state.notifications, {
-          id: Date.now(),
+          id: nextNotificationId(),
           timestamp: new Date(),
           ...action.payload
         }]
@@ -395,7 +400,7 @@ export function AdminProvider({ children }) {
     
     // Utility Actions
     showNotification: (message, type = 'info', duration = 5000) => {
-      const id = Date.now();
+      const id = nextNotificationId();
       dispatch({
         type: ADMIN_ACTIONS.ADD_NOTIFICATION,
         payload: { id, message, type, duration }

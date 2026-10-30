@@ -18,7 +18,7 @@ export async function middleware(req: NextRequest) {
   const adminAuth = req.cookies.get('admin_auth')?.value;
   if (!adminAuth) {
     // No cookie present, redirect to login
-    return NextResponse.redirect(new URL('/', req.url));
+    return NextResponse.redirect(new URL('/login', req.url));
   }
 
   // Cookie exists - proceed to dashboard

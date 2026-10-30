@@ -71,7 +71,7 @@ export default function OrdersPage() {
           .nt-orders-page .nt-breadcrumb-sep{color:var(--noirae-border-dark);}
           .nt-orders-page .nt-page-title{font-family:var(--noirae-font-serif);font-weight:500;font-size:38px;letter-spacing:-0.01em;color:var(--noirae-text-primary);margin:6px 0 30px;}
           .nt-orders-page .nt-orders-list{gap:20px;}
-          .nt-orders-page .nt-order-card{background:var(--noirae-bg-white);border:1px solid var(--noirae-border-medium);border-radius:0;padding:0;transition:border-color .25s ease,box-shadow .25s ease;}
+          .nt-orders-page .nt-order-card{position:relative;background:var(--noirae-bg-white);border:1px solid var(--noirae-border-medium);border-radius:0;padding:0;transition:border-color .25s ease,box-shadow .25s ease;}
           .nt-orders-page .nt-order-card:hover{border-color:var(--noirae-border-dark);box-shadow:0 6px 22px rgba(42,38,33,0.07);}
           .nt-orders-page .nt-order-card-header{margin:0;padding:18px 24px;border-bottom:1px solid var(--noirae-border-light);gap:12px;flex-wrap:wrap;}
           .nt-orders-page .nt-order-card-number{font-family:var(--noirae-font-sans);font-size:14px;font-weight:500;color:var(--noirae-text-primary);margin-right:14px;letter-spacing:0.01em;}
@@ -85,6 +85,10 @@ export default function OrdersPage() {
           .nt-orders-page .nt-order-card-footer{padding:0 24px 20px;}
           .nt-orders-page .nt-view-details{display:inline-flex;align-items:center;gap:6px;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:var(--noirae-bg-cream);background:var(--noirae-text-primary);padding:10px 18px;transition:background .2s ease,color .2s ease;}
           .nt-orders-page .nt-order-card:hover .nt-view-details{background:var(--noirae-accent-gold);color:var(--noirae-bg-white);}
+          /* The whole card stays clickable without nesting links: View Details
+             stretches an overlay across the card, and Request Return sits above it. */
+          .nt-orders-page .nt-view-details::after{content:'';position:absolute;inset:0;}
+          .nt-orders-page .nt-return-link{position:relative;z-index:1;}
           .nt-orders-page .nt-return-link{display:inline-flex;align-items:center;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:var(--noirae-text-primary);background:transparent;border:1px solid var(--noirae-border-dark);padding:9px 18px;text-decoration:none;transition:border-color .2s ease,color .2s ease;}
           .nt-orders-page .nt-return-link:hover{border-color:var(--noirae-error);color:var(--noirae-error);}
           .nt-orders-page .nt-btn-primary{background:var(--noirae-text-primary);color:var(--noirae-bg-cream);border-radius:0;font-family:var(--noirae-font-sans);font-size:11px;font-weight:500;letter-spacing:0.14em;text-transform:uppercase;padding:14px 30px;}
@@ -124,11 +128,7 @@ export default function OrdersPage() {
           ) : (
             <div className="nt-orders-list">
               {orders.map((order) => (
-                <Link
-                  key={order.id}
-                  href={`/order/confirmation/${order.id}`}
-                  className="nt-order-card"
-                >
+                <div key={order.id} className="nt-order-card">
                   <div className="nt-order-card-header">
                     <div>
                       <span className="nt-order-card-number">#{order.order_number}</span>
@@ -166,15 +166,16 @@ export default function OrdersPage() {
                     {order.status === 'delivered' && (
                       <Link
                         href={`/returns/request/${order.id || order.order_number}`}
-                        onClick={e => e.stopPropagation()}
                         className="nt-return-link"
                       >
                         {t('requestReturn')}
                       </Link>
                     )}
-                    <span className="nt-view-details">{t('viewDetails')} →</span>
+                    <Link href={`/orders/${order.id}`} className="nt-view-details">
+                      {t('viewDetails')} →
+                    </Link>
                   </div>
-                </Link>
+                </div>
               ))}
             </div>
           )}

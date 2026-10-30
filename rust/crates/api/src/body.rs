@@ -23,7 +23,8 @@ pub fn js_string(value: &Value) -> String {
         Value::Null => "null".into(),
         Value::String(s) => s.clone(),
         Value::Bool(b) => b.to_string(),
-        Value::Number(n) => common::json::js_number(n.as_f64().unwrap_or(f64::NAN)).to_string(),
+        // Number::toString: `1e+21`, not serde's `1e21`.
+        Value::Number(n) => common::json::js_number_string(n.as_f64().unwrap_or(f64::NAN)),
         // Array.prototype.toString: elements joined by commas, null → "".
         Value::Array(items) => items
             .iter()
@@ -97,6 +98,24 @@ pub fn truthy(value: Option<&Value>) -> bool {
     }
 }
 
+/// backend/utils/params.js `isNonEmptyString`: a required text field (the
+/// type check that keeps numbers/arrays from reaching `WHERE col = ?`).
+/// `None` is `undefined`.
+pub fn is_non_empty_string(value: Option<&Value>) -> bool {
+    matches!(value, Some(Value::String(s)) if !s.is_empty())
+}
+
+/// `isOptionalString`: absent, `null` or a string.
+pub fn is_optional_string(value: Option<&Value>) -> bool {
+    matches!(value, None | Some(Value::Null) | Some(Value::String(_)))
+}
+
+/// `isStringList`: a non-empty array of non-empty strings.
+pub fn is_string_list(value: Option<&Value>) -> bool {
+    matches!(value, Some(Value::Array(items))
+        if !items.is_empty() && items.iter().all(|v| is_non_empty_string(Some(v))))
+}
+
 /// `Number.parseInt(value, 10)` for a JSON value; `None` is NaN.
 pub fn parse_int(value: &Value) -> Option<i64> {
     crate::params::js_parse_int(&js_string(value))
@@ -133,6 +152,23 @@ mod tests {
         assert!(js_to_number(&json!([1, 2])).is_nan());
         assert!(js_to_number(&json!({})).is_nan());
         assert_eq!(js_to_number(&json!("-Infinity")), f64::NEG_INFINITY);
+    }
+
+    #[test]
+    fn string_checks_match_utils_params() {
+        let s = json!("a");
+        assert!(is_non_empty_string(Some(&s)));
+        assert!(!is_non_empty_string(Some(&json!(""))));
+        assert!(!is_non_empty_string(Some(&json!(0))));
+        assert!(!is_non_empty_string(None));
+        assert!(is_optional_string(None));
+        assert!(is_optional_string(Some(&json!(null))));
+        assert!(is_optional_string(Some(&json!(""))));
+        assert!(!is_optional_string(Some(&json!(["a"]))));
+        assert!(is_string_list(Some(&json!(["a", "b"]))));
+        assert!(!is_string_list(Some(&json!([]))));
+        assert!(!is_string_list(Some(&json!(["a", ""]))));
+        assert!(!is_string_list(Some(&json!("a"))));
     }
 
     #[test]

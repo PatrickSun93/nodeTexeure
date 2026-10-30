@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
+import { useNotifications } from './NotificationSystem';
 
 export default function CustomerDetailView({ customer, onBack }) {
     const t = useTranslations('CustomerDetailView');
+    const notify = useNotifications();
     const [activeTab, setActiveTab] = useState('overview'); // For future tabs if needed
     const [orders, setOrders] = useState([]);
     const [isLoadingOrders, setIsLoadingOrders] = useState(false);
@@ -25,7 +27,7 @@ export default function CustomerDetailView({ customer, onBack }) {
 
     // Wire "Save Changes" to the real endpoint: PUT /api/admin/users/:id (CSRF-aware apiFetch).
     const handleSaveProfile = async () => {
-        if (!customer?.id) { alert(t('missingCustomerId')); return; }
+        if (!customer?.id) { notify.warning(t('missingCustomerId')); return; }
         setIsSaving(true);
         try {
             const { apiFetch } = await import('../utils/api');
@@ -39,13 +41,13 @@ export default function CustomerDetailView({ customer, onBack }) {
                 }),
             });
             if (response.status === 'SUCCESS') {
-                alert(t('customerUpdated'));
+                notify.success(t('customerUpdated'));
             } else {
-                alert(response.message || t('updateFailed'));
+                notify.error(response.message || t('updateFailed'));
             }
         } catch (e) {
             console.error('Save customer failed', e);
-            alert(t('updateFailed'));
+            notify.error(t('updateFailed'));
         } finally {
             setIsSaving(false);
         }

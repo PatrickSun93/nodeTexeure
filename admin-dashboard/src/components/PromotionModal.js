@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useTranslations } from 'next-intl';
+import { useNotifications } from './NotificationSystem';
 
 // The form lives in its own component so its hooks always run in the same
 // order, and it remounts (fresh form state) every time the modal opens.
@@ -10,6 +11,7 @@ export default function PromotionModal({ isOpen, ...props }) {
 
 function PromotionModalForm({ onClose, promotion }) {
     const t = useTranslations('PromotionModal');
+    const notify = useNotifications();
 
     const getTodayDate = () => {
         const now = new Date();
@@ -79,11 +81,11 @@ function PromotionModalForm({ onClose, promotion }) {
             if (response.status === 'SUCCESS') {
                 onClose();
             } else {
-                alert(t('failedToCreate'));
+                notify.error(t('failedToCreate'));
             }
         } catch (e) {
             console.error('Create promo failed', e);
-            alert(t('errorCreating'));
+            notify.error(t('errorCreating'));
         } finally {
             setIsSaving(false);
         }

@@ -1,0 +1,12 @@
+{
+  "db_name": "MySQL",
+  "query": "INSERT INTO email_queue (id, to_email, to_name, subject, email_content, status, scheduled_at, created_at)\n         VALUES (?, ?, ?, ?, ?, 'pending', NOW(), NOW())",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 5
+    },
+    "nullable": []
+  },
+  "hash": "6d215b021706aa631f0de061cfa5ffa9cd5a4f09935e94e28c68b3b6b0dea686"
+}

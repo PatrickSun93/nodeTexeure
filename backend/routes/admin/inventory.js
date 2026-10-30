@@ -7,8 +7,12 @@ const InventoryService = require('../../services/inventoryService');
 const DatabaseUtil = require('../../utils/database');
 const ResponseFormatter = require('../../utils/responseFormatter');
 const { adminReadLimiter, adminWriteLimiter } = require('./limiters');
+const { isNonEmptyString, isOptionalString } = require('../../utils/params');
 
 const router = express.Router();
+
+// product/variant ids are strings; a number would compare numerically with them.
+const isIdPair = (productId, variantId) => isNonEmptyString(productId) && (!variantId || isNonEmptyString(variantId));
 
 // Inventory Management
 // Update inventory
@@ -35,7 +39,7 @@ router.post('/inventory/adjust', admin, adminWriteLimiter, csrfProtection, async
   try {
     const { product_id, variant_id, quantity_change, reason, notes } = req.body;
     const qty = Number(quantity_change);
-    if (!product_id || quantity_change === undefined || quantity_change === null || Number.isNaN(qty)) {
+    if (!isIdPair(product_id, variant_id) || quantity_change === undefined || quantity_change === null || Number.isNaN(qty)) {
       return res.status(400).json(ResponseFormatter.failure('product_id and a numeric quantity_change are required'));
     }
 
@@ -72,8 +76,8 @@ router.post('/inventory/bulk-adjust', admin, adminWriteLimiter, csrfProtection, 
     const results = [];
     for (const adj of adjustments) {
       const qty = Number(adj.quantity_change);
-      if (!adj.product_id || Number.isNaN(qty)) {
-        results.push({ product_id: adj.product_id || null, success: false, error: 'Invalid adjustment (product_id and numeric quantity_change required)' });
+      if (!adj || !isIdPair(adj.product_id, adj.variant_id) || Number.isNaN(qty)) {
+        results.push({ product_id: (adj && adj.product_id) || null, success: false, error: 'Invalid adjustment (product_id and numeric quantity_change required)' });
         continue;
       }
       const result = await InventoryService.updateInventoryWithLogging(
@@ -137,6 +141,9 @@ router.put('/inventory/:id/reorder-points', admin, adminWriteLimiter, csrfProtec
 router.get('/inventory/movements', admin, adminReadLimiter, async (req, res) => {
   try {
     const { inventory_id, product_id, movement_type, reference_type, date_from, date_to, limit } = req.query;
+    if (![inventory_id, product_id, movement_type, reference_type, date_from, date_to].every(isOptionalString)) {
+      return res.status(400).json(ResponseFormatter.failure('Filters must be single values'));
+    }
     const result = await InventoryService.getMovementHistory(inventory_id || null, {
       product_id,
       movement_type,

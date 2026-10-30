@@ -1,7 +1,7 @@
 # Deployment
 
 Production runs as one Docker Compose stack: `docker-compose.prod.yml`
-(MySQL + backend + storefront + admin). Put a TLS-terminating reverse proxy
+(MySQL + backend + storefront + admin + the Rust `api`, `worker` and `email-daemon`). Put a TLS-terminating reverse proxy
 (Caddy, nginx, a cloud load balancer) in front of ports 3000 and 3005.
 
 ## 1. Configure
@@ -23,11 +23,52 @@ In `backend/.env` set at least `FRONTEND_URL` (storefront origin used in emails 
 Stripe redirects) and `CORS_ORIGINS` (storefront + admin origins). Leave an
 integration's keys unset to disable it; each one degrades gracefully.
 
+### Client IPs and rate limits (`TRUST_PROXY`)
+
+Both APIs rate-limit per client IP (`RATE_LIMIT_WINDOW_MS` / `RATE_LIMIT_MAX_REQUESTS`
+for all of `/api`, plus tighter limits on login, registration, password reset and
+shipping quotes). `TRUST_PROXY` — read by the backend (`app.set('trust proxy')`)
+and by the Rust `api` — says how many proxy hops in front of the service may set
+`X-Forwarded-For`; the client IP is then the entry that many hops back
+(Express's rule):
+
+| `TRUST_PROXY` | Client IP | Use when |
+|---|---|---|
+| `0` (default) | the TCP peer; `X-Forwarded-For` ignored | clients reach the service directly, or nothing in front sets `X-Forwarded-For` |
+| `1` | the right-most `X-Forwarded-For` entry | only the storefront/admin reach it **and** 3000/3005 are reachable only through a TLS proxy that sets `X-Forwarded-For` |
+| `n` | `n` entries from the right | `n` trusted proxies |
+
+With `0` behind the storefront, every visitor shares the storefront's single
+bucket (e.g. 5 logins per 15 minutes for the whole shop). Next.js rewrites (and
+the storefront's server-side login call, which forwards the header) pass
+`X-Forwarded-For` through **unchanged and never add the client address**
+(verified with `next dev` and `next start`, Next 15.5), so the address must come
+from the TLS proxy:
+
+- Caddy `reverse_proxy` and cloud load balancers set it by default.
+- nginx: `proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;`
+
+If nothing in front sets it, a client can send its own `X-Forwarded-For` and pick
+its bucket — or lock someone else out of theirs — so the compose files don't
+set it: put `TRUST_PROXY=1` in `backend/.env` (read by both `backend` and
+`api`) only once the TLS proxy is in place **and** 3000/3005 can't be reached
+around it (e.g. publish them as `127.0.0.1:3000:3000`). Never expose 6666/7000
+publicly with a non-zero value. The value must be a hop count (`true`, IP lists, etc. are
+rejected and treated as `0`).
+
 The storefront's `/api` proxy target is baked in at build time
 (`PRODUCTION_BACKEND_URL`, set to `http://backend:6666` in the compose file).
-Route groups listed in `RUST_API_ROUTES` (default `products,search,journal,settings/public,wishlist,orders,cart`) go to the Rust API
-(`api` service) instead. **Rollback:** build with `RUST_API_ROUTES=` (empty) to
-send everything to the Node backend. Rebuild the frontend after changing either.
+Route groups listed in `RUST_API_ROUTES` (default `products,search,journal,settings,wishlist,orders,cart,users,reviews,returns,abandoned-cart,unsubscribe,newsletter,contact,status,shipping,admin,database,payments,images`) go to the Rust API
+(`api` service) instead. The admin dashboard does the same with its own list,
+`ADMIN_RUST_API_ROUTES` (default `admin,database,settings,payments,images,users`;
+`BACKEND_URL` for the rest). **Rollback:** build with `RUST_API_ROUTES=` /
+`ADMIN_RUST_API_ROUTES=` (empty) to send everything to the Node backend. Rebuild
+the frontend / admin after changing either.
+
+Both `backend` and `api` mount the `uploads_prod_data` volume at `/app/uploads`
+(`UPLOADS_DIR` on the api): local image uploads written by Rust are served by
+Node's `/uploads` route. The api also gets the backend's `STRIPE_SECRET_KEY` and
+`AWS_*` values, since `/api/payments` and `/api/images` now run there.
 
 ## 2. Ship
 
@@ -40,9 +81,19 @@ docker compose -f docker-compose.prod.yml up -d --build
   `docker compose -f docker-compose.prod.yml exec -e ADMIN_EMAIL=you@example.com -e ADMIN_PASSWORD='…' backend npm run create-admin`
   (12+ characters, mixed case and a digit).
 - Every start: the backend applies pending migrations (`backend/migrations`), then
-  starts the API. The `email-daemon` container (Rust, `rust/`) waits for those
+  starts the API. The `worker` container (Rust) runs the same migrations (a MySQL
+  lock lets only one runner apply them), then releases expired stock
+  reservations and queues abandoned-cart emails every 15 minutes; the backend's
+  own timers are off (`BACKGROUND_JOBS=off`). **Rollback:** stop `worker` and
+  remove `BACKGROUND_JOBS` from the backend's environment. The `email-daemon` container (Rust, `rust/`) waits for those
   migrations, then delivers queued email via SES using the `AWS_*` settings in
   `backend/.env`.
+- **Upgrading across migration 014** (HTML escaping moved into the email daemon):
+  stop the old `email-daemon` first, then deploy the backend (it runs the
+  migration), then start the new daemon. An old daemon left running after the
+  migration would send names and addresses into email HTML unescaped. Migration
+  014 also replaces the `order_confirmation` template; an admin-edited version is
+  kept as the inactive `order_confirmation_pre_014` template.
 - The backend container is healthy only when `GET /api/status/health` returns
   200, which requires a working DB connection (503 otherwise). Storefront and
   admin wait for it.
@@ -60,7 +111,8 @@ handlers return non-2xx if the order can't be updated, so Stripe retries.
   `https://<storefront>/api/status/health`).
 - **Errors:** set `SENTRY_DSN` in `backend/.env` to report unhandled backend
   errors (no PII is sent).
-- **Logs:** `docker compose -f docker-compose.prod.yml logs -f backend email-daemon`.
+- **Logs:** `docker compose -f docker-compose.prod.yml logs -f backend worker email-daemon`.
+- **Migrations:** `docker compose -f docker-compose.prod.yml exec worker worker migrate --status`.
 - **Email queue:** the admin's Email Queue view shows pending/sending/failed rows;
   failed sends retry with backoff and can be requeued there.
 - **Backups:** `database/db-manager.sh backup` / `restore <file>`, or `mysqldump`
@@ -74,6 +126,7 @@ handlers return non-2xx if the order can't be updated, so Stripe retries.
 - [ ] Strong `JWT_SECRET`, `NEXTAUTH_SECRET`, `DB_PASSWORD`; `backend/.env` not in git
 - [ ] `NODE_ENV=production` (rate limits on, raw-SQL endpoint off, secure cookies)
 - [ ] HTTPS in front of 3000/3005; MySQL not exposed publicly
+- [ ] `TRUST_PROXY=1` in `backend/.env` only if the TLS proxy sets `X-Forwarded-For` and 3000/3005 are reachable only through it; 6666/7000 not public
 - [ ] `FRONTEND_URL`, `NEXTAUTH_URL`, `CORS_ORIGINS` use the real domains
 - [ ] Stripe live keys + webhook secret; test a purchase and a refund
 - [ ] SES sender verified; test password-reset and order-confirmation emails

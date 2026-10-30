@@ -33,6 +33,10 @@ if (!isDev && (jwtSecret.length < 32 || jwtLooksPlaceholder)) {
   process.exit(1);
 }
 
+// req.ip — the key of every rate limiter — honours X-Forwarded-For only for the
+// TRUST_PROXY hops (default 0: the socket peer). See utils/trustProxy.js.
+app.set('trust proxy', require('./utils/trustProxy').parseTrustProxy(process.env.TRUST_PROXY));
+
 // Global rate limiter for all API routes (configurable via RATE_LIMIT_* env vars).
 // Enforced everywhere except dev/test (or when DISABLE_RATE_LIMIT=true) so local
 // dev, automated tests, and screenshot capture aren't throttled.
@@ -215,18 +219,25 @@ if (require.main === module) {
     console.log(`✅ Server ready to accept connections`);
   });
 
-  // Return stock held by abandoned checkouts. Idempotent, so running it in every
-  // backend instance is safe. Low-stock alerts stay in
-  // scripts/cleanup-expired-reservations.js (run it from cron if wanted).
-  const InventoryService = require('./services/inventoryService');
-  const releaseExpired = () => InventoryService.releaseExpiredReservations()
-    .then((r) => {
-      if (!r.success) console.error('Reservation cleanup failed:', r.error);
-      else if (r.data.released_count) console.log(`♻️  Released ${r.data.released_count} expired stock reservation(s)`);
-    })
-    .catch((err) => console.error('Reservation cleanup failed:', err.message));
-  setInterval(releaseExpired, 15 * 60 * 1000).unref();
-  releaseExpired();
+  // Return stock held by abandoned checkouts. Runs under a MySQL named lock
+  // shared with the Rust worker, so any number of instances is safe; with
+  // BACKGROUND_JOBS=off the worker alone runs it (utils/jobLock.js). Low-stock
+  // alerts stay in scripts/cleanup-expired-reservations.js (cron, if wanted).
+  const { LOCKS, withJobLock, backgroundJobsEnabled } = require('./utils/jobLock');
+  if (backgroundJobsEnabled()) {
+    const InventoryService = require('./services/inventoryService');
+    const releaseExpired = () => withJobLock(LOCKS.releaseReservations, () => InventoryService.releaseExpiredReservations())
+      .then(({ ran, result: r }) => {
+        if (!ran) return;
+        if (!r.success) console.error('Reservation cleanup failed:', r.error);
+        else if (r.data.released_count) console.log(`♻️  Released ${r.data.released_count} expired stock reservation(s)`);
+      })
+      .catch((err) => console.error('Reservation cleanup failed:', err.message));
+    setInterval(releaseExpired, 15 * 60 * 1000).unref();
+    releaseExpired();
+  } else {
+    console.log('⏸️  Background jobs off (BACKGROUND_JOBS=off): the Rust worker runs them');
+  }
 }
 
 module.exports = app;

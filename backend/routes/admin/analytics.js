@@ -16,12 +16,13 @@ router.get('/analytics/summary', admin, adminReadLimiter, async (req, res) => {
       DatabaseUtil.executeQuery("SELECT SUM(total_amount) as total FROM orders WHERE status != 'cancelled'"),
       DatabaseUtil.executeQuery("SELECT COUNT(*) as count FROM orders WHERE status != 'cancelled'"),
       DatabaseUtil.executeQuery("SELECT COUNT(*) as count FROM users WHERE role = 'customer' AND status = 'active'"),
-      // Visitor proxy: there is no analytics/tracking table, but shopping_carts records one row per
-      // browser session (session_id for guests, user_id once logged in). Distinct sessions is therefore
-      // an honest real-data proxy for unique visitors. COALESCE(..., id) guarantees every cart counts once.
-      DatabaseUtil.executeQuery("SELECT COUNT(DISTINCT COALESCE(session_id, user_id, id)) as count FROM shopping_carts"),
-      // Paid orders: orders with a completed payment. DISTINCT so multiple payment rows for one order count once.
-      DatabaseUtil.executeQuery("SELECT COUNT(DISTINCT order_id) as count FROM payments WHERE status = 'completed'"),
+      // Visitor proxy: there is no analytics/tracking table. shopping_carts has one row per browser
+      // session (user_id once logged in, else session_id), but checkout empties carts, so everyone who
+      // ever ordered (account or guest email) is added: a buyer is always a visitor.
+      DatabaseUtil.executeQuery("SELECT COUNT(*) as count FROM (SELECT COALESCE(user_id, session_id, id) AS visitor FROM shopping_carts UNION SELECT COALESCE(user_id, guest_email, id) FROM orders) v"),
+      // Paying visitors: distinct customers (account or guest email) with a completed payment, in the
+      // same identity as the visitors above, so the rate can't pass 100%.
+      DatabaseUtil.executeQuery("SELECT COUNT(DISTINCT COALESCE(o.user_id, o.guest_email, o.id)) as count FROM payments p JOIN orders o ON o.id = p.order_id WHERE p.status = 'completed'"),
       // Active orders: genuinely in-flight orders — non-terminal statuses only
       // (excludes delivered / cancelled / refunded).
       DatabaseUtil.executeQuery("SELECT COUNT(*) as count FROM orders WHERE status IN ('pending', 'confirmed', 'processing', 'shipped')")
@@ -36,9 +37,9 @@ router.get('/analytics/summary', admin, adminReadLimiter, async (req, res) => {
 
     // Derived from real DB data (no hardcoded constants).
     // COUNT() comes back as a BIGINT string from the driver, so coerce to Number for clean arithmetic/output.
-    const visitors = Number(visitorsResult.data[0].count) || 0;    // distinct shopping-cart sessions
-    const paidOrders = Number(paidOrdersResult.data[0].count) || 0; // orders with a completed payment
-    // Conversion rate as a percentage of visitor sessions that resulted in a paid order.
+    const visitors = Number(visitorsResult.data[0].count) || 0;    // cart sessions + customers who ordered
+    const paidOrders = Number(paidOrdersResult.data[0].count) || 0; // visitors with a completed payment
+    // Conversion rate: the percentage of visitors who paid for an order.
     // Falls back to 0 when no visitor proxy exists (avoids divide-by-zero and never fabricates a rate).
     const conversionRate = visitors > 0 ? Number(((paidOrders / visitors) * 100).toFixed(2)) : 0;
 
@@ -47,8 +48,8 @@ router.get('/analytics/summary', admin, adminReadLimiter, async (req, res) => {
         totalRevenue,
         activeOrders, // in-flight orders (pending/confirmed/processing/shipped); excludes delivered/cancelled/refunded
         avgOrderValue,
-        conversionRate, // derived: (paid orders / visitor sessions) * 100
-        visitors,       // derived: distinct shopping_carts sessions (honest visitor proxy)
+        conversionRate, // derived: (paying visitors / visitors) * 100
+        visitors,       // derived: cart sessions plus customers who ordered (visitor proxy)
         activeCustomers
       }
     }]));

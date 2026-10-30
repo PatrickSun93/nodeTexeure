@@ -1,13 +1,57 @@
 import React, { useState, useEffect } from 'react';
-import { useTranslations } from 'next-intl';
+import { useTranslations, useFormatter } from 'next-intl';
+
+// Every orders.status ENUM value, so a confirmed/refunded order isn't shown (and
+// re-saved) as "Pending".
+const STATUS_OPTIONS = ['Pending', 'Confirmed', 'Processing', 'Shipped', 'Delivered', 'Cancelled', 'Refunded'];
+
+const firstString = (...values) => values.find((v) => typeof v === 'string' && v.trim()) || '';
+
+// Order addresses are stored in more than one shape: checkout writes snake_case
+// (first_name, address_line_1, postal_code), the example seed writes
+// { name, street, zip }, and older admin code expected camelCase. Normalize them
+// so the street lines and postcode are never silently dropped.
+function normalizeAddress(raw) {
+    let addr = raw;
+    if (typeof addr === 'string') {
+        try { addr = JSON.parse(addr); } catch (e) { addr = null; }
+    }
+    if (!addr || typeof addr !== 'object') return null;
+    const name = firstString(
+        [firstString(addr.first_name, addr.firstName), firstString(addr.last_name, addr.lastName)].filter(Boolean).join(' '),
+        addr.name,
+        addr.full_name,
+    );
+    return {
+        name,
+        company: firstString(addr.company),
+        line1: firstString(addr.address_line_1, addr.address1, addr.addressLine1, addr.line1, addr.street),
+        line2: firstString(addr.address_line_2, addr.address2, addr.addressLine2, addr.line2),
+        city: firstString(addr.city),
+        state: firstString(addr.state, addr.province, addr.region),
+        postalCode: firstString(addr.postal_code, addr.postalCode, addr.zip, addr.zip_code),
+        country: firstString(addr.country, addr.country_code),
+        phone: firstString(addr.phone),
+    };
+}
+
+// DECIMAL columns arrive as strings ("12.42"); coerce before any arithmetic.
+const toNumber = (v) => {
+    const n = Number(v);
+    return Number.isFinite(n) ? n : 0;
+};
 
 export default function OrderDetailView({ order, onBack }) {
     const t = useTranslations('OrderDetailView');
+    const format = useFormatter();
     const [orderDetails, setOrderDetails] = useState(order);
     const [status, setStatus] = useState(order.status || 'Processing');
     const [trackingNumber, setTrackingNumber] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
+    // Inline save result ({ type: 'success' | 'error', message, detail? }) instead
+    // of a blocking window.alert().
+    const [saveFeedback, setSaveFeedback] = useState(null);
 
     // Fetch full details
     useEffect(() => {
@@ -25,11 +69,6 @@ export default function OrderDetailView({ order, onBack }) {
                     setOrderDetails(prev => ({ ...prev, ...data }));
                     if (data.status) setStatus(data.status.charAt(0).toUpperCase() + data.status.slice(1));
                     if (data.tracking_number) setTrackingNumber(data.tracking_number);
-                    // Address parsing if needed? Backend returns JSON blocks, frontend might need object.
-                    // The backend returns row with shipping_address_json string.
-                    // We might need to parse it if it wasn't parsed.
-                    // But adminRoutes.js GET /:id returns `order.*`.
-                    // Let's assume we might need to parse JSON fields if they are strings.
                 }
             } catch (e) {
                 console.error('Failed to load order details', e);
@@ -45,12 +84,10 @@ export default function OrderDetailView({ order, onBack }) {
         if (!idToUpdate) return;
 
         setIsSaving(true);
+        setSaveFeedback(null);
         try {
             const { apiFetch } = await import('../utils/api');
             // Persist the tracking number alongside the status change.
-            // NOTE (backend): PUT /api/admin/orders/:id/status currently reads only
-            // { status, notes } and does NOT save tracking_number — the backend route
-            // must be updated to accept and persist it for this to take effect.
             const payload = { status };
             const trimmedTracking = (trackingNumber || '').trim();
             if (trimmedTracking) payload.tracking_number = trimmedTracking;
@@ -59,13 +96,18 @@ export default function OrderDetailView({ order, onBack }) {
                 body: JSON.stringify(payload)
             });
             if (response.status === 'SUCCESS') {
-                alert(t('orderUpdatedSuccess'));
+                setSaveFeedback({ type: 'success', message: t('orderUpdatedSuccess') });
+                setOrderDetails(prev => ({
+                    ...prev,
+                    status: status.toLowerCase(),
+                    ...(trimmedTracking ? { tracking_number: trimmedTracking } : {}),
+                }));
             } else {
-                alert(t('failedToUpdate'));
+                setSaveFeedback({ type: 'error', message: t('failedToUpdate'), detail: response.message });
             }
         } catch (e) {
             console.error('Update failed', e);
-            alert(t('errorUpdating'));
+            setSaveFeedback({ type: 'error', message: t('errorUpdating') });
         } finally {
             setIsSaving(false);
         }
@@ -74,21 +116,33 @@ export default function OrderDetailView({ order, onBack }) {
     // Safe access to items and address
     const items = orderDetails.items || [];
 
-    // Calculate totals if not in order object
-    const subtotal = orderDetails.subtotal || items.reduce((acc, item) => acc + (item.unit_price || item.price || 0) * (item.quantity || 1), 0);
-    const shipping = orderDetails.shipping_amount || 0;
-    const taxes = orderDetails.tax_amount || 0;
-    const total = orderDetails.total_amount || (subtotal + shipping + taxes);
+    // Totals. The discount line must be shown, or subtotal + shipping + tax won't
+    // add up to the total of a coupon order.
+    const subtotal = orderDetails.subtotal != null
+        ? toNumber(orderDetails.subtotal)
+        : items.reduce((acc, item) => acc + toNumber(item.unit_price || item.price) * (item.quantity || 1), 0);
+    const shipping = toNumber(orderDetails.shipping_amount);
+    const taxes = toNumber(orderDetails.tax_amount);
+    const discount = toNumber(orderDetails.discount_amount);
+    // Until the detail fetch lands, the row from the orders list only has `amount`.
+    const rawTotal = orderDetails.total_amount ?? orderDetails.amount;
+    const total = rawTotal != null
+        ? toNumber(rawTotal)
+        : subtotal - discount + shipping + taxes;
 
-    // Parse address if string
-    let shippingAddress = {};
-    try {
-        if (typeof orderDetails.shipping_address_json === 'string') {
-            shippingAddress = JSON.parse(orderDetails.shipping_address_json);
-        } else if (typeof orderDetails.shipping_address_json === 'object') {
-            shippingAddress = orderDetails.shipping_address_json;
-        }
-    } catch (e) { }
+    const shippingAddress = normalizeAddress(orderDetails.shipping_address_json) || {};
+    const cityLine = [
+        [shippingAddress.city, shippingAddress.state].filter(Boolean).join(', '),
+        shippingAddress.postalCode,
+    ].filter(Boolean).join(' ');
+    const hasAddress = Boolean(shippingAddress.name || shippingAddress.line1 || cityLine || shippingAddress.country);
+
+    // created_at is an ISO timestamp; show it in the admin's locale.
+    const rawDate = orderDetails.created_at || orderDetails.date;
+    const parsedDate = rawDate ? new Date(rawDate) : null;
+    const orderDate = parsedDate && !Number.isNaN(parsedDate.getTime())
+        ? format.dateTime(parsedDate, { dateStyle: 'medium', timeStyle: 'short' })
+        : (rawDate || t('notAvailable'));
 
     return (
         <div className="p-8 bg-gray-50 min-h-full">
@@ -117,6 +171,28 @@ export default function OrderDetailView({ order, onBack }) {
                 </div>
             </div>
 
+            {saveFeedback && (
+                <div
+                    role={saveFeedback.type === 'error' ? 'alert' : 'status'}
+                    className={`mb-6 flex items-start justify-between gap-4 rounded-lg border p-4 text-sm ${saveFeedback.type === 'success'
+                        ? 'bg-green-50 border-green-200 text-green-800'
+                        : 'bg-red-50 border-red-200 text-red-800'}`}
+                >
+                    <div>
+                        <p className="font-medium">{saveFeedback.message}</p>
+                        {saveFeedback.detail && <p className="mt-1">{saveFeedback.detail}</p>}
+                    </div>
+                    <button
+                        type="button"
+                        onClick={() => setSaveFeedback(null)}
+                        className="opacity-70 hover:opacity-100"
+                        aria-label={t('dismiss')}
+                    >
+                        ×
+                    </button>
+                </div>
+            )}
+
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 {/* Left Column - Main Details */}
                 <div className="lg:col-span-2 space-y-6">
@@ -134,7 +210,7 @@ export default function OrderDetailView({ order, onBack }) {
                             </div>
                             <div>
                                 <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">{t('orderDate')}</p>
-                                <p className="text-gray-900 font-medium">{orderDetails.created_at || orderDetails.date}</p>
+                                <p className="text-gray-900 font-medium">{orderDate}</p>
                             </div>
                             <div>
                                 <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">{t('emailAddress')}</p>
@@ -191,19 +267,25 @@ export default function OrderDetailView({ order, onBack }) {
                         <div className="mt-6 border-t border-gray-100 pt-6 space-y-3">
                             <div className="flex justify-between text-sm">
                                 <span className="text-gray-500">{t('subtotal')}</span>
-                                <span className="font-medium text-gray-900">${Number(subtotal).toFixed(2)}</span>
+                                <span className="font-medium text-gray-900">${subtotal.toFixed(2)}</span>
                             </div>
+                            {discount > 0 && (
+                                <div className="flex justify-between text-sm">
+                                    <span className="text-gray-500">{t('discount')}</span>
+                                    <span className="font-medium text-green-700">-${discount.toFixed(2)}</span>
+                                </div>
+                            )}
                             <div className="flex justify-between text-sm">
                                 <span className="text-gray-500">{t('shipping')}</span>
-                                <span className="font-medium text-gray-900">${Number(shipping).toFixed(2)}</span>
+                                <span className="font-medium text-gray-900">${shipping.toFixed(2)}</span>
                             </div>
                             <div className="flex justify-between text-sm">
                                 <span className="text-gray-500">{t('taxes')}</span>
-                                <span className="font-medium text-gray-900">${Number(taxes).toFixed(2)}</span>
+                                <span className="font-medium text-gray-900">${taxes.toFixed(2)}</span>
                             </div>
                             <div className="flex justify-between text-base pt-3 border-t border-gray-100">
                                 <span className="font-bold text-gray-900">{t('total')}</span>
-                                <span className="font-bold text-gray-900">${Number(total).toFixed(2)}</span>
+                                <span className="font-bold text-gray-900">${total.toFixed(2)}</span>
                             </div>
                         </div>
                     </div>
@@ -219,14 +301,12 @@ export default function OrderDetailView({ order, onBack }) {
                             <label className="block text-xs text-gray-500 uppercase tracking-wider mb-2">{t('status')}</label>
                             <select
                                 value={status}
-                                onChange={(e) => setStatus(e.target.value)}
+                                onChange={(e) => { setStatus(e.target.value); setSaveFeedback(null); }}
                                 className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50"
                             >
-                                <option value="Pending">{t('statusPending')}</option>
-                                <option value="Processing">{t('statusProcessing')}</option>
-                                <option value="Shipped">{t('statusShipped')}</option>
-                                <option value="Delivered">{t('statusDelivered')}</option>
-                                <option value="Cancelled">{t('statusCancelled')}</option>
+                                {STATUS_OPTIONS.map((value) => (
+                                    <option key={value} value={value}>{t(`status${value}`)}</option>
+                                ))}
                             </select>
                         </div>
                     </div>
@@ -240,7 +320,8 @@ export default function OrderDetailView({ order, onBack }) {
                                 type="text"
                                 placeholder={t('addTrackingNumber')}
                                 value={trackingNumber}
-                                onChange={(e) => setTrackingNumber(e.target.value)}
+                                onChange={(e) => { setTrackingNumber(e.target.value); setSaveFeedback(null); }}
+                                maxLength={100}
                                 className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50"
                             />
                         </div>
@@ -255,13 +336,18 @@ export default function OrderDetailView({ order, onBack }) {
                         <div className="space-y-4">
                             <div>
                                 <p className="text-xs text-gray-500 uppercase tracking-wider mb-2">{t('shippingAddress')}</p>
-                                <div className="text-sm text-gray-600 leading-relaxed">
-                                    <p className="font-medium text-gray-900">{shippingAddress.firstName} {shippingAddress.lastName}</p>
-                                    <p>{shippingAddress.address1}</p>
-                                    {shippingAddress.address2 && <p>{shippingAddress.address2}</p>}
-                                    <p>{shippingAddress.city}, {shippingAddress.state} {shippingAddress.zip}</p>
-                                    <p>{shippingAddress.country}</p>
-                                </div>
+                                {hasAddress ? (
+                                    <address className="not-italic text-sm text-gray-600 leading-relaxed">
+                                        {shippingAddress.name && <p className="font-medium text-gray-900">{shippingAddress.name}</p>}
+                                        {shippingAddress.company && <p>{shippingAddress.company}</p>}
+                                        {shippingAddress.line1 && <p>{shippingAddress.line1}</p>}
+                                        {shippingAddress.line2 && <p>{shippingAddress.line2}</p>}
+                                        {cityLine && <p>{cityLine}</p>}
+                                        {shippingAddress.country && <p>{shippingAddress.country}</p>}
+                                    </address>
+                                ) : (
+                                    <p className="text-sm text-gray-500">{t('notAvailable')}</p>
+                                )}
                             </div>
                         </div>
                     </div>

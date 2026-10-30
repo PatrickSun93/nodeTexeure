@@ -5,7 +5,7 @@ const InventoryService = require('../services/inventoryService');
 const ResponseFormatter = require('../utils/responseFormatter');
 const EmailQueueService = require('../services/emailQueueService');
 const AbandonedCartService = require('../services/abandonedCartService');
-const crypto = require('crypto');
+const { GUEST_SESSION_COOKIE, guestSessionId, newGuestSessionId } = require('../utils/guestSession');
 const router = express.Router();
 
 // Initialize services
@@ -37,11 +37,13 @@ async function getOrCreateCart(req, res) {
       cartId = await createCart('user_id', req.user.id);
     }
   } else {
-    // Guest - use session_id from cookie or create new
-    let sessionId = req.cookies.sessionId;
+    // Guest - use the session id from the cookie, or issue a new one when there
+    // is none or it isn't one we issue (a `j:1` cookie is the number 1 and would
+    // match a stranger's cart; see utils/guestSession.js).
+    let sessionId = guestSessionId(req);
     if (!sessionId) {
-      sessionId = crypto.randomBytes(16).toString('hex');
-      res.cookie('sessionId', sessionId, { httpOnly: true, maxAge: 30 * 24 * 60 * 60 * 1000 });
+      sessionId = newGuestSessionId();
+      res.cookie(GUEST_SESSION_COOKIE, sessionId, { httpOnly: true, maxAge: 30 * 24 * 60 * 60 * 1000 });
     }
     const result = await DatabaseUtil.executeQuery(
       'SELECT id FROM shopping_carts WHERE session_id = ? ORDER BY created_at ASC, id ASC LIMIT 1', [sessionId]);
@@ -69,7 +71,9 @@ router.get('/', protectOptional, async (req, res) => {
         pv.price_adjustment,
         pv.sku as variant_sku,
         i.quantity_available,
-        i.quantity_reserved
+        i.quantity_reserved,
+        (SELECT COALESCE(pi.thumbnail_medium_url, pi.original_url) FROM product_images pi
+          WHERE pi.product_id = p.id ORDER BY pi.is_primary DESC, pi.sort_order ASC LIMIT 1) AS image
       FROM cart_items ci 
       JOIN products p ON ci.product_id = p.id 
       LEFT JOIN product_variants pv ON ci.variant_id = pv.id
@@ -88,8 +92,7 @@ router.get('/', protectOptional, async (req, res) => {
 
     // Track cart activity for abandonment detection
     const userEmail = req.user ? req.user.email : null;
-    const sessionId = req.cookies.sessionId || null;
-    await abandonedCartService.trackCartActivity(cartId, userEmail, sessionId);
+    await abandonedCartService.trackCartActivity(cartId, userEmail, guestSessionId(req));
     
     res.json(ResponseFormatter.success('Cart fetched', { 
       cartId, 
@@ -189,8 +192,7 @@ router.post('/add', protectOptional, async (req, res) => {
 
     // Track cart activity for abandonment detection
     const userEmail = req.user ? req.user.email : null;
-    const sessionId = req.cookies.sessionId || null;
-    await abandonedCartService.trackCartActivity(cartId, userEmail, sessionId);
+    await abandonedCartService.trackCartActivity(cartId, userEmail, guestSessionId(req));
     
     res.json(ResponseFormatter.success('Item added to cart'));
   } catch (error) {
@@ -309,9 +311,11 @@ router.post('/reserve-stock', protectOptional, async (req, res) => {
 
 /**
  * POST /api/cart/track-abandonment
- * Track cart abandonment and schedule recovery emails
+ * Track cart abandonment and schedule recovery emails.
+ * Signed-in customers only: the reminders go to the account's own address. Guests
+ * could name any address, so the shop would mail (or, below, stop mailing) strangers.
  */
-router.post('/track-abandonment', protectOptional, async (req, res) => {
+router.post('/track-abandonment', protect, async (req, res) => {
   try {
     const cartId = await getOrCreateCart(req, res);
     
@@ -329,15 +333,8 @@ router.post('/track-abandonment', protectOptional, async (req, res) => {
     }
 
     // Get customer email
-    let customerEmail = null;
-    let customerName = 'Guest';
-
-    if (req.user) {
-      customerEmail = req.user.email;
-      customerName = `${req.user.firstName || ''} ${req.user.lastName || ''}`.trim() || 'Customer';
-    } else if (req.body.guestEmail) {
-      customerEmail = req.body.guestEmail;
-    }
+    const customerEmail = req.user.email || null;
+    const customerName = `${req.user.firstName || ''} ${req.user.lastName || ''}`.trim() || 'Customer';
 
     if (!customerEmail) {
       return res.json(ResponseFormatter.success('No email available for cart abandonment tracking'));
@@ -390,17 +387,12 @@ router.post('/track-abandonment', protectOptional, async (req, res) => {
 
 /**
  * POST /api/cart/cancel-abandonment
- * Cancel abandoned cart emails (called when customer completes purchase)
+ * Cancel abandoned cart emails (called when customer completes purchase).
+ * Signed-in customers only, for their own address (see track-abandonment).
  */
-router.post('/cancel-abandonment', protectOptional, async (req, res) => {
+router.post('/cancel-abandonment', protect, async (req, res) => {
   try {
-    let customerEmail = null;
-
-    if (req.user) {
-      customerEmail = req.user.email;
-    } else if (req.body.guestEmail) {
-      customerEmail = req.body.guestEmail;
-    }
+    const customerEmail = req.user.email || null;
 
     if (!customerEmail) {
       return res.json(ResponseFormatter.success('No email to cancel abandonment tracking'));

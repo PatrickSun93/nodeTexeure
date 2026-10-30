@@ -5,6 +5,17 @@ import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { apiRequest, extractResponseData } from "../lib/api";
 
+// Unit price of a cart line: the API's `price` already includes the variant's
+// price adjustment (base_price alone would undercharge e.g. a +$10 King size).
+const unitPrice = (item) => {
+  const price = Number(item.price);
+  if (item.price != null && Number.isFinite(price)) return price;
+  return (Number(item.base_price) || 0) + (Number(item.price_adjustment) || 0);
+};
+
+// "King - Gray": the chosen variant, as the product page labels it.
+const variantLabel = (item) => [item.size, item.color].filter(Boolean).join(" - ");
+
 /**
  * CartDrawer component
  * - Right-side drawer with overlay
@@ -133,7 +144,7 @@ export default function CartDrawer({ isOpen, onClose }) {
     }
   };
 
-  const subtotal = cart.items.reduce((sum, it) => sum + (Number(it.base_price) || 0) * (Number(it.quantity) || 0), 0);
+  const subtotal = cart.items.reduce((sum, it) => sum + unitPrice(it) * (Number(it.quantity) || 0), 0);
 
   return (
     <>
@@ -174,13 +185,27 @@ export default function CartDrawer({ isOpen, onClose }) {
           ) : (
             <ul className="aesop-cart-items" aria-live="polite">
               {cart.items.map((item) => {
-                const price = Number(item.base_price) || 0;
+                const price = unitPrice(item);
                 const qty = Number(item.quantity) || 0;
                 const line = price * qty;
+                const variant = variantLabel(item);
                 return (
                   <li key={item.id} className="aesop-cart-item">
                     <div className="aesop-cart-item-main">
-                      <div className="aesop-cart-item-title">{item.name || item.product_id}</div>
+                      {item.image && (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={item.image}
+                          alt=""
+                          style={{ width: 56, height: 56, objectFit: "cover", borderRadius: "var(--radius-sm)", flexShrink: 0, alignSelf: "center" }}
+                        />
+                      )}
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div className="aesop-cart-item-title">{item.name || item.product_id}</div>
+                        {variant && (
+                          <div style={{ color: "var(--noirae-text-muted)", fontSize: "var(--noirae-text-sm)" }}>{variant}</div>
+                        )}
+                      </div>
                       <div className="aesop-cart-item-price">${price.toFixed(2)}</div>
                     </div>
                     <div className="aesop-cart-item-controls">

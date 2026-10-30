@@ -1,0 +1,12 @@
+{
+  "db_name": "MySQL",
+  "query": "INSERT INTO abandoned_cart_recovery (\n           id, cart_id, email, recovery_token, created_at\n         ) VALUES (?, ?, ?, ?, NOW())",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 4
+    },
+    "nullable": []
+  },
+  "hash": "f5c43b0497dc5cf4ea5f44227ed91749873de10086817c0af9729e782fb0e6fa"
+}

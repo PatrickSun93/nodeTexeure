@@ -8,6 +8,7 @@ const ResponseFormatter = require('../../utils/responseFormatter');
 const path = require('path');
 const bcrypt = require('bcryptjs');
 const { adminReadLimiter, adminWriteLimiter } = require('./limiters');
+const { isNonEmptyString, isOptionalString } = require('../../utils/params');
 
 const router = express.Router();
 
@@ -52,8 +53,10 @@ router.post('/users', admin, adminWriteLimiter, csrfProtection, async (req, res)
   try {
     const { email, password, first_name, last_name, role, status, phone } = req.body;
 
-    // Basic validation
-    if (!email || !password || !first_name || !last_name) {
+    // Basic validation. Strings only: a numeric email would compare numerically
+    // in the duplicate check below (see utils/params.js).
+    if (![email, password, first_name, last_name].every(isNonEmptyString)
+      || ![role, status, phone].every(isOptionalString)) {
       return res.status(400).json(ResponseFormatter.failure('Missing required fields'));
     }
 
@@ -68,10 +71,11 @@ router.post('/users', admin, adminWriteLimiter, csrfProtection, async (req, res)
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Default values
+    // Default values. phone is optional: mysql2 refuses an undefined parameter,
+    // so a body without phone used to fail the insert (500); store NULL instead.
     const insertResult = await DatabaseUtil.executeQuery(
       'INSERT INTO users (id, email, password_hash, first_name, last_name, role, status, phone) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-      [id, email, hashedPassword, first_name, last_name, role || 'customer', status || 'active', phone]
+      [id, email, hashedPassword, first_name, last_name, role || 'customer', status || 'active', phone ?? null]
     );
 
     if (!insertResult.success) throw new Error(insertResult.error);
@@ -93,6 +97,10 @@ router.put('/users/:id', admin, adminWriteLimiter, csrfProtection, async (req, r
     const updateValues = [];
     for (const [key, value] of Object.entries(updates)) {
       if (!ALLOWED_USER_COLUMNS.includes(key)) continue;
+      // role/status are ENUMs: a number would be written as an enum index.
+      if (!isOptionalString(value)) {
+        return res.status(400).json(ResponseFormatter.failure(`${key} must be a string`));
+      }
       updateFields.push(`${key} = ?`);
       updateValues.push(value);
     }

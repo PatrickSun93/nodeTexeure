@@ -1,0 +1,12 @@
+{
+  "db_name": "MySQL",
+  "query": "INSERT INTO stock_reservations\n           (id, product_id, variant_id, cart_id, user_id, quantity, expires_at)\n         VALUES (?, ?, ?, ?, ?, ?, ?)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 7
+    },
+    "nullable": []
+  },
+  "hash": "183726dc3f715f0c180d3b3b30f2640819fae2f3197012106193bbe9cf1fbaa8"
+}

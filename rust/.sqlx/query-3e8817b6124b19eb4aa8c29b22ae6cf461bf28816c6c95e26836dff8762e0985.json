@@ -1,0 +1,24 @@
+{
+  "db_name": "MySQL",
+  "query": "SELECT version FROM schema_migrations",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "version",
+        "type_info": {
+          "type": "Long",
+          "flags": "NOT_NULL | PRIMARY_KEY | NO_DEFAULT_VALUE",
+          "max_size": 11
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 0
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "3e8817b6124b19eb4aa8c29b22ae6cf461bf28816c6c95e26836dff8762e0985"
+}

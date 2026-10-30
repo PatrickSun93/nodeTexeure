@@ -1,6 +1,8 @@
 import React, { useRef } from 'react';
+import { useNotifications } from '../../NotificationSystem';
 
 export default function ImageBlock({ data, onChange, onFocus, isSelected }) {
+    const notify = useNotifications();
     const fileInputRef = useRef(null);
 
     const handleFileChange = (e) => {
@@ -9,13 +11,13 @@ export default function ImageBlock({ data, onChange, onFocus, isSelected }) {
 
         // Check file type
         if (!file.type.startsWith('image/')) {
-            alert('Please select an image file');
+            notify.warning('Please select an image file');
             return;
         }
 
         // Check file size (max 2MB for email)
         if (file.size > 2 * 1024 * 1024) {
-            alert('Image size should be less than 2MB');
+            notify.warning('Image size should be less than 2MB');
             return;
         }
 

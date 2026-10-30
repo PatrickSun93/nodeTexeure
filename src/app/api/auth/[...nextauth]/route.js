@@ -1,17 +1,25 @@
 import NextAuth from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import http from 'http';
+import https from 'https';
 import { URL } from 'url';
+import { headers as requestHeaders } from 'next/headers';
+import { apiBaseUrl } from '@/lib/server/apiTarget';
+// The Node backend as the rest of the server code sees it: PRODUCTION_BACKEND_URL
+// in production (the only one the production compose file sets), else BACKEND_URL.
+import { BACKEND_URL } from '@/lib/server/backend';
 
-const BACKEND_URL = (process.env.BACKEND_URL || 'http://localhost:6666').trim().replace(/\/$/, '');
-
+// These calls are made server-side, not through the storefront proxy, so they
+// pick the service themselves: the Rust API when RUST_API_ROUTES moves the path
+// (e.g. `users`), parsed exactly as next.config.mjs does; Node otherwise.
 const fetchBackend = async (url, options = {}) => {
   const path = `/${url.replace(/^\//, '')}`;
-  const requestUrl = `${BACKEND_URL}${path}`;
+  const requestUrl = `${apiBaseUrl(path, BACKEND_URL)}${path}`;
   
   return new Promise((resolve, reject) => {
     try {
       const parsedUrl = new URL(requestUrl);
+      const client = parsedUrl.protocol === 'https:' ? https : http;
       const postData = options.body ? options.body : null;
       
       const requestOptions = {
@@ -26,7 +34,7 @@ const fetchBackend = async (url, options = {}) => {
         }
       };
 
-      const req = http.request(requestOptions, (res) => {
+      const req = client.request(requestOptions, (res) => {
         let data = '';
         
         res.on('data', (chunk) => {
@@ -69,6 +77,45 @@ const fetchBackend = async (url, options = {}) => {
 
 const REFRESH_MARGIN_MS = 5 * 60 * 1000;
 
+// The backend merges the guest cart (keyed by the `sessionId` cookie) into the
+// user's cart on login, but this login call is made server-side, so the
+// browser's cookies don't come along. Forward that one cookie — and only when
+// it has the shape the backend issues (16 random bytes, hex) — so the merge runs.
+const GUEST_SESSION_RE = /^[0-9a-f]{32}$/;
+
+const guestSessionCookie = (cookieHeader) => {
+  if (typeof cookieHeader !== 'string') return null;
+  for (const part of cookieHeader.split(';')) {
+    const eq = part.indexOf('=');
+    if (eq === -1 || part.slice(0, eq).trim() !== 'sessionId') continue;
+    const value = part.slice(eq + 1).trim();
+    return GUEST_SESSION_RE.test(value) ? `sessionId=${value}` : null;
+  }
+  return null;
+};
+
+// The backend rate-limits login per client IP. This call comes from the Next
+// server, so without the browser's X-Forwarded-For every shopper would share the
+// server's one bucket (5 logins / 15 min for the whole shop). Pass the header on
+// as the storefront proxy does for /api/*; the backend only believes it when
+// TRUST_PROXY says a proxy in front sets it (docs/DEPLOYMENT.md).
+const forwardedFor = (headers) => {
+  const value = headers?.['x-forwarded-for'];
+  return typeof value === 'string' && value ? { 'X-Forwarded-For': value } : {};
+};
+
+// The token refresh runs in the jwt callback, which gets no request object; read
+// the current request's header instead (route handlers and server components
+// both have one). Outside a request there is nothing to forward.
+const currentForwardedFor = async () => {
+  try {
+    const value = (await requestHeaders()).get('x-forwarded-for');
+    return value ? { 'X-Forwarded-For': value } : {};
+  } catch {
+    return {};
+  }
+};
+
 // Read `exp` from the backend JWT (no verification needed: it's our own token,
 // only used to schedule the refresh).
 const accessTokenExpiry = (accessToken) => {
@@ -84,6 +131,7 @@ async function refreshAccessToken(token) {
   try {
     const response = await fetchBackend('/api/users/refresh', {
       method: 'POST',
+      headers: await currentForwardedFor(),
       body: JSON.stringify({ refreshToken: token.refreshToken }),
     });
     const data = await response.json();
@@ -106,7 +154,7 @@ const handler = NextAuth({
         email: { label: 'Email', type: 'email' },
         password: { label: 'Password', type: 'password' }
       },
-      async authorize(credentials) {
+      async authorize(credentials, req) {
         if (!credentials?.email || !credentials?.password) {
           console.log('[NextAuth] Missing credentials');
           return null;
@@ -114,8 +162,13 @@ const handler = NextAuth({
 
         try {
           // Make API call to backend login endpoint using fetchBackend helper
+          const guestCookie = guestSessionCookie(req?.headers?.cookie);
           const response = await fetchBackend('/api/users/login', {
             method: 'POST',
+            headers: {
+              ...forwardedFor(req?.headers),
+              ...(guestCookie && { Cookie: guestCookie }),
+            },
             body: JSON.stringify({
               email: credentials.email,
               password: credentials.password

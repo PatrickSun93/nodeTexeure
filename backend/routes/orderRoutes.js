@@ -7,6 +7,7 @@ const ResponseFormatter = require('../utils/responseFormatter');
 const { protect, protectOptional } = require('../middleware/authMiddleware');
 const emailQueueProducer = require('../services/emailQueueProducer');
 const shippingService = require('../services/shippingService');
+const { guestSessionId } = require('../utils/guestSession');
 const db = DatabaseUtil; // executeQuery et al. are static — reference the class, not an instance
 
 // Default tax rate fallback (NY rate)
@@ -143,9 +144,10 @@ async function ownsCart(cartId, req) {
   // Unauthenticated (guest): a cart owned by a registered account is off-limits.
   if (cart.user_id) return false;
 
-  // Guest cart: require a positive match on the same session cookie cartRoutes uses.
-  const sessionId = req.cookies ? req.cookies.sessionId : null;
-  return Boolean(sessionId) && cart.session_id === sessionId;
+  // Guest cart: require a positive match on the same session cookie cartRoutes
+  // uses (only a session id we issue counts; see utils/guestSession.js).
+  const sessionId = guestSessionId(req);
+  return sessionId !== null && cart.session_id === sessionId;
 }
 
 // Helper function to validate coupon
@@ -182,7 +184,7 @@ router.post('/apply-coupon', protectOptional, async (req, res) => {
       return res.status(403).json(ResponseFormatter.failure('Access denied'));
     }
 
-    const cartItems = await getCartDetails(cartId);
+    const cartItems = await getCartDetails(String(cartId));
     if (cartItems.length === 0) {
       return res.status(400).json(ResponseFormatter.failure('Cart is empty'));
     }
@@ -228,8 +230,9 @@ router.post('/create', protectOptional, async (req, res) => {
       return res.status(403).json(ResponseFormatter.failure('Access denied'));
     }
 
-    // Get cart details
-    const cartItems = await getCartDetails(cartId);
+    // Get cart details (by the same string ownsCart checked)
+    const cartKey = String(cartId);
+    const cartItems = await getCartDetails(cartKey);
     if (cartItems.length === 0) {
       return res.status(400).json(ResponseFormatter.failure('Cart is empty'));
     }
@@ -282,8 +285,8 @@ router.post('/create', protectOptional, async (req, res) => {
         shippingMethodName = selected.serviceType;
       }
     }
-    // Free shipping over $100
-    if (subtotal >= 100) {
+    // Free STANDARD shipping over $100; Express and Overnight are always charged.
+    if (subtotal >= 100 && shippingMethodName === 'STANDARD') {
       shippingAmount = 0;
     }
     // A free_shipping coupon zeroes the shipping cost regardless of subtotal.
@@ -436,8 +439,8 @@ router.post('/create', protectOptional, async (req, res) => {
       }
 
       // Clear cart
-      await connection.execute('DELETE FROM cart_items WHERE cart_id = ?', [cartId]);
-      await connection.execute('DELETE FROM shopping_carts WHERE id = ?', [cartId]);
+      await connection.execute('DELETE FROM cart_items WHERE cart_id = ?', [cartKey]);
+      await connection.execute('DELETE FROM shopping_carts WHERE id = ?', [cartKey]);
 
       await connection.commit();
     } catch (txError) {
@@ -451,11 +454,18 @@ router.post('/create', protectOptional, async (req, res) => {
     // queueing failure is logged, never fails the order.
     const customerEmail = req.user ? req.user.email : guestEmail;
     const customerName = shippingAddress.first_name || shippingAddress.firstName || 'Valued Customer';
-    const queued = await emailQueueProducer.enqueue(customerEmail, customerName, 'order_confirmation', {
-      order_number: orderNumber,
-      customer_name: customerName,
-      total_amount: totalAmount.toFixed(2),
-    });
+    const queued = await emailQueueProducer.enqueue(customerEmail, customerName, 'order_confirmation',
+      emailQueueProducer.orderConfirmationVariables({
+        orderNumber,
+        customerName,
+        items: cartItems,
+        subtotal,
+        discount: discountAmount,
+        shipping: shippingAmount,
+        tax: taxAmount,
+        total: totalAmount,
+        shippingAddress,
+      }));
     if (!queued.queued) console.error('Non-fatal: order confirmation not queued:', queued.reason);
 
     res.json(ResponseFormatter.success('Order created successfully', { orderId, orderNumber }));

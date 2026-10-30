@@ -1,0 +1,12 @@
+{
+  "db_name": "MySQL",
+  "query": "UPDATE product_reviews\n         SET rating = ?, review_details = ?, is_approved = 0, approved_by = NULL, approved_at = NULL\n         WHERE id = ? AND user_id = ?",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 4
+    },
+    "nullable": []
+  },
+  "hash": "f15e5770ca462746f1b2a4ddff3066c03582fbbdebb522710ffd3eb87ed8f595"
+}

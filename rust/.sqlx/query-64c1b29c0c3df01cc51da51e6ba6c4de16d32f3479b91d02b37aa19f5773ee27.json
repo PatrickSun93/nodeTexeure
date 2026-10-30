@@ -1,0 +1,12 @@
+{
+  "db_name": "MySQL",
+  "query": "DELETE FROM stock_reservations WHERE id = ? AND expires_at < NOW()",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": []
+  },
+  "hash": "64c1b29c0c3df01cc51da51e6ba6c4de16d32f3479b91d02b37aa19f5773ee27"
+}

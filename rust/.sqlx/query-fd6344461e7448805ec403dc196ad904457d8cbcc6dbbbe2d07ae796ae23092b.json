@@ -1,0 +1,34 @@
+{
+  "db_name": "MySQL",
+  "query": "SELECT ci.quantity, p.name\n         FROM cart_items ci\n         JOIN products p ON ci.product_id = p.id\n         LEFT JOIN product_variants pv ON ci.variant_id = pv.id\n         WHERE ci.cart_id = ?\n         ORDER BY ci.created_at ASC",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "quantity",
+        "type_info": {
+          "type": "Long",
+          "flags": "NOT_NULL | UNSIGNED",
+          "max_size": 10
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "name",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NOT_NULL | MULTIPLE_KEY | NO_DEFAULT_VALUE",
+          "max_size": 1020
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false,
+      false
+    ]
+  },
+  "hash": "fd6344461e7448805ec403dc196ad904457d8cbcc6dbbbe2d07ae796ae23092b"
+}

@@ -1,0 +1,12 @@
+{
+  "db_name": "MySQL",
+  "query": "INSERT INTO product_images (id, product_id, original_url, thumbnail_small_url, thumbnail_medium_url, thumbnail_large_url, sort_order)\n         VALUES (?, ?, ?, ?, ?, ?, ?)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 7
+    },
+    "nullable": []
+  },
+  "hash": "7c78dc5bea55a8c12d42fe3cc367fe9ff84f054f7edc98191858ee4c28534dc1"
+}

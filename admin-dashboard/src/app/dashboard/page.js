@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { ensureCsrfToken } from '../../utils/api';
+import { useAuth } from '@/contexts/AuthContext';
 import SettingsView from '../../components/SettingsView';
 import EmailTemplatesView from '../../components/EmailTemplatesView';
 import AnalyticsDashboard from '../../components/AnalyticsDashboard';
@@ -22,6 +23,7 @@ export default function Dashboard() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [timePeriod, setTimePeriod] = useState('last-30-days');
   const router = useRouter();
+  const { logout } = useAuth();
 
   // Analytics state
   const [metrics, setMetrics] = useState({
@@ -85,26 +87,25 @@ export default function Dashboard() {
   }, [activeTab]);
 
   useEffect(() => {
-    // Guard: verify auth and ensure CSRF token is present
+    // Guard: verify auth and get a CSRF token for this session (always a fresh
+    // one: a csrf_token cookie from an earlier session would fail every write).
     (async () => {
       try {
-        await ensureCsrfToken();
+        await ensureCsrfToken({ refresh: true });
       } catch (e) {
-        // Not authenticated or not admin
-        router.push('/');
+        // Not authenticated or not admin. Go straight to /login (not '/', which
+        // would bounce a stale admin_auth cookie back here).
+        router.push('/login');
       }
     })();
   }, [router]);
 
   const handleLogout = async () => {
-    try {
-      const { apiFetch } = await import('../../utils/api');
-      await apiFetch('/api/admin/logout', { method: 'POST' });
-      router.push('/');
-    } catch (e) {
-      // If unauthorized or other issue, still return to login
-      router.push('/');
-    }
+    // AuthContext.logout() calls POST /api/admin/logout (clears the cookies) and
+    // resets the client auth state even if the request fails — otherwise /login
+    // would still see isAuthenticated and bounce straight back to /dashboard.
+    await logout();
+    router.push('/login?logout=true');
   };
 
   return (

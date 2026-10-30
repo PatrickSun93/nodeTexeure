@@ -9,6 +9,7 @@ const path = require('path');
 const fs = require('fs');
 const multer = require('multer');
 const { adminReadLimiter, adminWriteLimiter } = require('./limiters');
+const { isNonEmptyString, isStringList } = require('../../utils/params');
 
 const router = express.Router();
 
@@ -85,6 +86,13 @@ router.put('/products/:id', admin, adminWriteLimiter, csrfProtection, async (req
   try {
     const { id } = req.params;
     const { variants, ...updates } = req.body; // Extract variants to prevent column error
+
+    // Validate every variant before any write, so a bad entry can't leave a half-applied update.
+    if (variants !== undefined && variants !== null) {
+      if (!Array.isArray(variants) || !variants.every((v) => v && typeof v === 'object' && (!v.id || isNonEmptyString(v.id)))) {
+        return res.status(400).json(ResponseFormatter.failure('variants must be objects with string ids'));
+      }
+    }
 
     // 1. Update Product Fields (whitelist columns to prevent SQL injection)
     const ALLOWED_PRODUCT_COLUMNS = [
@@ -353,7 +361,9 @@ function ensureDirSync(dirPath) {
 
 // Configure multer storage dynamically based on product id
 function createMulterForProduct(productId) {
-  const dest = path.join(__dirname, '..', 'uploads', 'products', String(productId));
+  // backend/uploads — the directory server.js serves at /uploads (this file
+  // is in routes/admin/, so two levels up).
+  const dest = path.join(__dirname, '..', '..', 'uploads', 'products', String(productId));
   ensureDirSync(dest);
   const storage = multer.diskStorage({
     destination: function (req, file, cb) {
@@ -362,8 +372,12 @@ function createMulterForProduct(productId) {
     filename: function (req, file, cb) {
       // Simple filename: timestamp-originalName sanitized
       const safeBase = path.basename(file.originalname).replace(/[^a-zA-Z0-9_.-]/g, '_');
+      // /uploads serves by extension: anything but an image one gets .jpg
+      // appended, so a declared image/png named x.html or x.svg stays an image.
+      const ext = path.extname(safeBase).toLowerCase();
+      const suffix = ['.jpg', '.jpeg', '.png', '.gif', '.webp'].includes(ext) ? '' : '.jpg';
       const ts = Date.now();
-      cb(null, `${ts}-${safeBase}`);
+      cb(null, `${ts}-${safeBase}${suffix}`);
     },
   });
   return multer({
@@ -444,7 +458,8 @@ router.post('/products/:id/image', admin, adminWriteLimiter, csrfProtection, asy
 router.post('/products/bulk-update', admin, adminWriteLimiter, csrfProtection, async (req, res) => {
   try {
     const { productIds, updates } = req.body;
-    if (!Array.isArray(productIds) || productIds.length === 0) {
+    // Ids must be strings: `WHERE id = 0` matches every product (PROD… casts to 0).
+    if (!isStringList(productIds)) {
       return res.status(400).json(ResponseFormatter.failure('productIds must be a non-empty array'));
     }
     if (!updates || typeof updates !== 'object' || Array.isArray(updates)) {
@@ -496,7 +511,8 @@ router.post('/products/bulk-update', admin, adminWriteLimiter, csrfProtection, a
 router.post('/products/bulk-delete', admin, adminWriteLimiter, csrfProtection, async (req, res) => {
   try {
     const { productIds } = req.body;
-    if (!Array.isArray(productIds) || productIds.length === 0) {
+    // Ids must be strings: `WHERE id = 0` would delete every product.
+    if (!isStringList(productIds)) {
       return res.status(400).json(ResponseFormatter.failure('productIds must be a non-empty array'));
     }
 

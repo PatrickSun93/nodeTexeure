@@ -6,6 +6,7 @@
 
 const { SESClient, SendEmailCommand } = require('@aws-sdk/client-ses');
 const DatabaseUtil = require('../utils/database');
+const { escapeHtml } = require('../utils/escapeHtml');
 const db = DatabaseUtil; // executeQuery et al. are static — reference the class, not an instance
 
 let sesClient;
@@ -110,8 +111,12 @@ const TEMPLATE_NAME_ALIASES = {
  * @param {string|string[]} to - Recipient email(s)
  * @param {string} templateSlug - Template slug (e.g. 'order-confirmation')
  * @param {Object} variables - Key-value pairs for template interpolation
+ * @param {Object} [options]
+ * @param {string[]} [options.rawHtmlKeys] - Variables that already hold built HTML
+ *   (their parts must be escaped by the caller); every other value is HTML-escaped
+ *   in the HTML body. Subject and text body get the raw values.
  */
-async function sendTemplatedEmail(to, templateSlug, variables = {}) {
+async function sendTemplatedEmail(to, templateSlug, variables = {}, { rawHtmlKeys = [] } = {}) {
   try {
     // Load template from database. The table has no `slug` column — match on
     // `name`, accepting the raw slug, its underscore form (seeded names use
@@ -159,9 +164,11 @@ async function sendTemplatedEmail(to, templateSlug, variables = {}) {
 
     Object.entries(variables).forEach(([key, value]) => {
       const regex = new RegExp(`{{\\s*${key}\\s*}}`, 'g');
-      subject = subject.replace(regex, value);
-      htmlBody = htmlBody.replace(regex, value);
-      textBody = textBody.replace(regex, value);
+      subject = subject.replace(regex, () => String(value ?? ''));
+      const htmlValue = rawHtmlKeys.includes(key) ? String(value ?? '') : escapeHtml(value);
+      // A function replacement keeps `$&`-style patterns in values literal.
+      htmlBody = htmlBody.replace(regex, () => htmlValue);
+      textBody = textBody.replace(regex, () => String(value ?? ''));
     });
 
     return await sendEmail(to, subject, htmlBody, textBody);
@@ -185,8 +192,8 @@ async function sendOrderConfirmation(order) {
   // Build items HTML
   const itemsHtml = (order.items || []).map(item =>
     `<tr>
-      <td style="padding: 8px; border-bottom: 1px solid #eee;">${item.product_name}</td>
-      <td style="padding: 8px; border-bottom: 1px solid #eee; text-align: center;">${item.quantity}</td>
+      <td style="padding: 8px; border-bottom: 1px solid #eee;">${escapeHtml(item.product_name)}</td>
+      <td style="padding: 8px; border-bottom: 1px solid #eee; text-align: center;">${escapeHtml(item.quantity)}</td>
       <td style="padding: 8px; border-bottom: 1px solid #eee; text-align: right;">$${parseFloat(item.unit_price).toFixed(2)}</td>
     </tr>`
   ).join('');
@@ -205,14 +212,14 @@ async function sendOrderConfirmation(order) {
 
   // Try template first, fall back to inline HTML
   try {
-    return await sendTemplatedEmail(email, 'order-confirmation', variables);
+    return await sendTemplatedEmail(email, 'order-confirmation', variables, { rawHtmlKeys: ['items_table'] });
   } catch {
     // Fallback: send inline HTML email
     const html = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <h1 style="color: #333;">Order Confirmation</h1>
-        <p>Thank you for your order, ${variables.customer_name}!</p>
-        <p>Order #${variables.order_number} placed on ${variables.order_date}</p>
+        <p>Thank you for your order, ${escapeHtml(variables.customer_name)}!</p>
+        <p>Order #${escapeHtml(variables.order_number)} placed on ${escapeHtml(variables.order_date)}</p>
         <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
           <thead>
             <tr style="background: #f5f5f5;">
@@ -259,9 +266,9 @@ async function sendShippingNotification(order, trackingNumber, carrier = 'FedEx'
     const html = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <h1 style="color: #333;">Your Order Has Shipped!</h1>
-        <p>Hi ${variables.customer_name},</p>
-        <p>Your order #${variables.order_number} has been shipped via ${variables.carrier}.</p>
-        <p><strong>Tracking Number:</strong> ${variables.tracking_number}</p>
+        <p>Hi ${escapeHtml(variables.customer_name)},</p>
+        <p>Your order #${escapeHtml(variables.order_number)} has been shipped via ${escapeHtml(variables.carrier)}.</p>
+        <p><strong>Tracking Number:</strong> ${escapeHtml(variables.tracking_number)}</p>
         <p>You can track your package using the tracking number above.</p>
       </div>
     `;
@@ -282,7 +289,7 @@ async function sendPasswordReset(email, resetLink) {
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <h1 style="color: #333;">Reset Your Password</h1>
         <p>You requested a password reset. Click the link below to set a new password:</p>
-        <p><a href="${resetLink}" style="display: inline-block; padding: 12px 24px; background: #333; color: #fff; text-decoration: none; border-radius: 4px;">Reset Password</a></p>
+        <p><a href="${escapeHtml(resetLink)}" style="display: inline-block; padding: 12px 24px; background: #333; color: #fff; text-decoration: none; border-radius: 4px;">Reset Password</a></p>
         <p>This link expires in 1 hour. If you didn't request this, please ignore this email.</p>
       </div>
     `;
@@ -299,7 +306,7 @@ async function sendWelcomeEmail(email, data = {}) {
   const name = data.name || 'there';
   const html = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-      <h1 style="color: #333;">Welcome to NodeTexeure, ${name}!</h1>
+      <h1 style="color: #333;">Welcome to NodeTexeure, ${escapeHtml(name)}!</h1>
       <p>Thank you for creating an account. Explore our collection of luxury silk and cashmere bedding.</p>
       <p><a href="${process.env.FRONTEND_URL || 'http://localhost:3000'}/shop" style="display:inline-block;padding:12px 24px;background:#333;color:#fff;text-decoration:none;border-radius:4px;">Start Shopping</a></p>
     </div>`;
@@ -317,7 +324,7 @@ async function sendOrderStatusUpdate(email, data = {}) {
   const html = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
       <h1 style="color: #333;">Order Update</h1>
-      <p>Your order ${orderNumber ? `#${orderNumber}` : ''} status is now: <strong>${status}</strong>.</p>
+      <p>Your order ${orderNumber ? `#${escapeHtml(orderNumber)}` : ''} status is now: <strong>${escapeHtml(status)}</strong>.</p>
     </div>`;
   return await sendEmail(email, `Order ${orderNumber ? `#${orderNumber} ` : ''}Update`, html);
 }
@@ -334,7 +341,7 @@ async function sendAbandonedCartEmail(email, data = {}, sequenceStep = 1) {
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
       <h1 style="color: #333;">You left something behind</h1>
       <p>Your cart is waiting for you. Complete your purchase before these luxury pieces sell out.</p>
-      <p><a href="${cartUrl}" style="display:inline-block;padding:12px 24px;background:#333;color:#fff;text-decoration:none;border-radius:4px;">Return to Cart</a></p>
+      <p><a href="${escapeHtml(cartUrl)}" style="display:inline-block;padding:12px 24px;background:#333;color:#fff;text-decoration:none;border-radius:4px;">Return to Cart</a></p>
     </div>`;
   return await sendEmail(email, 'Your cart is waiting', html);
 }
@@ -346,7 +353,7 @@ async function sendAbandonedCartEmail(email, data = {}, sequenceStep = 1) {
  */
 async function sendLowStockAlert(recipients, products = []) {
   const rows = (products || [])
-    .map((p) => `<li>${p.name || p.sku || 'Product'} — ${p.stock ?? p.quantity ?? 0} left</li>`)
+    .map((p) => `<li>${escapeHtml(p.name || p.sku || 'Product')} — ${escapeHtml(p.stock ?? p.quantity ?? 0)} left</li>`)
     .join('');
   const html = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -365,9 +372,9 @@ async function sendEmailFailureAlert(email, data = {}) {
   const html = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
       <h1 style="color: #b91c1c;">Email Delivery Failed</h1>
-      <p>Type: ${data.type || 'unknown'}</p>
-      <p>Intended recipient: ${data.recipient || 'unknown'}</p>
-      <p>Error: ${data.error || 'unspecified'}</p>
+      <p>Type: ${escapeHtml(data.type || 'unknown')}</p>
+      <p>Intended recipient: ${escapeHtml(data.recipient || 'unknown')}</p>
+      <p>Error: ${escapeHtml(data.error || 'unspecified')}</p>
     </div>`;
   return await sendEmail(email, 'Email Delivery Failure Alert', html);
 }

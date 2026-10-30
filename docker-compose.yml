@@ -34,6 +34,8 @@ services:
       NODE_ENV: development
       JWT_SECRET: ${JWT_SECRET:-dev_only_jwt_secret_change_me_min_32_characters}
       NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:-dev_only_nextauth_secret}
+      # The worker service runs the background jobs (rollback: remove this).
+      BACKGROUND_JOBS: "off"
     ports:
       - "6666:6666"
     volumes:
@@ -50,7 +52,7 @@ services:
     environment:
       BACKEND_URL: http://backend:6666
       RUST_API_URL: http://api:7000
-      RUST_API_ROUTES: products,search,journal,settings/public,wishlist,orders,cart
+      RUST_API_ROUTES: products,search,journal,settings,wishlist,orders,cart,users,reviews,returns,abandoned-cart,unsubscribe,newsletter,contact,status,shipping,admin,database,payments,images
       NEXTAUTH_URL: http://localhost:3000
       NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:-dev_only_nextauth_secret}
       NODE_ENV: development
@@ -71,6 +73,11 @@ services:
       dockerfile: Dockerfile.dev
     environment:
       BACKEND_URL: http://backend:6666
+      # Same mechanism as the frontend (admin-dashboard/rustRoutes.mjs): these
+      # groups go to the Rust API, the rest of /api to Node. Empty
+      # RUST_API_ROUTES = every admin /api call stays on Node (rollback).
+      RUST_API_URL: http://api:7000
+      RUST_API_ROUTES: admin,database,settings,payments,images,users
       NODE_ENV: development
       WATCHPACK_POLLING: "true"
     ports:
@@ -81,13 +88,20 @@ services:
       - admin_next:/app/.next
     depends_on:
       - backend
+      - api
 
   # Rust API (rust/crates/api): answers the route groups listed in the
-  # frontend's RUST_API_ROUTES; everything else stays on the Node backend.
+  # frontend's and the admin's RUST_API_ROUTES; everything else stays on the
+  # Node backend.
   api:
     build:
       context: ./rust
     command: ["api"]
+    # Same settings the Node backend reads (FedEx, FRONTEND_URL, limits, TTLs);
+    # `environment:` below still wins for DB_*, NODE_ENV and JWT_SECRET.
+    env_file:
+      - path: ./backend/.env
+        required: false
     environment:
       DB_HOST: mysql
       DB_PORT: "3306"
@@ -95,8 +109,45 @@ services:
       DB_USER: root
       DB_PASSWORD: ${DB_PASSWORD:-noirae_dev}
       API_PORT: "7000"
+      # Must match the backend: the API verifies the tokens Node signs.
+      NODE_ENV: development
+      JWT_SECRET: ${JWT_SECRET:-dev_only_jwt_secret_change_me_min_32_characters}
+      # /api/images and admin product images write here; the backend serves the
+      # same directory at /uploads (it is ./backend/uploads in both containers).
+      UPLOADS_DIR: /uploads
+    user: root # write to the bind-mounted uploads regardless of host ownership
+    volumes:
+      - ./backend/uploads:/uploads
     ports:
       - "7000:7000"
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+  # Rust background worker (rust/crates/api/src/bin/worker.rs): applies
+  # backend/migrations, then every 15 minutes releases expired stock
+  # reservations and queues abandoned-cart emails. The backend's own timers are
+  # off (BACKGROUND_JOBS=off); both take the same MySQL locks, so running the
+  # two at once is safe. Rollback: stop this service, drop BACKGROUND_JOBS.
+  worker:
+    build:
+      context: ./rust
+    command: ["worker"]
+    env_file:
+      - path: ./backend/.env
+        required: false
+    environment:
+      DB_HOST: mysql
+      DB_PORT: "3306"
+      DB_NAME: bed_texture_ecommerce
+      DB_USER: root
+      DB_PASSWORD: ${DB_PASSWORD:-noirae_dev}
+      NODE_ENV: development
+      # Signs the unsubscribe links in abandoned-cart emails: same as the backend.
+      JWT_SECRET: ${JWT_SECRET:-dev_only_jwt_secret_change_me_min_32_characters}
+      MIGRATIONS_DIR: /app/migrations
+    volumes:
+      - ./backend/migrations:/app/migrations:ro
     depends_on:
       mysql:
         condition: service_healthy

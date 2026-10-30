@@ -7,7 +7,8 @@ can move without the rest noticing.
 | Crate | Replaces | Status |
 |---|---|---|
 | `crates/email-daemon` | `backend/services/emailDaemon.js` | Live: the only consumer of `email_queue` |
-| `crates/api` | Express route groups, one at a time | `/api/products/*`, `/api/search/*`, `/api/journal/*`, `/api/settings/public`, `/api/wishlist/*` (signed in), `/api/orders/*` (my orders, detail, tracking, tax, coupons, **order creation**), `/api/cart` view/add/update/remove (signed in or guest) |
+| `crates/api` | Express route groups, one at a time | Every `/api` group `backend/server.js` mounts: `/api/products/*`, `/api/search/*`, `/api/journal/*`, all of `/api/settings/*` (public + admin `/all`), `/api/wishlist/*` (signed in), `/api/orders/*` (my orders, detail, tracking, tax, coupons, **order creation**), all of `/api/cart/*` (signed in or guest, incl. reserve-stock and abandonment tracking), `/api/abandoned-cart/*`, all of `/api/users/*` (register, login, refresh, session, CSRF token, password reset, email verification, profile, addresses, admin user management), `/api/reviews/*`, `/api/returns/*`, `/api/unsubscribe/*`, `/api/newsletter/*`, `/api/contact`, `/api/status/*`, `/api/shipping/*` (FedEx rates, labels, tracking), `/api/payments/*` (Stripe checkout session, payment intent, webhook, refund, session lookup), `/api/images/*` (uploads, product images + thumbnails, local or S3), `/api/database/*` (admin DB tools), and all of `/api/admin/*` (analytics, email queue, email templates, bulk CSV import/export, logout, products, categories, coupons, inventory, users/staff, orders, settings, shipping zones). Still on Node: seeds and `/uploads` static files |
+| `crates/api` `worker` binary | `server.js`'s reservation timer, `AbandonedCartService.startAbandonedCartDetection`, `scripts/migrate.js` | Live (the `worker` compose service): migrations, then expired stock-reservation release and abandoned-cart detection every 15 minutes. The backend's timers are off (`BACKGROUND_JOBS=off`) |
 | `crates/common` | — | Shared env config, MySQL connection, response envelope, timestamps |
 
 ## Why Rust here
@@ -34,6 +35,7 @@ cargo build                                   # queries checked against the live
 cargo clippy --all-targets -- -D warnings
 cargo test -- --include-ignored --test-threads=1   # unit + MySQL integration tests
 cargo run -p email-daemon                     # reads DB_* / AWS_* like the Node backend
+cargo run -p api --bin worker -- migrate --status   # or: migrate, once [JOB], run
 ```
 
 Without `DATABASE_URL`, builds use the committed **`.sqlx/`** query data (this is
@@ -45,10 +47,33 @@ cargo install sqlx-cli --no-default-features --features mysql,rustls   # once
 cargo sqlx prepare --workspace -- --all-targets
 ```
 
-The schema itself is still owned by the Node side: `docker/mysql/init.sql` plus
-`backend/migrations/` (applied by `npm run migrate`). A Rust service that needs a
-schema change adds the next numbered migration there and waits for it at start
-(see `queue::REQUIRED_MIGRATION`).
+The schema lives in `docker/mysql/init.sql` plus `backend/migrations/`. Both
+runners apply the migrations the same way: `npm run migrate` (Node, the
+backend's entrypoint) and `worker migrate` (Rust, also the first step of
+`worker run`). They share a MySQL named lock, so whichever starts second waits
+and then finds nothing pending. A Rust service that needs a schema change adds
+the next numbered migration there and waits for it at start (see
+`queue::REQUIRED_MIGRATION`).
+
+## worker
+
+`src/bin/worker.rs` (jobs in `src/jobs/`) runs what the Node backend ran on
+timers:
+
+| Command | Does |
+|---|---|
+| `worker` / `worker run` | `migrate` (skip with `WORKER_MIGRATE=false`), then every `WORKER_INTERVAL_SECS` (900): release expired stock reservations, detect abandoned carts |
+| `worker migrate [--status]` | `scripts/migrate.js` (same baseline, `schema_migrations` rows and `✔`/`·` listing); files from `MIGRATIONS_DIR` (default `../backend/migrations`) |
+| `worker once [release-reservations\|abandoned-carts]` | one run, a JSON line per job (`skipped: true` if the lock is held) |
+
+Each job holds a MySQL `GET_LOCK` (names in `jobs/mod.rs`, the same in
+`backend/utils/jobLock.js`), so Node and Rust never run one at the same time;
+`BACKGROUND_JOBS=off` turns the backend's own timers off. The release deletes
+each expired reservation by id and returns its stock in one transaction
+(clamped at 0), so no run releases twice. It needs the backend's `JWT_SECRET`
+(unsubscribe links in the abandoned-cart emails) and `FRONTEND_URL`. Parity:
+`backend/tests/parity-worker.test.js`. Rollback: stop the `worker` service and
+remove `BACKGROUND_JOBS` from the backend.
 
 ## email-daemon
 
@@ -82,24 +107,43 @@ Runs as the `email-daemon` service in both compose files (image: `rust/Dockerfil
 ## api
 
 Axum + sqlx HTTP service (port `API_PORT`, default 7000; `GET /health` checks the
-DB). It answers only the route groups the storefront proxy sends it:
+DB). It answers only the route groups the storefront and admin proxies send it:
 
 ```bash
-# next.config.mjs reads these (baked in at `next build` for production)
+# storefront: next.config.mjs reads these (baked in at `next build` for production)
 RUST_API_URL=http://api:7000
-RUST_API_ROUTES=products,search,journal,settings/public,wishlist,orders,cart
+RUST_API_ROUTES=products,search,journal,settings,wishlist,orders,cart,users,reviews,returns,abandoned-cart,unsubscribe,newsletter,contact,status,shipping,admin,database,payments,images
+# admin dashboard: admin-dashboard/rustRoutes.mjs, same rules (ADMIN_RUST_API_ROUTES in docker-compose.prod.yml)
+RUST_API_ROUTES=admin,database,settings,payments,images,users
 # comma-separated groups; an entry with a slash moves one path; unset = all Node
-# a partly ported group (cart) moves only its ported paths — see partialGroups in next.config.mjs
+# a partly ported group moves only its ported paths — see partialGroups in next.config.mjs
+# and PARTIAL_GROUPS in admin-dashboard/rustRoutes.mjs (none today)
 ```
 
-Unsetting `RUST_API_ROUTES` (and rebuilding the frontend) sends everything back
+Unsetting `RUST_API_ROUTES` (and rebuilding the frontend or admin) sends everything back
 to Express — the Node routes stay in place until a group has been on Rust for a
 while. Responses carry `X-Served-By: rust-api`.
+
+`/api/images` and the admin product-image upload write to `UPLOADS_DIR` (default
+`uploads` under the working directory); point it at the backend's `uploads/`
+directory (both compose files share it with the `backend` service), because Node
+still serves `/uploads`. `/api/payments` reads `STRIPE_SECRET_KEY`,
+`STRIPE_WEBHOOK_SECRET` and `FRONTEND_URL`, `/api/images` the `AWS_*` S3
+settings, like Node. `STRIPE_API_BASE` is for tests only. The binary loads the
+first `.env` found walking up from its working directory (dotenvy, never
+overriding set variables), so set these explicitly when running it by hand.
 
 **Parity is tested, not assumed.** `backend/tests/parity.test.js` sends the same
 requests (pagination edge cases, filters, search incl. SQL-injection strings,
 locales via query and cookie, slugs, unknown ids, bad input) to Node and Rust and
-requires identical status and JSON. CI runs it against a fresh API build.
+requires identical status and JSON. Each later group has its own
+`backend/tests/parity-<group>.test.js` (users_auth, users_account,
+reviews_returns, cart_rest, misc, admin_foundation, admin_catalog, admin_ops,
+analytics, email_admin, payments_images), which also compares Set-Cookie
+headers, the rows written, and rate-limit headers/429 bodies against
+production-mode servers (shared helpers: `backend/tests/parityHelpers.js`; the
+admin files start their own Rust API per file with `P.backOffice()`, because the
+admin limiters have no test skip). CI runs them all against a fresh API build.
 
 Notes on the port:
 - Optional filters are one static query with `(? IS NULL OR …)` clauses, so the
@@ -108,8 +152,35 @@ Notes on the port:
   `materials[]`, `NEXT_LOCALE` cookie) — see `src/params.rs`.
 - No response cache yet: Rust without a cache is as fast as Node with its
   5-minute cache, and never serves stale data.
-- Not yet ported: rate limiting (the Express global limiter) — the Rust service
-  sits behind the storefront proxy and is not exposed publicly in compose.
+- Rate limiting mirrors express-rate-limit (`src/ratelimit.rs`): the global
+  `/api` limiter plus the per-route presets (login, register, refresh,
+  forgot-password, verify-email, carrier), keyed on the client IP from
+  `TRUST_PROXY` hops exactly like Express's `req.ip` (`src/client_ip.rs`).
+  Buckets are in memory per service, so a client gets the budget once on Node
+  and once on Rust.
+- Shared foundation modules: `password.rs` (bcryptjs-compatible), `tokens.rs`
+  (access JWTs byte-identical to Node's, refresh tokens), `csrf.rs` (`Csrf<G>`
+  double-submit guard, Node-compatible tokens), `cookies.rs` (cookie-parser /
+  `res.cookie`), `email_queue.rs` (the queue producer, abandoned-cart emails,
+  unsubscribe tokens). Behaviour is pinned to recorded Node output in
+  `crates/api/fixtures/*.json` (`backend/scripts/gen-rust-fixtures.js`,
+  `gen-misc-fixtures.js`).
+- Express emulation: `express.rs` (body parsers with body-parser's errors, the
+  app's 404 `{ path, timestamp }` and error handler, `decode_param`, JS string
+  helpers), `express_router.rs` (Express Router matching for whole-group
+  dispatchers: case-insensitive literals, trailing slash, registration order),
+  `qs.rs` (qs 6.16 for `req.query` and urlencoded bodies), `fedex.rs` (the
+  FedEx client, via `reqwest` with rustls).
+- Back office (Wave B): `admin.rs` is the `/api/admin` dispatcher — the five
+  Express mounts in `server.js` order, each route's middleware as `Step`s
+  (protect, admin/staffOrAdmin, the admin limiters, CSRF), one
+  `routes/admin/<area>.rs` per Node router. `multer.rs` (multer + busboy),
+  `mysql_json.rs` (mysql2's row JSON for dynamic SQL), `csv.rs` (papaparse and
+  csvExporter/csvParser), `express_send.rs` (`res.send` with ETag/304),
+  `js_date.rs` (JS `Date` parsing and local-time math for analytics ranges),
+  `stripe.rs` (the Stripe API client and webhook signatures), `s3.rs` (S3 or
+  local uploads), `imaging.rs` (sharp-style thumbnails) and `v8_json.rs`
+  (`JSON.parse` with V8's exact error messages).
 
 ### Porting the next route group
 
@@ -121,15 +192,23 @@ Notes on the port:
 
 Done so far: the public read-only groups, `wishlist`, all of `orders` (incl.
 checkout: one transaction for order + coupon redemption + stock decrement +
-cart removal, then a queued confirmation email) and most of `cart`. A group can
-move in parts: `partialGroups` in `next.config.mjs` lists the paths of a partly
-ported group (Next path patterns, regex allowed); listing `cart` moves
-view/add/update/remove (incl. the guest `sessionId` cookie, issued exactly as
-Express does) while `reserve-stock` and the abandonment endpoints stay on Node.
+cart removal, then a queued confirmation email), all of `cart` and
+`abandoned-cart`, all of `users` (auth half in `routes/users_auth.rs`, account
+half and admin user management in `routes/users_account.rs`), `reviews`,
+`returns`, `unsubscribe`, `newsletter`, `contact`, `status`, `shipping`, and
+in Wave B `payments`, `images`, `database`, all of `settings` and the whole
+`admin` subtree. A
+group can move in parts: `partialGroups` in `next.config.mjs` (mirrored in
+`src/lib/server/apiTarget.js` for NextAuth's server-side login/refresh calls)
+lists the paths of a partly ported group (Next path patterns, regex allowed).
+None is partial today. The admin dashboard routes its own groups the same way
+(`admin-dashboard/rustRoutes.mjs`).
 **Auth** lives in `src/auth.rs`: handlers take `AuthUser` / `OptionalUser` /
 `StaffOrAdmin` / `Admin` extractors, which mirror Node's `protect` /
 `protectOptional` / `staffOrAdmin` / `admin` — Bearer header then `admin_auth`
 cookie, HS256 only, `exp`/`nbf` with no leeway, user row re-read per request
 (status + `token_version` revocation), identical 401/403 bodies. The parity test
-covers forged/expired/`alg:none`/revoked/deactivated tokens. Next: payments
-(Stripe checkout session + webhook), then CSRF + admin.
+covers forged/expired/`alg:none`/revoked/deactivated tokens. Admin writes use
+`Csrf<Admin>` (or the dispatcher's `Csrf` step under `/api/admin`). What is left
+on Node: the seeds and the `/uploads` static route (the background jobs and
+migrations are in the [worker](#worker)).

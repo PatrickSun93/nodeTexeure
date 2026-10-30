@@ -33,6 +33,9 @@ const {
 
 const VALID_SCOPES = ['all', 'marketing'];
 
+// The signed token as sent; an array/object (`?token[]=…`) is no token.
+const tokenOf = (v) => (typeof v === 'string' ? v : '');
+
 async function getSuppression(email) {
   const res = await DatabaseUtil.executeQuery(
     'SELECT id, email, scope, reason, unsubscribed_at FROM email_unsubscribes WHERE email = ? LIMIT 1',
@@ -48,7 +51,7 @@ async function getSuppression(email) {
 router.get('/', async (req, res) => {
   try {
     const email = normalizeEmail(req.query.email);
-    const token = req.query.token;
+    const token = tokenOf(req.query.token);
 
     if (!email || !token || !verifyUnsubscribeToken(email, token)) {
       // Do not disclose whether the address exists — just that the link is bad.
@@ -88,7 +91,7 @@ router.get('/', async (req, res) => {
 router.post('/', async (req, res) => {
   try {
     const email = normalizeEmail(req.body.email);
-    const token = req.body.token;
+    const token = tokenOf(req.body.token);
     const scope = VALID_SCOPES.includes(req.body.scope) ? req.body.scope : 'all';
     const reason =
       typeof req.body.reason === 'string' ? req.body.reason.slice(0, 255) : null;
@@ -140,7 +143,7 @@ router.post('/', async (req, res) => {
 router.post('/resubscribe', async (req, res) => {
   try {
     const email = normalizeEmail(req.body.email);
-    const token = req.body.token;
+    const token = tokenOf(req.body.token);
 
     if (!email || !token || !verifyUnsubscribeToken(email, token)) {
       return res.json(

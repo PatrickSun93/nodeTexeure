@@ -4,9 +4,11 @@ import { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import PromotionDetailView from '../PromotionDetailView';
 import PromotionModal from '../PromotionModal';
+import { useNotifications } from '../NotificationSystem';
 
 export default function PromotionsView() {
   const t = useTranslations('Dashboard');
+  const notify = useNotifications();
   const [viewMode, setViewMode] = useState('list'); // 'list', 'edit'
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedPromotion, setSelectedPromotion] = useState(null);
@@ -62,11 +64,11 @@ export default function PromotionsView() {
       if (response.status === 'SUCCESS') {
         setPromotions((prev) => prev.filter((p) => p.id !== promo.id));
       } else {
-        alert(t('deletePromotionError'));
+        notify.error(t('deletePromotionError'));
       }
     } catch (e) {
       console.error('Delete promotion failed', e);
-      alert(t('deletePromotionError'));
+      notify.error(t('deletePromotionError'));
     }
   };
 

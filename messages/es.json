@@ -60,7 +60,9 @@
     "sortPriceHigh": "Precio: Mayor a Menor",
     "sortName": "Nombre: A a Z",
     "loading": "Cargando productos...",
-    "noProducts": "No se encontraron productos que coincidan con sus criterios."
+    "noProducts": "No se encontraron productos que coincidan con sus criterios.",
+    "searchChip": "Búsqueda: «{term}»",
+    "removeFilter": "Quitar filtro: {label}"
   },
   "Home": {
     "heroTitle": "El Arte del Confort",
@@ -104,7 +106,7 @@
     "selectOptions": "Seleccionar opciones",
     "addingToCart": "Añadiendo al carrito...",
     "addToCart": "Añadir al carrito",
-    "freeShipping": "Envío gratis en pedidos superiores a $100",
+    "freeShipping": "Envío estándar gratis en pedidos superiores a $100",
     "returnPolicy": "Política de devolución de 30 días",
     "warranty": "Garantía de 1 año",
     "customerReviews": "Opiniones de clientes",
@@ -314,7 +316,7 @@
     "silkCareQuestion": "¿Cómo debo cuidar mi ropa de cama de seda?",
     "silkCareAnswer": "La ropa de cama de seda debe lavarse a mano con agua fría y un detergente suave, o bien limpiarse en seco. Evita la luz solar directa durante el secado y nunca uses lejía. Para un resultado óptimo, plánchala a baja temperatura cuando esté ligeramente húmeda.",
     "shippingOptionsQuestion": "¿Cuáles son sus opciones y plazos de envío?",
-    "shippingOptionsAnswer": "Ofrecemos envío estándar (5-7 días hábiles) y envío exprés (2-3 días hábiles). Todos los pedidos se procesan en un plazo de 1-2 días hábiles. El envío estándar es gratuito en pedidos superiores a $200.",
+    "shippingOptionsAnswer": "Ofrecemos envío estándar (5-7 días hábiles) y envío exprés (2-3 días hábiles). Todos los pedidos se procesan en un plazo de 1-2 días hábiles. El envío estándar es gratuito en pedidos superiores a $100.",
     "openReturnsQuestion": "¿Aceptan devoluciones de artículos abiertos?",
     "openReturnsAnswer": "Sí, aceptamos devoluciones dentro de los 30 días posteriores a la compra, incluso si el embalaje ha sido abierto. Los artículos deben estar sin usar y conservar todas sus etiquetas originales. Contacta con nuestro equipo de atención al cliente para iniciar una devolución.",
     "returnPolicyQuestion": "¿Cuál es su política de devolución para artículos abiertos?",
@@ -473,7 +475,7 @@
     "billingAddress": "Dirección de facturación",
     "continueToShipping": "Continuar con el envío",
     "shippingMethod": "Método de envío",
-    "freeShippingQualify": "¡Ha obtenido el envío gratis!",
+    "freeShippingQualify": "¡Ha obtenido el envío estándar gratis!",
     "free": "Gratis",
     "back": "Volver",
     "continueToPayment": "Continuar con el pago",
@@ -494,7 +496,7 @@
     "shipping": "Envío",
     "discount": "Descuento",
     "total": "Total",
-    "freeShippingHint": "¡Añada ${amount} más para el envío gratis!"
+    "freeShippingHint": "¡Añada ${amount} más para el envío estándar gratis!"
   },
   "Profile": {
     "failedFetchProfile": "No se pudo cargar el perfil",
@@ -673,7 +675,12 @@
     "statusShipped": "Enviado",
     "statusDelivered": "Entregado",
     "statusCancelled": "Cancelado",
-    "statusRefunded": "Reembolsado"
+    "statusRefunded": "Reembolsado",
+    "loading": "Cargando tu pedido...",
+    "notFoundBody": "No encontramos este pedido en tu cuenta.",
+    "free": "Gratis",
+    "shippingMethod": "Método de envío",
+    "orderPlaced": "Pedido realizado"
   },
   "ReturnFlow": {
     "breadcrumbHome": "Inicio",

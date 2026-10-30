@@ -1,6 +1,7 @@
 const DatabaseUtil = require('../utils/database');
 const ErrorUtils = require('../utils/errorUtils');
 const logger = require('../utils/logger');
+const { escapeHtml } = require('../utils/escapeHtml');
 
 class InventoryService {
   /**
@@ -374,10 +375,20 @@ class InventoryService {
       let releasedCount = 0;
       
       for (const reservation of expiredReservations) {
-        // Update inventory to release reserved quantity
+        // Delete it by id first and release only what this run deleted: never
+        // twice, and never a reservation that expired after the SELECT
+        // without releasing it (same as rust/crates/api/src/jobs/reservations.rs).
+        const deleteResult = await DatabaseUtil.executeQuery(
+          'DELETE FROM stock_reservations WHERE id = ? AND expires_at < NOW()',
+          [reservation.id]
+        );
+        if (!deleteResult.success || !deleteResult.affectedRows) continue;
+
+        // Update inventory to release reserved quantity (the column is
+        // unsigned: clamp at 0 instead of failing "out of range").
         const updateQuery = `
           UPDATE inventory 
-          SET quantity_reserved = quantity_reserved - ?
+          SET quantity_reserved = GREATEST(CAST(quantity_reserved AS SIGNED) - CAST(? AS SIGNED), 0)
           WHERE product_id = ? AND variant_id ${reservation.variant_id ? '= ?' : 'IS NULL'}
         `;
         const updateParams = reservation.variant_id 
@@ -389,10 +400,6 @@ class InventoryService {
           releasedCount++;
         }
       }
-      
-      // Delete expired reservations
-      const deleteQuery = 'DELETE FROM stock_reservations WHERE expires_at < NOW()';
-      await DatabaseUtil.executeQuery(deleteQuery);
       
       return {
         success: true,
@@ -884,12 +891,12 @@ class InventoryService {
           <h2>Low Stock Alert</h2>
           <p>The following product is running low on stock:</p>
           <ul>
-            <li><strong>Product:</strong> ${inventoryItem.product_name}</li>
-            <li><strong>SKU:</strong> ${inventoryItem.product_sku}</li>
-            <li><strong>Variant:</strong> ${variant}</li>
-            <li><strong>Current Stock:</strong> ${inventoryItem.quantity_available}</li>
-            <li><strong>Reorder Point:</strong> ${inventoryItem.reorder_point}</li>
-            <li><strong>Suggested Reorder Quantity:</strong> ${inventoryItem.reorder_quantity}</li>
+            <li><strong>Product:</strong> ${escapeHtml(inventoryItem.product_name)}</li>
+            <li><strong>SKU:</strong> ${escapeHtml(inventoryItem.product_sku)}</li>
+            <li><strong>Variant:</strong> ${escapeHtml(variant)}</li>
+            <li><strong>Current Stock:</strong> ${escapeHtml(inventoryItem.quantity_available)}</li>
+            <li><strong>Reorder Point:</strong> ${escapeHtml(inventoryItem.reorder_point)}</li>
+            <li><strong>Suggested Reorder Quantity:</strong> ${escapeHtml(inventoryItem.reorder_quantity)}</li>
           </ul>
           <p>Please consider restocking this item soon.</p>
         `,

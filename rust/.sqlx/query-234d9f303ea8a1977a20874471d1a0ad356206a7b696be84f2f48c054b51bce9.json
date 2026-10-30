@@ -1,0 +1,12 @@
+{
+  "db_name": "MySQL",
+  "query": "UPDATE user_addresses SET is_default = FALSE WHERE user_id = ? AND type = ?",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": []
+  },
+  "hash": "234d9f303ea8a1977a20874471d1a0ad356206a7b696be84f2f48c054b51bce9"
+}

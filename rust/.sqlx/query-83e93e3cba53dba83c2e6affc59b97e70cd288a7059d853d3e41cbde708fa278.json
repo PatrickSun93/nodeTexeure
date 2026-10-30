@@ -1,0 +1,12 @@
+{
+  "db_name": "MySQL",
+  "query": "UPDATE orders SET status = ?, tracking_number = ? WHERE id = ?",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 3
+    },
+    "nullable": []
+  },
+  "hash": "83e93e3cba53dba83c2e6affc59b97e70cd288a7059d853d3e41cbde708fa278"
+}

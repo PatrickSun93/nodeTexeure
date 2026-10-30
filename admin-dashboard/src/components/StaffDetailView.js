@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { useTranslations } from 'next-intl';
+import { useNotifications } from './NotificationSystem';
 
 export default function StaffDetailView({ staff, onBack }) {
     const t = useTranslations('StaffDetailView');
+    const notify = useNotifications();
     const isEditing = !!staff;
     const [formData, setFormData] = useState(staff || {
         fullName: '',
@@ -40,7 +42,7 @@ export default function StaffDetailView({ staff, onBack }) {
         setIsSaving(true);
         try {
             if (formData.password && formData.password !== formData.confirmPassword) {
-                alert(t('alertPwMismatch'));
+                notify.warning(t('alertPwMismatch'));
                 setIsSaving(false);
                 return;
             }
@@ -71,7 +73,7 @@ export default function StaffDetailView({ staff, onBack }) {
                 });
             } else {
                 if (!formData.password) {
-                    alert(t('alertPwRequired'));
+                    notify.warning(t('alertPwRequired'));
                     setIsSaving(false);
                     return;
                 }
@@ -82,14 +84,14 @@ export default function StaffDetailView({ staff, onBack }) {
             }
 
             if (response.status === 'SUCCESS') {
-                alert(isEditing ? t('successUpdated') : t('successCreated'));
+                notify.success(isEditing ? t('successUpdated') : t('successCreated'));
                 if (!isEditing && onBack) onBack(); // Go back on create, stay on edit
             } else {
-                alert(t('failSave') + (response.message || 'Unknown error'));
+                notify.error(t('failSave') + (response.message || 'Unknown error'));
             }
         } catch (e) {
             console.error('Save staff failed', e);
-            alert(t('errorSave'));
+            notify.error(t('errorSave'));
         } finally {
             setIsSaving(false);
         }

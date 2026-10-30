@@ -5,9 +5,8 @@ import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import Header from '../../components/Header';
 import Footer from '../../components/Footer';
+import OrderStatusTimeline from '../../components/OrderStatusTimeline';
 import { apiRequest } from '../../lib/api';
-
-const STATUS_STEPS = ['pending', 'confirmed', 'processing', 'shipped', 'delivered'];
 
 export default function TrackOrderPage() {
   const t = useTranslations('TrackOrder');
@@ -36,8 +35,6 @@ export default function TrackOrderPage() {
       setLoading(false);
     }
   };
-
-  const statusIdx = tracking ? STATUS_STEPS.indexOf(tracking.status) : -1;
 
   return (
     <div className="aesop-page nt-track-champagne" style={{ background: 'var(--noirae-bg-cream)', minHeight: '100vh' }}>
@@ -75,26 +72,6 @@ export default function TrackOrderPage() {
           transition: background 0.25s ease;
         }
         .nt-track-champagne button.nt-track-submit:hover:not(:disabled) { background: var(--noirae-accent-gold); }
-        .nt-track-champagne .nt-timeline-dot {
-          background: var(--noirae-bg-sand);
-          color: var(--noirae-text-muted);
-          border-color: var(--noirae-border-dark);
-        }
-        .nt-track-champagne .nt-step-active .nt-timeline-dot {
-          background: var(--noirae-accent-gold);
-          color: var(--noirae-bg-white);
-          border-color: var(--noirae-accent-gold);
-        }
-        .nt-track-champagne .nt-step-current .nt-timeline-dot {
-          background: var(--noirae-text-primary);
-          color: var(--noirae-bg-cream);
-          border-color: var(--noirae-text-primary);
-          box-shadow: 0 0 0 4px var(--noirae-warning-bg);
-        }
-        .nt-track-champagne .nt-timeline-label { color: var(--noirae-text-muted); }
-        .nt-track-champagne .nt-step-active .nt-timeline-label { color: var(--noirae-text-primary); font-weight: 500; }
-        .nt-track-champagne .nt-timeline-step:not(:last-child)::after { background: var(--noirae-border-dark); }
-        .nt-track-champagne .nt-timeline-step.nt-step-active:not(:last-child)::after { background: var(--noirae-accent-gold); }
         .nt-track-champagne .nt-help-link:hover { color: var(--noirae-accent-gold); }
       `}</style>
       <Header />
@@ -178,14 +155,7 @@ export default function TrackOrderPage() {
               </div>
 
               {/* Status Timeline */}
-              <div className="nt-status-timeline" style={{ marginTop: '2.5rem', marginBottom: '2.5rem' }}>
-                {STATUS_STEPS.map((step, idx) => (
-                  <div key={step} className={`nt-timeline-step ${idx <= statusIdx ? 'nt-step-active' : ''} ${idx === statusIdx ? 'nt-step-current' : ''}`}>
-                    <div className="nt-timeline-dot">{idx < statusIdx ? '✓' : idx + 1}</div>
-                    <span className="nt-timeline-label">{t.has(`statuses.${step}`) ? t(`statuses.${step}`) : (step.charAt(0).toUpperCase() + step.slice(1))}</span>
-                  </div>
-                ))}
-              </div>
+              <OrderStatusTimeline status={tracking.status} style={{ marginTop: '2.5rem', marginBottom: '2.5rem' }} />
 
               {tracking.tracking_number && (
                 <div

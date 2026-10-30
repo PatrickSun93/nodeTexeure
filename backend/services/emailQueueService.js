@@ -6,13 +6,6 @@ const { buildUnsubscribeUrl } = require('../utils/emailSuppression');
 // email_templates.name used for the abandoned-cart sequence (migration 013).
 const ABANDONED_CART_TEMPLATE = 'abandoned_cart';
 
-const escapeHtml = (value) => String(value ?? '')
-  .replace(/&/g, '&amp;')
-  .replace(/</g, '&lt;')
-  .replace(/>/g, '&gt;')
-  .replace(/"/g, '&quot;')
-  .replace(/'/g, '&#39;');
-
 // "$123.40" or "123.4" -> "123.40"
 const formatAmount = (value) => {
   const n = Number.parseFloat(String(value ?? '').replace(/[^0-9.-]/g, ''));
@@ -47,12 +40,13 @@ class EmailQueueService {
     const scheduledAt = new Date(Date.now() + delay);
 
     const items = cartData.items || [];
-    // The daemon substitutes variables verbatim into the HTML body, so values a
-    // customer controls (their name) or that come from the catalog are escaped.
+    // Raw values: the email daemon HTML-escapes every variable it puts into the
+    // HTML body (and the text body must show the name as typed), so escaping
+    // here would escape twice.
     const variables = {
-      customer_name: escapeHtml(cartData.customerName || 'Customer'),
+      customer_name: cartData.customerName || 'Customer',
       item_count: items.length,
-      item_summary: escapeHtml(items.map((i) => `${i.name} × ${i.quantity}`).join(', ')),
+      item_summary: items.map((i) => `${i.name} × ${i.quantity}`).join(', '),
       cart_total: formatAmount(cartData.totalAmount),
       recovery_link: cartData.checkoutUrl,
       unsubscribe_link: buildUnsubscribeUrl(customerEmail),

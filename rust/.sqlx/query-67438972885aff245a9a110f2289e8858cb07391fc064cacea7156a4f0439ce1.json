@@ -1,0 +1,24 @@
+{
+  "db_name": "MySQL",
+  "query": "SELECT quantity_available FROM inventory\n         WHERE product_id = ? AND variant_id <=> ? FOR UPDATE",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "quantity_available",
+        "type_info": {
+          "type": "Long",
+          "flags": "NOT_NULL | MULTIPLE_KEY | UNSIGNED",
+          "max_size": 10
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "67438972885aff245a9a110f2289e8858cb07391fc064cacea7156a4f0439ce1"
+}

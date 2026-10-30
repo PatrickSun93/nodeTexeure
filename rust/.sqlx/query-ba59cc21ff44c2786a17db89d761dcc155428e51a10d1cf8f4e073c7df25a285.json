@@ -1,0 +1,84 @@
+{
+  "db_name": "MySQL",
+  "query": "SELECT id, type AS \"addr_type: String\", is_default AS \"is_default: i8\", first_name, last_name, phone,\n             address_json AS \"address_json: Value\"\n           FROM user_addresses WHERE user_id = ? ORDER BY is_default DESC, created_at DESC, id DESC",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NOT_NULL | PRIMARY_KEY | NO_DEFAULT_VALUE",
+          "max_size": 200
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "addr_type: String",
+        "type_info": {
+          "type": "String",
+          "flags": "NOT_NULL | MULTIPLE_KEY | ENUM | NO_DEFAULT_VALUE",
+          "max_size": 32
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "is_default: i8",
+        "type_info": {
+          "type": "Tiny",
+          "flags": "",
+          "max_size": 1
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "first_name",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NOT_NULL | NO_DEFAULT_VALUE",
+          "max_size": 400
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "last_name",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NOT_NULL | NO_DEFAULT_VALUE",
+          "max_size": 400
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "phone",
+        "type_info": {
+          "type": "VarString",
+          "flags": "",
+          "max_size": 80
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "address_json: Value",
+        "type_info": {
+          "type": "Json",
+          "flags": "NOT_NULL | BLOB | BINARY | NO_DEFAULT_VALUE",
+          "max_size": 4294967295
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false,
+      false,
+      true,
+      false,
+      false,
+      true,
+      false
+    ]
+  },
+  "hash": "ba59cc21ff44c2786a17db89d761dcc155428e51a10d1cf8f4e073c7df25a285"
+}

@@ -1,0 +1,12 @@
+{
+  "db_name": "MySQL",
+  "query": "INSERT IGNORE INTO schema_migrations (version, name) VALUES (?, ?)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": []
+  },
+  "hash": "414855d4634bedcc8d07d0fef92664b9d8f4c7222cc495e5f622b5b5243df539"
+}

@@ -1,0 +1,2016 @@
+{
+  "secret": "fixture-secret-for-node-rust-compat-0123456789",
+  "now_ms": 1761812142123,
+  "cookie_parse": [
+    {
+      "header": "a=1",
+      "cookies": {
+        "a": "1"
+      }
+    },
+    {
+      "header": "a=1; a=2",
+      "cookies": {
+        "a": "1"
+      }
+    },
+    {
+      "header": "b = \" x \" ",
+      "cookies": {
+        "b": " x "
+      }
+    },
+    {
+      "header": "c=%E0%A4%A",
+      "cookies": {
+        "c": "%E0%A4%A"
+      }
+    },
+    {
+      "header": "d=%41",
+      "cookies": {
+        "d": "A"
+      }
+    },
+    {
+      "header": "=x",
+      "cookies": {
+        "": "x"
+      }
+    },
+    {
+      "header": "e",
+      "cookies": {}
+    },
+    {
+      "header": "f=j:1",
+      "cookies": {
+        "f": 1
+      }
+    },
+    {
+      "header": "g=j:0",
+      "cookies": {
+        "g": "j:0"
+      }
+    },
+    {
+      "header": "h=j:\"s\"",
+      "cookies": {
+        "h": "s"
+      }
+    },
+    {
+      "header": "i=j:{\"a\":[1,2]}",
+      "cookies": {
+        "i": {
+          "a": [
+            1,
+            2
+          ]
+        }
+      }
+    },
+    {
+      "header": "j=j:{bad",
+      "cookies": {
+        "j": "j:{bad"
+      }
+    },
+    {
+      "header": "k=\"",
+      "cookies": {
+        "k": ""
+      }
+    },
+    {
+      "header": "l=\"\"",
+      "cookies": {
+        "l": ""
+      }
+    },
+    {
+      "header": "m=%2B%2F%3D",
+      "cookies": {
+        "m": "+/="
+      }
+    },
+    {
+      "header": "x=1;;y=2",
+      "cookies": {
+        "x": "1",
+        "y": "2"
+      }
+    },
+    {
+      "header": "n=a=b",
+      "cookies": {
+        "n": "a=b"
+      }
+    },
+    {
+      "header": " sp = v ; t\t=\tw\t",
+      "cookies": {
+        "sp": "v",
+        "t": "w"
+      }
+    },
+    {
+      "header": "a",
+      "cookies": {}
+    },
+    {
+      "header": "q=%ZZ",
+      "cookies": {
+        "q": "%ZZ"
+      }
+    },
+    {
+      "header": "r=%C3%A9",
+      "cookies": {
+        "r": "é"
+      }
+    },
+    {
+      "header": "s=%C3",
+      "cookies": {
+        "s": "%C3"
+      }
+    },
+    {
+      "header": "csrf_token=j:123",
+      "cookies": {
+        "csrf_token": 123
+      }
+    },
+    {
+      "header": "sessionId=j:true",
+      "cookies": {
+        "sessionId": true
+      }
+    },
+    {
+      "header": "p=j:[]",
+      "cookies": {
+        "p": []
+      }
+    },
+    {
+      "header": "u=j:null",
+      "cookies": {
+        "u": "j:null"
+      }
+    },
+    {
+      "header": "w=j:\"\"",
+      "cookies": {
+        "w": "j:\"\""
+      }
+    },
+    {
+      "header": "v=j:\"x\"; v=2",
+      "cookies": {
+        "v": "x"
+      }
+    },
+    {
+      "header": "z=%zz%41",
+      "cookies": {
+        "z": "%zz%41"
+      }
+    },
+    {
+      "header": "o;p=1",
+      "cookies": {
+        "p": "1"
+      }
+    },
+    {
+      "header": "first=1; second",
+      "cookies": {
+        "first": "1"
+      }
+    },
+    {
+      "header": "big=j:123456789012345678901234567890",
+      "cookies": {
+        "big": 1.2345678901234568e+29
+      }
+    },
+    {
+      "header": "neg=j:-0",
+      "cookies": {
+        "neg": "j:-0"
+      }
+    },
+    {
+      "header": "esc=j:\"%41\"",
+      "cookies": {
+        "esc": "A"
+      }
+    }
+  ],
+  "req_ip": [
+    {
+      "socket": "10.0.0.2",
+      "xff": [],
+      "hops": 0,
+      "ip": "10.0.0.2"
+    },
+    {
+      "socket": "10.0.0.2",
+      "xff": [],
+      "hops": 1,
+      "ip": "10.0.0.2"
+    },
+    {
+      "socket": "10.0.0.2",
+      "xff": [],
+      "hops": 2,
+      "ip": "10.0.0.2"
+    },
+    {
+      "socket": "10.0.0.2",
+      "xff": [],
+      "hops": 3,
+      "ip": "10.0.0.2"
+    },
+    {
+      "socket": "10.0.0.2",
+      "xff": [
+        "1.1.1.1"
+      ],
+      "hops": 0,
+      "ip": "10.0.0.2"
+    },
+    {
+      "socket": "10.0.0.2",
+      "xff": [
+        "1.1.1.1"
+      ],
+      "hops": 1,
+      "ip": "1.1.1.1"
+    },
+    {
+      "socket": "10.0.0.2",
+      "xff": [
+        "1.1.1.1"
+      ],
+      "hops": 2,
+      "ip": "1.1.1.1"
+    },
+    {
+      "socket": "10.0.0.2",
+      "xff": [
+        "1.1.1.1"
+      ],
+      "hops": 3,
+      "ip": "1.1.1.1"
+    },
+    {
+      "socket": "10.0.0.2",
+      "xff": [
+        "1.1.1.1, 2.2.2.2"
+      ],
+      "hops": 0,
+      "ip": "10.0.0.2"
+    },
+    {
+      "socket": "10.0.0.2",
+      "xff": [
+        "1.1.1.1, 2.2.2.2"
+      ],
+      "hops": 1,
+      "ip": "2.2.2.2"
+    },
+    {
+      "socket": "10.0.0.2",
+      "xff": [
+        "1.1.1.1, 2.2.2.2"
+      ],
+      "hops": 2,
+      "ip": "1.1.1.1"
+    },
+    {
+      "socket": "10.0.0.2",
+      "xff": [
+        "1.1.1.1, 2.2.2.2"
+      ],
+      "hops": 3,
+      "ip": "1.1.1.1"
+    },
+    {
+      "socket": "10.0.0.2",
+      "xff": [
+        "1.1.1.1",
+        "3.3.3.3"
+      ],
+      "hops": 0,
+      "ip": "10.0.0.2"
+    },
+    {
+      "socket": "10.0.0.2",
+      "xff": [
+        "1.1.1.1",
+        "3.3.3.3"
+      ],
+      "hops": 1,
+      "ip": "3.3.3.3"
+    },
+    {
+      "socket": "10.0.0.2",
+      "xff": [
+        "1.1.1.1",
+        "3.3.3.3"
+      ],
+      "hops": 2,
+      "ip": "1.1.1.1"
+    },
+    {
+      "socket": "10.0.0.2",
+      "xff": [
+        "1.1.1.1",
+        "3.3.3.3"
+      ],
+      "hops": 3,
+      "ip": "1.1.1.1"
+    },
+    {
+      "socket": "10.0.0.2",
+      "xff": [
+        " , ,5.5.5.5 ,"
+      ],
+      "hops": 0,
+      "ip": "10.0.0.2"
+    },
+    {
+      "socket": "10.0.0.2",
+      "xff": [
+        " , ,5.5.5.5 ,"
+      ],
+      "hops": 1,
+      "ip": "5.5.5.5"
+    },
+    {
+      "socket": "10.0.0.2",
+      "xff": [
+        " , ,5.5.5.5 ,"
+      ],
+      "hops": 2,
+      "ip": "5.5.5.5"
+    },
+    {
+      "socket": "10.0.0.2",
+      "xff": [
+        " , ,5.5.5.5 ,"
+      ],
+      "hops": 3,
+      "ip": "5.5.5.5"
+    },
+    {
+      "socket": "10.0.0.2",
+      "xff": [
+        "garbage"
+      ],
+      "hops": 0,
+      "ip": "10.0.0.2"
+    },
+    {
+      "socket": "10.0.0.2",
+      "xff": [
+        "garbage"
+      ],
+      "hops": 1,
+      "ip": "garbage"
+    },
+    {
+      "socket": "10.0.0.2",
+      "xff": [
+        "garbage"
+      ],
+      "hops": 2,
+      "ip": "garbage"
+    },
+    {
+      "socket": "10.0.0.2",
+      "xff": [
+        "garbage"
+      ],
+      "hops": 3,
+      "ip": "garbage"
+    },
+    {
+      "socket": "10.0.0.2",
+      "xff": [
+        "9.9.9.9,8.8.8.8 ,7.7.7.7"
+      ],
+      "hops": 0,
+      "ip": "10.0.0.2"
+    },
+    {
+      "socket": "10.0.0.2",
+      "xff": [
+        "9.9.9.9,8.8.8.8 ,7.7.7.7"
+      ],
+      "hops": 1,
+      "ip": "7.7.7.7"
+    },
+    {
+      "socket": "10.0.0.2",
+      "xff": [
+        "9.9.9.9,8.8.8.8 ,7.7.7.7"
+      ],
+      "hops": 2,
+      "ip": "8.8.8.8"
+    },
+    {
+      "socket": "10.0.0.2",
+      "xff": [
+        "9.9.9.9,8.8.8.8 ,7.7.7.7"
+      ],
+      "hops": 3,
+      "ip": "9.9.9.9"
+    },
+    {
+      "socket": "10.0.0.2",
+      "xff": [
+        "2001:db8::1"
+      ],
+      "hops": 0,
+      "ip": "10.0.0.2"
+    },
+    {
+      "socket": "10.0.0.2",
+      "xff": [
+        "2001:db8::1"
+      ],
+      "hops": 1,
+      "ip": "2001:db8::1"
+    },
+    {
+      "socket": "10.0.0.2",
+      "xff": [
+        "2001:db8::1"
+      ],
+      "hops": 2,
+      "ip": "2001:db8::1"
+    },
+    {
+      "socket": "10.0.0.2",
+      "xff": [
+        "2001:db8::1"
+      ],
+      "hops": 3,
+      "ip": "2001:db8::1"
+    }
+  ],
+  "ip_key": [
+    [
+      "127.0.0.1",
+      "127.0.0.1"
+    ],
+    [
+      "::1",
+      "::/56"
+    ],
+    [
+      "::ffff:10.1.2.3",
+      "10.1.2.3"
+    ],
+    [
+      "2001:db8:1234:5678::1",
+      "2001:db8:1234:5600::/56"
+    ],
+    [
+      "2001:db8:12ff:5678::1",
+      "2001:db8:12ff:5600::/56"
+    ],
+    [
+      "::1.2.3.4",
+      "1.2.3.4"
+    ],
+    [
+      "fe80::1%eth0",
+      "fe80::/56"
+    ],
+    [
+      "garbage",
+      "garbage"
+    ],
+    [
+      "::",
+      "::/56"
+    ],
+    [
+      "2001:db8::",
+      "2001:db8::/56"
+    ],
+    [
+      "unknown",
+      "unknown"
+    ],
+    [
+      "::ffff:7f00:1",
+      "127.0.0.1"
+    ]
+  ],
+  "ms": [
+    [
+      "24h",
+      86400000
+    ],
+    [
+      "15m",
+      900000
+    ],
+    [
+      "3600",
+      3600
+    ],
+    [
+      "1.5h",
+      5400000
+    ],
+    [
+      "2 days",
+      172800000
+    ],
+    [
+      "-1h",
+      -3600000
+    ],
+    [
+      "abc",
+      null
+    ],
+    [
+      "1y",
+      31557600000
+    ],
+    [
+      "1 week",
+      604800000
+    ],
+    [
+      ".5s",
+      500
+    ],
+    [
+      "5.",
+      null
+    ],
+    [
+      "5 ",
+      5
+    ],
+    [
+      "5  h",
+      18000000
+    ],
+    [
+      "5\th",
+      null
+    ],
+    [
+      "10MS",
+      10
+    ],
+    [
+      "1e3",
+      null
+    ],
+    [
+      "-.5h",
+      -1800000
+    ],
+    [
+      "7d",
+      604800000
+    ],
+    [
+      "1 Hour",
+      3600000
+    ],
+    [
+      "2hrs",
+      7200000
+    ],
+    [
+      "3 mins",
+      180000
+    ],
+    [
+      "100",
+      100
+    ],
+    [
+      "-5",
+      -5
+    ],
+    [
+      "1.",
+      null
+    ],
+    [
+      "h",
+      null
+    ],
+    [
+      "30 seconds",
+      30000
+    ],
+    [
+      "2.5 yrs",
+      78894000000
+    ],
+    [
+      "1msecs",
+      1
+    ],
+    [
+      "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+      null
+    ]
+  ],
+  "jwt": [
+    {
+      "user": {
+        "id": "USER0000000001",
+        "email": "admin@example.com",
+        "role": "admin",
+        "token_version": 0
+      },
+      "ttl": "24h",
+      "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IlVTRVIwMDAwMDAwMDAxIiwiZW1haWwiOiJhZG1pbkBleGFtcGxlLmNvbSIsImlzQWRtaW4iOnRydWUsImlzU3RhZmYiOmZhbHNlLCJ0diI6MCwiaWF0IjoxNzYxODEyMTQyLCJleHAiOjE3NjE4OTg1NDJ9.ob7R_snd9WcVszD3Z9UUs1ACbBRZdnA7LgpDt_d8jTo"
+    },
+    {
+      "user": {
+        "id": "USER0000000001",
+        "email": "admin@example.com",
+        "role": "admin",
+        "token_version": 0
+      },
+      "ttl": "15m",
+      "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IlVTRVIwMDAwMDAwMDAxIiwiZW1haWwiOiJhZG1pbkBleGFtcGxlLmNvbSIsImlzQWRtaW4iOnRydWUsImlzU3RhZmYiOmZhbHNlLCJ0diI6MCwiaWF0IjoxNzYxODEyMTQyLCJleHAiOjE3NjE4MTMwNDJ9.iZbZLQq3PMEpdAxQYisq_SAFahiFVWEnhV3ee7IijgQ"
+    },
+    {
+      "user": {
+        "id": "USER0000000001",
+        "email": "admin@example.com",
+        "role": "admin",
+        "token_version": 0
+      },
+      "ttl": "3600",
+      "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IlVTRVIwMDAwMDAwMDAxIiwiZW1haWwiOiJhZG1pbkBleGFtcGxlLmNvbSIsImlzQWRtaW4iOnRydWUsImlzU3RhZmYiOmZhbHNlLCJ0diI6MCwiaWF0IjoxNzYxODEyMTQyLCJleHAiOjE3NjE4MTIxNDV9.GNELYVceQatb1QW2SR3SKQJq31cbToKc1CH0P2RyEMU"
+    },
+    {
+      "user": {
+        "id": "USER0000000001",
+        "email": "admin@example.com",
+        "role": "admin",
+        "token_version": 0
+      },
+      "ttl": "1.5h",
+      "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IlVTRVIwMDAwMDAwMDAxIiwiZW1haWwiOiJhZG1pbkBleGFtcGxlLmNvbSIsImlzQWRtaW4iOnRydWUsImlzU3RhZmYiOmZhbHNlLCJ0diI6MCwiaWF0IjoxNzYxODEyMTQyLCJleHAiOjE3NjE4MTc1NDJ9.u5pgKYH-IaRLp3gbOaNu3QnhYl5FkCJig_burp0fw5U"
+    },
+    {
+      "user": {
+        "id": "USER0000000001",
+        "email": "admin@example.com",
+        "role": "admin",
+        "token_version": 0
+      },
+      "ttl": "-1h",
+      "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IlVTRVIwMDAwMDAwMDAxIiwiZW1haWwiOiJhZG1pbkBleGFtcGxlLmNvbSIsImlzQWRtaW4iOnRydWUsImlzU3RhZmYiOmZhbHNlLCJ0diI6MCwiaWF0IjoxNzYxODEyMTQyLCJleHAiOjE3NjE4MDg1NDJ9.enVeYFI8BB8bYc9sWHq0GLLxpgS6AOx2_kBSrLCKM9w"
+    },
+    {
+      "user": {
+        "id": "USER0000000001",
+        "email": "admin@example.com",
+        "role": "admin",
+        "token_version": 0
+      },
+      "ttl": "abc",
+      "token": null
+    },
+    {
+      "user": {
+        "id": "USER0000000001",
+        "email": "admin@example.com",
+        "role": "admin",
+        "token_version": 0
+      },
+      "ttl": "7 days",
+      "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IlVTRVIwMDAwMDAwMDAxIiwiZW1haWwiOiJhZG1pbkBleGFtcGxlLmNvbSIsImlzQWRtaW4iOnRydWUsImlzU3RhZmYiOmZhbHNlLCJ0diI6MCwiaWF0IjoxNzYxODEyMTQyLCJleHAiOjE3NjI0MTY5NDJ9._x3uYr2fzmN6kAX-tYQG8Rbag8jR7ak4fva5LMpLIS0"
+    },
+    {
+      "user": {
+        "id": "USER0000000001",
+        "email": "admin@example.com",
+        "role": "admin",
+        "token_version": 0
+      },
+      "ttl": "2.5 yrs",
+      "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IlVTRVIwMDAwMDAwMDAxIiwiZW1haWwiOiJhZG1pbkBleGFtcGxlLmNvbSIsImlzQWRtaW4iOnRydWUsImlzU3RhZmYiOmZhbHNlLCJ0diI6MCwiaWF0IjoxNzYxODEyMTQyLCJleHAiOjE4NDA3MDYxNDJ9.2oO7kd39A6r4gjQXHQSDAH8toOFpwXM0CrdzKm5LUy8"
+    },
+    {
+      "user": {
+        "id": "USER0000000002",
+        "email": "staff@example.com",
+        "role": "Staff",
+        "token_version": 3
+      },
+      "ttl": "24h",
+      "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IlVTRVIwMDAwMDAwMDAyIiwiZW1haWwiOiJzdGFmZkBleGFtcGxlLmNvbSIsImlzQWRtaW4iOmZhbHNlLCJpc1N0YWZmIjp0cnVlLCJ0diI6MywiaWF0IjoxNzYxODEyMTQyLCJleHAiOjE3NjE4OTg1NDJ9.n4ButDODE1L6IdA8fUi_rj1JIbC0nD5XV5aj8AMLk48"
+    },
+    {
+      "user": {
+        "id": "USER0000000002",
+        "email": "staff@example.com",
+        "role": "Staff",
+        "token_version": 3
+      },
+      "ttl": "15m",
+      "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IlVTRVIwMDAwMDAwMDAyIiwiZW1haWwiOiJzdGFmZkBleGFtcGxlLmNvbSIsImlzQWRtaW4iOmZhbHNlLCJpc1N0YWZmIjp0cnVlLCJ0diI6MywiaWF0IjoxNzYxODEyMTQyLCJleHAiOjE3NjE4MTMwNDJ9.a3bUKc3zntK4XBQJ31Vl1c2SrU-Yn1jrDMNlmR_E58E"
+    },
+    {
+      "user": {
+        "id": "USER0000000002",
+        "email": "staff@example.com",
+        "role": "Staff",
+        "token_version": 3
+      },
+      "ttl": "3600",
+      "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IlVTRVIwMDAwMDAwMDAyIiwiZW1haWwiOiJzdGFmZkBleGFtcGxlLmNvbSIsImlzQWRtaW4iOmZhbHNlLCJpc1N0YWZmIjp0cnVlLCJ0diI6MywiaWF0IjoxNzYxODEyMTQyLCJleHAiOjE3NjE4MTIxNDV9.baH-hubSbY5JBs4c7RTCfEeKSBhDWwcuTZ5lyUasUMI"
+    },
+    {
+      "user": {
+        "id": "USER0000000002",
+        "email": "staff@example.com",
+        "role": "Staff",
+        "token_version": 3
+      },
+      "ttl": "1.5h",
+      "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IlVTRVIwMDAwMDAwMDAyIiwiZW1haWwiOiJzdGFmZkBleGFtcGxlLmNvbSIsImlzQWRtaW4iOmZhbHNlLCJpc1N0YWZmIjp0cnVlLCJ0diI6MywiaWF0IjoxNzYxODEyMTQyLCJleHAiOjE3NjE4MTc1NDJ9.fOjfc_Bqm7zJeiHMSJUQGim3L1NQ1LtNcgNXZOBzd58"
+    },
+    {
+      "user": {
+        "id": "USER0000000002",
+        "email": "staff@example.com",
+        "role": "Staff",
+        "token_version": 3
+      },
+      "ttl": "-1h",
+      "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IlVTRVIwMDAwMDAwMDAyIiwiZW1haWwiOiJzdGFmZkBleGFtcGxlLmNvbSIsImlzQWRtaW4iOmZhbHNlLCJpc1N0YWZmIjp0cnVlLCJ0diI6MywiaWF0IjoxNzYxODEyMTQyLCJleHAiOjE3NjE4MDg1NDJ9.9oSagkmrPreG9k_hS_D3WCZv5qD0GKagfbXbPHKmpgI"
+    },
+    {
+      "user": {
+        "id": "USER0000000002",
+        "email": "staff@example.com",
+        "role": "Staff",
+        "token_version": 3
+      },
+      "ttl": "abc",
+      "token": null
+    },
+    {
+      "user": {
+        "id": "USER0000000002",
+        "email": "staff@example.com",
+        "role": "Staff",
+        "token_version": 3
+      },
+      "ttl": "7 days",
+      "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IlVTRVIwMDAwMDAwMDAyIiwiZW1haWwiOiJzdGFmZkBleGFtcGxlLmNvbSIsImlzQWRtaW4iOmZhbHNlLCJpc1N0YWZmIjp0cnVlLCJ0diI6MywiaWF0IjoxNzYxODEyMTQyLCJleHAiOjE3NjI0MTY5NDJ9.E89BlC_UvwOL35U_fFe2ExGO0YQKrluMzrgKB2D6VI4"
+    },
+    {
+      "user": {
+        "id": "USER0000000002",
+        "email": "staff@example.com",
+        "role": "Staff",
+        "token_version": 3
+      },
+      "ttl": "2.5 yrs",
+      "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IlVTRVIwMDAwMDAwMDAyIiwiZW1haWwiOiJzdGFmZkBleGFtcGxlLmNvbSIsImlzQWRtaW4iOmZhbHNlLCJpc1N0YWZmIjp0cnVlLCJ0diI6MywiaWF0IjoxNzYxODEyMTQyLCJleHAiOjE4NDA3MDYxNDJ9.AGo0NNpZ90ctrGJe2WmHjgL_FEkuLaX0HDNlzoftNg0"
+    },
+    {
+      "user": {
+        "id": "USER0000000003",
+        "email": null,
+        "role": "CUSTOMER",
+        "token_version": 12
+      },
+      "ttl": "24h",
+      "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IlVTRVIwMDAwMDAwMDAzIiwiZW1haWwiOm51bGwsImlzQWRtaW4iOmZhbHNlLCJpc1N0YWZmIjpmYWxzZSwidHYiOjEyLCJpYXQiOjE3NjE4MTIxNDIsImV4cCI6MTc2MTg5ODU0Mn0.vk-eyETYr7TWRvM0I8aerKelfl5VmOTqbV2mTQRAhII"
+    },
+    {
+      "user": {
+        "id": "USER0000000003",
+        "email": null,
+        "role": "CUSTOMER",
+        "token_version": 12
+      },
+      "ttl": "15m",
+      "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IlVTRVIwMDAwMDAwMDAzIiwiZW1haWwiOm51bGwsImlzQWRtaW4iOmZhbHNlLCJpc1N0YWZmIjpmYWxzZSwidHYiOjEyLCJpYXQiOjE3NjE4MTIxNDIsImV4cCI6MTc2MTgxMzA0Mn0.63Zeq_2kYY_ntKZrXe1UDsjucOZX0FyMd29LebewjQU"
+    },
+    {
+      "user": {
+        "id": "USER0000000003",
+        "email": null,
+        "role": "CUSTOMER",
+        "token_version": 12
+      },
+      "ttl": "3600",
+      "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IlVTRVIwMDAwMDAwMDAzIiwiZW1haWwiOm51bGwsImlzQWRtaW4iOmZhbHNlLCJpc1N0YWZmIjpmYWxzZSwidHYiOjEyLCJpYXQiOjE3NjE4MTIxNDIsImV4cCI6MTc2MTgxMjE0NX0.LcfvRlqRjU0rIVfUQqpgF18DAFr6KxS_79p5EXrSpWY"
+    },
+    {
+      "user": {
+        "id": "USER0000000003",
+        "email": null,
+        "role": "CUSTOMER",
+        "token_version": 12
+      },
+      "ttl": "1.5h",
+      "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IlVTRVIwMDAwMDAwMDAzIiwiZW1haWwiOm51bGwsImlzQWRtaW4iOmZhbHNlLCJpc1N0YWZmIjpmYWxzZSwidHYiOjEyLCJpYXQiOjE3NjE4MTIxNDIsImV4cCI6MTc2MTgxNzU0Mn0.eD8obJadXaipTu6D6QmkKl6Eucsf8WGNO9KHkwzKck4"
+    },
+    {
+      "user": {
+        "id": "USER0000000003",
+        "email": null,
+        "role": "CUSTOMER",
+        "token_version": 12
+      },
+      "ttl": "-1h",
+      "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IlVTRVIwMDAwMDAwMDAzIiwiZW1haWwiOm51bGwsImlzQWRtaW4iOmZhbHNlLCJpc1N0YWZmIjpmYWxzZSwidHYiOjEyLCJpYXQiOjE3NjE4MTIxNDIsImV4cCI6MTc2MTgwODU0Mn0.MjqsrduWbvI-Lqf5PZmXN8ohYMjpKCez-senJZKNvUE"
+    },
+    {
+      "user": {
+        "id": "USER0000000003",
+        "email": null,
+        "role": "CUSTOMER",
+        "token_version": 12
+      },
+      "ttl": "abc",
+      "token": null
+    },
+    {
+      "user": {
+        "id": "USER0000000003",
+        "email": null,
+        "role": "CUSTOMER",
+        "token_version": 12
+      },
+      "ttl": "7 days",
+      "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IlVTRVIwMDAwMDAwMDAzIiwiZW1haWwiOm51bGwsImlzQWRtaW4iOmZhbHNlLCJpc1N0YWZmIjpmYWxzZSwidHYiOjEyLCJpYXQiOjE3NjE4MTIxNDIsImV4cCI6MTc2MjQxNjk0Mn0.k7eHOHa5AnzhBKif3tL828VPAbsy_j-BEu3WJTygHBs"
+    },
+    {
+      "user": {
+        "id": "USER0000000003",
+        "email": null,
+        "role": "CUSTOMER",
+        "token_version": 12
+      },
+      "ttl": "2.5 yrs",
+      "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IlVTRVIwMDAwMDAwMDAzIiwiZW1haWwiOm51bGwsImlzQWRtaW4iOmZhbHNlLCJpc1N0YWZmIjpmYWxzZSwidHYiOjEyLCJpYXQiOjE3NjE4MTIxNDIsImV4cCI6MTg0MDcwNjE0Mn0.NvTyJgfgo-MfIBH0jhTfAtiLy-Yr7eOeSZGkILz5T9c"
+    },
+    {
+      "user": {
+        "id": "USER0000000004",
+        "email": "zoë\"\\@example.com",
+        "role": "customer",
+        "token_version": 1
+      },
+      "ttl": "24h",
+      "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IlVTRVIwMDAwMDAwMDA0IiwiZW1haWwiOiJ6b8OrXCJcXEBleGFtcGxlLmNvbSIsImlzQWRtaW4iOmZhbHNlLCJpc1N0YWZmIjpmYWxzZSwidHYiOjEsImlhdCI6MTc2MTgxMjE0MiwiZXhwIjoxNzYxODk4NTQyfQ.0Xf7uoT3HoBYvxRSjzp9hdbBRxyzXL33Ji9wVKkLzXY"
+    },
+    {
+      "user": {
+        "id": "USER0000000004",
+        "email": "zoë\"\\@example.com",
+        "role": "customer",
+        "token_version": 1
+      },
+      "ttl": "15m",
+      "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IlVTRVIwMDAwMDAwMDA0IiwiZW1haWwiOiJ6b8OrXCJcXEBleGFtcGxlLmNvbSIsImlzQWRtaW4iOmZhbHNlLCJpc1N0YWZmIjpmYWxzZSwidHYiOjEsImlhdCI6MTc2MTgxMjE0MiwiZXhwIjoxNzYxODEzMDQyfQ.FaghsKqTSI9FMF3Sw1bCSk6tzCUaUDAWeRpjda7y_Zg"
+    },
+    {
+      "user": {
+        "id": "USER0000000004",
+        "email": "zoë\"\\@example.com",
+        "role": "customer",
+        "token_version": 1
+      },
+      "ttl": "3600",
+      "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IlVTRVIwMDAwMDAwMDA0IiwiZW1haWwiOiJ6b8OrXCJcXEBleGFtcGxlLmNvbSIsImlzQWRtaW4iOmZhbHNlLCJpc1N0YWZmIjpmYWxzZSwidHYiOjEsImlhdCI6MTc2MTgxMjE0MiwiZXhwIjoxNzYxODEyMTQ1fQ.arGxPgQ5nQy_OGvzzJ1UbH5E0iF3KPtPpnpm0x3qZW8"
+    },
+    {
+      "user": {
+        "id": "USER0000000004",
+        "email": "zoë\"\\@example.com",
+        "role": "customer",
+        "token_version": 1
+      },
+      "ttl": "1.5h",
+      "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IlVTRVIwMDAwMDAwMDA0IiwiZW1haWwiOiJ6b8OrXCJcXEBleGFtcGxlLmNvbSIsImlzQWRtaW4iOmZhbHNlLCJpc1N0YWZmIjpmYWxzZSwidHYiOjEsImlhdCI6MTc2MTgxMjE0MiwiZXhwIjoxNzYxODE3NTQyfQ.bRtNFeEZOs_q4-VQhiO2YTL8OwvYBMdpaQa0fOyHP7I"
+    },
+    {
+      "user": {
+        "id": "USER0000000004",
+        "email": "zoë\"\\@example.com",
+        "role": "customer",
+        "token_version": 1
+      },
+      "ttl": "-1h",
+      "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IlVTRVIwMDAwMDAwMDA0IiwiZW1haWwiOiJ6b8OrXCJcXEBleGFtcGxlLmNvbSIsImlzQWRtaW4iOmZhbHNlLCJpc1N0YWZmIjpmYWxzZSwidHYiOjEsImlhdCI6MTc2MTgxMjE0MiwiZXhwIjoxNzYxODA4NTQyfQ.lORDGVl-ajCmbq70EbuJ3F0T0i02cdhie5_GBVv3TeU"
+    },
+    {
+      "user": {
+        "id": "USER0000000004",
+        "email": "zoë\"\\@example.com",
+        "role": "customer",
+        "token_version": 1
+      },
+      "ttl": "abc",
+      "token": null
+    },
+    {
+      "user": {
+        "id": "USER0000000004",
+        "email": "zoë\"\\@example.com",
+        "role": "customer",
+        "token_version": 1
+      },
+      "ttl": "7 days",
+      "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IlVTRVIwMDAwMDAwMDA0IiwiZW1haWwiOiJ6b8OrXCJcXEBleGFtcGxlLmNvbSIsImlzQWRtaW4iOmZhbHNlLCJpc1N0YWZmIjpmYWxzZSwidHYiOjEsImlhdCI6MTc2MTgxMjE0MiwiZXhwIjoxNzYyNDE2OTQyfQ.2wCVNI3z8qzHdkIt5tzJe-PShIwNPCuXMcymRjSupEg"
+    },
+    {
+      "user": {
+        "id": "USER0000000004",
+        "email": "zoë\"\\@example.com",
+        "role": "customer",
+        "token_version": 1
+      },
+      "ttl": "2.5 yrs",
+      "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IlVTRVIwMDAwMDAwMDA0IiwiZW1haWwiOiJ6b8OrXCJcXEBleGFtcGxlLmNvbSIsImlzQWRtaW4iOmZhbHNlLCJpc1N0YWZmIjpmYWxzZSwidHYiOjEsImlhdCI6MTc2MTgxMjE0MiwiZXhwIjoxODQwNzA2MTQyfQ.zKaCCzc8-HmOgtwfhlK56WIV7nbXjstTrAEHsUBMhHA"
+    }
+  ],
+  "bcrypt_hash": [
+    {
+      "password": "Customer@123",
+      "hash": "$2b$10$abcdefghijklmnopqrstuuSJWQBjgZzQtEu0UIFgKGUQJgugi...e"
+    },
+    {
+      "password": "Customer@123",
+      "hash": "$2a$04$abcdefghijklmnopqrstuuDYn0vYmKwnp2/aOn92QHq92JmYZD/Eq"
+    },
+    {
+      "password": "",
+      "hash": "$2a$04$abcdefghijklmnopqrstuubyCG3zY1GIXMyxfivm.ClDiInHzxjiq"
+    },
+    {
+      "password": "pässwörd",
+      "hash": "$2a$04$abcdefghijklmnopqrstuuyx2n0Zzopyr9QuYTMCfOJJOj526QVoC"
+    },
+    {
+      "password": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "hash": "$2a$04$abcdefghijklmnopqrstuuBzzIgyKkz7xMWYSzkIjUSnxEQFQ0WNe"
+    },
+    {
+      "password": "😀 emoji",
+      "hash": "$2a$04$abcdefghijklmnopqrstuuTGKTKoMG8o/k1h9iJvSlCN.er158qoy"
+    },
+    {
+      "password": "Admin@123",
+      "hash": "$2b$04$abcdefghijklmnopqrstuuLfrcnchkEQ6xacGMljGKVC5RpO8gWQ6"
+    },
+    {
+      "password": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+      "hash": "$2b$04$abcdefghijklmnopqrstuu.gc7UY/21CSNJGJg21jJzx9QiOpJ9bO"
+    },
+    {
+      "password": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+      "hash": "$2b$04$abcdefghijklmnopqrstuubzadhGtS2zEF.gu0yd0opP6cVzb.e0i"
+    },
+    {
+      "password": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+      "hash": "$2b$04$abcdefghijklmnopqrstuubzadhGtS2zEF.gu0yd0opP6cVzb.e0i"
+    },
+    {
+      "password": "Staff@123",
+      "hash": "$2y$05$abcdefghijklmnopqrstuuNnSu44ErSZ2mObm/ccP252h63NEKTbG"
+    }
+  ],
+  "bcrypt_compare": [
+    {
+      "password": "Customer@123",
+      "hash": "$2b$04$abcdefghijklmnopqrstuuDYn0vYmKwnp2/aOn92QHq92JmYZD/Eq",
+      "result": "true"
+    },
+    {
+      "password": "customer@123",
+      "hash": "$2b$04$abcdefghijklmnopqrstuuDYn0vYmKwnp2/aOn92QHq92JmYZD/Eq",
+      "result": "false"
+    },
+    {
+      "password": "Customer@123",
+      "hash": "$2b$04$abcdefghijklmnopqrstuuDYn0vYmKwnp2/aOn92QHq92JmYZD/E",
+      "result": "false"
+    },
+    {
+      "password": "Customer@123",
+      "hash": "$2b$04$abcdefghijklmnopqrstuuDYn0vYmKwnp2/aOn92QHq92JmYZD/Eqx",
+      "result": "false"
+    },
+    {
+      "password": "Customer@123",
+      "hash": "$2b$04$abcdefghijklmnopqrstuuDYn0vYmKwnp2/aOn92QHq92JmYZD/Ea",
+      "result": "false"
+    },
+    {
+      "password": "Customer@123",
+      "hash": "$2x$04$abcdefghijklmnopqrstuuDYn0vYmKwnp2/aOn92QHq92JmYZD/Eq",
+      "result": "throws"
+    },
+    {
+      "password": "Customer@123",
+      "hash": "$1$$04$abcdefghijklmnopqrstuuDYn0vYmKwnp2/aOn92QHq92JmYZD/Eq",
+      "result": "throws"
+    },
+    {
+      "password": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabbbbbbbb",
+      "hash": "$2b$04$abcdefghijklmnopqrstuuBzzIgyKkz7xMWYSzkIjUSnxEQFQ0WNe",
+      "result": "true"
+    },
+    {
+      "password": "Customer@123",
+      "hash": "",
+      "result": "false"
+    }
+  ],
+  "csrf": {
+    "generated": [
+      {
+        "userId": "USER0000000001",
+        "timestamp": 1761812142123,
+        "random": "00112233445566778899aabbccddeeff",
+        "token": "eyJkYXRhIjp7InVzZXJJZCI6IlVTRVIwMDAwMDAwMDAxIiwidGltZXN0YW1wIjoxNzYxODEyMTQyMTIzLCJyYW5kb20iOiIwMDExMjIzMzQ0NTU2Njc3ODg5OWFhYmJjY2RkZWVmZiJ9LCJzaWduYXR1cmUiOiJhODA4MjNjMDI5ZGEzNjMzNjJhOTVlNjRhOGVlNTYyYzZiMWE3NGI4NDRlZmUyNDRkYmM2YWMyMzIwMjM1YmUzIn0="
+      },
+      {
+        "userId": "USER0000000042",
+        "timestamp": 1761812137123,
+        "random": "ffffffffffffffffffffffffffffffff",
+        "token": "eyJkYXRhIjp7InVzZXJJZCI6IlVTRVIwMDAwMDAwMDQyIiwidGltZXN0YW1wIjoxNzYxODEyMTM3MTIzLCJyYW5kb20iOiJmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZiJ9LCJzaWduYXR1cmUiOiI2YjRhOWIxOThmMDFmMjMzZTI0ODY1MWNjYjZjMzNlZTg5MGU4MDczMGI1OWE0Y2YyYjJiMjU3ZTA4MzgwYWJmIn0="
+      },
+      {
+        "userId": "Zoë \"quoted\" \\ id",
+        "timestamp": 1761812142124,
+        "random": "0123456789abcdef0123456789abcdef",
+        "token": "eyJkYXRhIjp7InVzZXJJZCI6Ilpvw6sgXCJxdW90ZWRcIiBcXCBpZCIsInRpbWVzdGFtcCI6MTc2MTgxMjE0MjEyNCwicmFuZG9tIjoiMDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWYifSwic2lnbmF0dXJlIjoiNzZlZmIyNDVmNGMxNDE4MWU2MTY2NjI3ZWQzMmYyMjZhYTExMzE1YjUxMDk3MTI2NTNkNWE5MWM3ODcxNDRlMSJ9"
+      }
+    ],
+    "validate": [
+      {
+        "label": "fresh",
+        "token": "eyJkYXRhIjp7InVzZXJJZCI6IlVTRVIwMDAwMDAwMDAxIiwidGltZXN0YW1wIjoxNzYxODEyMTQyMTIzLCJyYW5kb20iOiIwMDExMjIzMzQ0NTU2Njc3ODg5OWFhYmJjY2RkZWVmZiJ9LCJzaWduYXR1cmUiOiJhODA4MjNjMDI5ZGEzNjMzNjJhOTVlNjRhOGVlNTYyYzZiMWE3NGI4NDRlZmUyNDRkYmM2YWMyMzIwMjM1YmUzIn0=",
+        "userId": "USER0000000001",
+        "now": 1761812143123,
+        "valid": true
+      },
+      {
+        "label": "wrong user",
+        "token": "eyJkYXRhIjp7InVzZXJJZCI6IlVTRVIwMDAwMDAwMDAxIiwidGltZXN0YW1wIjoxNzYxODEyMTQyMTIzLCJyYW5kb20iOiIwMDExMjIzMzQ0NTU2Njc3ODg5OWFhYmJjY2RkZWVmZiJ9LCJzaWduYXR1cmUiOiJhODA4MjNjMDI5ZGEzNjMzNjJhOTVlNjRhOGVlNTYyYzZiMWE3NGI4NDRlZmUyNDRkYmM2YWMyMzIwMjM1YmUzIn0=",
+        "userId": "USER0000000002",
+        "now": 1761812143123,
+        "valid": false
+      },
+      {
+        "label": "empty user",
+        "token": "eyJkYXRhIjp7InVzZXJJZCI6IlVTRVIwMDAwMDAwMDAxIiwidGltZXN0YW1wIjoxNzYxODEyMTQyMTIzLCJyYW5kb20iOiIwMDExMjIzMzQ0NTU2Njc3ODg5OWFhYmJjY2RkZWVmZiJ9LCJzaWduYXR1cmUiOiJhODA4MjNjMDI5ZGEzNjMzNjJhOTVlNjRhOGVlNTYyYzZiMWE3NGI4NDRlZmUyNDRkYmM2YWMyMzIwMjM1YmUzIn0=",
+        "userId": "",
+        "now": 1761812143123,
+        "valid": false
+      },
+      {
+        "label": "expired by 1ms",
+        "token": "eyJkYXRhIjp7InVzZXJJZCI6IlVTRVIwMDAwMDAwMDAxIiwidGltZXN0YW1wIjoxNzYxODEyMTQyMTIzLCJyYW5kb20iOiIwMDExMjIzMzQ0NTU2Njc3ODg5OWFhYmJjY2RkZWVmZiJ9LCJzaWduYXR1cmUiOiJhODA4MjNjMDI5ZGEzNjMzNjJhOTVlNjRhOGVlNTYyYzZiMWE3NGI4NDRlZmUyNDRkYmM2YWMyMzIwMjM1YmUzIn0=",
+        "userId": "USER0000000001",
+        "now": 1761898542124,
+        "valid": false
+      },
+      {
+        "label": "exactly 24h old",
+        "token": "eyJkYXRhIjp7InVzZXJJZCI6IlVTRVIwMDAwMDAwMDAxIiwidGltZXN0YW1wIjoxNzYxODEyMTQyMTIzLCJyYW5kb20iOiIwMDExMjIzMzQ0NTU2Njc3ODg5OWFhYmJjY2RkZWVmZiJ9LCJzaWduYXR1cmUiOiJhODA4MjNjMDI5ZGEzNjMzNjJhOTVlNjRhOGVlNTYyYzZiMWE3NGI4NDRlZmUyNDRkYmM2YWMyMzIwMjM1YmUzIn0=",
+        "userId": "USER0000000001",
+        "now": 1761898542123,
+        "valid": true
+      },
+      {
+        "label": "from the future",
+        "token": "eyJkYXRhIjp7InVzZXJJZCI6IlVTRVIwMDAwMDAwMDAxIiwidGltZXN0YW1wIjoxNzYxODEyMTQyMTIzLCJyYW5kb20iOiIwMDExMjIzMzQ0NTU2Njc3ODg5OWFhYmJjY2RkZWVmZiJ9LCJzaWduYXR1cmUiOiJhODA4MjNjMDI5ZGEzNjMzNjJhOTVlNjRhOGVlNTYyYzZiMWE3NGI4NDRlZmUyNDRkYmM2YWMyMzIwMjM1YmUzIn0=",
+        "userId": "USER0000000001",
+        "now": 1761811142124,
+        "valid": true
+      },
+      {
+        "label": "base64url, unpadded",
+        "token": "eyJkYXRhIjp7InVzZXJJZCI6IlVTRVIwMDAwMDAwMDAxIiwidGltZXN0YW1wIjoxNzYxODEyMTQyMTIzLCJyYW5kb20iOiIwMDExMjIzMzQ0NTU2Njc3ODg5OWFhYmJjY2RkZWVmZiJ9LCJzaWduYXR1cmUiOiJhODA4MjNjMDI5ZGEzNjMzNjJhOTVlNjRhOGVlNTYyYzZiMWE3NGI4NDRlZmUyNDRkYmM2YWMyMzIwMjM1YmUzIn0",
+        "userId": "USER0000000001",
+        "now": 1761812143123,
+        "valid": true
+      },
+      {
+        "label": "junk and whitespace inside",
+        "token": "eyJkYXRhIj \n*p7InVzZXJJZCI6IlVTRV\tIwMDAwMDAwMDAxIiwidGltZXN0YW1wIjoxNzYxODEyMTQyMTIzLCJyYW5kb20iOiIwMDExMjIzMzQ0NTU2Njc3ODg5OWFhYmJjY2RkZWVmZiJ9LCJzaWduYXR1cmUiOiJhODA4MjNjMDI5ZGEzNjMzNjJhOTVlNjRhOGVlNTYyYzZiMWE3NGI4NDRlZmUyNDRkYmM2YWMyMzIwMjM1YmUzIn0=",
+        "userId": "USER0000000001",
+        "now": 1761812143123,
+        "valid": true
+      },
+      {
+        "label": "padding then junk",
+        "token": "eyJkYXRhIjp7InVzZXJJZCI6IlVTRVIwMDAwMDAwMDAxIiwidGltZXN0YW1wIjoxNzYxODEyMTQyMTIzLCJyYW5kb20iOiIwMDExMjIzMzQ0NTU2Njc3ODg5OWFhYmJjY2RkZWVmZiJ9LCJzaWduYXR1cmUiOiJhODA4MjNjMDI5ZGEzNjMzNjJhOTVlNjRhOGVlNTYyYzZiMWE3NGI4NDRlZmUyNDRkYmM2YWMyMzIwMjM1YmUzIn0==AAAA",
+        "userId": "USER0000000001",
+        "now": 1761812143123,
+        "valid": true
+      },
+      {
+        "label": "truncated",
+        "token": "eyJkYXRhIjp7InVzZXJJZCI6IlVTRVIwMDAwMDAwMDAxIiwidGltZXN0YW1wIjoxNzYxODEyMTQyMTIzLCJyYW5kb20iOiIwMDExMjIzMzQ0NTU2Njc3ODg5OWFhYmJjY2RkZWVmZiJ9LCJzaWduYXR1cmUiOiJhODA4MjNjMDI5ZGEzNjMzNjJhOTVlNjRhOGVlNTYyYzZiMWE3NGI4NDRlZmUyNDRkYmM2YWMyMzIwMjM1",
+        "userId": "USER0000000001",
+        "now": 1761812143123,
+        "valid": false
+      },
+      {
+        "label": "empty token",
+        "token": "",
+        "userId": "USER0000000001",
+        "now": 1761812143123,
+        "valid": false
+      },
+      {
+        "label": "not base64 json",
+        "token": "bm90IGpzb24=",
+        "userId": "USER0000000001",
+        "now": 1761812143123,
+        "valid": false
+      },
+      {
+        "label": "json null",
+        "token": "bnVsbA==",
+        "userId": "USER0000000001",
+        "now": 1761812143123,
+        "valid": false
+      },
+      {
+        "label": "json string",
+        "token": "Ingi",
+        "userId": "USER0000000001",
+        "now": 1761812143123,
+        "valid": false
+      },
+      {
+        "label": "signature flipped",
+        "token": "eyJkYXRhIjp7InVzZXJJZCI6IlVTRVIwMDAwMDAwMDAxIiwidGltZXN0YW1wIjoxNzYxODEyMTQyMTIzLCJyYW5kb20iOiIwMDExMjIzMzQ0NTU2Njc3ODg5OWFhYmJjY2RkZWVmZiJ9LCJzaWduYXR1cmUiOiIwODA4MjNjMDI5ZGEzNjMzNjJhOTVlNjRhOGVlNTYyYzZiMWE3NGI4NDRlZmUyNDRkYmM2YWMyMzIwMjM1YmUzIn0=",
+        "userId": "USER0000000001",
+        "now": 1761812143123,
+        "valid": false
+      },
+      {
+        "label": "reordered keys",
+        "token": "eyJkYXRhIjp7InJhbmRvbSI6ImFiIiwidXNlcklkIjoiVVNFUjAwMDAwMDAwMDEiLCJ0aW1lc3RhbXAiOjE3NjE4MTIxNDIxMjN9LCJzaWduYXR1cmUiOiIwNmYwMWMzYjQ3MmY5ZTU5MDUxZThiMzdmMjJhYmE0YTY0ZGMyYTY3OTk0NzQzYzQ2MmI1YjczNGQwOGI4NzYwIn0=",
+        "userId": "USER0000000001",
+        "now": 1761812143123,
+        "valid": true
+      },
+      {
+        "label": "integer-like keys",
+        "token": "eyJkYXRhIjp7ImIiOjEsIjIiOiJ0d28iLCJ1c2VySWQiOiJVU0VSMDAwMDAwMDAwMSIsIjEiOiJvbmUiLCJ0aW1lc3RhbXAiOjE3NjE4MTIxNDIxMjN9LCJzaWduYXR1cmUiOiI0MGIzZDM4OWJmZGZmYzYzYmNmODU0ODhjZmU5ODI1OWQ4YmQzYzIwMzI1MzNmYjc4YjIzNzUwMmFmYTc1YWI3In0=",
+        "userId": "USER0000000001",
+        "now": 1761812143123,
+        "valid": true
+      },
+      {
+        "label": "no timestamp never expires",
+        "token": "eyJkYXRhIjp7InVzZXJJZCI6IlVTRVIwMDAwMDAwMDAxIn0sInNpZ25hdHVyZSI6ImIyN2Y5ZWYxZjk5YTk3ZjQ2YmFkYjhiZTg5ZjQyMjQ4OTdhYmM0MDA2NzE1ZjAyYTM2MGVmOWI2ZDFkYTk0YWYifQ==",
+        "userId": "USER0000000001",
+        "now": 1762676142123,
+        "valid": true
+      },
+      {
+        "label": "string timestamp",
+        "token": "eyJkYXRhIjp7InVzZXJJZCI6IlVTRVIwMDAwMDAwMDAxIiwidGltZXN0YW1wIjoiMTc2MTgxMjE0MjEyMyJ9LCJzaWduYXR1cmUiOiJhYjM2MDlhNDllMTNmMDFjYjJjOTFmNTdiNDQ0ZWE5OTRkNmU4ZWExNzUxM2VlMjc4Mjc3NGNhMWNjYWRjODgxIn0=",
+        "userId": "USER0000000001",
+        "now": 1761812143123,
+        "valid": true
+      },
+      {
+        "label": "stale string timestamp",
+        "token": "eyJkYXRhIjp7InVzZXJJZCI6IlVTRVIwMDAwMDAwMDAxIiwidGltZXN0YW1wIjoiMTIzIn0sInNpZ25hdHVyZSI6ImZiN2QwMjk3YjlhZTM3ZGU4MjEyYTQ2ZWRjZTZiZmUxNWQ2ZWMxNGMyMzI1OGVjOWUwZWVmNGNiZGE0N2JmYTcifQ==",
+        "userId": "USER0000000001",
+        "now": 1761812143123,
+        "valid": false
+      },
+      {
+        "label": "null timestamp",
+        "token": "eyJkYXRhIjp7InVzZXJJZCI6IlVTRVIwMDAwMDAwMDAxIiwidGltZXN0YW1wIjpudWxsfSwic2lnbmF0dXJlIjoiYmQ0YWZjOWQwNjMxNWRhOTgwZTRlNjE1NmYzYzA2ZjU0NTUyOGRiYzk0YTFjMGRiNjQ0MWM5ODc5NGMzOWRkOSJ9",
+        "userId": "USER0000000001",
+        "now": 1761812143123,
+        "valid": false
+      },
+      {
+        "label": "array timestamp",
+        "token": "eyJkYXRhIjp7InVzZXJJZCI6IlVTRVIwMDAwMDAwMDAxIiwidGltZXN0YW1wIjpbIjE3NjE4MTIxNDIxMjMiXX0sInNpZ25hdHVyZSI6IjkwMzVlNTU0NjlmZDYzOGMzN2NhNWY1ZGJiZDg5NTkzYjE1ODU5Nzg2OWZjMzEyOTg0NTViZmFiZDk0ODg0OGUifQ==",
+        "userId": "USER0000000001",
+        "now": 1761812143123,
+        "valid": true
+      },
+      {
+        "label": "bool timestamp",
+        "token": "eyJkYXRhIjp7InVzZXJJZCI6IlVTRVIwMDAwMDAwMDAxIiwidGltZXN0YW1wIjp0cnVlfSwic2lnbmF0dXJlIjoiNGU5MmMyMTk2Y2YwZTkwOGY1ZGY4NmFlYTM5MDE2NDI2ZGI4ZDg0MGI0NTMzY2MyN2I1ODI0MGNiNDYyM2JkMCJ9",
+        "userId": "USER0000000001",
+        "now": 1761812143123,
+        "valid": false
+      },
+      {
+        "label": "object timestamp",
+        "token": "eyJkYXRhIjp7InVzZXJJZCI6IlVTRVIwMDAwMDAwMDAxIiwidGltZXN0YW1wIjp7fX0sInNpZ25hdHVyZSI6IjI4YjYxOTY3NThmZWZmNjhhNWM0ZmZkN2JjNWVlZmM4ODZlYmUxNjZkYTM1ODg2MjY1ZjBkMGVmMWRkMmQwZjAifQ==",
+        "userId": "USER0000000001",
+        "now": 1761812142123,
+        "valid": true
+      },
+      {
+        "label": "float timestamp text",
+        "token": "eyJkYXRhIjp7InVzZXJJZCI6IlVTRVIwMDAwMDAwMDAxIiwidGltZXN0YW1wIjoxLjc2MTgxMjE0MjEyM2UxMiwieCI6WzEuNTAsLTAuMCwxZTIxLDFFLTcsMTAwXX0sInNpZ25hdHVyZSI6IjYyMzNlMTgxNThjZjJmMDNiNjg2OGJjYzFlOGRiNTZhNjAzYjY0NDc0YTBiZGU3OTUxZGYyNjhjMjE1MGMzOGQifQ==",
+        "userId": "USER0000000001",
+        "now": 1761812143123,
+        "valid": true
+      },
+      {
+        "label": "numeric userId",
+        "token": "eyJkYXRhIjp7InVzZXJJZCI6MSwidGltZXN0YW1wIjoxNzYxODEyMTQyMTIzfSwic2lnbmF0dXJlIjoiOWVjNDMzMDk1Y2RlNGFhZGE5ZTRiNjcxMGI5ZjFlYjIwZGYzOWY4NmM4Nzk3NWJkMGM0Njk2YTUwZTIwN2RmZiJ9",
+        "userId": "1",
+        "now": 1761812143123,
+        "valid": false
+      },
+      {
+        "label": "data null",
+        "token": "eyJkYXRhIjpudWxsLCJzaWduYXR1cmUiOiI0YzQ1OGEzYTZjYjk0MTkzMTljMDhjN2ZiOTE5MjI1NzVjNTcyYTA0NmE4MTgwOGFjOGJkYjI3NGE1YWQzYTg4In0=",
+        "userId": "USER0000000001",
+        "now": 1761812143123,
+        "valid": false
+      },
+      {
+        "label": "data string",
+        "token": "eyJkYXRhIjoiYWJjIiwic2lnbmF0dXJlIjoiNjg1YjIxMmY0NjU0NTI5NTViNjI5OWRkYWJlOThhYTczM2JiYTBjMjc2ZjAwNzBkOWNjNzZiMmE1YmNhYzcwZCJ9",
+        "userId": "USER0000000001",
+        "now": 1761812143123,
+        "valid": false
+      },
+      {
+        "label": "data array",
+        "token": "eyJkYXRhIjpbIlVTRVIwMDAwMDAwMDAxIl0sInNpZ25hdHVyZSI6ImFkNmNlMzk0ZGNkNmRjY2Y2M2QwOGMzZWNiNTMxNGQ5Yjk1ZDNkNjk0MDY3MTBjNGU3ZWRkOTExZmFjNGJjNTQifQ==",
+        "userId": "USER0000000001",
+        "now": 1761812143123,
+        "valid": false
+      },
+      {
+        "label": "duplicate keys: last value wins",
+        "token": "eyJkYXRhIjp7InVzZXJJZCI6IlgiLCJ0aW1lc3RhbXAiOjE3NjE4MTIxNDIxMjMsInVzZXJJZCI6IlVTRVIwMDAwMDAwMDAxIn0sInNpZ25hdHVyZSI6IjRlZDZiNjEwYzJkMjIzMDBmZjE0MmNkZGZmNTc2YWEwZjVlZGFiOTM3MjJmZDlkYWExNGU5NzQyYWVhMmVhNjkifQ==",
+        "userId": "USER0000000001",
+        "now": 1761812143123,
+        "valid": true
+      },
+      {
+        "label": "unicode + escapes",
+        "token": "eyJkYXRhIjp7InVzZXJJZCI6IlpvXHUwMGViIFwicVwiIFxcIFxuIiwidGltZXN0YW1wIjoxNzYxODEyMTQyMTIzLCJyIjoiXHUyMDI4XHUwMDAxXC8ifSwic2lnbmF0dXJlIjoiZmFmZWVmMThiMzg1NmQyMmMwYjRmMTgxMDQwNGEzYzVkNzEyMWQzYzUxMDFhZDkwYTY3MmI1ZDJmNzgwYjM5NCJ9",
+        "userId": "Zoë \"q\" \\ \n",
+        "now": 1761812143123,
+        "valid": true
+      },
+      {
+        "label": "signature as number",
+        "token": "eyJkYXRhIjp7InVzZXJJZCI6IlVTRVIwMDAwMDAwMDAxIiwidGltZXN0YW1wIjoxNzYxODEyMTQyMTIzfSwic2lnbmF0dXJlIjoxMn0=",
+        "userId": "USER0000000001",
+        "now": 1761812143123,
+        "valid": false
+      },
+      {
+        "label": "whitespace in json",
+        "token": "eyAiZGF0YSIgOiB7ICJ1c2VySWQiIDogIlVTRVIwMDAwMDAwMDAxIiAsICJ0aW1lc3RhbXAiIDogMTc2MTgxMjE0MjEyMyB9ICwgInNpZ25hdHVyZSIgOiAiNGVkNmI2MTBjMmQyMjMwMGZmMTQyY2RkZmY1NzZhYTBmNWVkYWI5MzcyMmZkOWRhYTE0ZTk3NDJhZWEyZWE2OSIgfQ==",
+        "userId": "USER0000000001",
+        "now": 1761812143123,
+        "valid": true
+      },
+      {
+        "label": "invalid utf-8 in data",
+        "token": "eyJkYXRhIjp7InVzZXJJZCI6IlVTRVIwMDAwMDAwMDAxIiwidCI6Iv/+In0sInNpZ25hdHVyZSI6ImIxZGJlMThmZDEwMjYwOTkyMGI1NDEyNDgzYjMxN2EzNjJiYmMxM2ZhYmFhMjJlY2UzNzM3NDIzZjAxZDZiMTIifQ==",
+        "userId": "USER0000000001",
+        "now": 1761812143123,
+        "valid": true
+      },
+      {
+        "label": "other secret",
+        "token": "eyJkYXRhIjp7InVzZXJJZCI6IlVTRVIwMDAwMDAwMDAxIiwidGltZXN0YW1wIjoxNzYxODEyMTQyMTIzfSwic2lnbmF0dXJlIjoiODY4Y2YyZDFmNjNjNjVhNjVmNTRkYjM2OWViMDNjZWRlMTNjMDM3MjNjZjI4NjNiODYyOTM4OWFiOTgyOTBhNCJ9",
+        "userId": "USER0000000001",
+        "now": 1761812143123,
+        "valid": false
+      }
+    ],
+    "middleware": [
+      {
+        "label": "POST without a user",
+        "method": "POST",
+        "userId": null,
+        "now": 1761812143123,
+        "headers": {},
+        "status": 401,
+        "body": {
+          "status": "FAIL",
+          "message": "Not authenticated",
+          "keyValueTable": {
+            "error": "Authentication required for CSRF protection"
+          }
+        }
+      },
+      {
+        "label": "POST without header",
+        "method": "POST",
+        "userId": "USER0000000001",
+        "now": 1761812143123,
+        "headers": {
+          "Cookie": "csrf_token=eyJkYXRhIjp7InVzZXJJZCI6IlVTRVIwMDAwMDAwMDAxIiwidGltZXN0YW1wIjoxNzYxODEyMTQyMTIzLCJyYW5kb20iOiIwMDExMjIzMzQ0NTU2Njc3ODg5OWFhYmJjY2RkZWVmZiJ9LCJzaWduYXR1cmUiOiJhODA4MjNjMDI5ZGEzNjMzNjJhOTVlNjRhOGVlNTYyYzZiMWE3NGI4NDRlZmUyNDRkYmM2YWMyMzIwMjM1YmUzIn0%3D"
+        },
+        "status": 403,
+        "body": {
+          "status": "FAIL",
+          "message": "CSRF token required",
+          "keyValueTable": {
+            "error": "CSRF token missing in X-CSRF-Token header"
+          }
+        }
+      },
+      {
+        "label": "POST with empty header",
+        "method": "POST",
+        "userId": "USER0000000001",
+        "now": 1761812143123,
+        "headers": {
+          "X-CSRF-Token": "",
+          "Cookie": "csrf_token=eyJkYXRhIjp7InVzZXJJZCI6IlVTRVIwMDAwMDAwMDAxIiwidGltZXN0YW1wIjoxNzYxODEyMTQyMTIzLCJyYW5kb20iOiIwMDExMjIzMzQ0NTU2Njc3ODg5OWFhYmJjY2RkZWVmZiJ9LCJzaWduYXR1cmUiOiJhODA4MjNjMDI5ZGEzNjMzNjJhOTVlNjRhOGVlNTYyYzZiMWE3NGI4NDRlZmUyNDRkYmM2YWMyMzIwMjM1YmUzIn0%3D"
+        },
+        "status": 403,
+        "body": {
+          "status": "FAIL",
+          "message": "CSRF token required",
+          "keyValueTable": {
+            "error": "CSRF token missing in X-CSRF-Token header"
+          }
+        }
+      },
+      {
+        "label": "POST without cookie",
+        "method": "POST",
+        "userId": "USER0000000001",
+        "now": 1761812143123,
+        "headers": {
+          "X-CSRF-Token": "eyJkYXRhIjp7InVzZXJJZCI6IlVTRVIwMDAwMDAwMDAxIiwidGltZXN0YW1wIjoxNzYxODEyMTQyMTIzLCJyYW5kb20iOiIwMDExMjIzMzQ0NTU2Njc3ODg5OWFhYmJjY2RkZWVmZiJ9LCJzaWduYXR1cmUiOiJhODA4MjNjMDI5ZGEzNjMzNjJhOTVlNjRhOGVlNTYyYzZiMWE3NGI4NDRlZmUyNDRkYmM2YWMyMzIwMjM1YmUzIn0="
+        },
+        "status": 403,
+        "body": {
+          "status": "FAIL",
+          "message": "CSRF token required",
+          "keyValueTable": {
+            "error": "CSRF cookie missing"
+          }
+        }
+      },
+      {
+        "label": "POST with empty cookie",
+        "method": "POST",
+        "userId": "USER0000000001",
+        "now": 1761812143123,
+        "headers": {
+          "X-CSRF-Token": "eyJkYXRhIjp7InVzZXJJZCI6IlVTRVIwMDAwMDAwMDAxIiwidGltZXN0YW1wIjoxNzYxODEyMTQyMTIzLCJyYW5kb20iOiIwMDExMjIzMzQ0NTU2Njc3ODg5OWFhYmJjY2RkZWVmZiJ9LCJzaWduYXR1cmUiOiJhODA4MjNjMDI5ZGEzNjMzNjJhOTVlNjRhOGVlNTYyYzZiMWE3NGI4NDRlZmUyNDRkYmM2YWMyMzIwMjM1YmUzIn0=",
+          "Cookie": "csrf_token="
+        },
+        "status": 403,
+        "body": {
+          "status": "FAIL",
+          "message": "CSRF token required",
+          "keyValueTable": {
+            "error": "CSRF cookie missing"
+          }
+        }
+      },
+      {
+        "label": "POST mismatch",
+        "method": "POST",
+        "userId": "USER0000000001",
+        "now": 1761812143123,
+        "headers": {
+          "X-CSRF-Token": "eyJkYXRhIjp7InVzZXJJZCI6IlVTRVIwMDAwMDAwMDAxIiwidGltZXN0YW1wIjoxNzYxODEyMTQyMTIzLCJyYW5kb20iOiIwMDExMjIzMzQ0NTU2Njc3ODg5OWFhYmJjY2RkZWVmZiJ9LCJzaWduYXR1cmUiOiJhODA4MjNjMDI5ZGEzNjMzNjJhOTVlNjRhOGVlNTYyYzZiMWE3NGI4NDRlZmUyNDRkYmM2YWMyMzIwMjM1YmUzIn0=",
+          "Cookie": "csrf_token=other"
+        },
+        "status": 403,
+        "body": {
+          "status": "FAIL",
+          "message": "CSRF token mismatch",
+          "keyValueTable": {
+            "error": "CSRF header and cookie tokens do not match"
+          }
+        }
+      },
+      {
+        "label": "POST valid",
+        "method": "POST",
+        "userId": "USER0000000001",
+        "now": 1761812143123,
+        "headers": {
+          "X-CSRF-Token": "eyJkYXRhIjp7InVzZXJJZCI6IlVTRVIwMDAwMDAwMDAxIiwidGltZXN0YW1wIjoxNzYxODEyMTQyMTIzLCJyYW5kb20iOiIwMDExMjIzMzQ0NTU2Njc3ODg5OWFhYmJjY2RkZWVmZiJ9LCJzaWduYXR1cmUiOiJhODA4MjNjMDI5ZGEzNjMzNjJhOTVlNjRhOGVlNTYyYzZiMWE3NGI4NDRlZmUyNDRkYmM2YWMyMzIwMjM1YmUzIn0=",
+          "Cookie": "x=1; csrf_token=eyJkYXRhIjp7InVzZXJJZCI6IlVTRVIwMDAwMDAwMDAxIiwidGltZXN0YW1wIjoxNzYxODEyMTQyMTIzLCJyYW5kb20iOiIwMDExMjIzMzQ0NTU2Njc3ODg5OWFhYmJjY2RkZWVmZiJ9LCJzaWduYXR1cmUiOiJhODA4MjNjMDI5ZGEzNjMzNjJhOTVlNjRhOGVlNTYyYzZiMWE3NGI4NDRlZmUyNDRkYmM2YWMyMzIwMjM1YmUzIn0%3D"
+        },
+        "status": 200,
+        "body": null
+      },
+      {
+        "label": "POST valid, cookie not encoded",
+        "method": "POST",
+        "userId": "USER0000000001",
+        "now": 1761812143123,
+        "headers": {
+          "X-CSRF-Token": "eyJkYXRhIjp7InVzZXJJZCI6IlVTRVIwMDAwMDAwMDAxIiwidGltZXN0YW1wIjoxNzYxODEyMTQyMTIzLCJyYW5kb20iOiIwMDExMjIzMzQ0NTU2Njc3ODg5OWFhYmJjY2RkZWVmZiJ9LCJzaWduYXR1cmUiOiJhODA4MjNjMDI5ZGEzNjMzNjJhOTVlNjRhOGVlNTYyYzZiMWE3NGI4NDRlZmUyNDRkYmM2YWMyMzIwMjM1YmUzIn0=",
+          "Cookie": "csrf_token=eyJkYXRhIjp7InVzZXJJZCI6IlVTRVIwMDAwMDAwMDAxIiwidGltZXN0YW1wIjoxNzYxODEyMTQyMTIzLCJyYW5kb20iOiIwMDExMjIzMzQ0NTU2Njc3ODg5OWFhYmJjY2RkZWVmZiJ9LCJzaWduYXR1cmUiOiJhODA4MjNjMDI5ZGEzNjMzNjJhOTVlNjRhOGVlNTYyYzZiMWE3NGI4NDRlZmUyNDRkYmM2YWMyMzIwMjM1YmUzIn0="
+        },
+        "status": 200,
+        "body": null
+      },
+      {
+        "label": "POST wrong user",
+        "method": "POST",
+        "userId": "USER0000000009",
+        "now": 1761812143123,
+        "headers": {
+          "X-CSRF-Token": "eyJkYXRhIjp7InVzZXJJZCI6IlVTRVIwMDAwMDAwMDAxIiwidGltZXN0YW1wIjoxNzYxODEyMTQyMTIzLCJyYW5kb20iOiIwMDExMjIzMzQ0NTU2Njc3ODg5OWFhYmJjY2RkZWVmZiJ9LCJzaWduYXR1cmUiOiJhODA4MjNjMDI5ZGEzNjMzNjJhOTVlNjRhOGVlNTYyYzZiMWE3NGI4NDRlZmUyNDRkYmM2YWMyMzIwMjM1YmUzIn0=",
+          "Cookie": "csrf_token=eyJkYXRhIjp7InVzZXJJZCI6IlVTRVIwMDAwMDAwMDAxIiwidGltZXN0YW1wIjoxNzYxODEyMTQyMTIzLCJyYW5kb20iOiIwMDExMjIzMzQ0NTU2Njc3ODg5OWFhYmJjY2RkZWVmZiJ9LCJzaWduYXR1cmUiOiJhODA4MjNjMDI5ZGEzNjMzNjJhOTVlNjRhOGVlNTYyYzZiMWE3NGI4NDRlZmUyNDRkYmM2YWMyMzIwMjM1YmUzIn0%3D"
+        },
+        "status": 403,
+        "body": {
+          "status": "FAIL",
+          "message": "CSRF token validation failed",
+          "keyValueTable": {
+            "error": "Invalid or expired CSRF token"
+          }
+        }
+      },
+      {
+        "label": "POST same garbage twice",
+        "method": "POST",
+        "userId": "USER0000000001",
+        "now": 1761812143123,
+        "headers": {
+          "X-CSRF-Token": "abc",
+          "Cookie": "csrf_token=abc"
+        },
+        "status": 403,
+        "body": {
+          "status": "FAIL",
+          "message": "CSRF token validation failed",
+          "keyValueTable": {
+            "error": "Invalid or expired CSRF token"
+          }
+        }
+      },
+      {
+        "label": "POST j: cookie string",
+        "method": "POST",
+        "userId": "USER0000000001",
+        "now": 1761812143123,
+        "headers": {
+          "X-CSRF-Token": "eyJkYXRhIjp7InVzZXJJZCI6IlVTRVIwMDAwMDAwMDAxIiwidGltZXN0YW1wIjoxNzYxODEyMTQyMTIzLCJyYW5kb20iOiIwMDExMjIzMzQ0NTU2Njc3ODg5OWFhYmJjY2RkZWVmZiJ9LCJzaWduYXR1cmUiOiJhODA4MjNjMDI5ZGEzNjMzNjJhOTVlNjRhOGVlNTYyYzZiMWE3NGI4NDRlZmUyNDRkYmM2YWMyMzIwMjM1YmUzIn0=",
+          "Cookie": "csrf_token=j:%22eyJkYXRhIjp7InVzZXJJZCI6IlVTRVIwMDAwMDAwMDAxIiwidGltZXN0YW1wIjoxNzYxODEyMTQyMTIzLCJyYW5kb20iOiIwMDExMjIzMzQ0NTU2Njc3ODg5OWFhYmJjY2RkZWVmZiJ9LCJzaWduYXR1cmUiOiJhODA4MjNjMDI5ZGEzNjMzNjJhOTVlNjRhOGVlNTYyYzZiMWE3NGI4NDRlZmUyNDRkYmM2YWMyMzIwMjM1YmUzIn0%3D%22"
+        },
+        "status": 200,
+        "body": null
+      },
+      {
+        "label": "POST j: cookie number",
+        "method": "POST",
+        "userId": "USER0000000001",
+        "now": 1761812143123,
+        "headers": {
+          "X-CSRF-Token": "123",
+          "Cookie": "csrf_token=j:123"
+        },
+        "status": 403,
+        "body": {
+          "status": "FAIL",
+          "message": "CSRF token mismatch",
+          "keyValueTable": {
+            "error": "CSRF header and cookie tokens do not match"
+          }
+        }
+      },
+      {
+        "label": "PUT valid",
+        "method": "PUT",
+        "userId": "USER0000000001",
+        "now": 1761812143123,
+        "headers": {
+          "X-CSRF-Token": "eyJkYXRhIjp7InVzZXJJZCI6IlVTRVIwMDAwMDAwMDAxIiwidGltZXN0YW1wIjoxNzYxODEyMTQyMTIzLCJyYW5kb20iOiIwMDExMjIzMzQ0NTU2Njc3ODg5OWFhYmJjY2RkZWVmZiJ9LCJzaWduYXR1cmUiOiJhODA4MjNjMDI5ZGEzNjMzNjJhOTVlNjRhOGVlNTYyYzZiMWE3NGI4NDRlZmUyNDRkYmM2YWMyMzIwMjM1YmUzIn0=",
+          "Cookie": "csrf_token=eyJkYXRhIjp7InVzZXJJZCI6IlVTRVIwMDAwMDAwMDAxIiwidGltZXN0YW1wIjoxNzYxODEyMTQyMTIzLCJyYW5kb20iOiIwMDExMjIzMzQ0NTU2Njc3ODg5OWFhYmJjY2RkZWVmZiJ9LCJzaWduYXR1cmUiOiJhODA4MjNjMDI5ZGEzNjMzNjJhOTVlNjRhOGVlNTYyYzZiMWE3NGI4NDRlZmUyNDRkYmM2YWMyMzIwMjM1YmUzIn0%3D"
+        },
+        "status": 200,
+        "body": null
+      },
+      {
+        "label": "DELETE mismatch",
+        "method": "DELETE",
+        "userId": "USER0000000001",
+        "now": 1761812143123,
+        "headers": {
+          "X-CSRF-Token": "eyJkYXRhIjp7InVzZXJJZCI6IlVTRVIwMDAwMDAwMDAxIiwidGltZXN0YW1wIjoxNzYxODEyMTQyMTIzLCJyYW5kb20iOiIwMDExMjIzMzQ0NTU2Njc3ODg5OWFhYmJjY2RkZWVmZiJ9LCJzaWduYXR1cmUiOiJhODA4MjNjMDI5ZGEzNjMzNjJhOTVlNjRhOGVlNTYyYzZiMWE3NGI4NDRlZmUyNDRkYmM2YWMyMzIwMjM1YmUzIn0=",
+          "Cookie": "csrf_token=x"
+        },
+        "status": 403,
+        "body": {
+          "status": "FAIL",
+          "message": "CSRF token mismatch",
+          "keyValueTable": {
+            "error": "CSRF header and cookie tokens do not match"
+          }
+        }
+      },
+      {
+        "label": "PATCH without header",
+        "method": "PATCH",
+        "userId": "USER0000000001",
+        "now": 1761812143123,
+        "headers": {},
+        "status": 403,
+        "body": {
+          "status": "FAIL",
+          "message": "CSRF token required",
+          "keyValueTable": {
+            "error": "CSRF token missing in X-CSRF-Token header"
+          }
+        }
+      },
+      {
+        "label": "GET skips",
+        "method": "GET",
+        "userId": null,
+        "now": 1761812143123,
+        "headers": {},
+        "status": 200,
+        "body": null
+      },
+      {
+        "label": "OPTIONS skips",
+        "method": "OPTIONS",
+        "userId": null,
+        "now": 1761812143123,
+        "headers": {},
+        "status": 200,
+        "body": null
+      }
+    ]
+  },
+  "set_cookie": [
+    {
+      "name": "sessionId",
+      "value": "0123456789abcdef0123456789abcdef",
+      "clear": false,
+      "options": {
+        "httpOnly": true,
+        "maxAge": 2592000000
+      },
+      "set_cookie": "sessionId=0123456789abcdef0123456789abcdef; Max-Age=2592000; Path=/; Expires=Sat, 29 Nov 2025 08:15:42 GMT; HttpOnly"
+    },
+    {
+      "name": "admin_auth",
+      "value": "eyJhbGciOiJIUzI1NiJ9.eyJpZCI6IlUifQ.sig-_",
+      "clear": false,
+      "options": {
+        "httpOnly": true,
+        "secure": true,
+        "sameSite": "strict",
+        "path": "/",
+        "maxAge": 86400000
+      },
+      "set_cookie": "admin_auth=eyJhbGciOiJIUzI1NiJ9.eyJpZCI6IlUifQ.sig-_; Max-Age=86400; Path=/; Expires=Fri, 31 Oct 2025 08:15:42 GMT; HttpOnly; Secure; SameSite=Strict"
+    },
+    {
+      "name": "csrf_token",
+      "value": "eyJkYXRhIjp7fQ+/==",
+      "clear": false,
+      "options": {
+        "httpOnly": false,
+        "secure": false,
+        "sameSite": "strict",
+        "path": "/",
+        "maxAge": 86400000
+      },
+      "set_cookie": "csrf_token=eyJkYXRhIjp7fQ%2B%2F%3D%3D; Max-Age=86400; Path=/; Expires=Fri, 31 Oct 2025 08:15:42 GMT; SameSite=Strict"
+    },
+    {
+      "name": "a",
+      "value": "x",
+      "clear": false,
+      "options": {
+        "maxAge": 1500
+      },
+      "set_cookie": "a=x; Max-Age=1; Path=/; Expires=Thu, 30 Oct 2025 08:15:43 GMT"
+    },
+    {
+      "name": "a",
+      "value": "x",
+      "clear": false,
+      "options": {
+        "maxAge": -500
+      },
+      "set_cookie": "a=x; Max-Age=-1; Path=/; Expires=Thu, 30 Oct 2025 08:15:41 GMT"
+    },
+    {
+      "name": "a",
+      "value": "x",
+      "clear": false,
+      "options": {
+        "maxAge": 0
+      },
+      "set_cookie": "a=x; Max-Age=0; Path=/; Expires=Thu, 30 Oct 2025 08:15:42 GMT"
+    },
+    {
+      "name": "a",
+      "value": "x",
+      "clear": false,
+      "options": {
+        "maxAge": "NaN"
+      },
+      "set_cookie": null
+    },
+    {
+      "name": "a",
+      "value": "x",
+      "clear": false,
+      "options": {
+        "path": ""
+      },
+      "set_cookie": "a=x"
+    },
+    {
+      "name": "a",
+      "value": "x",
+      "clear": false,
+      "options": {
+        "path": "/api",
+        "domain": "example.com",
+        "sameSite": "lax"
+      },
+      "set_cookie": "a=x; Domain=example.com; Path=/api; SameSite=Lax"
+    },
+    {
+      "name": "a",
+      "value": "x",
+      "clear": false,
+      "options": {
+        "sameSite": "none",
+        "secure": true
+      },
+      "set_cookie": "a=x; Path=/; Secure; SameSite=None"
+    },
+    {
+      "name": "a",
+      "value": "é ü;,\"\\",
+      "clear": false,
+      "options": {},
+      "set_cookie": "a=%C3%A9%20%C3%BC%3B%2C%22%5C; Path=/"
+    },
+    {
+      "name": "a",
+      "value": "x",
+      "clear": false,
+      "options": {
+        "expires_ms": 1893553445678
+      },
+      "set_cookie": "a=x; Path=/; Expires=Wed, 02 Jan 2030 03:04:05 GMT"
+    },
+    {
+      "name": "a b",
+      "value": "x",
+      "clear": false,
+      "options": {},
+      "set_cookie": null
+    },
+    {
+      "name": "admin_auth",
+      "value": "",
+      "clear": true,
+      "options": {
+        "path": "/",
+        "sameSite": "strict",
+        "secure": true,
+        "httpOnly": true
+      },
+      "set_cookie": "admin_auth=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; HttpOnly; Secure; SameSite=Strict"
+    },
+    {
+      "name": "csrf_token",
+      "value": "",
+      "clear": true,
+      "options": {
+        "path": "/",
+        "sameSite": "strict",
+        "secure": false
+      },
+      "set_cookie": "csrf_token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Strict"
+    },
+    {
+      "name": "sessionId",
+      "value": "",
+      "clear": true,
+      "options": {},
+      "set_cookie": "sessionId=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT"
+    },
+    {
+      "name": "old",
+      "value": "",
+      "clear": true,
+      "options": {
+        "maxAge": 1000
+      },
+      "set_cookie": "old=; Max-Age=1; Path=/; Expires=Thu, 30 Oct 2025 08:15:43 GMT"
+    }
+  ],
+  "encode_uri_component": [
+    [
+      "abc",
+      "abc"
+    ],
+    [
+      "a+b/c=d",
+      "a%2Bb%2Fc%3Dd"
+    ],
+    [
+      "é ü",
+      "%C3%A9%20%C3%BC"
+    ],
+    [
+      ";,\"\\",
+      "%3B%2C%22%5C"
+    ],
+    [
+      "!*'()~-_.",
+      "!*'()~-_."
+    ],
+    [
+      "😀",
+      "%F0%9F%98%80"
+    ],
+    [
+      "%",
+      "%25"
+    ]
+  ],
+  "base64": [
+    [
+      "YWJj",
+      "616263"
+    ],
+    [
+      "YWJ j",
+      "616263"
+    ],
+    [
+      "YW*Jj",
+      "616263"
+    ],
+    [
+      "YWI=",
+      "6162"
+    ],
+    [
+      "YWI=YWJj",
+      "6162"
+    ],
+    [
+      "YW=Jj",
+      "61"
+    ],
+    [
+      "YWI",
+      "6162"
+    ],
+    [
+      "YQ",
+      "61"
+    ],
+    [
+      "Y",
+      ""
+    ],
+    [
+      "-_-_",
+      "fbffbf"
+    ],
+    [
+      "+/+/",
+      "fbffbf"
+    ],
+    [
+      "YWJj\n",
+      "616263"
+    ],
+    [
+      "YQ===",
+      "61"
+    ],
+    [
+      "YQ=x=",
+      "61"
+    ],
+    [
+      "Y=Q",
+      ""
+    ],
+    [
+      "",
+      ""
+    ],
+    [
+      "====",
+      ""
+    ],
+    [
+      "éYWJj",
+      "616263"
+    ]
+  ],
+  "subject": [
+    {
+      "template": "Order {{ order_number }} / {{order_number}} {{other}}",
+      "variables": {
+        "order_number": "NOR-1"
+      },
+      "subject": "Order NOR-1 / NOR-1 {{other}}"
+    },
+    {
+      "template": "{{{order_number}}}",
+      "variables": {
+        "order_number": "X"
+      },
+      "subject": "{X}"
+    },
+    {
+      "template": "{{  name\t}} and {{name}}",
+      "variables": {
+        "name": "Ada $& $$ $` $' $1 $"
+      },
+      "subject": "Ada {{  name\t}} $   and {{name}} $1 $ and Ada {{name}} $ {{  name\t}} and   $1 $"
+    },
+    {
+      "template": "Hi {{ first_name }}",
+      "variables": {
+        "first_name": 7
+      },
+      "subject": "Hi 7"
+    },
+    {
+      "template": "Hi {{ first_name }}",
+      "variables": {
+        "first_name": null
+      },
+      "subject": "Hi null"
+    },
+    {
+      "template": "Hi {{ first_name }}",
+      "variables": {
+        "first_name": [
+          1,
+          2
+        ]
+      },
+      "subject": "Hi 1,2"
+    },
+    {
+      "template": "Hi {{ first_name }}",
+      "variables": {
+        "first_name": {
+          "a": 1
+        }
+      },
+      "subject": "Hi [object Object]"
+    },
+    {
+      "template": "{{ a }}{{ b }}",
+      "variables": {
+        "a": "1",
+        "b": "2"
+      },
+      "subject": "12"
+    },
+    {
+      "template": "No placeholders",
+      "variables": {
+        "a": "x"
+      },
+      "subject": "No placeholders"
+    },
+    {
+      "template": "{{ a }",
+      "variables": {
+        "a": "x"
+      },
+      "subject": "{{ a }"
+    },
+    {
+      "template": "{{ a　}}",
+      "variables": {
+        "a": "wide spaces"
+      },
+      "subject": "wide spaces"
+    }
+  ],
+  "format_amount": [
+    [
+      "$123.40",
+      "123.40"
+    ],
+    [
+      "123.4",
+      "123.40"
+    ],
+    [
+      "$0.125",
+      "0.13"
+    ],
+    [
+      "",
+      "0.00"
+    ],
+    [
+      "abc",
+      "0.00"
+    ],
+    [
+      "$1,234.565",
+      "1234.57"
+    ],
+    [
+      "-5",
+      "-5.00"
+    ],
+    [
+      "1.2.3",
+      "1.20"
+    ],
+    [
+      "--5",
+      "0.00"
+    ],
+    [
+      "5-3",
+      "5.00"
+    ],
+    [
+      ".5",
+      "0.50"
+    ],
+    [
+      "-.5",
+      "-0.50"
+    ],
+    [
+      "0.375",
+      "0.38"
+    ],
+    [
+      "$9.995",
+      "9.99"
+    ],
+    [
+      "1e5",
+      "15.00"
+    ]
+  ],
+  "unsubscribe": [
+    {
+      "email": "alice@example.com",
+      "token": "eyUzo03VCWUbDHgFZ8_oxy-r4tpRuEDc5f93HjYeOTw",
+      "url": "http://shop.test/unsubscribe?email=alice%40example.com&token=eyUzo03VCWUbDHgFZ8_oxy-r4tpRuEDc5f93HjYeOTw"
+    },
+    {
+      "email": " Alice@Example.COM ",
+      "token": "eyUzo03VCWUbDHgFZ8_oxy-r4tpRuEDc5f93HjYeOTw",
+      "url": "http://shop.test/unsubscribe?email=alice%40example.com&token=eyUzo03VCWUbDHgFZ8_oxy-r4tpRuEDc5f93HjYeOTw"
+    },
+    {
+      "email": "zoë+tag@example.com",
+      "token": "A_GAKbDExE9xOF4fhATUUxGrJjcifjcxyulpNns1vDY",
+      "url": "http://shop.test/unsubscribe?email=zo%C3%AB%2Btag%40example.com&token=A_GAKbDExE9xOF4fhATUUxGrJjcifjcxyulpNns1vDY"
+    },
+    {
+      "email": "a b@c.d",
+      "token": "VX3i0AhyCyn_PZmONmwjj4NUEGrq5W0LDD51QjrJkIk",
+      "url": "http://shop.test/unsubscribe?email=a+b%40c.d&token=VX3i0AhyCyn_PZmONmwjj4NUEGrq5W0LDD51QjrJkIk"
+    }
+  ]
+}

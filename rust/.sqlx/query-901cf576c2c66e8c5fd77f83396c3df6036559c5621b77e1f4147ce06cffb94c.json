@@ -1,0 +1,12 @@
+{
+  "db_name": "MySQL",
+  "query": "UPDATE product_reviews SET is_approved = 1, approved_by = ?, approved_at = NOW() WHERE id = ?",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": []
+  },
+  "hash": "901cf576c2c66e8c5fd77f83396c3df6036559c5621b77e1f4147ce06cffb94c"
+}

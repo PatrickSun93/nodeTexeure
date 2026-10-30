@@ -39,9 +39,17 @@ services:
       NODE_ENV: production
       JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET}
       NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:?set NEXTAUTH_SECRET}
+      # The worker service runs the background jobs (rollback: remove this).
+      BACKGROUND_JOBS: "off"
+      # TRUST_PROXY (rate-limit client IP) comes from backend/.env: opt in with 1
+      # only when 3000/3005 are reachable solely through a TLS proxy that sets
+      # X-Forwarded-For (docs/DEPLOYMENT.md).
       STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
       AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-}
       AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-}
+    volumes:
+      # Shared with the api service (local upload storage when S3 is unset).
+      - uploads_prod_data:/app/uploads
     expose:
       - "6666"
     restart: unless-stopped
@@ -63,7 +71,7 @@ services:
       args:
         PRODUCTION_BACKEND_URL: http://backend:6666
         RUST_API_URL: http://api:7000
-        RUST_API_ROUTES: ${RUST_API_ROUTES-products,search,journal,settings/public,wishlist,orders,cart}
+        RUST_API_ROUTES: ${RUST_API_ROUTES-products,search,journal,settings,wishlist,orders,cart,users,reviews,returns,abandoned-cart,unsubscribe,newsletter,contact,status,shipping,admin,database,payments,images}
     environment:
       PRODUCTION_BACKEND_URL: http://backend:6666
       NEXTAUTH_URL: ${NEXTAUTH_URL:-http://localhost:3000}
@@ -82,6 +90,12 @@ services:
     build:
       context: ./admin-dashboard
       dockerfile: Dockerfile.prod
+      # Baked into the build (admin-dashboard/rustRoutes.mjs). Empty
+      # ADMIN_RUST_API_ROUTES = every admin /api call stays on Node.
+      args:
+        BACKEND_URL: http://backend:6666
+        RUST_API_URL: http://api:7000
+        RUST_API_ROUTES: ${ADMIN_RUST_API_ROUTES-admin,database,settings,payments,images,users}
     environment:
       BACKEND_URL: http://backend:6666
       NODE_ENV: production
@@ -91,13 +105,22 @@ services:
     depends_on:
       backend:
         condition: service_healthy
+      api:
+        condition: service_healthy
 
-  # Rust API: serves the route groups in RUST_API_ROUTES (baked into the
-  # frontend build below); unset them to send everything back to Node.
+  # Rust API: serves the route groups in RUST_API_ROUTES / ADMIN_RUST_API_ROUTES
+  # (baked into the frontend and admin builds above); set them empty to send
+  # everything back to Node.
   api:
     build:
       context: ./rust
     command: ["api"]
+    # Same backend/.env as the Node backend: the groups served here read
+    # FEDEX_*, FRONTEND_URL, CSRF_SECRET, ACCESS_TOKEN_TTL, the rate-limit and
+    # cookie TTL settings, so both services must see the same values.
+    env_file:
+      - path: ./backend/.env
+        required: false
     environment:
       DB_HOST: mysql
       DB_PORT: "3306"
@@ -105,6 +128,22 @@ services:
       DB_USER: root
       DB_PASSWORD: ${DB_PASSWORD:?set DB_PASSWORD}
       API_PORT: "7000"
+      # Must match the backend: the API verifies the tokens Node signs.
+      NODE_ENV: production
+      JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET}
+      # TRUST_PROXY (rate-limit client IP) comes from backend/.env: opt in with 1
+      # only when 3000/3005 are reachable solely through a TLS proxy that sets
+      # X-Forwarded-For (docs/DEPLOYMENT.md).
+      # Same Stripe/S3 credentials as the backend (/api/payments, /api/images).
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-}
+      # Local uploads (no S3): the backend's /app/uploads volume, which Node
+      # serves at /uploads. root like the backend, so it can write the volume.
+      UPLOADS_DIR: /app/uploads
+    user: root
+    volumes:
+      - uploads_prod_data:/app/uploads
     expose:
       - "7000"
     restart: unless-stopped
@@ -117,6 +156,34 @@ services:
       timeout: 5s
       start_period: 10s
       retries: 3
+
+  # Rust background worker: migrations, then the expired stock-reservation
+  # release and abandoned-cart detection every 15 minutes (BACKGROUND_JOBS=off
+  # turns the backend's own timers off; both use the same MySQL locks).
+  # Rollback: stop this service and remove BACKGROUND_JOBS from the backend.
+  worker:
+    build:
+      context: ./rust
+    command: ["worker"]
+    env_file:
+      - path: ./backend/.env
+        required: false
+    environment:
+      DB_HOST: mysql
+      DB_PORT: "3306"
+      DB_NAME: bed_texture_ecommerce
+      DB_USER: root
+      DB_PASSWORD: ${DB_PASSWORD:?set DB_PASSWORD}
+      NODE_ENV: production
+      # Signs the unsubscribe links in abandoned-cart emails: same as the backend.
+      JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET}
+      MIGRATIONS_DIR: /app/migrations
+    volumes:
+      - ./backend/migrations:/app/migrations:ro
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
 
   # Rust email daemon: the only consumer of email_queue (SES credentials and
   # sender settings come from backend/.env).
@@ -140,3 +207,4 @@ services:
 
 volumes:
   mysql_prod_data:
+  uploads_prod_data:

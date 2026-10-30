@@ -56,16 +56,6 @@
       "security": "Sécurité et audit"
     }
   },
-  "AdminHome": {
-    "adminLogin": "Connexion administrateur",
-    "emailPlaceholder": "E-mail",
-    "passwordPlaceholder": "Mot de passe",
-    "accessDenied": "Accès refusé. Privilèges administrateur requis.",
-    "invalidCredentials": "Identifiants invalides",
-    "loginFailed": "Échec de la connexion. Veuillez réessayer.",
-    "loggingIn": "Connexion en cours…",
-    "login": "Se connecter"
-  },
   "Dashboard": {
     "title": "Tableau de bord admin",
     "brandSubtitle": "Admin Noirae",
@@ -87,6 +77,7 @@
     "customRange": "Plage personnalisée",
     "totalRevenue": "Chiffre d'affaires total",
     "totalOrders": "Total des commandes",
+    "activeOrders": "Commandes en cours",
     "avgOrderValue": "Valeur moyenne des commandes",
     "conversionRate": "Taux de conversion",
     "colOrderId": "N° de commande",
@@ -2016,7 +2007,11 @@
     "shippingAddress": "Adresse de livraison",
     "orderUpdatedSuccess": "Commande mise à jour avec succès",
     "failedToUpdate": "Échec de la mise à jour de la commande",
-    "errorUpdating": "Erreur lors de la mise à jour de la commande"
+    "errorUpdating": "Erreur lors de la mise à jour de la commande",
+    "discount": "Remise",
+    "statusConfirmed": "Confirmée",
+    "statusRefunded": "Remboursée",
+    "dismiss": "Fermer"
   },
   "CustomerDetailView": {
     "breadcrumbCustomers": "Clients",

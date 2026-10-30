@@ -1,0 +1,12 @@
+{
+  "db_name": "MySQL",
+  "query": "INSERT INTO newsletter_subscribers (email, status, created_at)\n         VALUES (?, 'subscribed', NOW())\n         ON DUPLICATE KEY UPDATE status = 'subscribed'",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": []
+  },
+  "hash": "7a24ec14e6d758d858d2b93087345d77535ac2e554926a9f1bc4ea0d77574b00"
+}

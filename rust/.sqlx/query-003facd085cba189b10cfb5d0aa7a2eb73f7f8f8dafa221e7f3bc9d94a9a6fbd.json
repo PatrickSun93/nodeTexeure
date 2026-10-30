@@ -1,0 +1,12 @@
+{
+  "db_name": "MySQL",
+  "query": "UPDATE user_addresses SET type = COALESCE(?, type), first_name = COALESCE(?, first_name),\n           last_name = COALESCE(?, last_name), phone = IF(?, ?, phone),\n           address_json = COALESCE(?, address_json), is_default = IF(?, TRUE, is_default)\n         WHERE id = ?",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 8
+    },
+    "nullable": []
+  },
+  "hash": "003facd085cba189b10cfb5d0aa7a2eb73f7f8f8dafa221e7f3bc9d94a9a6fbd"
+}

@@ -1162,7 +1162,8 @@ INSERT IGNORE INTO transno (prefix, count, details) VALUES ('JRNL', 0, 'Journal 
 -- Seed rows are inserted by backend/scripts/seed-example-data.js (seedUnsubscribes).
 CREATE TABLE IF NOT EXISTS email_unsubscribes (
   id               VARCHAR(50)  PRIMARY KEY,
-  email            VARCHAR(255) NOT NULL,
+  -- Binary: tokens are per exact (normalized) address; see migration 015.
+  email            VARCHAR(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
   token            VARCHAR(255) NOT NULL,
   scope            VARCHAR(32)  NOT NULL DEFAULT 'all',
   reason           VARCHAR(255) NULL,

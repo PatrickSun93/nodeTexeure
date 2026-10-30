@@ -13,19 +13,28 @@ publish = false
 [workspace.dependencies]
 anyhow = "1"
 axum = "0.8"
+base64 = "0.22"
+bcrypt = "0.19"
 common = { path = "crates/common" }
 chrono = { version = "0.4", default-features = false, features = ["clock", "std"] }
 dotenvy = "0.15"
+hmac = "0.12"
 jsonwebtoken = { version = "9", default-features = false }
 regex = "1"
+reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
+sha1 = "0.10"
+sha2 = "0.10"
 sqlx = { version = "0.8", default-features = false, features = ["runtime-tokio", "tls-rustls-ring", "mysql", "json", "chrono", "macros", "migrate"] }
 tokio = { version = "1", features = ["macros", "rt-multi-thread", "signal", "time", "fs"] }
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt"] }
 aws-config = { version = "1", features = ["behavior-version-latest"] }
 aws-sdk-sesv2 = "1"
+aws-sdk-s3 = "1"
+flate2 = "1"
+image = { version = "0.25", default-features = false, features = ["jpeg", "png", "gif", "webp", "tiff"] }
 tempfile = "3"
 tower = "0.5"
 tower-http = { version = "0.6", features = ["trace", "set-header", "timeout"] }

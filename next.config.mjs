@@ -43,12 +43,11 @@ const nextConfig = {
       ? (process.env.RUST_API_ROUTES || '').split(',').map((r) => r.trim()).filter(Boolean)
       : [];
     // Groups only partly ported: listing the group moves just these paths (Next
-    // path patterns); the rest of the group stays on Node. Drop the entry once the
-    // whole group is ported. cart: view/add/update/remove — reserve-stock and
-    // the abandonment endpoints are still Node.
-    const partialGroups = {
-      cart: ['cart', 'cart/add', 'cart/update/:itemId', 'cart/remove/:itemId'],
-    };
+    // path patterns, e.g. `group: ['group', 'group/add', 'group/:id']`); the rest
+    // of the group stays on Node. Drop the entry once the whole group is ported.
+    // None right now: every listed group is fully ported. Keep in sync with
+    // PARTIAL_GROUPS in src/lib/server/apiTarget.js.
+    const partialGroups = {};
     const rustGroups = new Set(
       rustEntries.filter((r) => !r.includes('/') && !partialGroups[r])
     );

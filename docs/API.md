@@ -139,8 +139,8 @@ the `X-CSRF-Token` header matching the `csrf_token` cookie (from
 | PUT | `/api/cart/update/:itemId` | public (user-aware) |
 | DELETE | `/api/cart/remove/:itemId` | public (user-aware) |
 | POST | `/api/cart/reserve-stock` | public (user-aware) |
-| POST | `/api/cart/track-abandonment` | public (user-aware) |
-| POST | `/api/cart/cancel-abandonment` | public (user-aware) |
+| POST | `/api/cart/track-abandonment` | signed in |
+| POST | `/api/cart/cancel-abandonment` | signed in |
 
 ## `/api/contact` — routes/contactRoutes.js
 
@@ -263,7 +263,7 @@ the `X-CSRF-Token` header matching the `csrf_token` cookie (from
 | Method | Path | Access |
 |---|---|---|
 | POST | `/api/shipping/rates` | public |
-| POST | `/api/shipping/create-label` | admin |
+| POST | `/api/shipping/create-label` | admin + CSRF |
 | GET | `/api/shipping/track/:trackingNumber` | public |
 
 ## `/api/status` — routes/statusRoutes.js

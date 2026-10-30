@@ -17,6 +17,11 @@ RUN npm run build
 FROM node:22-bookworm-slim AS run
 WORKDIR /app
 ENV NODE_ENV=production
+# NextAuth's server-side login/refresh calls read these at runtime
+# (src/lib/server/apiTarget.js): same values as the proxy baked in above.
+ARG RUST_API_URL=
+ARG RUST_API_ROUTES=
+ENV RUST_API_URL=$RUST_API_URL RUST_API_ROUTES=$RUST_API_ROUTES
 COPY --from=build /app/package.json ./package.json
 COPY --from=build /app/next.config.mjs ./next.config.mjs
 COPY --from=build /app/node_modules ./node_modules

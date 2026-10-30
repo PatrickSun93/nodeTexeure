@@ -56,16 +56,6 @@
       "security": "安全和审计"
     }
   },
-  "AdminHome": {
-    "adminLogin": "管理员登录",
-    "emailPlaceholder": "邮箱",
-    "passwordPlaceholder": "密码",
-    "accessDenied": "访问被拒绝。需要管理员权限。",
-    "invalidCredentials": "凭据无效",
-    "loginFailed": "登录失败，请重试。",
-    "loggingIn": "登录中…",
-    "login": "登录"
-  },
   "Dashboard": {
     "title": "管理后台",
     "brandSubtitle": "Noirae 管理",
@@ -87,6 +77,7 @@
     "customRange": "自定义范围",
     "totalRevenue": "总收入",
     "totalOrders": "订单总数",
+    "activeOrders": "进行中的订单",
     "avgOrderValue": "平均订单金额",
     "conversionRate": "转化率",
     "colOrderId": "订单编号",
@@ -2016,7 +2007,11 @@
     "shippingAddress": "收货地址",
     "orderUpdatedSuccess": "订单更新成功",
     "failedToUpdate": "订单更新失败",
-    "errorUpdating": "更新订单时出错"
+    "errorUpdating": "更新订单时出错",
+    "discount": "折扣",
+    "statusConfirmed": "已确认",
+    "statusRefunded": "已退款",
+    "dismiss": "关闭"
   },
   "CustomerDetailView": {
     "breadcrumbCustomers": "客户",

@@ -60,7 +60,9 @@
     "sortPriceHigh": "价格：高到低",
     "sortName": "名称：A 至 Z",
     "loading": "加载产品中...",
-    "noProducts": "未找到符合条件的产品。"
+    "noProducts": "未找到符合条件的产品。",
+    "searchChip": "搜索：“{term}”",
+    "removeFilter": "移除筛选：{label}"
   },
   "Home": {
     "heroTitle": "舒适的艺术",
@@ -104,7 +106,7 @@
     "selectOptions": "选择选项",
     "addingToCart": "正在添加至购物车...",
     "addToCart": "加入购物车",
-    "freeShipping": "订单满 $100 免运费",
+    "freeShipping": "订单满 $100 免标准配送运费",
     "returnPolicy": "30天退货政策",
     "warranty": "1年保修",
     "customerReviews": "客户评价",
@@ -314,7 +316,7 @@
     "silkCareQuestion": "我该如何护理真丝寝具？",
     "silkCareAnswer": "真丝寝具应以温和洗涤剂用冷水手洗，或进行干洗。晾干时避免阳光直射，切勿使用漂白剂。为达最佳效果，可在微湿时以低温熨烫。",
     "shippingOptionsQuestion": "你们有哪些配送方式及时效？",
-    "shippingOptionsAnswer": "我们提供标准配送（5-7 个工作日）与快捷配送（2-3 个工作日）。所有订单将在 1-2 个工作日内处理。订单满 $200 即享免费标准配送。",
+    "shippingOptionsAnswer": "我们提供标准配送（5-7 个工作日）与快捷配送（2-3 个工作日）。所有订单将在 1-2 个工作日内处理。订单满 $100 即享免费标准配送。",
     "openReturnsQuestion": "已拆封的商品可以退货吗？",
     "openReturnsAnswer": "可以，即使包装已拆封，我们仍接受自购买之日起 30 天内的退货。商品须保持未使用状态，并附有全部原始标签。请联系我们的客户服务团队以办理退货。",
     "returnPolicyQuestion": "已拆封商品的退货政策是怎样的？",
@@ -473,7 +475,7 @@
     "billingAddress": "账单地址",
     "continueToShipping": "继续填写配送信息",
     "shippingMethod": "配送方式",
-    "freeShippingQualify": "您已符合免费配送资格！",
+    "freeShippingQualify": "您已符合免费标准配送资格！",
     "free": "免费",
     "back": "返回",
     "continueToPayment": "继续付款",
@@ -494,7 +496,7 @@
     "shipping": "运费",
     "discount": "折扣",
     "total": "总计",
-    "freeShippingHint": "再消费 ${amount} 即可享受免费配送！"
+    "freeShippingHint": "再消费 ${amount} 即可享受免费标准配送！"
   },
   "Profile": {
     "failedFetchProfile": "获取个人资料失败",
@@ -673,7 +675,12 @@
     "statusShipped": "已发货",
     "statusDelivered": "已送达",
     "statusCancelled": "已取消",
-    "statusRefunded": "已退款"
+    "statusRefunded": "已退款",
+    "loading": "正在加载您的订单...",
+    "notFoundBody": "在您的账户中找不到此订单。",
+    "free": "免费",
+    "shippingMethod": "配送方式",
+    "orderPlaced": "已下单"
   },
   "ReturnFlow": {
     "breadcrumbHome": "首页",
