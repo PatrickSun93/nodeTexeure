@@ -1,8 +1,8 @@
 import React from 'react';
 import { VARIABLE_GROUPS } from './utils/blockTypes';
 
-export default function VariablesPalette({ onInsertVariable }) {
-    const handleClick = (variable) => {
+export default function VariablesPalette({ onInsertVariable }: { onInsertVariable?: (variable: string) => void }) {
+    const handleClick = (variable: string) => {
         // Copy to clipboard
         navigator.clipboard.writeText(variable).then(() => {
             // Also trigger insert if handler provided

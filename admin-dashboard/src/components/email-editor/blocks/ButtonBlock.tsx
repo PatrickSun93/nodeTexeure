@@ -1,29 +1,30 @@
-import React, { useState } from 'react';
+import React, { useState, type ChangeEvent } from 'react';
+import type { Alignment, BlockProps } from '../utils/blockTypes';
 
-export default function ButtonBlock({ data, onChange, onFocus, isSelected }) {
+export default function ButtonBlock({ data, onChange, onFocus, isSelected }: BlockProps<'button'>) {
     const [isEditingText, setIsEditingText] = useState(false);
 
-    const handleTextChange = (e) => {
+    const handleTextChange = (e: ChangeEvent<HTMLInputElement>) => {
         onChange({ ...data, text: e.target.value });
     };
 
-    const handleUrlChange = (e) => {
+    const handleUrlChange = (e: ChangeEvent<HTMLInputElement>) => {
         onChange({ ...data, url: e.target.value });
     };
 
-    const handleBackgroundColorChange = (e) => {
+    const handleBackgroundColorChange = (e: ChangeEvent<HTMLInputElement>) => {
         onChange({ ...data, backgroundColor: e.target.value });
     };
 
-    const handleTextColorChange = (e) => {
+    const handleTextColorChange = (e: ChangeEvent<HTMLInputElement>) => {
         onChange({ ...data, textColor: e.target.value });
     };
 
-    const handleBorderRadiusChange = (radius) => {
+    const handleBorderRadiusChange = (radius: number) => {
         onChange({ ...data, borderRadius: radius });
     };
 
-    const handleAlignment = (alignment) => {
+    const handleAlignment = (alignment: Alignment) => {
         onChange({ ...data, alignment });
     };
 
@@ -130,7 +131,7 @@ export default function ButtonBlock({ data, onChange, onFocus, isSelected }) {
                     <div className="flex items-center gap-2">
                         <label className="text-xs text-gray-500 w-20">Align:</label>
                         <div className="flex items-center gap-1">
-                            {['left', 'center', 'right'].map((align) => (
+                            {(['left', 'center', 'right'] as const).map((align) => (
                                 <button
                                     key={align}
                                     onClick={() => handleAlignment(align)}

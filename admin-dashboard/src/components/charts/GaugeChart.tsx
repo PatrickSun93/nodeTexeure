@@ -1,6 +1,23 @@
 'use client';
 
+import type { EChartsOption } from 'echarts';
 import BaseChart from './BaseChart';
+
+interface Threshold {
+  value: number;
+  color: string;
+}
+
+interface GaugeChartProps {
+  data?: { name: string; value: number }[];
+  value?: number;
+  max?: number;
+  title?: string;
+  loading?: boolean;
+  height?: number;
+  unit?: string;
+  thresholds?: Threshold[];
+}
 
 /**
  * Gauge Chart Component for KPI Indicators and Progress Metrics
@@ -18,7 +35,7 @@ export default function GaugeChart({
     { value: 70, color: '#f59e0b' },  // Yellow
     { value: 100, color: '#10b981' }  // Green
   ]
-}) {
+}: GaugeChartProps) {
   // Handle both data array format and direct value prop
   const chartValue = data && data.length > 0 ? data[0].value : (value || 0);
   const chartTitle = data && data.length > 0 ? data[0].name : title;
@@ -27,7 +44,7 @@ export default function GaugeChart({
   const percentage = Math.min((chartValue / max) * 100, 100);
   
   // Determine color based on thresholds
-  const getColor = (val) => {
+  const getColor = (val: number) => {
     for (let i = 0; i < thresholds.length; i++) {
       if (val <= thresholds[i].value) {
         return thresholds[i].color;
@@ -37,7 +54,7 @@ export default function GaugeChart({
   };
 
   // Prepare chart option
-  const option = {
+  const option: EChartsOption = {
     title: {
       text: chartTitle,
       left: 'center',
@@ -101,18 +118,18 @@ export default function GaugeChart({
         color: '#6b7280',
         fontSize: 12,
         distance: -60,
-        formatter: function(value) {
+        formatter: function(value: number) {
           if (value >= 1000000) {
             return (value / 1000000).toFixed(1) + 'M';
           } else if (value >= 1000) {
             return (value / 1000).toFixed(1) + 'K';
           }
-          return value;
+          return String(value);
         }
       },
       detail: {
         valueAnimation: true,
-        formatter: function(value) {
+        formatter: function(value: number) {
           let formattedValue;
           if (value >= 1000000) {
             formattedValue = (value / 1000000).toFixed(1) + 'M';

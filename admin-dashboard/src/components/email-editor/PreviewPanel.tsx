@@ -1,8 +1,11 @@
 import React, { useState } from 'react';
 import { blocksToPreviewHtml } from './utils/blockToHtml';
+import type { Block } from './utils/blockTypes';
+
+type Device = 'desktop' | 'tablet' | 'mobile';
 
 // Device presets
-const DEVICES = {
+const DEVICES: Record<Device, { width: number; label: string; icon: string }> = {
     desktop: { width: 600, label: 'Desktop', icon: '🖥️' },
     tablet: { width: 480, label: 'Tablet', icon: '📱' },
     mobile: { width: 320, label: 'Mobile', icon: '📲' },
@@ -32,8 +35,16 @@ export default function PreviewPanel({
     templateName,
     status,
     type
+}: {
+    isOpen: boolean;
+    onClose: () => void;
+    blocks: Block[];
+    subject?: string;
+    templateName?: string;
+    status?: string;
+    type?: string;
 }) {
-    const [selectedDevice, setSelectedDevice] = useState('desktop');
+    const [selectedDevice, setSelectedDevice] = useState<Device>('desktop');
     const [showVariables, setShowVariables] = useState(true);
 
     if (!isOpen) return null;
@@ -72,7 +83,7 @@ export default function PreviewPanel({
 
                     {/* Device Selector */}
                     <div className="flex items-center gap-2">
-                        {Object.entries(DEVICES).map(([key, dev]) => (
+                        {(Object.entries(DEVICES) as [Device, typeof DEVICES[Device]][]).map(([key, dev]) => (
                             <button
                                 key={key}
                                 onClick={() => setSelectedDevice(key)}
@@ -178,6 +189,6 @@ export default function PreviewPanel({
 }
 
 // Helper to escape regex special characters
-function escapeRegExp(string) {
+function escapeRegExp(string: string) {
     return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }

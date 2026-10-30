@@ -1,8 +1,13 @@
 import React from 'react';
-import { BLOCK_META, BLOCK_TYPES } from './utils/blockTypes';
+import { BLOCK_META, BLOCK_TYPES, type BlockType } from './utils/blockTypes';
 
-export default function AddBlockMenu({ onAddBlock, position = null }) {
-    const blockCategories = [
+interface AddBlockMenuProps {
+    onAddBlock: (type: BlockType) => void;
+    position?: number | null;
+}
+
+export default function AddBlockMenu({ onAddBlock, position = null }: AddBlockMenuProps) {
+    const blockCategories: { label: string; blocks: BlockType[] }[] = [
         {
             label: 'Content',
             blocks: [BLOCK_TYPES.TEXT, BLOCK_TYPES.HEADING, BLOCK_TYPES.IMAGE],
@@ -63,7 +68,7 @@ export default function AddBlockMenu({ onAddBlock, position = null }) {
 }
 
 // Compact inline version for adding between blocks
-export function AddBlockButton({ onClick, className = '' }) {
+export function AddBlockButton({ onClick, className = '' }: { onClick: () => void; className?: string }) {
     return (
         <button
             onClick={onClick}
