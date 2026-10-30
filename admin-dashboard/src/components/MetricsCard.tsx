@@ -1,6 +1,13 @@
 'use client';
 
-export default function MetricsCard({ title, value, change, trend }) {
+interface MetricsCardProps {
+    title: string;
+    value: string | number;
+    change?: string | null;
+    trend?: 'up' | 'down' | 'neutral' | null;
+}
+
+export default function MetricsCard({ title, value, change, trend }: MetricsCardProps) {
     const isNeutral = !trend || trend === 'neutral';
     const isPositive = trend === 'up';
     const colorClass = isNeutral ? 'text-gray-400' : (isPositive ? 'text-green-600' : 'text-red-600');

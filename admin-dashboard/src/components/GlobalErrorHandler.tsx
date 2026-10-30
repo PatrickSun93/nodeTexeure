@@ -11,7 +11,7 @@ export default function GlobalErrorHandler() {
 
   useEffect(() => {
     // Global error handler for unhandled promise rejections
-    const handleUnhandledRejection = (event) => {
+    const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
       console.error('Unhandled promise rejection:', event.reason);
       
       // Check if it's an authentication error
@@ -26,7 +26,7 @@ export default function GlobalErrorHandler() {
     };
 
     // Global error handler for JavaScript errors
-    const handleError = (event) => {
+    const handleError = (event: ErrorEvent) => {
       console.error('Global JavaScript error:', event.error);
       
       // Don't show notifications for every JS error in production

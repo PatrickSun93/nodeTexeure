@@ -12,8 +12,8 @@ export default function SessionManager() {
   const { showWarning, showError, updateSettings, settings } = useAdmin();
   const router = useRouter();
   const lastActivityRef = useRef(Date.now());
-  const sessionCheckIntervalRef = useRef(null);
-  const inactivityWarningRef = useRef(null);
+  const sessionCheckIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const inactivityWarningRef = useRef<string | null>(null);
 
   // Session timeout settings (in milliseconds)
   const SESSION_TIMEOUT = 30 * 60 * 1000; // 30 minutes
@@ -157,7 +157,7 @@ export default function SessionManager() {
 
   // Handle browser tab/window close
   useEffect(() => {
-    const handleBeforeUnload = (event) => {
+    const handleBeforeUnload = () => {
       // Save any pending data or state before the user leaves
       if (settings.autoSave) {
         // Trigger any auto-save functionality

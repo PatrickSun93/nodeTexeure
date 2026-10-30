@@ -2195,11 +2195,6 @@
     "low": "Faible",
     "loading": "Chargement…"
   },
-  "ExportButton": {
-    "exportCsv": "Exporter en CSV",
-    "exporting": "Exportation…",
-    "exportFailed": "Échec de l'export. Veuillez réessayer."
-  },
   "SessionManager": {
     "validationFailed": "Échec de la validation de la session. Veuillez vous reconnecter.",
     "expiryWarning": "Votre session expirera dans 5 minutes en raison d'inactivité. Cliquez n'importe où pour la prolonger.",

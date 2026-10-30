@@ -2195,11 +2195,6 @@
     "low": "Low",
     "loading": "Loading..."
   },
-  "ExportButton": {
-    "exportCsv": "Export CSV",
-    "exporting": "Exporting...",
-    "exportFailed": "Export failed. Please try again."
-  },
   "SessionManager": {
     "validationFailed": "Session validation failed. Please log in again.",
     "expiryWarning": "Your session will expire in 5 minutes due to inactivity. Click anywhere to extend your session.",

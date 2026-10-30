@@ -1,20 +1,30 @@
 'use client';
 
+type SpinnerSize = 'small' | 'medium' | 'large' | 'xlarge';
+type SpinnerColor = 'blue' | 'gray' | 'white' | 'green' | 'red';
+
+interface LoadingSpinnerProps {
+  size?: SpinnerSize;
+  color?: SpinnerColor;
+  text?: string;
+  className?: string;
+}
+
 // Loading Spinner Component
 export default function LoadingSpinner({ 
   size = 'medium', 
   color = 'blue', 
   text = '', 
   className = '' 
-}) {
-  const sizeClasses = {
+}: LoadingSpinnerProps) {
+  const sizeClasses: Record<SpinnerSize, string> = {
     small: 'w-4 h-4',
     medium: 'w-6 h-6',
     large: 'w-8 h-8',
     xlarge: 'w-12 h-12'
   };
 
-  const colorClasses = {
+  const colorClasses: Record<SpinnerColor, string> = {
     blue: 'text-blue-600',
     gray: 'text-gray-600',
     white: 'text-white',
@@ -56,12 +66,12 @@ export default function LoadingSpinner({
 }
 
 // Inline loading spinner for buttons
-export function ButtonSpinner({ size = 'small', color = 'white' }) {
+export function ButtonSpinner({ size = 'small', color = 'white' }: Pick<LoadingSpinnerProps, 'size' | 'color'>) {
   return <LoadingSpinner size={size} color={color} />;
 }
 
 // Page loading overlay
-export function PageLoadingOverlay({ text = 'Loading...' }) {
+export function PageLoadingOverlay({ text = 'Loading...' }: { text?: string }) {
   return (
     <div className="fixed inset-0 bg-white bg-opacity-75 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg shadow-lg p-6 flex items-center space-x-3">
@@ -73,7 +83,7 @@ export function PageLoadingOverlay({ text = 'Loading...' }) {
 }
 
 // Card loading skeleton
-export function CardLoadingSkeleton({ rows = 3 }) {
+export function CardLoadingSkeleton({ rows = 3 }: { rows?: number }) {
   return (
     <div className="animate-pulse">
       <div className="space-y-3">
@@ -86,7 +96,7 @@ export function CardLoadingSkeleton({ rows = 3 }) {
 }
 
 // Table loading skeleton
-export function TableLoadingSkeleton({ rows = 5, columns = 4 }) {
+export function TableLoadingSkeleton({ rows = 5, columns = 4 }: { rows?: number; columns?: number }) {
   return (
     <div className="animate-pulse">
       <div className="space-y-3">

@@ -1,16 +1,43 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { usePerformance, useWebVitals, useResourcePerformance } from '@/hooks/usePerformance';
+import { usePerformance, useWebVitals, useResourcePerformance, type PerformanceMetrics, type VitalName } from '@/hooks/usePerformance';
 import { useAdmin } from '@/contexts/AdminContext';
+
+interface PerformanceData {
+  timestamp?: number;
+  vitals?: Record<VitalName, number>;
+  resources?: { total: number; totalSize: number; slowResources: number };
+  memory?: { used: number; total: number; limit: number } | null;
+  navigation?: {
+    domContentLoaded: number;
+    loadComplete: number;
+    domInteractive: number;
+    firstPaint: number | null;
+  } | null;
+  component?: PerformanceMetrics;
+}
+
+/** Chrome's non-standard performance.memory */
+interface PerformanceMemory {
+  usedJSHeapSize: number;
+  totalJSHeapSize: number;
+  jsHeapSizeLimit: number;
+}
+
+declare global {
+  interface Window {
+    gtag?: (...args: unknown[]) => void;
+  }
+}
 
 // Performance Monitor Component
 export default function PerformanceMonitor({ 
   enabled = process.env.NODE_ENV === 'development',
   showWidget = false,
   reportInterval = 30000 // 30 seconds
-}) {
-  const [performanceData, setPerformanceData] = useState({});
+}: { enabled?: boolean; showWidget?: boolean; reportInterval?: number }) {
+  const [performanceData, setPerformanceData] = useState<PerformanceData>({});
   const [isVisible, setIsVisible] = useState(showWidget);
   const { showWarning } = useAdmin();
 
@@ -46,7 +73,7 @@ export default function PerformanceMonitor({
     if (!enabled) return;
 
     const collectPerformanceData = () => {
-      const data = {
+      const data: PerformanceData = {
         timestamp: Date.now(),
         vitals,
         resources: {
@@ -85,7 +112,7 @@ export default function PerformanceMonitor({
   // Get memory information
   const getMemoryInfo = () => {
     if (typeof window !== 'undefined' && 'memory' in performance) {
-      const memory = performance.memory;
+      const memory = (performance as Performance & { memory: PerformanceMemory }).memory;
       return {
         used: Math.round(memory.usedJSHeapSize / 1024 / 1024),
         total: Math.round(memory.totalJSHeapSize / 1024 / 1024),
@@ -98,12 +125,13 @@ export default function PerformanceMonitor({
   // Get navigation timing
   const getNavigationTiming = () => {
     if (typeof window !== 'undefined' && 'navigation' in performance) {
-      const nav = performance.getEntriesByType('navigation')[0];
+      const nav = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming | undefined;
       if (nav) {
         return {
           domContentLoaded: nav.domContentLoadedEventEnd - nav.domContentLoadedEventStart,
           loadComplete: nav.loadEventEnd - nav.loadEventStart,
-          domInteractive: nav.domInteractive - nav.navigationStart,
+          // navigationStart is the old Navigation Timing API; this entry starts at startTime (0)
+          domInteractive: nav.domInteractive - nav.startTime,
           firstPaint: getFirstPaint()
         };
       }
@@ -169,9 +197,9 @@ export default function PerformanceMonitor({
           <div className="font-medium text-gray-700 mb-1">Resources</div>
           <div className="text-gray-600">
             {performanceData.resources?.total || 0} loaded
-            {performanceData.resources?.slowResources > 0 && (
+            {(performanceData.resources?.slowResources ?? 0) > 0 && (
               <span className="text-red-600 ml-1">
-                ({performanceData.resources.slowResources} slow)
+                ({performanceData.resources?.slowResources} slow)
               </span>
             )}
           </div>
@@ -191,7 +219,7 @@ export default function PerformanceMonitor({
   );
 
   // Get color class for vital scores
-  const getVitalColor = (vital, value) => {
+  const getVitalColor = (vital: 'LCP' | 'FID' | 'CLS', value: number) => {
     if (!value) return 'bg-gray-100 text-gray-600';
     
     const thresholds = {
@@ -228,7 +256,7 @@ export default function PerformanceMonitor({
 }
 
 // Performance Report Component
-export function PerformanceReport({ data }) {
+export function PerformanceReport({ data }: { data: PerformanceData | null }) {
   if (!data) return null;
 
   return (
@@ -242,19 +270,19 @@ export function PerformanceReport({ data }) {
           <div className="space-y-2">
             <div className="flex justify-between">
               <span>LCP:</span>
-              <span className={data.vitals?.LCP > 2500 ? 'text-red-600' : 'text-green-600'}>
+              <span className={(data.vitals?.LCP ?? 0) > 2500 ? 'text-red-600' : 'text-green-600'}>
                 {data.vitals?.LCP ? `${data.vitals.LCP.toFixed(0)}ms` : 'N/A'}
               </span>
             </div>
             <div className="flex justify-between">
               <span>FID:</span>
-              <span className={data.vitals?.FID > 100 ? 'text-red-600' : 'text-green-600'}>
+              <span className={(data.vitals?.FID ?? 0) > 100 ? 'text-red-600' : 'text-green-600'}>
                 {data.vitals?.FID ? `${data.vitals.FID.toFixed(0)}ms` : 'N/A'}
               </span>
             </div>
             <div className="flex justify-between">
               <span>CLS:</span>
-              <span className={data.vitals?.CLS > 0.1 ? 'text-red-600' : 'text-green-600'}>
+              <span className={(data.vitals?.CLS ?? 0) > 0.1 ? 'text-red-600' : 'text-green-600'}>
                 {data.vitals?.CLS ? data.vitals.CLS.toFixed(3) : 'N/A'}
               </span>
             </div>

@@ -1,7 +1,15 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { useAdmin } from '@/contexts/AdminContext';
+import { useAdmin, type AdminContextValue } from '@/contexts/AdminContext';
+
+interface ServiceWorkerRegistrationProps {
+  enabled?: boolean;
+  swPath?: string;
+  onUpdate?: (worker: ServiceWorker) => void;
+  onOffline?: () => void;
+  onOnline?: () => void;
+}
 
 // Service Worker Registration Component
 export default function ServiceWorkerRegistration({ 
@@ -10,8 +18,8 @@ export default function ServiceWorkerRegistration({
   onUpdate,
   onOffline,
   onOnline
-}) {
-  const [registration, setRegistration] = useState(null);
+}: ServiceWorkerRegistrationProps) {
+  const [registration, setRegistration] = useState<ServiceWorkerRegistration | null>(null);
   const [updateAvailable, setUpdateAvailable] = useState(false);
   const [isOnline, setIsOnline] = useState(true);
   const { showNotification, showSuccess, showWarning } = useAdmin();
@@ -20,7 +28,7 @@ export default function ServiceWorkerRegistration({
   // identities on every render. Keep the latest in a ref so the effects below
   // run once — otherwise each re-render re-registered the worker, stacked another
   // controllerchange listener, and showed another "ready for offline use" toast.
-  const latest = useRef({});
+  const latest = useRef<Pick<AdminContextValue, 'showNotification' | 'showSuccess' | 'showWarning'> & Pick<ServiceWorkerRegistrationProps, 'onUpdate' | 'onOffline' | 'onOnline'>>(null!);
   latest.current = { showNotification, showSuccess, showWarning, onUpdate, onOffline, onOnline };
 
   // Register service worker
@@ -133,7 +141,7 @@ export default function ServiceWorkerRegistration({
   };
 
   // Cache specific URLs
-  const cacheUrls = (urls) => {
+  const cacheUrls = (urls: string[]) => {
     if (registration && registration.active) {
       registration.active.postMessage({
         type: 'CACHE_URLS',
@@ -143,7 +151,7 @@ export default function ServiceWorkerRegistration({
   };
 
   // Clear cache
-  const clearCache = (cacheName = null) => {
+  const clearCache = (cacheName: string | null = null) => {
     if (registration && registration.active) {
       registration.active.postMessage({
         type: 'CLEAR_CACHE',
@@ -195,7 +203,7 @@ export default function ServiceWorkerRegistration({
 
 // Hook for service worker functionality
 export function useServiceWorker() {
-  const [registration, setRegistration] = useState(null);
+  const [registration, setRegistration] = useState<ServiceWorkerRegistration | null>(null);
   const [isOnline, setIsOnline] = useState(true);
   const [updateAvailable, setUpdateAvailable] = useState(false);
 
@@ -206,7 +214,7 @@ export function useServiceWorker() {
     }
   }, []);
 
-  const cacheUrls = (urls) => {
+  const cacheUrls = (urls: string[]) => {
     if (registration && registration.active) {
       registration.active.postMessage({
         type: 'CACHE_URLS',
@@ -215,7 +223,7 @@ export function useServiceWorker() {
     }
   };
 
-  const clearCache = (cacheName = null) => {
+  const clearCache = (cacheName: string | null = null) => {
     if (registration && registration.active) {
       registration.active.postMessage({
         type: 'CLEAR_CACHE',

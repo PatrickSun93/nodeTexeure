@@ -1,13 +1,16 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
+import type { OrderListItem } from '@/types/api';
 
-export default function RecentOrdersTable({ orders = [] }) {
+type RecentOrder = Pick<OrderListItem, 'id' | 'customer' | 'date' | 'amount' | 'status'>;
+
+export default function RecentOrdersTable({ orders = [] }: { orders?: RecentOrder[] }) {
     const t = useTranslations('RecentOrders');
     const displayOrders = orders;
 
-    const getStatusBadge = (status) => {
-        const colors = {
+    const getStatusBadge = (status: string) => {
+        const colors: Record<string, string> = {
             'Shipped': 'bg-green-100 text-green-700',
             'Pending': 'bg-yellow-100 text-yellow-700',
             'Cancelled': 'bg-red-100 text-red-700',
@@ -35,7 +38,7 @@ export default function RecentOrdersTable({ orders = [] }) {
                     <tbody className="bg-white divide-y divide-gray-200">
                         {displayOrders.length === 0 ? (
                             <tr>
-                                <td colSpan="5" className="px-6 py-10 text-center text-gray-500">
+                                <td colSpan={5} className="px-6 py-10 text-center text-gray-500">
                                     {t('noOrders')}
                                 </td>
                             </tr>

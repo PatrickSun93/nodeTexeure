@@ -2,8 +2,14 @@
 
 import { useState, useRef, useEffect } from 'react';
 
-export default function RichTextEditor({ value = '', onChange, placeholder = 'Start writing...' }) {
-  const editorRef = useRef(null);
+interface RichTextEditorProps {
+  value?: string;
+  onChange?: (html: string) => void;
+  placeholder?: string;
+}
+
+export default function RichTextEditor({ value = '', onChange, placeholder = 'Start writing...' }: RichTextEditorProps) {
+  const editorRef = useRef<HTMLDivElement>(null);
   const [isToolbarVisible, setIsToolbarVisible] = useState(true);
 
   useEffect(() => {
@@ -18,7 +24,7 @@ export default function RichTextEditor({ value = '', onChange, placeholder = 'St
     }
   };
 
-  const execCommand = (command, value = null) => {
+  const execCommand = (command: string, value?: string) => {
     document.execCommand(command, false, value);
     editorRef.current?.focus();
     handleInput();
@@ -38,7 +44,7 @@ export default function RichTextEditor({ value = '', onChange, placeholder = 'St
     }
   };
 
-  const formatBlock = (tag) => {
+  const formatBlock = (tag: string) => {
     execCommand('formatBlock', tag);
   };
 
