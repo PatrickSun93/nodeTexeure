@@ -206,6 +206,17 @@ describeIfRust('users auth: register', () => {
     await same('post', '/api/users/register', { raw: `email${'[a]'.repeat(32)}=x`, type: form });
   });
 
+  test('bodies past axum\'s 2 MB extractor limit, and bad bodies on the cart routes', async () => {
+    const noError = (b) => ({ ...b, keyValueTable: { ...b.keyValueTable, error: 'ERR' } });
+    const huge = JSON.stringify({ email: 'a@b.co', pad: 'x'.repeat(2.5 * 1024 * 1024) });
+    await same('post', '/api/users/login', { raw: huge, type: 'application/json' });
+    for (const url of ['/api/cart/track-abandonment', '/api/cart/cancel-abandonment', '/api/cart/reserve-stock', '/api/cart/add']) {
+      await same('post', url, { raw: '{bad', type: 'application/json' }, { fix: noError });
+      await same('post', url, { raw: '"just a string"', type: 'application/json' }, { fix: noError });
+      await same('post', url, { raw: huge, type: 'application/json' });
+    }
+  });
+
   test('success: same answer, same users row, same queued emails', async () => {
     const n = valid();
     const r = valid();

@@ -39,10 +39,9 @@ services:
       NODE_ENV: production
       JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET}
       NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:?set NEXTAUTH_SECRET}
-      # Rate limits key on the client IP. Only the storefront/admin reach this
-      # service, so trust one hop: the right-most X-Forwarded-For entry, which
-      # the TLS proxy in front of 3000/3005 must set (docs/DEPLOYMENT.md).
-      TRUST_PROXY: ${TRUST_PROXY:-1}
+      # TRUST_PROXY (rate-limit client IP) comes from backend/.env: opt in with 1
+      # only when 3000/3005 are reachable solely through a TLS proxy that sets
+      # X-Forwarded-For (docs/DEPLOYMENT.md).
       STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
       AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-}
       AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-}
@@ -118,10 +117,9 @@ services:
       # Must match the backend: the API verifies the tokens Node signs.
       NODE_ENV: production
       JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET}
-      # Rate limits key on the client IP. Only the storefront/admin reach this
-      # service, so trust one hop: the right-most X-Forwarded-For entry, which
-      # the TLS proxy in front of 3000/3005 must set (docs/DEPLOYMENT.md).
-      TRUST_PROXY: ${TRUST_PROXY:-1}
+      # TRUST_PROXY (rate-limit client IP) comes from backend/.env: opt in with 1
+      # only when 3000/3005 are reachable solely through a TLS proxy that sets
+      # X-Forwarded-For (docs/DEPLOYMENT.md).
     expose:
       - "7000"
     restart: unless-stopped

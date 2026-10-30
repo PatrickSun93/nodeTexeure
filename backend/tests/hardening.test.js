@@ -54,3 +54,44 @@ describe('admin writes', () => {
     expect(withCsrf.status).toBe(404);
   });
 });
+
+describe('unsubscribe addresses match exactly (migration 015)', () => {
+  const { buildUnsubscribeToken, isEmailSuppressed } = require('../utils/emailSuppression');
+  const victim = `optout.${Date.now()}@example.com`;
+  const lookalike = victim.replace('example.com', 'exämple.com');
+
+  test('a look-alike address token neither removes nor rewrites the real opt-out', async () => {
+    const opt = await request(app).post('/api/unsubscribe')
+      .send({ email: victim, token: buildUnsubscribeToken(victim), reason: 'mine' });
+    expect(opt.status).toBe(200);
+    expect(await isEmailSuppressed(victim)).toBe(true);
+
+    await request(app).post('/api/unsubscribe/resubscribe')
+      .send({ email: lookalike, token: buildUnsubscribeToken(lookalike) });
+    await request(app).post('/api/unsubscribe')
+      .send({ email: lookalike, token: buildUnsubscribeToken(lookalike), reason: 'attacker' });
+
+    const rows = DatabaseUtil.rows(await DatabaseUtil.executeQuery(
+      'SELECT email, reason FROM email_unsubscribes WHERE email IN (?, ?) ORDER BY email', [victim, lookalike]));
+    expect(rows).toEqual([
+      { email: victim, reason: 'mine' },
+      { email: lookalike, reason: 'attacker' },
+    ]);
+    expect(await isEmailSuppressed(victim)).toBe(true);
+  });
+});
+
+describe('forgot-password mails the stored address', () => {
+  test('a look-alike address gets nothing; the reset goes to the account email', async () => {
+    const lookalike = 'alice.customer@exämple.com';
+    const res = await request(app).post('/api/users/forgot-password').send({ email: lookalike });
+    expect(res.status).toBe(200);
+    const sentToTyped = DatabaseUtil.rows(await DatabaseUtil.executeQuery(
+      "SELECT id FROM email_queue WHERE to_email = ? COLLATE utf8mb4_bin", [lookalike]));
+    expect(sentToTyped).toEqual([]);
+    const sentToAccount = DatabaseUtil.rows(await DatabaseUtil.executeQuery(
+      `SELECT q.id FROM email_queue q JOIN email_templates t ON t.id = q.template_id
+        WHERE q.to_email = 'alice.customer@example.com' COLLATE utf8mb4_bin AND t.name = 'password_reset'`));
+    expect(sentToAccount.length).toBeGreaterThan(0);
+  });
+});

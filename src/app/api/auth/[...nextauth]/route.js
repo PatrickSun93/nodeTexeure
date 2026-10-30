@@ -3,6 +3,7 @@ import CredentialsProvider from 'next-auth/providers/credentials';
 import http from 'http';
 import https from 'https';
 import { URL } from 'url';
+import { headers as requestHeaders } from 'next/headers';
 import { apiBaseUrl } from '@/lib/server/apiTarget';
 // The Node backend as the rest of the server code sees it: PRODUCTION_BACKEND_URL
 // in production (the only one the production compose file sets), else BACKEND_URL.
@@ -103,6 +104,18 @@ const forwardedFor = (headers) => {
   return typeof value === 'string' && value ? { 'X-Forwarded-For': value } : {};
 };
 
+// The token refresh runs in the jwt callback, which gets no request object; read
+// the current request's header instead (route handlers and server components
+// both have one). Outside a request there is nothing to forward.
+const currentForwardedFor = async () => {
+  try {
+    const value = (await requestHeaders()).get('x-forwarded-for');
+    return value ? { 'X-Forwarded-For': value } : {};
+  } catch {
+    return {};
+  }
+};
+
 // Read `exp` from the backend JWT (no verification needed: it's our own token,
 // only used to schedule the refresh).
 const accessTokenExpiry = (accessToken) => {
@@ -118,6 +131,7 @@ async function refreshAccessToken(token) {
   try {
     const response = await fetchBackend('/api/users/refresh', {
       method: 'POST',
+      headers: await currentForwardedFor(),
       body: JSON.stringify({ refreshToken: token.refreshToken }),
     });
     const data = await response.json();

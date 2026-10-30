@@ -22,6 +22,7 @@
 use axum::Json;
 use axum::Router;
 use axum::body::Bytes;
+use axum::extract::rejection::BytesRejection;
 use axum::extract::{RawQuery, State};
 use axum::handler::Handler;
 use axum::http::{HeaderMap, HeaderValue, StatusCode, Uri, header};
@@ -184,6 +185,19 @@ struct Rejected(String);
 impl IntoResponse for Rejected {
     fn into_response(self) -> Response {
         express_error(&self.0)
+    }
+}
+
+/// [`request_body`] for a handler's body. Past axum's 2 MB extractor limit the
+/// bytes never arrive; body-parser answers that like anything over its 100 kB
+/// limit (the error handler's 500), not with axum's text 413.
+fn received_body(
+    headers: &HeaderMap,
+    bytes: &Result<Bytes, BytesRejection>,
+) -> Result<Value, Rejected> {
+    match bytes {
+        Ok(bytes) => request_body(headers, bytes),
+        Err(_) => Err(Rejected("request entity too large".into())),
     }
 }
 
@@ -524,8 +538,12 @@ fn vars(pairs: &[(&str, &str)]) -> Map<String, Value> {
 // --- POST /register ------------------------------------------------------------
 
 /// `POST /api/users/register` `{ email, password, firstName, lastName }`
-pub async fn register(State(state): State<AppState>, headers: HeaderMap, body: Bytes) -> Response {
-    let body = match request_body(&headers, &body) {
+pub async fn register(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+    body: Result<Bytes, BytesRejection>,
+) -> Response {
+    let body = match received_body(&headers, &body) {
         Ok(body) => body,
         Err(rejected) => return rejected.into_response(),
     };
@@ -652,8 +670,12 @@ fn invalid_credentials() -> Response {
 }
 
 /// `POST /api/users/login` `{ email, password }`
-pub async fn login(State(state): State<AppState>, headers: HeaderMap, body: Bytes) -> Response {
-    let body = match request_body(&headers, &body) {
+pub async fn login(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+    body: Result<Bytes, BytesRejection>,
+) -> Response {
+    let body = match received_body(&headers, &body) {
         Ok(body) => body,
         Err(rejected) => return rejected.into_response(),
     };
@@ -863,8 +885,12 @@ fn invalid_refresh() -> Response {
 
 /// `POST /api/users/refresh` `{ refreshToken }` → a new access token (the
 /// refresh token is not rotated).
-pub async fn refresh(State(state): State<AppState>, headers: HeaderMap, body: Bytes) -> Response {
-    let body = match request_body(&headers, &body) {
+pub async fn refresh(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+    body: Result<Bytes, BytesRejection>,
+) -> Response {
+    let body = match received_body(&headers, &body) {
         Ok(body) => body,
         Err(rejected) => return rejected.into_response(),
     };
@@ -995,9 +1021,9 @@ pub async fn csrf_token(
 pub async fn forgot_password(
     State(state): State<AppState>,
     headers: HeaderMap,
-    body: Bytes,
+    body: Result<Bytes, BytesRejection>,
 ) -> Response {
-    let body = match request_body(&headers, &body) {
+    let body = match received_body(&headers, &body) {
         Ok(body) => body,
         Err(rejected) => return rejected.into_response(),
     };
@@ -1020,10 +1046,10 @@ pub async fn forgot_password(
 }
 
 async fn send_reset(pool: &MySqlPool, email: &str) -> anyhow::Result<Response> {
-    let user_id = sqlx::query_scalar!("SELECT id FROM users WHERE email = ? LIMIT 1", email)
+    let user = sqlx::query!("SELECT id, email FROM users WHERE email = ? LIMIT 1", email)
         .fetch_optional(pool)
         .await;
-    let Ok(Some(user_id)) = user_id else {
+    let Ok(Some(user)) = user else {
         return Ok(reply(
             StatusCode::OK,
             success(
@@ -1032,6 +1058,10 @@ async fn send_reset(pool: &MySqlPool, email: &str) -> anyhow::Result<Response> {
             ),
         ));
     };
+    // Mail the stored address, never the typed one: the utf8mb4_unicode_ci
+    // lookup ignores case and accents, so a look-alike address finds this row.
+    let user_id = user.id;
+    let account_email = user.email;
     // Single use; only the SHA-256 is stored.
     let token = tokens::random_hex::<32>()?;
     sqlx::query!(
@@ -1045,7 +1075,7 @@ async fn send_reset(pool: &MySqlPool, email: &str) -> anyhow::Result<Response> {
     let reset_link = format!("{}/reset-password?token={token}", nextauth_url());
     email_queue::enqueue(
         pool,
-        email,
+        &account_email,
         "",
         "password_reset",
         &vars(&[("reset_link", &reset_link)]),
@@ -1068,9 +1098,9 @@ async fn send_reset(pool: &MySqlPool, email: &str) -> anyhow::Result<Response> {
 pub async fn reset_password(
     State(state): State<AppState>,
     headers: HeaderMap,
-    body: Bytes,
+    body: Result<Bytes, BytesRejection>,
 ) -> Response {
-    let body = match request_body(&headers, &body) {
+    let body = match received_body(&headers, &body) {
         Ok(body) => body,
         Err(rejected) => return rejected.into_response(),
     };

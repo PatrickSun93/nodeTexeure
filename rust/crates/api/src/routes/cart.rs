@@ -9,7 +9,7 @@
 //!   abandoned-cart email sequence (emailQueueService).
 
 use axum::Json;
-use axum::body::Bytes;
+use axum::body::Body;
 use axum::extract::{Path, State};
 use axum::http::{HeaderMap, HeaderValue, StatusCode, header};
 use axum::response::{IntoResponse, Response};
@@ -25,6 +25,7 @@ use crate::body;
 use crate::cookies;
 use crate::email_queue;
 use crate::error::ApiError;
+use crate::express;
 
 const SESSION_COOKIE: &str = "sessionId";
 const SESSION_MAX_AGE_DAYS: i64 = 30;
@@ -293,9 +294,13 @@ pub async fn add(
     State(state): State<AppState>,
     user: OptionalUser,
     headers: HeaderMap,
-    body: Bytes,
+    body: Body,
 ) -> Result<Response, ApiError> {
-    let body = body::json(&headers, &body);
+    // express.json() runs before the route: a body it rejects never gets here.
+    let body = match express::read_body(&headers, body).await {
+        Ok(body) => body,
+        Err(rejected) => return Ok(rejected),
+    };
     let Ok(Some(product_id)) = optional_id(body.get("product_id")) else {
         return Ok(reply(
             StatusCode::BAD_REQUEST,
@@ -420,9 +425,13 @@ pub async fn update(
     user: OptionalUser,
     headers: HeaderMap,
     Path(item_id): Path<String>,
-    body: Bytes,
+    body: Body,
 ) -> Result<Response, ApiError> {
-    let body = body::json(&headers, &body);
+    // express.json() runs before the route: a body it rejects never gets here.
+    let body = match express::read_body(&headers, body).await {
+        Ok(body) => body,
+        Err(rejected) => return Ok(rejected),
+    };
     let quantity = body.get("quantity").and_then(body::parse_int);
     let quantity = match check_quantity(quantity) {
         Ok(q) => q,
@@ -672,7 +681,12 @@ pub async fn reserve_stock(
     State(state): State<AppState>,
     user: OptionalUser,
     headers: HeaderMap,
+    body: Body,
 ) -> Response {
+    // The route ignores the body, but express.json() still rejects a bad one first.
+    if let Err(rejected) = express::read_body(&headers, body).await {
+        return rejected;
+    }
     let cart = match get_or_create(&state.pool, &user, &headers).await {
         Ok(cart) => cart,
         Err(err) => return server_error("Failed to reserve stock", &err),
@@ -776,10 +790,13 @@ pub async fn track_abandonment(
     State(state): State<AppState>,
     user: OptionalUser,
     headers: HeaderMap,
-    body: Bytes,
+    body: Body,
 ) -> Response {
     const FAILED: &str = "Failed to track cart abandonment";
-    let body = body::json(&headers, &body);
+    let body = match express::read_body(&headers, body).await {
+        Ok(body) => body,
+        Err(rejected) => return rejected,
+    };
     let guest_email = body.get("guestEmail");
     if user.0.is_none() && body::truthy(guest_email) && !is_guest_email(guest_email) {
         return reply(
@@ -900,9 +917,12 @@ pub async fn cancel_abandonment(
     State(state): State<AppState>,
     user: OptionalUser,
     headers: HeaderMap,
-    body: Bytes,
+    body: Body,
 ) -> Response {
-    let body = body::json(&headers, &body);
+    let body = match express::read_body(&headers, body).await {
+        Ok(body) => body,
+        Err(rejected) => return rejected,
+    };
     let email = match &user.0 {
         Some(u) => u.email.clone().filter(|e| !e.is_empty()),
         None => {

@@ -10,7 +10,7 @@
 const { app, request } = require('./helpers');
 const {
   RUST, describeIfRust, fresh, compare, compareWith, step, both, norm,
-  expectSameRateLimit, rustBin, startNode, startRust,
+  expectSameRateLimit, expectSameSetCookies, rustBin, startNode, startRust,
 } = require('./parityHelpers');
 
 describeIfRust('products: Node and Rust answer identically', () => {
@@ -326,8 +326,9 @@ describeIfRust('cart: same sequence, same answers', () => {
 
   test('guest: issues the same sessionId cookie, then keeps the cart on it', async () => {
     const first = await both({ node: { auth: {} }, rust: { auth: {} } }, 'get', '/api/cart');
-    const shape = (c) => c.replace(/sessionId=[0-9a-f]{32}/, 'sessionId=ID').replace(/Expires=[^;]+/, 'Expires=DATE');
-    expect(shape(first.rust.cookie)).toBe(shape(first.node.cookie));
+    // Every Set-Cookie, not just the first: an extra cookie from Rust must fail.
+    expect(first.rust.cookies).toHaveLength(first.node.cookies.length);
+    expectSameSetCookies(first.node, first.rust, { volatile: ['sessionId'] });
     const jar = (c) => ({ Cookie: c.split(';')[0] });
     await sequence({ node: { auth: jar(first.node.cookie) }, rust: { auth: jar(first.rust.cookie) } });
   });

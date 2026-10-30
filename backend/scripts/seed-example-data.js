@@ -647,7 +647,7 @@ async function seedUnsubscribes() {
   // create this table + register the UNSB prefix).
   await q(`CREATE TABLE IF NOT EXISTS email_unsubscribes (
     id VARCHAR(50) PRIMARY KEY,
-    email VARCHAR(255) NOT NULL,
+    email VARCHAR(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
     token VARCHAR(255) NOT NULL,
     scope VARCHAR(32) NOT NULL DEFAULT 'all',
     reason VARCHAR(255) NULL,

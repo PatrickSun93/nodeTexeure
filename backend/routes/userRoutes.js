@@ -914,14 +914,17 @@ router.post('/forgot-password', forgotLimiter, async (req, res) => {
       return res.status(400).json(ResponseFormatter.failure('Missing email', keyValueTable));
     }
 
-    const result = await DatabaseUtil.executeQuery('SELECT id FROM users WHERE email = ?', [email]);
+    const result = await DatabaseUtil.executeQuery('SELECT id, email FROM users WHERE email = ?', [email]);
 
     if (!result.success || result.data.length === 0) {
       const keyValueTable = { message: 'If the email exists, a reset link has been sent' }; // Security: don't reveal if email exists
       return res.json(ResponseFormatter.success('Password reset email sent if email exists', keyValueTable));
     }
 
-    const userId = result.data[0].id;
+    // Mail the address stored on the account, never the one typed: the
+    // utf8mb4_unicode_ci lookup ignores case and accents, so a look-alike
+    // address (alice@exämple.com) finds alice@example.com's row.
+    const { id: userId, email: accountEmail } = result.data[0];
     // Single-use random token; only its SHA-256 hash is stored, so a DB leak
     // doesn't hand out working reset links.
     const token = crypto.randomBytes(32).toString('hex');
@@ -936,7 +939,7 @@ router.post('/forgot-password', forgotLimiter, async (req, res) => {
 
     // Enqueue password reset email via the queue (daemon will send it)
     const resetLink = `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/reset-password?token=${token}`;
-    await emailQueueProducer.enqueue(email, '', 'password_reset', {
+    await emailQueueProducer.enqueue(accountEmail, '', 'password_reset', {
       reset_link: resetLink,
     });
 

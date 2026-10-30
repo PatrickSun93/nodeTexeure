@@ -34,8 +34,8 @@ and by the Rust `api` — says how many proxy hops in front of the service may s
 
 | `TRUST_PROXY` | Client IP | Use when |
 |---|---|---|
-| `0` (code default) | the TCP peer; `X-Forwarded-For` ignored | clients reach the service directly |
-| `1` (compose default) | the right-most `X-Forwarded-For` entry | only the storefront/admin reach it **and** the TLS proxy in front of them sets `X-Forwarded-For` |
+| `0` (default) | the TCP peer; `X-Forwarded-For` ignored | clients reach the service directly, or nothing in front sets `X-Forwarded-For` |
+| `1` | the right-most `X-Forwarded-For` entry | only the storefront/admin reach it **and** 3000/3005 are reachable only through a TLS proxy that sets `X-Forwarded-For` |
 | `n` | `n` entries from the right | `n` trusted proxies |
 
 With `0` behind the storefront, every visitor shares the storefront's single
@@ -49,8 +49,11 @@ from the TLS proxy:
 - nginx: `proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;`
 
 If nothing in front sets it, a client can send its own `X-Forwarded-For` and pick
-its bucket — use `TRUST_PROXY=0` then. Never expose 6666/7000 publicly with a
-non-zero value. The value must be a hop count (`true`, IP lists, etc. are
+its bucket — or lock someone else out of theirs — so the compose files don't
+set it: put `TRUST_PROXY=1` in `backend/.env` (read by both `backend` and
+`api`) only once the TLS proxy is in place **and** 3000/3005 can't be reached
+around it (e.g. publish them as `127.0.0.1:3000:3000`). Never expose 6666/7000
+publicly with a non-zero value. The value must be a hop count (`true`, IP lists, etc. are
 rejected and treated as `0`).
 
 The storefront's `/api` proxy target is baked in at build time
@@ -110,7 +113,7 @@ handlers return non-2xx if the order can't be updated, so Stripe retries.
 - [ ] Strong `JWT_SECRET`, `NEXTAUTH_SECRET`, `DB_PASSWORD`; `backend/.env` not in git
 - [ ] `NODE_ENV=production` (rate limits on, raw-SQL endpoint off, secure cookies)
 - [ ] HTTPS in front of 3000/3005; MySQL not exposed publicly
-- [ ] The TLS proxy sets `X-Forwarded-For` (else `TRUST_PROXY=0`); 6666/7000 not public
+- [ ] `TRUST_PROXY=1` in `backend/.env` only if the TLS proxy sets `X-Forwarded-For` and 3000/3005 are reachable only through it; 6666/7000 not public
 - [ ] `FRONTEND_URL`, `NEXTAUTH_URL`, `CORS_ORIGINS` use the real domains
 - [ ] Stripe live keys + webhook secret; test a purchase and a refund
 - [ ] SES sender verified; test password-reset and order-confirmation emails

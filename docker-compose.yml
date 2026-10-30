@@ -34,8 +34,6 @@ services:
       NODE_ENV: development
       JWT_SECRET: ${JWT_SECRET:-dev_only_jwt_secret_change_me_min_32_characters}
       NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:-dev_only_nextauth_secret}
-      # Rate-limit client IP: one trusted hop (the storefront proxy), as in prod.
-      TRUST_PROXY: ${TRUST_PROXY:-1}
     ports:
       - "6666:6666"
     volumes:
@@ -90,6 +88,11 @@ services:
     build:
       context: ./rust
     command: ["api"]
+    # Same settings the Node backend reads (FedEx, FRONTEND_URL, limits, TTLs);
+    # `environment:` below still wins for DB_*, NODE_ENV and JWT_SECRET.
+    env_file:
+      - path: ./backend/.env
+        required: false
     environment:
       DB_HOST: mysql
       DB_PORT: "3306"
@@ -100,8 +103,6 @@ services:
       # Must match the backend: the API verifies the tokens Node signs.
       NODE_ENV: development
       JWT_SECRET: ${JWT_SECRET:-dev_only_jwt_secret_change_me_min_32_characters}
-      # Rate-limit client IP: one trusted hop (the storefront proxy), as in prod.
-      TRUST_PROXY: ${TRUST_PROXY:-1}
     ports:
       - "7000:7000"
     depends_on:
