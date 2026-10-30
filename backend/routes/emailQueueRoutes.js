@@ -176,7 +176,11 @@ async function getWorkerStatus() {
 router.get('/', protect, admin, adminReadLimiter, async (req, res) => {
   try {
     const rawStatus = String(req.query.status || 'all').toLowerCase();
-    const dbStatus = UI_TO_DB_STATUS[rawStatus];
+    // Own keys only: `?status=constructor` / `__proto__` / `toString` must not
+    // resolve to an Object.prototype member and be bound into the WHERE.
+    const dbStatus = Object.prototype.hasOwnProperty.call(UI_TO_DB_STATUS, rawStatus)
+      ? UI_TO_DB_STATUS[rawStatus]
+      : undefined;
     const hasFilter = rawStatus !== 'all' && !!dbStatus;
 
     const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 50, 1), 200);

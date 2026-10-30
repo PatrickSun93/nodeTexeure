@@ -120,7 +120,9 @@ router.post('/products/upload', protect, admin, csrfProtection, upload.single('f
                     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 `;
 
-                await DatabaseUtil.executeQuery(query, [
+                // executeQuery never throws: a failed INSERT must count as failed,
+                // not as successful.
+                const insertResult = await DatabaseUtil.executeQuery(query, [
                     productId,
                     product.sku,
                     product.name,
@@ -140,6 +142,9 @@ router.post('/products/upload', protect, admin, csrfProtection, upload.single('f
                     JSON.stringify(product.product_details),
                     req.user.id
                 ]);
+                if (!insertResult.success) {
+                    throw new Error(insertResult.error);
+                }
 
                 results.successful++;
 
@@ -173,9 +178,12 @@ router.get('/orders/export', protect, admin, async (req, res) => {
             return res.status(400).json(ResponseFormatter.failure('Filters must be single values'));
         }
 
+        // `o.total_amount AS total`: orders has no `total` column, and
+        // exportOrders reads `order.total` (it wrote "NaN" for every order).
         let query = `
             SELECT 
                 o.*,
+                o.total_amount AS total,
                 u.email as user_email
             FROM orders o
             LEFT JOIN users u ON o.user_id = u.id
@@ -256,11 +264,13 @@ router.get('/products/export', protect, admin, async (req, res) => {
  */
 router.get('/customers/export', protect, admin, async (req, res) => {
     try {
+        // `o.total_amount`: orders has no `total` column (the query used to fail,
+        // so this export always answered 500).
         const query = `
             SELECT 
                 u.*,
                 COUNT(o.id) as total_orders,
-                SUM(CASE WHEN o.status NOT IN ('cancelled', 'refunded') THEN o.total ELSE 0 END) as lifetime_value
+                SUM(CASE WHEN o.status NOT IN ('cancelled', 'refunded') THEN o.total_amount ELSE 0 END) as lifetime_value
             FROM users u
             LEFT JOIN orders o ON u.id = o.user_id
             WHERE u.role = 'customer'

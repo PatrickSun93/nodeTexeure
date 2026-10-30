@@ -1,0 +1,24 @@
+{
+  "db_name": "MySQL",
+  "query": "SELECT get_next_id('PROD') AS \"id: String\"",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id: String",
+        "type_info": {
+          "type": "VarString",
+          "flags": "",
+          "max_size": 200
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 0
+    },
+    "nullable": [
+      true
+    ]
+  },
+  "hash": "9cd2e37606e24076e1f7f1c6511950c77081398d7156987a99ec98e262b053f8"
+}
