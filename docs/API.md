@@ -263,7 +263,7 @@ the `X-CSRF-Token` header matching the `csrf_token` cookie (from
 | Method | Path | Access |
 |---|---|---|
 | POST | `/api/shipping/rates` | public |
-| POST | `/api/shipping/create-label` | admin |
+| POST | `/api/shipping/create-label` | admin + CSRF |
 | GET | `/api/shipping/track/:trackingNumber` | public |
 
 ## `/api/status` — routes/statusRoutes.js

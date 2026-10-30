@@ -7,7 +7,7 @@ can move without the rest noticing.
 | Crate | Replaces | Status |
 |---|---|---|
 | `crates/email-daemon` | `backend/services/emailDaemon.js` | Live: the only consumer of `email_queue` |
-| `crates/api` | Express route groups, one at a time | `/api/products/*`, `/api/search/*`, `/api/journal/*`, `/api/settings/public`, `/api/wishlist/*` (signed in), `/api/orders/*` (my orders, detail, tracking, tax, coupons, **order creation**), `/api/cart` view/add/update/remove (signed in or guest) |
+| `crates/api` | Express route groups, one at a time | `/api/products/*`, `/api/search/*`, `/api/journal/*`, `/api/settings/public`, `/api/wishlist/*` (signed in), `/api/orders/*` (my orders, detail, tracking, tax, coupons, **order creation**), all of `/api/cart/*` (signed in or guest, incl. reserve-stock and abandonment tracking), `/api/abandoned-cart/*`, all of `/api/users/*` (register, login, refresh, session, CSRF token, password reset, email verification, profile, addresses, admin user management), `/api/reviews/*`, `/api/returns/*`, `/api/unsubscribe/*`, `/api/newsletter/*`, `/api/contact`, `/api/status/*`, `/api/shipping/*` (FedEx rates, labels, tracking) |
 | `crates/common` | — | Shared env config, MySQL connection, response envelope, timestamps |
 
 ## Why Rust here
@@ -87,9 +87,9 @@ DB). It answers only the route groups the storefront proxy sends it:
 ```bash
 # next.config.mjs reads these (baked in at `next build` for production)
 RUST_API_URL=http://api:7000
-RUST_API_ROUTES=products,search,journal,settings/public,wishlist,orders,cart
+RUST_API_ROUTES=products,search,journal,settings/public,wishlist,orders,cart,users,reviews,returns,abandoned-cart,unsubscribe,newsletter,contact,status,shipping
 # comma-separated groups; an entry with a slash moves one path; unset = all Node
-# a partly ported group (cart) moves only its ported paths — see partialGroups in next.config.mjs
+# a partly ported group moves only its ported paths — see partialGroups in next.config.mjs (none today)
 ```
 
 Unsetting `RUST_API_ROUTES` (and rebuilding the frontend) sends everything back
@@ -99,7 +99,12 @@ while. Responses carry `X-Served-By: rust-api`.
 **Parity is tested, not assumed.** `backend/tests/parity.test.js` sends the same
 requests (pagination edge cases, filters, search incl. SQL-injection strings,
 locales via query and cookie, slugs, unknown ids, bad input) to Node and Rust and
-requires identical status and JSON. CI runs it against a fresh API build.
+requires identical status and JSON. Each later group has its own
+`backend/tests/parity-<group>.test.js` (users_auth, users_account,
+reviews_returns, cart_rest, misc), which also compares Set-Cookie headers, the
+rows written, and rate-limit headers/429 bodies against production-mode servers
+(shared helpers: `backend/tests/parityHelpers.js`). CI runs them against a fresh
+API build.
 
 Notes on the port:
 - Optional filters are one static query with `(? IS NULL OR …)` clauses, so the
@@ -108,8 +113,25 @@ Notes on the port:
   `materials[]`, `NEXT_LOCALE` cookie) — see `src/params.rs`.
 - No response cache yet: Rust without a cache is as fast as Node with its
   5-minute cache, and never serves stale data.
-- Not yet ported: rate limiting (the Express global limiter) — the Rust service
-  sits behind the storefront proxy and is not exposed publicly in compose.
+- Rate limiting mirrors express-rate-limit (`src/ratelimit.rs`): the global
+  `/api` limiter plus the per-route presets (login, register, refresh,
+  forgot-password, verify-email, carrier), keyed on the client IP from
+  `TRUST_PROXY` hops exactly like Express's `req.ip` (`src/client_ip.rs`).
+  Buckets are in memory per service, so a client gets the budget once on Node
+  and once on Rust.
+- Shared foundation modules: `password.rs` (bcryptjs-compatible), `tokens.rs`
+  (access JWTs byte-identical to Node's, refresh tokens), `csrf.rs` (`Csrf<G>`
+  double-submit guard, Node-compatible tokens), `cookies.rs` (cookie-parser /
+  `res.cookie`), `email_queue.rs` (the queue producer, abandoned-cart emails,
+  unsubscribe tokens). Behaviour is pinned to recorded Node output in
+  `crates/api/fixtures/*.json` (`backend/scripts/gen-rust-fixtures.js`,
+  `gen-misc-fixtures.js`).
+- Express emulation: `express.rs` (body parsers with body-parser's errors, the
+  app's 404 `{ path, timestamp }` and error handler, `decode_param`, JS string
+  helpers), `express_router.rs` (Express Router matching for whole-group
+  dispatchers: case-insensitive literals, trailing slash, registration order),
+  `qs.rs` (qs 6.16 for `req.query` and urlencoded bodies), `fedex.rs` (the
+  FedEx client, via `reqwest` with rustls).
 
 ### Porting the next route group
 
@@ -121,15 +143,19 @@ Notes on the port:
 
 Done so far: the public read-only groups, `wishlist`, all of `orders` (incl.
 checkout: one transaction for order + coupon redemption + stock decrement +
-cart removal, then a queued confirmation email) and most of `cart`. A group can
-move in parts: `partialGroups` in `next.config.mjs` lists the paths of a partly
-ported group (Next path patterns, regex allowed); listing `cart` moves
-view/add/update/remove (incl. the guest `sessionId` cookie, issued exactly as
-Express does) while `reserve-stock` and the abandonment endpoints stay on Node.
+cart removal, then a queued confirmation email), all of `cart` and
+`abandoned-cart`, all of `users` (auth half in `routes/users_auth.rs`, account
+half and admin user management in `routes/users_account.rs`), `reviews`,
+`returns`, `unsubscribe`, `newsletter`, `contact`, `status` and `shipping`. A
+group can move in parts: `partialGroups` in `next.config.mjs` (mirrored in
+`src/lib/server/apiTarget.js` for NextAuth's server-side login/refresh calls)
+lists the paths of a partly ported group (Next path patterns, regex allowed).
+None is partial today. The admin dashboard still proxies everything to Node.
 **Auth** lives in `src/auth.rs`: handlers take `AuthUser` / `OptionalUser` /
 `StaffOrAdmin` / `Admin` extractors, which mirror Node's `protect` /
 `protectOptional` / `staffOrAdmin` / `admin` — Bearer header then `admin_auth`
 cookie, HS256 only, `exp`/`nbf` with no leeway, user row re-read per request
 (status + `token_version` revocation), identical 401/403 bodies. The parity test
-covers forged/expired/`alg:none`/revoked/deactivated tokens. Next: payments
-(Stripe checkout session + webhook), then CSRF + admin.
+covers forged/expired/`alg:none`/revoked/deactivated tokens. Admin writes use
+`Csrf<Admin>`. Next: payments (Stripe checkout session + webhook), then the
+admin groups.

@@ -9,9 +9,10 @@ pub mod returns;
 pub mod reviews;
 pub mod search;
 pub mod settings;
+// /api/users, account half (profile, addresses, admin users)
+pub mod users_account;
 // /api/users, auth half (register, login, refresh, session, csrf-token, password reset, verify-email)
 pub mod users_auth;
-pub mod users_account;
 pub mod wishlist;
 // unsubscribe, newsletter, contact, status, shipping (wf/misc)
 pub mod contact;

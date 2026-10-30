@@ -67,7 +67,7 @@ services:
       args:
         PRODUCTION_BACKEND_URL: http://backend:6666
         RUST_API_URL: http://api:7000
-        RUST_API_ROUTES: ${RUST_API_ROUTES-products,search,journal,settings/public,wishlist,orders,cart}
+        RUST_API_ROUTES: ${RUST_API_ROUTES-products,search,journal,settings/public,wishlist,orders,cart,users,reviews,returns,abandoned-cart,unsubscribe,newsletter,contact,status,shipping}
     environment:
       PRODUCTION_BACKEND_URL: http://backend:6666
       NEXTAUTH_URL: ${NEXTAUTH_URL:-http://localhost:3000}
@@ -102,6 +102,12 @@ services:
     build:
       context: ./rust
     command: ["api"]
+    # Same backend/.env as the Node backend: the groups served here read
+    # FEDEX_*, FRONTEND_URL, CSRF_SECRET, ACCESS_TOKEN_TTL, the rate-limit and
+    # cookie TTL settings, so both services must see the same values.
+    env_file:
+      - path: ./backend/.env
+        required: false
     environment:
       DB_HOST: mysql
       DB_PORT: "3306"

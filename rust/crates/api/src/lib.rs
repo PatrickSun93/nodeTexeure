@@ -181,7 +181,7 @@ pub fn router_with_limiter(state: AppState, global: ratelimit::RateLimiter) -> R
             axum::routing::any(routes::users_account::dispatch),
         )
         // reviews + returns: every path under their mount points, routed the
-        // way the Express router does it (crate::express).
+        // way the Express router does it (crate::express_router).
         .merge(routes::reviews::router())
         .merge(routes::returns::router())
         // unsubscribe, newsletter, contact, status, shipping (wf/misc)

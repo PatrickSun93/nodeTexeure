@@ -20,12 +20,18 @@ Design direction: **"Champagne & Charcoal"** (see [docs/DESIGN.md](docs/DESIGN.m
 
 The backend is being ported to Rust piece by piece (`rust/`, see
 [rust/README.md](rust/README.md)): the email daemon, the public read-only APIs
-(`products`, `search`, `journal`, `settings/public`), `wishlist` and the
-all of `orders` (incl. checkout/order creation) and the cart (view/add/update/remove)
-are done.
+(`products`, `search`, `journal`, `settings/public`), `wishlist`, all of `orders`
+(incl. checkout/order creation), all of `cart` and `abandoned-cart`, all of `users`
+(auth + account + admin user management), `reviews`, `returns`, `unsubscribe`,
+`newsletter`, `contact`, `status` and `shipping` are done. Shared Rust building
+blocks: `ratelimit.rs` + `client_ip.rs` (express-rate-limit / `TRUST_PROXY`),
+`password.rs` (bcryptjs), `tokens.rs` (JWT/refresh), `csrf.rs` (`Csrf<Admin>`),
+`cookies.rs`, `email_queue.rs`, `express.rs` / `express_router.rs` / `qs.rs`
+(Express body parsing, 404/error handler, routing, qs). The admin dashboard
+still proxies all of `/api` to Node.
 Rust auth (`rust/crates/api/src/auth.rs`: `AuthUser`, `OptionalUser`,
 `StaffOrAdmin`, `Admin` extractors) mirrors `protect`/`admin` exactly. The storefront proxy sends the groups in `RUST_API_ROUTES` to the Rust API;
-a ported group must pass `backend/tests/parity.test.js` (identical JSON to Node).
+a ported group must pass `backend/tests/parity.test.js` / its `parity-<group>.test.js` (identical JSON to Node).
 Write new public endpoints in `rust/crates/api`. New Rust queries use
 sqlx `query!` macros — refresh `rust/.sqlx` with `cargo sqlx prepare --workspace
 -- --all-targets` after changing one, or CI fails.

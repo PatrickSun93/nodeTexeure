@@ -9,9 +9,7 @@
 //
 // A group listed in PARTIAL_GROUPS moves only those paths. Keep it in sync with
 // `partialGroups` in next.config.mjs.
-const PARTIAL_GROUPS = {
-  cart: ['cart', 'cart/add', 'cart/update/:itemId', 'cart/remove/:itemId'],
-};
+const PARTIAL_GROUPS = {};
 
 /** RUST_API_URL and the RUST_API_ROUTES entries, parsed like next.config.mjs. */
 export function rustRouting(env = process.env) {
