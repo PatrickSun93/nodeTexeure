@@ -384,6 +384,9 @@ function backOffice() {
     const port = await freePort();
     const env = { NODE_ENV: 'test', JWT_SECRET: process.env.JWT_SECRET };
     if (process.env.CSRF_SECRET) env.CSRF_SECRET = process.env.CSRF_SECRET;
+    // A file that sets TRUST_PROXY before loading the app (so X-Forwarded-For
+    // picks the limiter key on both sides) gets the same rule in Rust.
+    if (process.env.TRUST_PROXY) env.TRUST_PROXY = process.env.TRUST_PROXY;
     bo.server = await startRust({ port, env });
     bo.rustUrl = bo.server.url;
     for (const who of ['admin', 'staff', 'customer']) bo.sessions[who] = await session(who);

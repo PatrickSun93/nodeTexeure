@@ -8,7 +8,6 @@ const ResponseFormatter = require('../../utils/responseFormatter');
 const path = require('path');
 const { randomUUID: uuidv4 } = require('crypto');
 const emailQueueProducer = require('../../services/emailQueueProducer');
-const emailService = require('../../services/emailService');
 const { adminReadLimiter, adminWriteLimiter } = require('./limiters');
 
 const router = express.Router();
@@ -170,21 +169,9 @@ router.put('/orders/:id/status', staffOrAdmin, adminWriteLimiter, csrfProtection
     if (order) {
       const customerEmail = order.user_email || order.guest_email;
       if (customerEmail) {
-        // For "shipped", send a direct shipping notification — reliable inline HTML
-        // captured by the dev email sink (the queue path below needs a DB template + daemon).
-        if (normalizedStatus === 'shipped') {
-          emailService.sendShippingNotification(
-            {
-              order_number: order.order_number,
-              guest_email: order.guest_email,
-              user_email: order.user_email,
-              customer_name: order.customer_name,
-            },
-            order.tracking_number || ('TRK' + Date.now()),
-            'FedEx'
-          ).catch((err) => console.error('Non-fatal: shipping email failed:', err.message));
-        }
-        // Map status to template name
+        // Map status to template name. Every customer email goes through the
+        // queue (the email daemon sends it); "shipped" used to also send a
+        // direct SES notification here, so the customer got two emails.
         const templateMap = {
           confirmed: 'order_confirmed',
           processing: 'order_processing',

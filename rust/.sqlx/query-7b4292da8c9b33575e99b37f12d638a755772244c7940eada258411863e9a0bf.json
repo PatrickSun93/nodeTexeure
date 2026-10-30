@@ -1,0 +1,12 @@
+{
+  "db_name": "MySQL",
+  "query": "INSERT INTO shipping_zones (id, name, countries, is_active) VALUES (?, ?, ?, ?)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 4
+    },
+    "nullable": []
+  },
+  "hash": "7b4292da8c9b33575e99b37f12d638a755772244c7940eada258411863e9a0bf"
+}

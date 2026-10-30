@@ -100,7 +100,8 @@ pub fn router_with_limiter(state: AppState, global: ratelimit::RateLimiter) -> R
         .route("/api/search/recent", get(routes::search::recent))
         .route("/api/journal", get(routes::journal::list))
         .route("/api/journal/{id_or_slug}", get(routes::journal::detail))
-        .route("/api/settings/public", get(routes::settings::public))
+        // The whole /api/settings group (public + admin `all`), Express-routed.
+        .merge(routes::settings::router())
         // The whole /api/cart and /api/abandoned-cart groups. Another method on
         // a known path, or an unknown sub-path, gets Express's 404 (never 405).
         .route("/api/cart", routes::cart::express(get(routes::cart::get)))

@@ -1,0 +1,12 @@
+{
+  "db_name": "MySQL",
+  "query": "DELETE FROM shipping_rates WHERE zone_id = ?",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": []
+  },
+  "hash": "bb99c0083d4dea9002863fae7e7498e9e724e5c0ec2e28fe76e8fbb97e1ee7f8"
+}

@@ -1,0 +1,24 @@
+{
+  "db_name": "MySQL",
+  "query": "SELECT UUID() as \"id!: String\"",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id!: String",
+        "type_info": {
+          "type": "VarString",
+          "flags": "",
+          "max_size": 144
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 0
+    },
+    "nullable": [
+      true
+    ]
+  },
+  "hash": "8cdd9e023ab7d30af4b8e449c71c645504fdf58eb3beb3da6823eeaa2706052c"
+}
