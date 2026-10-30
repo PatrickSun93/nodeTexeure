@@ -1,0 +1,37 @@
+# k3s's bundled Traefik serves both sites; cert-manager gets the certificates
+# from Let's Encrypt (ClusterIssuer in overlays/prod). __DOMAIN__ is filled in
+# by deploy.yml from the DOMAIN repository variable (e.g. 203.0.113.7.nip.io).
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: web
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+spec:
+  ingressClassName: traefik
+  tls:
+    - hosts:
+        - shop.__DOMAIN__
+        - admin.__DOMAIN__
+      secretName: web-tls
+  rules:
+    - host: shop.__DOMAIN__
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: frontend
+                port:
+                  name: http
+    - host: admin.__DOMAIN__
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: admin-dashboard
+                port:
+                  name: http

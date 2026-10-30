@@ -1,0 +1,49 @@
+#cloud-config
+# First boot: k3s (with its bundled Traefik ingress and local-path storage)
+# and cert-manager, installed by k3s's Helm controller from the manifest below.
+package_update: true
+
+write_files:
+  - path: /var/lib/rancher/k3s/server/manifests/cert-manager.yaml
+    permissions: "0600"
+    content: |
+      apiVersion: v1
+      kind: Namespace
+      metadata:
+        name: cert-manager
+      ---
+      apiVersion: helm.cattle.io/v1
+      kind: HelmChart
+      metadata:
+        name: cert-manager
+        namespace: kube-system
+      spec:
+        repo: https://charts.jetstack.io
+        chart: cert-manager
+        version: ${cert_manager_version}
+        targetNamespace: cert-manager
+        valuesContent: |-
+          crds:
+            enabled: true
+  # Keep the client's address: with the default Cluster policy k3s's service
+  # load balancer rewrites the source IP, and X-Forwarded-For (which the APIs
+  # rate-limit on, TRUST_PROXY=1) would carry the node's address instead.
+  - path: /var/lib/rancher/k3s/server/manifests/traefik-config.yaml
+    permissions: "0600"
+    content: |
+      apiVersion: helm.cattle.io/v1
+      kind: HelmChartConfig
+      metadata:
+        name: traefik
+        namespace: kube-system
+      spec:
+        valuesContent: |-
+          service:
+            spec:
+              externalTrafficPolicy: Local
+
+runcmd:
+  - >-
+    curl -sfL https://get.k3s.io |
+    %{ if k3s_version != "" }INSTALL_K3S_VERSION='${k3s_version}'%{ else }INSTALL_K3S_CHANNEL='${k3s_channel}'%{ endif }
+    sh -s - server --write-kubeconfig-mode 600

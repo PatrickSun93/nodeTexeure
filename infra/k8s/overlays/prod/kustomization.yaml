@@ -1,0 +1,27 @@
+# Production: the GHCR images at the deployed commit, plus the Let's Encrypt
+# issuer. deploy.yml renders this with `kubectl kustomize` and replaces the
+# placeholders before applying:
+#   __IMAGE_TAG__   the commit SHA the images were pushed with
+#   __DOMAIN__      repository variable DOMAIN (e.g. 203.0.113.7.nip.io)
+#   __ACME_EMAIL__  repository variable ACME_EMAIL (Let's Encrypt notices)
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../../base
+  # Cluster-scoped, so it stays out of the base's namespace.
+  - cluster-issuer.yaml
+
+images:
+  - name: nodetexeure-frontend
+    newName: ghcr.io/patricksun93/nodetexeure-frontend
+    newTag: __IMAGE_TAG__
+  - name: nodetexeure-admin
+    newName: ghcr.io/patricksun93/nodetexeure-admin
+    newTag: __IMAGE_TAG__
+  - name: nodetexeure-backend
+    newName: ghcr.io/patricksun93/nodetexeure-backend
+    newTag: __IMAGE_TAG__
+  - name: nodetexeure-rust
+    newName: ghcr.io/patricksun93/nodetexeure-rust
+    newTag: __IMAGE_TAG__

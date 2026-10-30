@@ -1,0 +1,47 @@
+# Rust worker: expired stock-reservation release and abandoned-cart detection
+# every 15 minutes, under the MySQL locks the backend's timers also take.
+# Migrations stay with the backend here (WORKER_MIGRATE=false), so the image
+# doesn't need backend/migrations. No HTTP port, so no probes: a crash exits
+# the process and the kubelet restarts it.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: worker
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: worker
+  template:
+    metadata:
+      labels:
+        app: worker
+    spec:
+      imagePullSecrets:
+        - name: ghcr-pull
+      containers:
+        - name: worker
+          image: nodetexeure-rust
+          args: ["worker"]
+          envFrom:
+            - secretRef:
+                name: app-env
+          env:
+            - name: DB_HOST
+              value: mysql
+            - name: DB_PORT
+              value: "3306"
+            - name: DB_NAME
+              value: bed_texture_ecommerce
+            - name: DB_USER
+              value: root
+            - name: NODE_ENV
+              value: production
+            - name: WORKER_MIGRATE
+              value: "false"
+          resources:
+            requests:
+              cpu: 10m
+              memory: 16Mi
+            limits:
+              memory: 128Mi

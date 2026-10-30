@@ -1,0 +1,12 @@
+# Local image uploads (when S3 is not configured), shared by the backend,
+# which serves /uploads, and the Rust API, which writes them. ReadWriteOnce is
+# enough on a single node: both pods run there.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: uploads
+spec:
+  accessModes: ["ReadWriteOnce"]
+  resources:
+    requests:
+      storage: 5Gi

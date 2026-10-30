@@ -1,0 +1,245 @@
+name: Deploy
+
+# After CI passes on main: build the four images, push them to GHCR tagged with
+# the commit SHA, roll the k3s cluster (infra/terraform) forward, and check
+# that https://shop.<DOMAIN>/health reports the new commit. A rollout that
+# doesn't become ready, or a health check that doesn't see the new commit,
+# is rolled back with `kubectl rollout undo` and fails the run.
+#
+# Configuration (Settings → Secrets and variables → Actions):
+#   secrets   DEPLOY_SSH_KEY      private key for root@DEPLOY_HOST (terraform's ssh_public_key_path)
+#             APP_ENV             the app's environment, dotenv format: DB_PASSWORD, JWT_SECRET,
+#                                 NEXTAUTH_SECRET, FRONTEND_URL, CORS_ORIGINS, Stripe/SES/S3 keys...
+#                                 (backend/.env.example lists them) → Secret app-env
+#             DEPLOY_KNOWN_HOSTS  optional: the node's ssh host key line; without it the key
+#                                 is trusted on first use (ssh-keyscan)
+#             GHCR_PULL_TOKEN     optional: a read:packages token, if the GHCR packages are private
+#   variables DEPLOY_HOST         the node's IP (terraform output ipv4)
+#             DOMAIN              e.g. 203.0.113.7.nip.io (terraform output nip_io_domain)
+#             ACME_EMAIL          Let's Encrypt account email
+# Without DEPLOY_SSH_KEY and DEPLOY_HOST the run is skipped, not failed.
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  NAMESPACE: nodetexeure
+
+jobs:
+  gate:
+    name: Gate
+    # Pushes to main whose CI passed (not CI runs of pull requests), or by hand.
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push')
+    runs-on: ubuntu-latest
+    outputs:
+      enabled: ${{ steps.check.outputs.enabled }}
+      sha: ${{ steps.check.outputs.sha }}
+      owner: ${{ steps.check.outputs.owner }}
+    steps:
+      - id: check
+        env:
+          SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          HOST: ${{ vars.DEPLOY_HOST }}
+          SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
+        run: |
+          echo "sha=$SHA" >> "$GITHUB_OUTPUT"
+          echo "owner=${GITHUB_REPOSITORY_OWNER,,}" >> "$GITHUB_OUTPUT"
+          if [ -n "$SSH_KEY" ] && [ -n "$HOST" ]; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Deploy skipped: set the DEPLOY_SSH_KEY secret and the DEPLOY_HOST variable (infra/README.md)."
+          fi
+
+  images:
+    name: Image (${{ matrix.name }})
+    needs: gate
+    if: needs.gate.outputs.enabled == 'true'
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          # Build args as in docker-compose.prod.yml: the proxy targets are
+          # baked into the Next.js builds and match the cluster's Service names.
+          - name: frontend
+            context: .
+            file: Dockerfile.prod
+            build-args: |
+              PRODUCTION_BACKEND_URL=http://backend:6666
+              RUST_API_URL=http://api:7000
+              RUST_API_ROUTES=products,search,journal,settings,wishlist,orders,cart,users,reviews,returns,abandoned-cart,unsubscribe,newsletter,contact,status,shipping,admin,database,payments,images
+          - name: admin
+            context: admin-dashboard
+            file: admin-dashboard/Dockerfile.prod
+            build-args: |
+              BACKEND_URL=http://backend:6666
+              RUST_API_URL=http://api:7000
+              RUST_API_ROUTES=admin,database,settings,payments,images,users
+          - name: backend
+            context: backend
+            file: backend/Dockerfile.prod
+            build-args: ""
+          - name: rust
+            context: rust
+            file: rust/Dockerfile
+            build-args: ""
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.gate.outputs.sha }}
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/build-push-action@v6
+        with:
+          context: ${{ matrix.context }}
+          file: ${{ matrix.file }}
+          build-args: ${{ matrix.build-args }}
+          push: true
+          tags: |
+            ghcr.io/${{ needs.gate.outputs.owner }}/nodetexeure-${{ matrix.name }}:${{ needs.gate.outputs.sha }}
+            ghcr.io/${{ needs.gate.outputs.owner }}/nodetexeure-${{ matrix.name }}:latest
+          cache-from: type=gha,scope=${{ matrix.name }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.name }}
+
+  deploy:
+    name: Roll out to k3s
+    needs: [gate, images]
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: https://shop.${{ vars.DOMAIN }}
+    env:
+      SHA: ${{ needs.gate.outputs.sha }}
+      DEPLOY_HOST: ${{ vars.DEPLOY_HOST }}
+      DOMAIN: ${{ vars.DOMAIN }}
+      ACME_EMAIL: ${{ vars.ACME_EMAIL }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.gate.outputs.sha }}
+
+      - name: Check configuration
+        env:
+          APP_ENV: ${{ secrets.APP_ENV }}
+        run: |
+          missing=""
+          [ -n "$DOMAIN" ] || missing="$missing DOMAIN(variable)"
+          [ -n "$ACME_EMAIL" ] || missing="$missing ACME_EMAIL(variable)"
+          [ -n "$APP_ENV" ] || missing="$missing APP_ENV(secret)"
+          if [ -n "$missing" ]; then echo "::error::Missing:$missing"; exit 1; fi
+          for key in DB_PASSWORD JWT_SECRET NEXTAUTH_SECRET; do
+            grep -q "^$key=." <<<"$APP_ENV" || { echo "::error::APP_ENV has no $key"; exit 1; }
+          done
+
+      # The Kubernetes API is not exposed (the firewall opens 22/80/443 only):
+      # kubectl goes through an SSH tunnel to the node's 127.0.0.1:6443.
+      - name: SSH tunnel and kubeconfig
+        env:
+          SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/deploy && chmod 600 ~/.ssh/deploy
+          if [ -n "$KNOWN_HOSTS" ]; then
+            printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
+          else
+            ssh-keyscan -T 10 "$DEPLOY_HOST" > ~/.ssh/known_hosts 2>/dev/null
+          fi
+          ssh -i ~/.ssh/deploy "root@$DEPLOY_HOST" cat /etc/rancher/k3s/k3s.yaml > "$RUNNER_TEMP/kubeconfig"
+          chmod 600 "$RUNNER_TEMP/kubeconfig"
+          ssh -i ~/.ssh/deploy -fN -o ExitOnForwardFailure=yes -L 6443:127.0.0.1:6443 "root@$DEPLOY_HOST"
+          echo "KUBECONFIG=$RUNNER_TEMP/kubeconfig" >> "$GITHUB_ENV"
+
+      - name: Cluster ready
+        run: |
+          kubectl get nodes
+          # cert-manager is installed by k3s on first boot (cloud-init); the
+          # ClusterIssuer can only be applied once its CRDs exist.
+          for i in $(seq 1 30); do
+            kubectl get crd clusterissuers.cert-manager.io >/dev/null 2>&1 && break
+            sleep 10
+          done
+          kubectl wait --for condition=established --timeout=60s crd/clusterissuers.cert-manager.io
+          kubectl -n cert-manager rollout status deploy/cert-manager-webhook --timeout=180s
+
+      - name: Secrets and config
+        env:
+          APP_ENV: ${{ secrets.APP_ENV }}
+          GHCR_PULL_TOKEN: ${{ secrets.GHCR_PULL_TOKEN }}
+        run: |
+          kubectl create namespace "$NAMESPACE" --dry-run=client -o yaml | kubectl apply -f -
+          printf '%s\n' "$APP_ENV" > "$RUNNER_TEMP/app.env"
+          kubectl -n "$NAMESPACE" create secret generic app-env --from-env-file="$RUNNER_TEMP/app.env" \
+            --dry-run=client -o yaml | kubectl apply -f -
+          rm -f "$RUNNER_TEMP/app.env"
+          if [ -n "$GHCR_PULL_TOKEN" ]; then
+            kubectl -n "$NAMESPACE" create secret docker-registry ghcr-pull --docker-server=ghcr.io \
+              --docker-username="${{ github.repository_owner }}" --docker-password="$GHCR_PULL_TOKEN" \
+              --dry-run=client -o yaml | kubectl apply -f -
+          fi
+          # Schema for MySQL's first start (docker/mysql/init.sql).
+          kubectl -n "$NAMESPACE" create configmap mysql-init --from-file=init.sql=docker/mysql/init.sql \
+            --dry-run=client -o yaml | kubectl apply -f -
+
+      - name: Apply
+        run: |
+          kubectl kustomize infra/k8s/overlays/prod \
+            | sed -e "s/__IMAGE_TAG__/$SHA/g" -e "s/__DOMAIN__/$DOMAIN/g" -e "s/__ACME_EMAIL__/$ACME_EMAIL/g" \
+            > "$RUNNER_TEMP/rendered.yaml"
+          kubectl apply -f "$RUNNER_TEMP/rendered.yaml"
+
+      - name: Roll out, check, roll back on failure
+        run: |
+          deployments="backend api worker email-daemon frontend admin-dashboard"
+          rollback() {
+            echo "::error::$1 — rolling back"
+            for d in $deployments; do
+              kubectl -n "$NAMESPACE" rollout undo "deploy/$d" || true   # nothing to undo on a first deploy
+            done
+            for d in $deployments; do
+              kubectl -n "$NAMESPACE" rollout status "deploy/$d" --timeout=300s || true
+            done
+            exit 1
+          }
+
+          kubectl -n "$NAMESPACE" rollout status statefulset/mysql --timeout=600s
+          for d in $deployments; do
+            kubectl -n "$NAMESPACE" rollout status "deploy/$d" --timeout=300s || {
+              kubectl -n "$NAMESPACE" get pods -o wide
+              kubectl -n "$NAMESPACE" describe "deploy/$d" | tail -30
+              rollback "deploy/$d did not become ready"
+            }
+          done
+
+          # The public URL must serve the new commit (the first certificate can
+          # take a minute or two to be issued).
+          url="https://shop.$DOMAIN/health"
+          for i in $(seq 1 30); do
+            body=$(curl -fsS --max-time 10 "$url" 2>/dev/null || true)
+            if grep -q "\"version\":\"$SHA\"" <<<"$body"; then
+              echo "$url → $body"
+              curl -sS --max-time 10 -o /dev/null -w "admin: %{http_code}\n" "https://admin.$DOMAIN/login" || true
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "last response: ${body:-none}"
+          rollback "$url never reported $SHA"
