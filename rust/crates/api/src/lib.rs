@@ -33,6 +33,14 @@ pub mod mysql_json;
 // /api/admin/analytics (wf/analytics): JavaScript Date semantics for getDateRange.
 pub mod js_date;
 
+// /api/payments and /api/images (wf/payments_images): the Stripe client and
+// webhook verification, S3 / local upload storage, sharp-style thumbnails,
+// and V8's JSON.parse (its exact error messages).
+pub mod imaging;
+pub mod s3;
+pub mod stripe;
+pub mod v8_json;
+
 use std::time::Duration;
 
 use axum::Router;

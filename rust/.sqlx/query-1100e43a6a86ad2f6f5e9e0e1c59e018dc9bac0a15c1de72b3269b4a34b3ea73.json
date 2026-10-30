@@ -1,0 +1,54 @@
+{
+  "db_name": "MySQL",
+  "query": "SELECT original_url, thumbnail_small_url, thumbnail_medium_url, thumbnail_large_url FROM product_images WHERE id = ?",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "original_url",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NOT_NULL | NO_DEFAULT_VALUE",
+          "max_size": 2000
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "thumbnail_small_url",
+        "type_info": {
+          "type": "VarString",
+          "flags": "",
+          "max_size": 2000
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "thumbnail_medium_url",
+        "type_info": {
+          "type": "VarString",
+          "flags": "",
+          "max_size": 2000
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "thumbnail_large_url",
+        "type_info": {
+          "type": "VarString",
+          "flags": "",
+          "max_size": 2000
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false,
+      true,
+      true,
+      true
+    ]
+  },
+  "hash": "1100e43a6a86ad2f6f5e9e0e1c59e018dc9bac0a15c1de72b3269b4a34b3ea73"
+}

@@ -135,7 +135,13 @@ async function uploadProductImage(fileBuffer, originalName, productId) {
 async function deleteFile(key) {
   if (!isConfigured) {
     // Delete locally
-    const filePath = path.join(__dirname, '..', 'uploads', key);
+    const uploadsDir = path.join(__dirname, '..', 'uploads');
+    const filePath = path.join(uploadsDir, key);
+    // Same path-traversal guard as saveLocally: a stored URL like
+    // '/uploads/../server.js' must not delete files outside the uploads dir.
+    if (!path.resolve(filePath).startsWith(path.resolve(uploadsDir) + path.sep)) {
+      throw new Error('Invalid upload path');
+    }
     if (fs.existsSync(filePath)) {
       fs.unlinkSync(filePath);
     }

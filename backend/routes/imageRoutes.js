@@ -90,11 +90,14 @@ router.post('/product/:productId', protect, admin, upload.single('image'), async
       'SELECT COALESCE(MAX(sort_order), 0) as max_sort FROM product_images WHERE product_id = ?',
       [productId]
     ));
-    const sortOrder = (maxSort?.max_sort || 0) + 1;
+    // COALESCE(MAX(int), 0) is a BIGINT, which mysql2 hands over as a string:
+    // without Number() this concatenated ('3' + 1 = '31'), so sort orders grew
+    // 1, 11, 111, … until the INSERT overflowed the INT column.
+    const sortOrder = Number(maxSort?.max_sort || 0) + 1;
 
     // Insert image record into database
     const imageId = uuidv4();
-    await db.executeQuery(
+    const inserted = await db.executeQuery(
       `INSERT INTO product_images (id, product_id, original_url, thumbnail_small_url, thumbnail_medium_url, thumbnail_large_url, sort_order)
        VALUES (?, ?, ?, ?, ?, ?, ?)`,
       [
@@ -107,6 +110,11 @@ router.post('/product/:productId', protect, admin, upload.single('image'), async
         sortOrder,
       ]
     );
+    // executeQuery never throws: without this check a failed INSERT answered
+    // success with an imageId that does not exist.
+    if (!inserted.success) {
+      throw new Error('Failed to save product image');
+    }
 
     res.json(ResponseFormatter.success('Product image uploaded successfully', {
       imageId,

@@ -9,14 +9,17 @@ publish.workspace = true
 
 [dependencies]
 anyhow.workspace = true
+aws-sdk-s3.workspace = true
 axum.workspace = true
 base64.workspace = true
 bcrypt.workspace = true
 chrono = { workspace = true, features = ["serde"] }
 common.workspace = true
 dotenvy.workspace = true
+flate2.workspace = true
 getrandom = "0.2"
 hmac.workspace = true
+image.workspace = true
 jsonwebtoken.workspace = true
 reqwest.workspace = true
 serde.workspace = true
@@ -29,6 +32,9 @@ tower.workspace = true
 tower-http.workspace = true
 tracing.workspace = true
 tracing-subscriber.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true
 
 [lints]
 workspace = true
