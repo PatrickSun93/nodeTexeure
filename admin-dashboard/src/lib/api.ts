@@ -3,10 +3,18 @@
  * Handles API calls to the backend with proper error handling and authentication
  */
 
+import type { ApiResponse } from '@/types/api';
+
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:6666';
 
+/** Query parameters, serialized with URLSearchParams. */
+type Params = Record<string, string>;
+
 class ApiError extends Error {
-  constructor(message, status, data) {
+  status: number;
+  data: unknown;
+
+  constructor(message: string, status: number, data: unknown) {
     super(message);
     this.name = 'ApiError';
     this.status = status;
@@ -16,14 +24,14 @@ class ApiError extends Error {
 
 /**
  * Make an API request with proper error handling
- * @param {string} endpoint - API endpoint (without /api prefix)
- * @param {object} options - Fetch options
- * @returns {Promise<object>} - API response data
+ * @param endpoint - API endpoint (without /api prefix)
+ * @param options - Fetch options
+ * @returns - API response data
  */
-export async function apiRequest(endpoint, options = {}) {
+export async function apiRequest<T = unknown>(endpoint: string, options: RequestInit = {}): Promise<ApiResponse<T>> {
   const url = endpoint.startsWith('http') ? endpoint : `/api/${endpoint.replace(/^\//, '')}`;
   
-  const config = {
+  const config: RequestInit = {
     headers: {
       'Content-Type': 'application/json',
       ...options.headers,
@@ -69,10 +77,11 @@ export async function apiRequest(endpoint, options = {}) {
     }
     
     // Network or other errors
+    const message = error instanceof Error ? error.message : String(error);
     throw new ApiError(
-      error.message || 'Network error occurred',
+      message || 'Network error occurred',
       0,
-      { error: error.message }
+      { error: message }
     );
   }
 }
@@ -83,11 +92,11 @@ export async function apiRequest(endpoint, options = {}) {
 export const adminAuth = {
   /**
    * Login admin user
-   * @param {string} email - Admin email
-   * @param {string} password - Admin password
-   * @returns {Promise<object>} - Login response
+   * @param email - Admin email
+   * @param password - Admin password
+   * @returns - Login response
    */
-  async login(email, password) {
+  async login(email: string, password: string) {
     // Login goes through the public users/login endpoint (there is no
     // /api/admin/auth/login — /api/admin/* is auth-protected). The backend sets an
     // HttpOnly admin_auth cookie which the admin routes accept, and apiRequest sends
@@ -100,7 +109,7 @@ export const adminAuth = {
 
   /**
    * Logout admin user
-   * @returns {Promise<object>} - Logout response
+   * @returns - Logout response
    */
   async logout() {
     // Backend route is POST /api/admin/logout (mounted under /api/admin); there is no
@@ -113,7 +122,7 @@ export const adminAuth = {
 
   /**
    * Verify admin session
-   * @returns {Promise<object>} - Verification response
+   * @returns - Verification response
    */
   async verify() {
     // Lightweight session probe: returns 200 with { authenticated } whether or not
@@ -123,7 +132,7 @@ export const adminAuth = {
 
   /**
    * Get admin profile
-   * @returns {Promise<object>} - Profile data
+   * @returns - Profile data
    */
   async getProfile() {
     return apiRequest('admin/auth/profile');
@@ -131,10 +140,10 @@ export const adminAuth = {
 
   /**
    * Update admin profile
-   * @param {object} profileData - Profile update data
-   * @returns {Promise<object>} - Update response
+   * @param profileData - Profile update data
+   * @returns - Update response
    */
-  async updateProfile(profileData) {
+  async updateProfile(profileData: Record<string, unknown>) {
     return apiRequest('admin/auth/profile', {
       method: 'PUT',
       body: JSON.stringify(profileData),
@@ -148,10 +157,10 @@ export const adminAuth = {
 export const adminUsers = {
   /**
    * Get all users with pagination and filters
-   * @param {object} params - Query parameters
-   * @returns {Promise<object>} - Users data
+   * @param params - Query parameters
+   * @returns - Users data
    */
-  async getUsers(params = {}) {
+  async getUsers(params: Params = {}) {
     const queryString = new URLSearchParams(params).toString();
     const endpoint = queryString ? `admin/users?${queryString}` : 'admin/users';
     return apiRequest(endpoint);
@@ -159,11 +168,11 @@ export const adminUsers = {
 
   /**
    * Change user role
-   * @param {string} userId - User ID
-   * @param {string} role - New role
-   * @returns {Promise<object>} - Update response
+   * @param userId - User ID
+   * @param role - New role
+   * @returns - Update response
    */
-  async changeUserRole(userId, role) {
+  async changeUserRole(userId: string, role: string) {
     return apiRequest(`admin/users/${userId}/role`, {
       method: 'PUT',
       body: JSON.stringify({ role }),
@@ -172,11 +181,11 @@ export const adminUsers = {
 
   /**
    * Change user status (delete/restore)
-   * @param {string} userId - User ID
-   * @param {boolean} isDeleted - Whether user should be deleted
-   * @returns {Promise<object>} - Update response
+   * @param userId - User ID
+   * @param isDeleted - Whether user should be deleted
+   * @returns - Update response
    */
-  async changeUserStatus(userId, isDeleted) {
+  async changeUserStatus(userId: string, isDeleted: boolean) {
     return apiRequest(`admin/users/${userId}/status`, {
       method: 'PUT',
       body: JSON.stringify({ isDeleted }),
@@ -185,10 +194,10 @@ export const adminUsers = {
 
   /**
    * Create new user
-   * @param {object} userData - User data
-   * @returns {Promise<object>} - Creation response
+   * @param userData - User data
+   * @returns - Creation response
    */
-  async createUser(userData) {
+  async createUser(userData: Record<string, unknown>) {
     return apiRequest('admin/users', {
       method: 'POST',
       body: JSON.stringify(userData),
@@ -197,20 +206,20 @@ export const adminUsers = {
 
   /**
    * Get user by ID
-   * @param {string} userId - User ID
-   * @returns {Promise<object>} - User data
+   * @param userId - User ID
+   * @returns - User data
    */
-  async getUser(userId) {
+  async getUser(userId: string) {
     return apiRequest(`admin/users/${userId}`);
   },
 
   /**
    * Update user
-   * @param {string} userId - User ID
-   * @param {object} userData - User update data
-   * @returns {Promise<object>} - Update response
+   * @param userId - User ID
+   * @param userData - User update data
+   * @returns - Update response
    */
-  async updateUser(userId, userData) {
+  async updateUser(userId: string, userData: Record<string, unknown>) {
     return apiRequest(`admin/users/${userId}`, {
       method: 'PUT',
       body: JSON.stringify(userData),
@@ -219,10 +228,10 @@ export const adminUsers = {
 
   /**
    * Delete user (soft delete)
-   * @param {string} userId - User ID
-   * @returns {Promise<object>} - Delete response
+   * @param userId - User ID
+   * @returns - Delete response
    */
-  async deleteUser(userId) {
+  async deleteUser(userId: string) {
     return apiRequest(`admin/users/${userId}`, {
       method: 'DELETE',
     });
@@ -235,10 +244,10 @@ export const adminUsers = {
 export const adminDashboard = {
   /**
    * Get dashboard overview with KPIs
-   * @param {object} params - Query parameters (period, startDate, endDate)
-   * @returns {Promise<object>} - Dashboard overview data
+   * @param params - Query parameters (period, startDate, endDate)
+   * @returns - Dashboard overview data
    */
-  async getOverview(params = {}) {
+  async getOverview(params: Params = {}) {
     const queryString = new URLSearchParams(params).toString();
     const endpoint = queryString ? `dashboard/overview?${queryString}` : 'dashboard/overview';
     return apiRequest(endpoint);
@@ -246,10 +255,10 @@ export const adminDashboard = {
 
   /**
    * Get sales trend data for charts
-   * @param {object} params - Query parameters (period, granularity)
-   * @returns {Promise<object>} - Sales trend data
+   * @param params - Query parameters (period, granularity)
+   * @returns - Sales trend data
    */
-  async getSalesTrend(params = {}) {
+  async getSalesTrend(params: Params = {}) {
     const queryString = new URLSearchParams(params).toString();
     const endpoint = queryString ? `dashboard/sales-trend?${queryString}` : 'dashboard/sales-trend';
     return apiRequest(endpoint);
@@ -257,10 +266,10 @@ export const adminDashboard = {
 
   /**
    * Get top performing products
-   * @param {object} params - Query parameters (period, limit, metric)
-   * @returns {Promise<object>} - Top products data
+   * @param params - Query parameters (period, limit, metric)
+   * @returns - Top products data
    */
-  async getTopProducts(params = {}) {
+  async getTopProducts(params: Params = {}) {
     const queryString = new URLSearchParams(params).toString();
     const endpoint = queryString ? `dashboard/top-products?${queryString}` : 'dashboard/top-products';
     return apiRequest(endpoint);
@@ -268,10 +277,10 @@ export const adminDashboard = {
 
   /**
    * Get order status distribution
-   * @param {object} params - Query parameters (period)
-   * @returns {Promise<object>} - Order status distribution data
+   * @param params - Query parameters (period)
+   * @returns - Order status distribution data
    */
-  async getOrderStatusDistribution(params = {}) {
+  async getOrderStatusDistribution(params: Params = {}) {
     const queryString = new URLSearchParams(params).toString();
     const endpoint = queryString ? `dashboard/order-status-distribution?${queryString}` : 'dashboard/order-status-distribution';
     return apiRequest(endpoint);
@@ -279,10 +288,10 @@ export const adminDashboard = {
 
   /**
    * Get customer analytics
-   * @param {object} params - Query parameters (period)
-   * @returns {Promise<object>} - Customer analytics data
+   * @param params - Query parameters (period)
+   * @returns - Customer analytics data
    */
-  async getCustomerAnalytics(params = {}) {
+  async getCustomerAnalytics(params: Params = {}) {
     const queryString = new URLSearchParams(params).toString();
     const endpoint = queryString ? `dashboard/customer-analytics?${queryString}` : 'dashboard/customer-analytics';
     return apiRequest(endpoint);
@@ -290,7 +299,7 @@ export const adminDashboard = {
 
   /**
    * Get inventory alerts
-   * @returns {Promise<object>} - Inventory alerts data
+   * @returns - Inventory alerts data
    */
   async getInventoryAlerts() {
     return apiRequest('dashboard/inventory-alerts');
@@ -303,10 +312,10 @@ export const adminDashboard = {
 export const adminProducts = {
   /**
    * Get all products with pagination and filters
-   * @param {object} params - Query parameters
-   * @returns {Promise<object>} - Products data
+   * @param params - Query parameters
+   * @returns - Products data
    */
-  async getProducts(params = {}) {
+  async getProducts(params: Params = {}) {
     const queryString = new URLSearchParams(params).toString();
     const endpoint = queryString ? `admin/products?${queryString}` : 'admin/products';
     return apiRequest(endpoint);
@@ -314,21 +323,21 @@ export const adminProducts = {
 
   /**
    * Get product by ID
-   * @param {string} productId - Product ID
-   * @returns {Promise<object>} - Product data
+   * @param productId - Product ID
+   * @returns - Product data
    */
-  async getProduct(productId) {
+  async getProduct(productId: string) {
     return apiRequest(`admin/products/${productId}`);
   },
 
   /**
    * Update product status
-   * @param {string} productId - Product ID
-   * @param {string} status - New status
-   * @param {string} notes - Optional notes
-   * @returns {Promise<object>} - Update response
+   * @param productId - Product ID
+   * @param status - New status
+   * @param notes - Optional notes
+   * @returns - Update response
    */
-  async updateProductStatus(productId, status, notes = '') {
+  async updateProductStatus(productId: string, status: string, notes = '') {
     return apiRequest(`admin/products/${productId}/status`, {
       method: 'PUT',
       body: JSON.stringify({ status, notes }),
@@ -337,11 +346,11 @@ export const adminProducts = {
 
   /**
    * Bulk update products
-   * @param {Array} productIds - Array of product IDs
-   * @param {object} updates - Update data
-   * @returns {Promise<object>} - Update response
+   * @param productIds - Array of product IDs
+   * @param updates - Update data
+   * @returns - Update response
    */
-  async bulkUpdateProducts(productIds, updates) {
+  async bulkUpdateProducts(productIds: string[], updates: Record<string, unknown>) {
     return apiRequest('admin/products/bulk-update', {
       method: 'PUT',
       body: JSON.stringify({ product_ids: productIds, updates }),
@@ -350,10 +359,10 @@ export const adminProducts = {
 
   /**
    * Bulk delete products
-   * @param {Array} productIds - Array of product IDs
-   * @returns {Promise<object>} - Delete response
+   * @param productIds - Array of product IDs
+   * @returns - Delete response
    */
-  async bulkDeleteProducts(productIds) {
+  async bulkDeleteProducts(productIds: string[]) {
     return apiRequest('admin/products/bulk-delete', {
       method: 'DELETE',
       body: JSON.stringify({ product_ids: productIds }),
@@ -362,7 +371,7 @@ export const adminProducts = {
 
   /**
    * Get product statistics
-   * @returns {Promise<object>} - Product statistics
+   * @returns - Product statistics
    */
   async getProductStats() {
     return apiRequest('admin/products/stats/overview');
@@ -375,10 +384,10 @@ export const adminProducts = {
 export const adminCustomers = {
   /**
    * Get all customers with pagination and filters
-   * @param {object} params - Query parameters
-   * @returns {Promise<object>} - Customers data
+   * @param params - Query parameters
+   * @returns - Customers data
    */
-  async getCustomers(params = {}) {
+  async getCustomers(params: Params = {}) {
     const queryString = new URLSearchParams(params).toString();
     const endpoint = queryString ? `admin/customers?${queryString}` : 'admin/customers';
     return apiRequest(endpoint);
@@ -386,16 +395,16 @@ export const adminCustomers = {
 
   /**
    * Get customer by ID with detailed profile
-   * @param {string} customerId - Customer ID
-   * @returns {Promise<object>} - Customer profile data
+   * @param customerId - Customer ID
+   * @returns - Customer profile data
    */
-  async getCustomer(customerId) {
+  async getCustomer(customerId: string) {
     return apiRequest(`admin/customers/${customerId}`);
   },
 
   /**
    * Get customer analytics and segmentation
-   * @returns {Promise<object>} - Customer analytics data
+   * @returns - Customer analytics data
    */
   async getCustomerAnalytics() {
     return apiRequest('admin/customers/analytics');
@@ -403,12 +412,12 @@ export const adminCustomers = {
 
   /**
    * Update customer status
-   * @param {string} customerId - Customer ID
-   * @param {string} status - New status (active, inactive, suspended)
-   * @param {string} reason - Reason for status change
-   * @returns {Promise<object>} - Update response
+   * @param customerId - Customer ID
+   * @param status - New status (active, inactive, suspended)
+   * @param reason - Reason for status change
+   * @returns - Update response
    */
-  async updateCustomerStatus(customerId, status, reason = '') {
+  async updateCustomerStatus(customerId: string, status: string, reason = '') {
     return apiRequest(`admin/customers/${customerId}/status`, {
       method: 'PUT',
       body: JSON.stringify({ status, reason }),
@@ -417,12 +426,12 @@ export const adminCustomers = {
 
   /**
    * Add customer service note
-   * @param {string} customerId - Customer ID
-   * @param {string} note - Note content
-   * @param {string} type - Note type (support, billing, general)
-   * @returns {Promise<object>} - Add note response
+   * @param customerId - Customer ID
+   * @param note - Note content
+   * @param type - Note type (support, billing, general)
+   * @returns - Add note response
    */
-  async addCustomerNote(customerId, note, type = 'general') {
+  async addCustomerNote(customerId: string, note: string, type = 'general') {
     return apiRequest(`admin/customers/${customerId}/notes`, {
       method: 'POST',
       body: JSON.stringify({ note, type }),
@@ -431,10 +440,10 @@ export const adminCustomers = {
 
   /**
    * Get customer notes and activity history
-   * @param {string} customerId - Customer ID
-   * @returns {Promise<object>} - Customer notes data
+   * @param customerId - Customer ID
+   * @returns - Customer notes data
    */
-  async getCustomerNotes(customerId) {
+  async getCustomerNotes(customerId: string) {
     return apiRequest(`admin/customers/${customerId}/notes`);
   },
 };
@@ -445,10 +454,10 @@ export const adminCustomers = {
 export const adminOrders = {
   /**
    * Get all orders with pagination and filters
-   * @param {object} params - Query parameters
-   * @returns {Promise<object>} - Orders data
+   * @param params - Query parameters
+   * @returns - Orders data
    */
-  async getOrders(params = {}) {
+  async getOrders(params: Params = {}) {
     const queryString = new URLSearchParams(params).toString();
     const endpoint = queryString ? `admin/orders?${queryString}` : 'admin/orders';
     return apiRequest(endpoint);
@@ -456,21 +465,21 @@ export const adminOrders = {
 
   /**
    * Get order by ID
-   * @param {string} orderId - Order ID
-   * @returns {Promise<object>} - Order data
+   * @param orderId - Order ID
+   * @returns - Order data
    */
-  async getOrder(orderId) {
+  async getOrder(orderId: string) {
     return apiRequest(`admin/orders/${orderId}`);
   },
 
   /**
    * Update order status
-   * @param {string} orderId - Order ID
-   * @param {string} status - New status
-   * @param {string} notes - Optional notes
-   * @returns {Promise<object>} - Update response
+   * @param orderId - Order ID
+   * @param status - New status
+   * @param notes - Optional notes
+   * @returns - Update response
    */
-  async updateOrderStatus(orderId, status, notes = '') {
+  async updateOrderStatus(orderId: string, status: string, notes = '') {
     return apiRequest(`admin/orders/${orderId}/status`, {
       method: 'PUT',
       body: JSON.stringify({ status, notes }),
@@ -479,13 +488,13 @@ export const adminOrders = {
 
   /**
    * Process refund for an order
-   * @param {string} orderId - Order ID
-   * @param {number} amount - Refund amount (optional, full refund if not specified)
-   * @param {string} reason - Refund reason
-   * @param {string} reasonNotes - Additional notes
-   * @returns {Promise<object>} - Refund response
+   * @param orderId - Order ID
+   * @param amount - Refund amount (optional, full refund if not specified)
+   * @param reason - Refund reason
+   * @param reasonNotes - Additional notes
+   * @returns - Refund response
    */
-  async processRefund(orderId, amount, reason, reasonNotes = '') {
+  async processRefund(orderId: string, amount: number | undefined, reason: string, reasonNotes = '') {
     return apiRequest(`admin/orders/${orderId}/refund`, {
       method: 'POST',
       body: JSON.stringify({ amount, reason, reasonNotes }),
@@ -494,11 +503,11 @@ export const adminOrders = {
 
   /**
    * Generate shipping label and update tracking
-   * @param {string} orderId - Order ID
-   * @param {object} shippingData - Shipping configuration
-   * @returns {Promise<object>} - Shipping response
+   * @param orderId - Order ID
+   * @param shippingData - Shipping configuration
+   * @returns - Shipping response
    */
-  async generateShippingLabel(orderId, shippingData = {}) {
+  async generateShippingLabel(orderId: string, shippingData: Record<string, unknown> = {}) {
     return apiRequest(`admin/orders/${orderId}/shipping`, {
       method: 'POST',
       body: JSON.stringify(shippingData),
@@ -507,12 +516,12 @@ export const adminOrders = {
 
   /**
    * Bulk update order statuses
-   * @param {Array} orderIds - Array of order IDs
-   * @param {string} status - New status
-   * @param {string} notes - Optional notes
-   * @returns {Promise<object>} - Update response
+   * @param orderIds - Array of order IDs
+   * @param status - New status
+   * @param notes - Optional notes
+   * @returns - Update response
    */
-  async bulkUpdateOrders(orderIds, status, notes = '') {
+  async bulkUpdateOrders(orderIds: string[], status: string, notes = '') {
     return apiRequest('admin/orders/bulk-update', {
       method: 'POST',
       body: JSON.stringify({ orderIds, status, notes }),
@@ -521,10 +530,10 @@ export const adminOrders = {
 
   /**
    * Get order analytics for dashboard
-   * @param {object} params - Query parameters (period)
-   * @returns {Promise<object>} - Order analytics data
+   * @param params - Query parameters (period)
+   * @returns - Order analytics data
    */
-  async getOrderAnalytics(params = {}) {
+  async getOrderAnalytics(params: Params = {}) {
     const queryString = new URLSearchParams(params).toString();
     const endpoint = queryString ? `admin/orders/analytics/dashboard?${queryString}` : 'admin/orders/analytics/dashboard';
     return apiRequest(endpoint);
@@ -533,25 +542,25 @@ export const adminOrders = {
 
 /**
  * Utility function to handle API errors in components
- * @param {Error} error - Error object
- * @returns {string} - User-friendly error message
+ * @param error - Error object
+ * @returns - User-friendly error message
  */
-export function getErrorMessage(error) {
+export function getErrorMessage(error: unknown): string {
   if (error instanceof ApiError) {
     // Use the message from the API response
     return error.message;
   }
   
   // Fallback for other types of errors
-  return error.message || 'An unexpected error occurred';
+  return (error instanceof Error && error.message) || 'An unexpected error occurred';
 }
 
 /**
  * Utility function to check if error is authentication related
- * @param {Error} error - Error object
- * @returns {boolean} - True if auth error
+ * @param error - Error object
+ * @returns - True if auth error
  */
-export function isAuthError(error) {
+export function isAuthError(error: unknown): error is ApiError {
   return error instanceof ApiError && (error.status === 401 || error.status === 403);
 }
 
@@ -561,10 +570,10 @@ export function isAuthError(error) {
 export const adminSettings = {
   /**
    * Get all system settings
-   * @param {object} params - Query parameters
-   * @returns {Promise<object>} - Settings data
+   * @param params - Query parameters
+   * @returns - Settings data
    */
-  async getSettings(params = {}) {
+  async getSettings(params: Params = {}) {
     const queryString = new URLSearchParams(params).toString();
     const endpoint = queryString ? `admin/settings?${queryString}` : 'admin/settings';
     return apiRequest(endpoint);
@@ -572,20 +581,20 @@ export const adminSettings = {
 
   /**
    * Get specific setting by key
-   * @param {string} key - Setting key
-   * @returns {Promise<object>} - Setting data
+   * @param key - Setting key
+   * @returns - Setting data
    */
-  async getSetting(key) {
+  async getSetting(key: string) {
     return apiRequest(`admin/settings/${key}`);
   },
 
   /**
    * Update or create setting
-   * @param {string} key - Setting key
-   * @param {object} data - Setting data
-   * @returns {Promise<object>} - Update response
+   * @param key - Setting key
+   * @param data - Setting data
+   * @returns - Update response
    */
-  async updateSetting(key, data) {
+  async updateSetting(key: string, data: Record<string, unknown>) {
     return apiRequest(`admin/settings/${key}`, {
       method: 'PUT',
       body: JSON.stringify(data),
@@ -594,10 +603,10 @@ export const adminSettings = {
 
   /**
    * Bulk update settings
-   * @param {Array} settings - Array of setting objects
-   * @returns {Promise<object>} - Update response
+   * @param settings - Array of setting objects
+   * @returns - Update response
    */
-  async bulkUpdateSettings(settings) {
+  async bulkUpdateSettings(settings: Array<Record<string, unknown>>) {
     return apiRequest('admin/settings/bulk-update', {
       method: 'POST',
       body: JSON.stringify({ settings }),
@@ -606,10 +615,10 @@ export const adminSettings = {
 
   /**
    * Delete setting
-   * @param {string} key - Setting key
-   * @returns {Promise<object>} - Delete response
+   * @param key - Setting key
+   * @returns - Delete response
    */
-  async deleteSetting(key) {
+  async deleteSetting(key: string) {
     return apiRequest(`admin/settings/${key}`, {
       method: 'DELETE',
     });
@@ -617,7 +626,7 @@ export const adminSettings = {
 
   /**
    * Get setting categories
-   * @returns {Promise<object>} - Categories data
+   * @returns - Categories data
    */
   async getCategories() {
     return apiRequest('admin/settings/categories/list');
@@ -630,10 +639,10 @@ export const adminSettings = {
 export const adminEmailTemplates = {
   /**
    * Get all email templates
-   * @param {object} params - Query parameters
-   * @returns {Promise<object>} - Templates data
+   * @param params - Query parameters
+   * @returns - Templates data
    */
-  async getTemplates(params = {}) {
+  async getTemplates(params: Params = {}) {
     const queryString = new URLSearchParams(params).toString();
     const endpoint = queryString ? `admin/email-templates?${queryString}` : 'admin/email-templates';
     return apiRequest(endpoint);
@@ -641,19 +650,19 @@ export const adminEmailTemplates = {
 
   /**
    * Get specific template by ID
-   * @param {string} id - Template ID
-   * @returns {Promise<object>} - Template data
+   * @param id - Template ID
+   * @returns - Template data
    */
-  async getTemplate(id) {
+  async getTemplate(id: string) {
     return apiRequest(`admin/email-templates/${id}`);
   },
 
   /**
    * Create new template
-   * @param {object} templateData - Template data
-   * @returns {Promise<object>} - Creation response
+   * @param templateData - Template data
+   * @returns - Creation response
    */
-  async createTemplate(templateData) {
+  async createTemplate(templateData: Record<string, unknown>) {
     return apiRequest('admin/email-templates', {
       method: 'POST',
       body: JSON.stringify(templateData),
@@ -662,11 +671,11 @@ export const adminEmailTemplates = {
 
   /**
    * Update template
-   * @param {string} id - Template ID
-   * @param {object} templateData - Template data
-   * @returns {Promise<object>} - Update response
+   * @param id - Template ID
+   * @param templateData - Template data
+   * @returns - Update response
    */
-  async updateTemplate(id, templateData) {
+  async updateTemplate(id: string, templateData: Record<string, unknown>) {
     return apiRequest(`admin/email-templates/${id}`, {
       method: 'PUT',
       body: JSON.stringify(templateData),
@@ -675,10 +684,10 @@ export const adminEmailTemplates = {
 
   /**
    * Delete template
-   * @param {string} id - Template ID
-   * @returns {Promise<object>} - Delete response
+   * @param id - Template ID
+   * @returns - Delete response
    */
-  async deleteTemplate(id) {
+  async deleteTemplate(id: string) {
     return apiRequest(`admin/email-templates/${id}`, {
       method: 'DELETE',
     });
@@ -686,12 +695,12 @@ export const adminEmailTemplates = {
 
   /**
    * Send test email
-   * @param {string} id - Template ID
-   * @param {string} testEmail - Test email address
-   * @param {object} testData - Test data
-   * @returns {Promise<object>} - Test response
+   * @param id - Template ID
+   * @param testEmail - Test email address
+   * @param testData - Test data
+   * @returns - Test response
    */
-  async sendTestEmail(id, testEmail, testData = {}) {
+  async sendTestEmail(id: string, testEmail: string, testData: Record<string, unknown> = {}) {
     return apiRequest(`admin/email-templates/${id}/test`, {
       method: 'POST',
       body: JSON.stringify({ testEmail, testData }),
@@ -699,7 +708,7 @@ export const adminEmailTemplates = {
   },
 };
 
-export default {
+const api = {
   apiRequest,
   adminAuth,
   adminUsers,
@@ -712,3 +721,5 @@ export default {
   getErrorMessage,
   isAuthError,
 };
+
+export default api;

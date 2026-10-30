@@ -26,7 +26,7 @@ jobs:
         run: node scripts/gen-api-docs.js && git diff --exit-code docs/API.md
 
   admin:
-    name: Admin (lint + build)
+    name: Admin (lint + typecheck + build)
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -40,6 +40,8 @@ jobs:
           cache-dependency-path: admin-dashboard/package-lock.json
       - run: npm ci
       - run: npm run lint
+      - name: TypeScript (strict)
+        run: npm run typecheck
       - name: /api routing rules (rustRoutes.mjs)
         run: node --test rustRoutes.test.mjs
       - run: npm run build
