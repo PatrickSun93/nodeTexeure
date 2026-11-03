@@ -403,8 +403,32 @@ describe('admin', () => {
   });
 });
 
+describe('firstQueryValue', () => {
+  const { firstQueryValue } = require('../utils/params');
+  const of = (url) => firstQueryValue({ originalUrl: url }, 'q');
+  test('first non-empty value of the literal key, from the first ? on', () => {
+    expect(of('/x')).toBe('');
+    expect(of('/x?q=')).toBe('');
+    expect(of('/x?q=a&q=b')).toBe('a');
+    expect(of('/x?q=&q=b')).toBe('b');
+    expect(of('/x?q[]=a')).toBe('');
+    expect(of('/x?q[a]=b')).toBe('');
+    // A literal ? inside a value is part of the value (Rust reads uri.query()).
+    expect(of('/x?q=what?silk')).toBe('what?silk');
+    expect(of('/x?q=?silk')).toBe('?silk');
+    expect(of('/x?q=%3Fsilk')).toBe('?silk');
+  });
+});
+
 describe('search autocomplete', () => {
   const get = (query) => request(app).get(`/api/search/autocomplete?${query}`);
+  test('a literal ? in q is searched, not cut off', async () => {
+    const res = await get('q=silk?zz');
+    expect(res.status).toBe(200);
+    // 'silk?zz' matches nothing; a cut-off 'silk' would.
+    expect(res.body.keyValueTable.products).toEqual([]);
+  });
+
   test('array / object q is not a 500; repeated q uses the first non-empty value', async () => {
     for (const query of ['q[]=silk', 'q[a]=silk', 'q[]=silk&q[]=bed']) {
       const res = await get(query);
@@ -421,31 +445,78 @@ describe('search autocomplete', () => {
   });
 });
 
+describe('repeated / array query keys use the first value (as the Rust API does)', () => {
+  test('journal ?category', async () => {
+    const care = await request(app).get('/api/journal?category=Care');
+    expect(care.status).toBe(200);
+    for (const query of ['category=Care&category=Guides', 'category=&category=Care']) {
+      const res = await request(app).get(`/api/journal?${query}`);
+      expect({ query, status: res.status, body: res.body }).toEqual({ query, status: 200, body: care.body });
+    }
+    for (const query of ['category[]=Care', 'category[a]=Care']) {
+      const res = await request(app).get(`/api/journal?${query}`);
+      expect({ query, status: res.status }).toEqual({ query, status: 200 });
+    }
+  });
+
+  test('products ?locale', async () => {
+    const fr = await request(app).get('/api/products?locale=fr&nocache=true');
+    expect(fr.status).toBe(200);
+    const res = await request(app).get('/api/products?locale=fr&locale=zh&nocache=true');
+    expect(res.status).toBe(200);
+    expect(res.body.keyValueTable).toEqual(fr.body.keyValueTable);
+  });
+});
+
 // The apply-coupon exploit, replayed against the other lookups that take an id,
 // code or token from a JSON body: send numbers / booleans REPEAT times (enough to
 // reach every pooled connection's cached statement), then a made-up string,
 // which must still match nothing. A real value must still match afterwards.
 describe('numbers first, then a made-up string still matches nothing', () => {
-  const NUMBERS = [0, 1, 7, true, false];
-  const poison = async (send) => {
+  // SENTINEL is a number no route binds on its own (quantities, limits, flags
+  // are small), so a bind of it means the request value reached SQL untyped.
+  const SENTINEL = 424242;
+  const NUMBERS = [0, 1, 7, true, false, SENTINEL];
+  // Runs fn with DatabaseUtil.executeQuery wrapped; fails if SENTINEL is bound.
+  const noSentinelBinds = async (fn) => {
+    const orig = DatabaseUtil.executeQuery;
+    const bound = [];
+    DatabaseUtil.executeQuery = function (sql, params = [], ...rest) {
+      if (Array.isArray(params) && params.includes(SENTINEL)) bound.push(sql.replace(/\s+/g, ' ').trim().slice(0, 100));
+      return orig.call(this, sql, params, ...rest);
+    };
+    try {
+      await fn();
+    } finally {
+      DatabaseUtil.executeQuery = orig;
+    }
+    expect(bound).toEqual([]);
+  };
+  const poison = (send, status = 400) => noSentinelBinds(async () => {
     for (const v of NUMBERS) {
+      await resetLimiters(); // REPEAT writes per limiter window, well under 60
       for (let i = 0; i < REPEAT; i++) {
         const res = await send(v);
-        expect({ v, status: res.status }).toEqual({ v, status: 400 });
+        expect({ v, status: res.status }).toEqual({ v, status });
       }
     }
-  };
+  });
   const repeatBogus = async (send, check) => {
     await resetLimiters();
     for (let i = 0; i < REPEAT; i++) check(await send(`bogus-${hex(6)}`));
   };
 
-  // Each admin case sends ~70 writes; the admin limiters (100 / 60 per minute,
-  // no skip in tests) would answer 429 long before that.
+  // The admin limiters (100 / 60 per minute, no skip in tests) are reset before
+  // every batch of REPEAT writes. Keys are what express-rate-limit stores:
+  // ipKeyGenerator maps IPv6 to its /56 ('::1' -> '::/56'), so the raw address
+  // alone would reset nothing on an IPv6 loopback.
+  const { ipKeyGenerator } = require('express-rate-limit');
   const limiters = require('../routes/admin/limiters');
+  const LOOPBACKS = ['::ffff:127.0.0.1', '127.0.0.1', '::1'];
+  const LIMITER_KEYS = [...new Set([...LOOPBACKS, ...LOOPBACKS.map((ip) => ipKeyGenerator(ip))])];
   const resetLimiters = async () => {
     for (const limiter of Object.values(limiters)) {
-      for (const key of ['::ffff:127.0.0.1', '127.0.0.1', '::1']) await limiter.resetKey(key);
+      for (const key of LIMITER_KEYS) await limiter.resetKey(key);
     }
   };
   beforeEach(resetLimiters);
@@ -503,9 +574,9 @@ describe('numbers first, then a made-up string still matches nothing', () => {
     const address = { first_name: 'A', last_name: 'B', address_line_1: '1 Way', city: 'X', state: 'TX', postal_code: '1', country: 'US' };
     const send = (cartId) => request(app).post('/api/orders/create').set(bearer(user.accessToken))
       .send({ cartId, shippingAddress: address, billingAddress: address });
-    for (const v of NUMBERS) {
-      for (let i = 0; i < REPEAT; i++) expect((await send(v)).status).toBe(403);
-    }
+    // ownsCart answers 403 for every bad id; the bind spy in poison() is what
+    // catches a numeric cartId reaching `WHERE id = ?` (it is bound as String()).
+    await poison(send, 403);
     await repeatBogus(send, (res) => {
       expect(res.status).toBe(403);
       expect(res.body.message).toBe('Access denied');
@@ -550,7 +621,10 @@ describe('numbers first, then a made-up string still matches nothing', () => {
     const before = await live();
     const send = (id) => admin(request(app).post('/api/admin/products/bulk-delete')).send({ productIds: [id] });
     await poison(send);
-    await repeatBogus(send, () => {});
+    await repeatBogus(send, (res) => {
+      expect(res.status).toBe(200);
+      expect(res.body.keyValueTable[0].result.deleted).toBe(0);
+    });
     expect(await live()).toBe(before);
   });
 
@@ -567,8 +641,8 @@ describe('numbers first, then a made-up string still matches nothing', () => {
   test('admin: stock adjustment product id', async () => {
     const send = (product_id) => admin(request(app).post('/api/admin/inventory/adjust')).send({ product_id, quantity_change: 1 });
     const stock = async () => Number((await first('SELECT COALESCE(SUM(quantity_available), 0) AS n FROM inventory')).n);
-    await poison(send);
     const before = await stock();
+    await poison(send);
     await repeatBogus(send, (res) => expect(res.status).toBe(400));
     expect(await stock()).toBe(before);
   });

@@ -1,15 +1,8 @@
 const express = require('express');
 const DatabaseUtil = require('../utils/database');
 const ResponseFormatter = require('../utils/responseFormatter');
+const { firstQueryValue } = require('../utils/params');
 const router = express.Router();
-
-// First non-empty value of a raw query-string key, like the Rust API's
-// `params::first`. req.query can't be used directly: `?q=a&q=b` and `?q[]=x`
-// parse to arrays (and `?q[a]=x` to an object), whose .trim() threw a 500.
-function firstQueryValue(req, key) {
-    const raw = req.originalUrl.split('?')[1] || '';
-    return new URLSearchParams(raw).getAll(key).find((v) => v !== '') || '';
-}
 
 /**
  * GET /api/search/autocomplete

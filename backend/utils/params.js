@@ -20,4 +20,16 @@ const isOptionalString = (v) => v === undefined || v === null || typeof v === 's
 // Every element is a non-empty string (and there is at least one).
 const isStringList = (v) => Array.isArray(v) && v.length > 0 && v.every(isNonEmptyString);
 
-module.exports = { isString, isNonEmptyString, isOptionalString, isStringList };
+// The first non-empty value of a raw query-string key — what the Rust API's
+// `params::first` reads. Express's `req.query` can't be used for this: with the
+// default (qs) parser `?x=a&x=b` and `?x[]=a` become arrays and `?x[a]=b` an
+// object, so `.trim()` throws and a bound value becomes JSON text. Reads from
+// the first `?` on, so a literal `?` inside a value is kept.
+function firstQueryValue(req, key) {
+  const url = req.originalUrl || req.url || '';
+  const i = url.indexOf('?');
+  const raw = i < 0 ? '' : url.slice(i + 1);
+  return new URLSearchParams(raw).getAll(key).find((v) => v !== '') || '';
+}
+
+module.exports = { isString, isNonEmptyString, isOptionalString, isStringList, firstQueryValue };

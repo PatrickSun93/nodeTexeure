@@ -3,6 +3,7 @@ const DatabaseUtil = require('../utils/database');
 const ResponseFormatter = require('../utils/responseFormatter');
 const PerformanceMiddleware = require('../middleware/performanceMiddleware');
 const cacheManager = require('../utils/cacheManager');
+const { firstQueryValue } = require('../utils/params');
 const router = express.Router();
 
 // Locale for serving translated product content. Comes from the NEXT_LOCALE cookie
@@ -10,7 +11,8 @@ const router = express.Router();
 // a ?locale= query override. Unknown values fall back to English.
 const SUPPORTED_LOCALES = ['en', 'zh', 'fr', 'es'];
 function resolveLocale(req) {
-  const raw = req.query.locale || req.cookies?.NEXT_LOCALE || 'en';
+  // First ?locale= value (an array from ?locale=a&locale=b fell back to 'en'; Rust picks 'a').
+  const raw = firstQueryValue(req, 'locale') || req.cookies?.NEXT_LOCALE || 'en';
   return SUPPORTED_LOCALES.includes(raw) ? raw : 'en';
 }
 
