@@ -21,6 +21,7 @@ const path = require('path');
 const { DatabaseUtil } = require('./helpers');
 const P = require('./parityHelpers');
 const limiters = require('../routes/admin/limiters');
+const { ipKeyGenerator } = require('express-rate-limit');
 
 const BO = P.backOffice();
 const SIDE = { node: 'N', rust: 'R' };
@@ -50,7 +51,12 @@ const q = async (sql, params = []) => {
 /** Fresh admin limiter budgets on both sides (see the header). */
 async function budget() {
   for (const limiter of Object.values(limiters)) {
-    for (const key of ['::ffff:127.0.0.1', '127.0.0.1', '::1']) await limiter.resetKey(key);
+    // Keys as express-rate-limit stores them: ipKeyGenerator maps IPv6 to its
+    // /56 ('::1' -> '::/56'), so the raw address alone would not reset it.
+    for (const ip of ['::ffff:127.0.0.1', '127.0.0.1', '::1']) {
+      await limiter.resetKey(ip);
+      await limiter.resetKey(ipKeyGenerator(ip));
+    }
   }
   await BO.stop();
   await BO.start();

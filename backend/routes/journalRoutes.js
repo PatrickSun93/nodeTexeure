@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const DatabaseUtil = require('../utils/database');
 const ResponseFormatter = require('../utils/responseFormatter');
+const { firstQueryValue } = require('../utils/params');
 
 /**
  * Journal (editorial blog) routes — all PUBLIC (no auth).
@@ -23,7 +24,8 @@ const LIST_COLUMNS =
  */
 router.get('/', async (req, res) => {
   try {
-    const { category } = req.query;
+    // First value of a repeated key, like the Rust twin; an array would bind as JSON text.
+    const category = firstQueryValue(req, 'category');
     let limit = parseInt(req.query.limit, 10);
     if (!Number.isFinite(limit) || limit <= 0) limit = 50;
     if (limit > 100) limit = 100;
