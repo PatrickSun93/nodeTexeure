@@ -403,6 +403,177 @@ describe('admin', () => {
   });
 });
 
+describe('search autocomplete', () => {
+  const get = (query) => request(app).get(`/api/search/autocomplete?${query}`);
+  test('array / object q is not a 500; repeated q uses the first non-empty value', async () => {
+    for (const query of ['q[]=silk', 'q[a]=silk', 'q[]=silk&q[]=bed']) {
+      const res = await get(query);
+      expect({ query, status: res.status }).toEqual({ query, status: 200 });
+      expect(res.body.keyValueTable.products).toEqual([]);
+    }
+    const silk = await get('q=silk');
+    expect(silk.status).toBe(200);
+    expect(silk.body.keyValueTable.products.length).toBeGreaterThan(0);
+    for (const query of ['q=silk&q=bed', 'q=&q=silk']) {
+      const res = await get(query);
+      expect({ query, body: res.body }).toEqual({ query, body: silk.body });
+    }
+  });
+});
+
+// The apply-coupon exploit, replayed against the other lookups that take an id,
+// code or token from a JSON body: send numbers / booleans REPEAT times (enough to
+// reach every pooled connection's cached statement), then a made-up string,
+// which must still match nothing. A real value must still match afterwards.
+describe('numbers first, then a made-up string still matches nothing', () => {
+  const NUMBERS = [0, 1, 7, true, false];
+  const poison = async (send) => {
+    for (const v of NUMBERS) {
+      for (let i = 0; i < REPEAT; i++) {
+        const res = await send(v);
+        expect({ v, status: res.status }).toEqual({ v, status: 400 });
+      }
+    }
+  };
+  const repeatBogus = async (send, check) => {
+    await resetLimiters();
+    for (let i = 0; i < REPEAT; i++) check(await send(`bogus-${hex(6)}`));
+  };
+
+  // Each admin case sends ~70 writes; the admin limiters (100 / 60 per minute,
+  // no skip in tests) would answer 429 long before that.
+  const limiters = require('../routes/admin/limiters');
+  const resetLimiters = async () => {
+    for (const limiter of Object.values(limiters)) {
+      for (const key of ['::ffff:127.0.0.1', '127.0.0.1', '::1']) await limiter.resetKey(key);
+    }
+  };
+  beforeEach(resetLimiters);
+
+  let admin;
+  beforeAll(async () => {
+    const { accessToken } = await login('admin');
+    const res = await request(app).get('/api/users/csrf-token').set(bearer(accessToken));
+    const csrf = res.body.keyValueTable.csrfToken;
+    admin = (r) => r.set(bearer(accessToken)).set('X-CSRF-Token', csrf).set('Cookie', `csrf_token=${csrf}`);
+  });
+
+  test('refresh token', async () => {
+    const user = await registerCustomer();
+    const send = (refreshToken) => request(app).post('/api/users/refresh').send({ refreshToken });
+    await poison(send);
+    await repeatBogus(send, (res) => {
+      expect(res.status).toBe(401);
+      expect(res.body.message).toBe('Invalid or expired refresh token');
+    });
+    const ok = await send(user.refreshToken);
+    expect(ok.status).toBe(200);
+  });
+
+  test('password reset token', async () => {
+    const user = await registerCustomer();
+    const token = hex(32);
+    await q(`UPDATE users SET password_reset_token = ?, password_reset_expires = DATE_ADD(NOW(), INTERVAL 1 HOUR)
+             WHERE id = ?`, [crypto.createHash('sha256').update(token).digest('hex'), user.userId]);
+    const send = (t) => request(app).post('/api/users/reset-password').send({ token: t, newPassword: 'Newpass@1234' });
+    await poison(send);
+    const hashBefore = (await first('SELECT password_hash FROM users WHERE id = ?', [user.userId])).password_hash;
+    await repeatBogus(send, (res) => {
+      expect(res.status).toBe(400);
+      expect(res.body.message).toBe('Invalid token');
+    });
+    expect((await first('SELECT password_hash FROM users WHERE id = ?', [user.userId])).password_hash).toBe(hashBefore);
+    expect((await send(token)).status).toBe(200);
+    await login({ email: user.email, password: 'Newpass@1234' });
+  });
+
+  test('return request order id', async () => {
+    const user = await registerCustomer();
+    const send = (orderId) => request(app).post('/api/returns/request').set(bearer(user.accessToken))
+      .send({ orderId, reason: 'defective', items: [{ orderItemId: 'OI1', quantity: 1 }] });
+    await poison(send);
+    await repeatBogus(send, (res) => {
+      expect(res.status).toBe(404);
+      expect(res.body.message).toBe('Order not found');
+    });
+  });
+
+  test('checkout cart id', async () => {
+    const user = await registerCustomer();
+    const address = { first_name: 'A', last_name: 'B', address_line_1: '1 Way', city: 'X', state: 'TX', postal_code: '1', country: 'US' };
+    const send = (cartId) => request(app).post('/api/orders/create').set(bearer(user.accessToken))
+      .send({ cartId, shippingAddress: address, billingAddress: address });
+    for (const v of NUMBERS) {
+      for (let i = 0; i < REPEAT; i++) expect((await send(v)).status).toBe(403);
+    }
+    await repeatBogus(send, (res) => {
+      expect(res.status).toBe(403);
+      expect(res.body.message).toBe('Access denied');
+    });
+    expect(await first('SELECT id FROM orders WHERE user_id = ?', [user.userId])).toBeNull();
+  });
+
+  test('cart product id', async () => {
+    const user = await registerCustomer();
+    const send = (product_id, variant_id) => request(app).post('/api/cart/add').set(bearer(user.accessToken))
+      .send({ product_id, variant_id, quantity: 1 });
+    await poison(send);
+    await repeatBogus(send, (res) => {
+      expect(res.status).toBe(400);
+      expect(res.body.message).toBe('Product not found');
+    });
+    const item = await inStockVariant(1);
+    const ok = await send(item.product_id, item.variant_id);
+    expect(ok.status).toBe(200);
+  });
+
+  test('admin: shipping label order id', async () => {
+    const send = (orderId) => admin(request(app).post('/api/shipping/create-label')).send({ orderId });
+    await poison(send);
+    await repeatBogus(send, (res) => {
+      expect(res.status).toBe(404);
+      expect(res.body.message).toBe('Order not found');
+    });
+  });
+
+  test('admin: bulk order status ids', async () => {
+    const send = (id) => admin(request(app).post('/api/admin/orders/bulk-update')).send({ orderIds: [id], status: 'cancelled' });
+    await poison(send);
+    await repeatBogus(send, (res) => {
+      expect(res.status).toBe(200);
+      expect(res.body.keyValueTable[0].result.updated).toBe(0);
+    });
+  });
+
+  test('admin: bulk product delete ids', async () => {
+    const live = async () => Number((await first("SELECT COUNT(*) AS n FROM products WHERE status <> 'discontinued'")).n);
+    const before = await live();
+    const send = (id) => admin(request(app).post('/api/admin/products/bulk-delete')).send({ productIds: [id] });
+    await poison(send);
+    await repeatBogus(send, () => {});
+    expect(await live()).toBe(before);
+  });
+
+  test('admin: create user email', async () => {
+    const send = (email) => admin(request(app).post('/api/admin/users'))
+      .send({ email, password: 'Admin@12345', first_name: 'A', last_name: 'B' });
+    await poison(send);
+    await resetLimiters();
+    // A fresh address is not "already exists" (email = 0 would match every user).
+    const res = await send(unknownEmail());
+    expect(res.status).toBe(201);
+  });
+
+  test('admin: stock adjustment product id', async () => {
+    const send = (product_id) => admin(request(app).post('/api/admin/inventory/adjust')).send({ product_id, quantity_change: 1 });
+    const stock = async () => Number((await first('SELECT COALESCE(SUM(quantity_available), 0) AS n FROM inventory')).n);
+    await poison(send);
+    const before = await stock();
+    await repeatBogus(send, (res) => expect(res.status).toBe(400));
+    expect(await stock()).toBe(before);
+  });
+});
+
 // Node ↔ Rust: the Rust API serves cart and wishlist in production, so it must
 // treat the same inputs the same way (parity.test.js covers the valid paths).
 const RUST = process.env.RUST_API_URL;
