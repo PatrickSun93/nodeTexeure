@@ -403,6 +403,24 @@ describe('admin', () => {
   });
 });
 
+describe('search autocomplete', () => {
+  const get = (query) => request(app).get(`/api/search/autocomplete?${query}`);
+  test('array / object q is not a 500; repeated q uses the first non-empty value', async () => {
+    for (const query of ['q[]=silk', 'q[a]=silk', 'q[]=silk&q[]=bed']) {
+      const res = await get(query);
+      expect({ query, status: res.status }).toEqual({ query, status: 200 });
+      expect(res.body.keyValueTable.products).toEqual([]);
+    }
+    const silk = await get('q=silk');
+    expect(silk.status).toBe(200);
+    expect(silk.body.keyValueTable.products.length).toBeGreaterThan(0);
+    for (const query of ['q=silk&q=bed', 'q=&q=silk']) {
+      const res = await get(query);
+      expect({ query, body: res.body }).toEqual({ query, body: silk.body });
+    }
+  });
+});
+
 // The apply-coupon exploit, replayed against the other lookups that take an id,
 // code or token from a JSON body: send numbers / booleans REPEAT times (enough to
 // reach every pooled connection's cached statement), then a made-up string,
